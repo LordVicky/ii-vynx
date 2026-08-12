@@ -20,6 +20,26 @@ QtObject {
         }
     }
 
+    function normalizeName(name) {
+        return String(name ?? "")
+            .toLowerCase()
+            .replace(/[^a-z0-9]/g, "");
+    }
+
+    function bluetoothHasSameName(name) {
+        const target = root.normalizeName(name);
+        if (!target.length)
+            return false;
+
+        const connected = BluetoothStatus.connectedDevices;
+        for (let i = 0; i < connected.length; ++i) {
+            const device = connected[i];
+            if (device.batteryAvailable && root.normalizeName(device.name) === target)
+                return true;
+        }
+        return false;
+    }
+
     readonly property var devices: {
         const result = [];
 
@@ -32,7 +52,8 @@ QtObject {
                 percentage: Math.max(0, Math.min(1, Battery.percentage)),
                 charging: Battery.isCharging,
                 chargingKnown: true,
-                observedAt: Date.now()
+                observedAt: Date.now(),
+                stale: false
             });
         }
 
@@ -51,15 +72,25 @@ QtObject {
                     percentage: Math.max(0, Math.min(1, device.battery)),
                     charging: false,
                     chargingKnown: false,
-                    observedAt: Date.now()
+                    observedAt: Date.now(),
+                    stale: false
                 });
             }
         }
 
-        if (root.appleEnabled && AppleBatteryStatus.state === "connected") {
+        if (root.appleEnabled) {
             const appleDevices = AppleBatteryStatus.devices;
             for (let i = 0; i < appleDevices.length; ++i) {
                 const device = appleDevices[i];
+                if (AppleBatteryStatus.isExpired(device))
+                    continue;
+
+                // A live local Bluetooth reading is more useful than the same
+                // accessory's remote Find My snapshot. Name matching is kept
+                // deliberately conservative until real payloads are validated.
+                if (root.bluetoothEnabled && root.bluetoothHasSameName(device.name))
+                    continue;
+
                 result.push({
                     id: device.id,
                     source: "icloud",
@@ -68,7 +99,8 @@ QtObject {
                     percentage: Math.max(0, Math.min(1, Number(device.percentage ?? 0))),
                     charging: device.charging ?? false,
                     chargingKnown: device.chargingKnown ?? false,
-                    observedAt: device.observedAt ?? AppleBatteryStatus.lastRefresh
+                    observedAt: device.observedAt ?? AppleBatteryStatus.lastRefresh,
+                    stale: AppleBatteryStatus.isStale(device)
                 });
             }
         }
