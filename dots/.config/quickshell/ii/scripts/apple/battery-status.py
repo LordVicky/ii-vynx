@@ -1,0 +1,200 @@
+#!/usr/bin/env python3
+"""Minimal Apple Find My battery bridge for Vynx.
+
+`login APPLE_ID` performs interactive authentication once and persists the
+pyicloud session. `status` is non-interactive: it reuses that session, emits a
+small normalized JSON payload, and exits.
+"""
+
+from __future__ import annotations
+
+import getpass
+import hashlib
+import json
+import os
+import sys
+import time
+from importlib.metadata import PackageNotFoundError, version
+from pathlib import Path
+from typing import Any
+
+MIN_PYICLOUD_VERSION = (2, 6, 5)
+CACHE_DIR = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache")) / "ii-vynx" / "apple"
+ACCOUNT_FILE = CACHE_DIR / "account"
+
+
+def parse_version(value: str) -> tuple[int, ...]:
+    result: list[int] = []
+    for part in value.split("."):
+        digits = "".join(ch for ch in part if ch.isdigit())
+        if not digits:
+            break
+        result.append(int(digits))
+    return tuple(result)
+
+
+def pyicloud_service():
+    try:
+        installed = version("pyicloud")
+    except PackageNotFoundError as exc:
+        raise RuntimeError("pyicloud >= 2.6.5 is required") from exc
+    if parse_version(installed) < MIN_PYICLOUD_VERSION:
+        raise RuntimeError(f"pyicloud {installed} is too old; need >= 2.6.5")
+
+    from pyicloud import PyiCloudService
+
+    return PyiCloudService
+
+
+def ensure_cache() -> None:
+    CACHE_DIR.mkdir(parents=True, exist_ok=True, mode=0o700)
+    try:
+        CACHE_DIR.chmod(0o700)
+    except OSError:
+        pass
+
+
+def read_account() -> str | None:
+    try:
+        value = ACCOUNT_FILE.read_text(encoding="utf-8").strip()
+    except OSError:
+        return None
+    return value or None
+
+
+def write_account(apple_id: str) -> None:
+    ensure_cache()
+    ACCOUNT_FILE.write_text(apple_id.strip() + "\n", encoding="utf-8")
+    try:
+        ACCOUNT_FILE.chmod(0o600)
+    except OSError:
+        pass
+
+
+def stable_id(raw_id: str) -> str:
+    digest = hashlib.sha256(raw_id.encode("utf-8")).hexdigest()[:16]
+    return f"icloud:{digest}"
+
+
+def normalize_level(value: Any) -> float | None:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return None
+    value = float(value)
+    return round(value, 4) if 0 <= value <= 1 else None
+
+
+def normalize_charging(value: Any) -> tuple[bool, bool]:
+    if not isinstance(value, str):
+        return False, False
+    state = value.strip().lower().replace(" ", "")
+    if state in {"charging", "charged", "full", "fullycharged"}:
+        return True, True
+    if state in {"notcharging", "unplugged", "discharging"}:
+        return False, True
+    return False, False
+
+
+def service(apple_id: str, password: str | None):
+    ensure_cache()
+    return pyicloud_service()(
+        apple_id,
+        password,
+        cookie_directory=str(CACHE_DIR),
+        with_family=False,
+        refresh_interval=3600,
+    )
+
+
+def login(apple_id: str) -> int:
+    password = getpass.getpass("Apple Account password: ")
+    try:
+        api = service(apple_id, password)
+        if api.requires_2fa:
+            if not api.request_2fa_code():
+                print("Unable to complete this Apple 2FA method.", file=sys.stderr)
+                return 3
+            code = input("Apple verification code: ").strip()
+            if not api.validate_2fa_code(code):
+                print("Verification code rejected.", file=sys.stderr)
+                return 3
+        write_account(apple_id)
+        print("Apple session saved.")
+        return 0
+    finally:
+        password = ""
+
+
+def normalize_device(device: Any, observed_at: int) -> dict[str, Any] | None:
+    data = device.status(
+        additional=["id", "batteryStatus", "deviceClass", "deviceModel", "rawDeviceModel"]
+    )
+    raw_id = data.get("id")
+    percentage = normalize_level(data.get("batteryLevel"))
+    if raw_id is None or percentage is None:
+        return None
+
+    charging, charging_known = normalize_charging(data.get("batteryStatus"))
+    name = data.get("name") or data.get("deviceDisplayName") or "Apple device"
+    return {
+        "id": stable_id(str(raw_id)),
+        "name": str(name),
+        "deviceClass": data.get("deviceClass"),
+        "deviceModel": data.get("deviceModel") or data.get("rawDeviceModel"),
+        "percentage": percentage,
+        "charging": charging,
+        "chargingKnown": charging_known,
+        "observedAt": observed_at,
+    }
+
+
+def status() -> int:
+    apple_id = read_account()
+    if not apple_id:
+        print('{"state":"notConfigured","devices":[]}')
+        return 2
+
+    observed_at = int(time.time() * 1000)
+    try:
+        api = service(apple_id, None)
+        if api.requires_2fa:
+            print('{"state":"authenticationRequired","devices":[]}')
+            return 3
+
+        devices = []
+        for device in api.devices:
+            normalized = normalize_device(device, observed_at)
+            if normalized is not None:
+                devices.append(normalized)
+
+        print(json.dumps({
+            "state": "connected",
+            "observedAt": observed_at,
+            "devices": devices,
+        }, separators=(",", ":")))
+        return 0
+    except Exception as exc:
+        print(json.dumps({
+            "state": "error",
+            "error": type(exc).__name__,
+            "devices": [],
+        }, separators=(",", ":")))
+        return 4
+
+
+def main() -> int:
+    if len(sys.argv) < 2:
+        print("usage: battery-status.py login APPLE_ID | status", file=sys.stderr)
+        return 2
+
+    command = sys.argv[1]
+    if command == "login" and len(sys.argv) == 3:
+        return login(sys.argv[2])
+    if command == "status" and len(sys.argv) == 2:
+        return status()
+
+    print("usage: battery-status.py login APPLE_ID | status", file=sys.stderr)
+    return 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
