@@ -23,6 +23,10 @@ CACHE_DIR = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache")) / "ii
 ACCOUNT_FILE = CACHE_DIR / "account"
 
 
+class DependencyError(RuntimeError):
+    pass
+
+
 def parse_version(value: str) -> tuple[int, ...]:
     result: list[int] = []
     for part in value.split("."):
@@ -37,11 +41,14 @@ def pyicloud_service():
     try:
         installed = version("pyicloud")
     except PackageNotFoundError as exc:
-        raise RuntimeError("pyicloud >= 2.6.5 is required") from exc
+        raise DependencyError("pyicloud >= 2.6.5 is required") from exc
     if parse_version(installed) < MIN_PYICLOUD_VERSION:
-        raise RuntimeError(f"pyicloud {installed} is too old; need >= 2.6.5")
+        raise DependencyError(f"pyicloud {installed} is too old; need >= 2.6.5")
 
-    from pyicloud import PyiCloudService
+    try:
+        from pyicloud import PyiCloudService
+    except ImportError as exc:
+        raise DependencyError("pyicloud could not be imported") from exc
 
     return PyiCloudService
 
@@ -120,6 +127,9 @@ def login(apple_id: str) -> int:
         write_account(apple_id)
         print("Apple session saved.")
         return 0
+    except DependencyError as exc:
+        print(str(exc), file=sys.stderr)
+        return 5
     finally:
         password = ""
 
@@ -147,17 +157,21 @@ def normalize_device(device: Any, observed_at: int) -> dict[str, Any] | None:
     }
 
 
+def emit(payload: dict[str, Any]) -> None:
+    print(json.dumps(payload, separators=(",", ":")))
+
+
 def status() -> int:
     apple_id = read_account()
     if not apple_id:
-        print('{"state":"notConfigured","devices":[]}')
+        emit({"state": "notConfigured", "devices": []})
         return 2
 
     observed_at = int(time.time() * 1000)
     try:
         api = service(apple_id, None)
         if api.requires_2fa:
-            print('{"state":"authenticationRequired","devices":[]}')
+            emit({"state": "authenticationRequired", "devices": []})
             return 3
 
         devices = []
@@ -166,18 +180,25 @@ def status() -> int:
             if normalized is not None:
                 devices.append(normalized)
 
-        print(json.dumps({
+        emit({
             "state": "connected",
             "observedAt": observed_at,
             "devices": devices,
-        }, separators=(",", ":")))
+        })
         return 0
+    except DependencyError as exc:
+        emit({
+            "state": "dependencyMissing",
+            "error": str(exc),
+            "devices": [],
+        })
+        return 5
     except Exception as exc:
-        print(json.dumps({
+        emit({
             "state": "error",
             "error": type(exc).__name__,
             "devices": [],
-        }, separators=(",", ":")))
+        })
         return 4
 
 
