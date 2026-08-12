@@ -4,12 +4,14 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import qs.modules.common
 
 Singleton {
     id: root
 
-    // Remote battery readings change slowly. One short-lived helper process per
-    // interval keeps this service effectively idle between refreshes.
+    // Stay completely idle unless the Battery widget explicitly enables the
+    // Apple source. Remote battery readings only need a low polling cadence.
+    readonly property bool enabled: Config.options.background.widgets.battery?.showAppleBatteries ?? false
     readonly property int refreshInterval: 15 * 60 * 1000
     property string state: "idle"
     property list<var> devices: []
@@ -19,10 +21,17 @@ Singleton {
     readonly property string helperPath: Quickshell.shellPath("scripts/apple/battery-status.py")
 
     function refresh() {
-        if (refreshProcess.running)
+        if (!root.enabled || refreshProcess.running)
             return;
         root.refreshing = true;
         refreshProcess.running = true;
+    }
+
+    onEnabledChanged: {
+        if (root.enabled)
+            root.refresh();
+        else
+            root.devices = [];
     }
 
     Component.onCompleted: root.refresh()
@@ -30,7 +39,9 @@ Singleton {
     Timer {
         interval: root.refreshInterval
         repeat: true
-        running: root.state !== "notConfigured" && root.state !== "authenticationRequired"
+        running: root.enabled
+            && root.state !== "notConfigured"
+            && root.state !== "authenticationRequired"
         onTriggered: root.refresh()
     }
 
