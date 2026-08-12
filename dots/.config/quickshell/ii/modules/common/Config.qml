@@ -19,6 +19,7 @@ Singleton {
         let obj = root.options;
         let parents = [obj];
 
+        // Traverse and collect parent objects
         for (let i = 0; i < keys.length - 1; ++i) {
             if (!obj[keys[i]] || typeof obj[keys[i]] !== "object") {
                 obj[keys[i]] = {};
@@ -27,6 +28,7 @@ Singleton {
             parents.push(obj);
         }
 
+        // Convert value to correct type using JSON.parse when safe
         let convertedValue = value;
         if (typeof value === "string") {
             let trimmed = value.trim();
@@ -46,14 +48,18 @@ Singleton {
         id: fileReloadTimer
         interval: root.readWriteDelay
         repeat: false
-        onTriggered: configFileView.reload()
+        onTriggered: {
+            configFileView.reload();
+        }
     }
 
     Timer {
         id: fileWriteTimer
         interval: root.readWriteDelay
         repeat: false
-        onTriggered: configFileView.writeAdapter()
+        onTriggered: {
+            configFileView.writeAdapter();
+        }
     }
 
     FileView {
@@ -73,13 +79,13 @@ Singleton {
         JsonAdapter {
             id: configOptionsJsonAdapter
 
-            property string panelFamily: "ii"
+            property string panelFamily: "ii" // "ii", "waffle"
 
             property JsonObject policies: JsonObject {
-                property int ai: 1
-                property int weeb: 0
-                property int wallpapers: 1
-                property int translator: 0
+                property int ai: 1 // 0: No | 1: Yes | 2: Local
+                property int weeb: 0 // 0: No | 1: Open | 2: Closet
+                property int wallpapers: 1 // 0: No | 1: Yes
+                property int translator: 0 // 0: No | 1: Yes
             }
 
             property JsonObject extensions: JsonObject {
@@ -93,8 +99,8 @@ Singleton {
             }
 
             property JsonObject ai: JsonObject {
-                property string systemPrompt: "## Style\n- Use casual tone, don't be formal!\n- Always be brief and to the point, unless asked otherwise\n- Don't repeat the user's question\n- Be approachable: Avoid using overly complicated, domain-specific terms and provide analogies when asked to explain a concept\n\n## Context (ignore when irrelevant)\n- You are a helpful and inspiring sidebar assistant on a {DISTRO} Linux system\n- Desktop environment: {DE}\n- Current date & time: {DATETIME}\n- Focused app: {WINDOWCLASS}\n\n## Presentation\n- Use Markdown features in your response: \n  - **Bold** text to **highlight keywords** in your response\n  - **Split long information into small sections** with h2 headers and a relevant emoji at the start of it (for example `## 🐧 Linux`). Bullet points are preferred over long paragraphs, unless you're offering writing support or instructed otherwise by the user.\n- Asked to compare different options? You should firstly use a table to compare the main aspects, then elaborate or include relevant comments from online forums *after* the table. Make sure to provide a final recommendation for your use case!\n- Use LaTeX formatting for mathematical and scientific notations whenever appropriate. Enclose all LaTeX '$$' delimiters. NEVER generate LaTeX code in a latex block unless the user explicitly asks for it. DO NOT use LaTeX for regular documents (resumes, letters, essays, CVs, etc.).\n\nThanks!\n"
-                property string tool: "functions"
+                property string systemPrompt: "## Style\n- Use casual tone, don't be formal!\n- Always be brief and to the point, unless asked otherwise\n- Don't repeat the user's question\n- Be approachable: Avoid using overly complicated, domain-specific terms and provide analogies when asked to explain a concept\n\n## Context (ignore when irrelevant)\n- You are a helpful and inspiring sidebar assistant on a {DISTRO} Linux system\n- Desktop environment: {DE}\n- Current date & time: {DATETIME}\n- Focused app: {WINDOWCLASS}\n\n## Presentation\n- Use Markdown features in your response: \n  - **Bold** text to **highlight keywords** in your response\n  - **Split long information into small sections** with a relevant emoji at the start of it (for example `## 🐧 Linux`). Bullet points are preferred over long paragraphs, unless you're offering writing support or instructed otherwise by the user.\n- Asked to compare different options? You should firstly use a table to compare the main aspects, then elaborate or include relevant comments from online forums *after* the table. Make sure to provide a final recommendation for the user's use case!\n- Use LaTeX formatting for mathematical and scientific notations whenever appropriate. Enclose all LaTeX '$$' delimiters. NEVER generate LaTeX code in a latex block unless the user explicitly asks for it. DO NOT use LaTeX for regular documents (resumes, letters, essays, CVs, etc.).\n\nThanks!\n"
+                property string tool: "functions" // search, functions, or none
                 property list<var> models: [
                     {
                         "openrouter": [
@@ -124,7 +130,7 @@ Singleton {
 
             property JsonObject appearance: JsonObject {
                 property bool extraBackgroundTint: true
-                property int fakeScreenRounding: 2
+                property int fakeScreenRounding: 2 // 0: None | 1: Always | 2: When not fullscreen | 3: Wrapped
                 property int wrappedFrameThickness: 10
                 property bool sharpMode: false
                 property int defaultBorderRadius: 18
@@ -258,17 +264,6 @@ Singleton {
                         property real x: 400
                         property real y: 100
                     }
-                    property JsonObject battery: JsonObject {
-                        property bool enable: false
-                        property string placementStrategy: "free"
-                        property real x: 100
-                        property real y: 400
-                        property real scale: 1
-                        property string layout: "list"
-                        property bool showLaptopBattery: true
-                        property bool showBluetoothBatteries: true
-                        property bool showAppleBatteries: false
-                    }
                 }
                 property bool animateWallpaperChanges: true
                 property string transitionType: "radial"
@@ -305,13 +300,12 @@ Singleton {
                 property JsonObject activeWindow: JsonObject {
                     property bool fixedSize: false
                 }
-
                 property JsonObject autoHide: JsonObject {
                     property bool enable: false
                     property int hoverRegionWidth: 2
                     property bool pushWindows: false
                     property JsonObject showWhenPressingSuper: JsonObject {
-                        property bool enable: false
+                        property bool enable: true
                         property int delay: 140
                     }
                 }
@@ -327,9 +321,7 @@ Singleton {
                     property bool useFixedSize: false
                     property int customSize: 250
                     property int maxSize: 400
-                    property JsonObject artwork: JsonObject {
-                        property bool enable: false
-                    }
+                    property JsonObject artwork: JsonObject { property bool enable: false }
                     property JsonObject lyrics: JsonObject {
                         property bool enable: false
                         property int customSize: 400
