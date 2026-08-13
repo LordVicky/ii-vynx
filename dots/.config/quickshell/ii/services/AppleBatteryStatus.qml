@@ -9,10 +9,8 @@ import qs.modules.common
 Singleton {
     id: root
 
-    readonly property bool enabled: Config.options.background.widgets.battery?.showAppleBatteries ?? true
-    readonly property int configuredPollingMinutes: Math.max(5, Math.min(180,
-        Number(Config.options.background.widgets.battery?.applePollingMinutes ?? 15)))
-    readonly property int refreshInterval: root.configuredPollingMinutes * 60 * 1000
+    property int pollingMinutes: 15
+    readonly property int refreshInterval: root.pollingMinutes * 60 * 1000
     readonly property int errorRetryInterval: Math.max(30 * 60 * 1000, root.refreshInterval * 2)
     readonly property int staleAfter: Math.max(30 * 60 * 1000, root.refreshInterval * 2)
     readonly property int expireAfter: Math.max(2 * 60 * 60 * 1000, root.refreshInterval * 8)
@@ -23,6 +21,7 @@ Singleton {
     property double lastAttempt: 0
     property bool refreshing: false
     property bool disconnecting: false
+    property bool savingPollingInterval: false
 
     readonly property string helperPath: Quickshell.shellPath("scripts/apple/battery-status.py")
 
@@ -37,7 +36,7 @@ Singleton {
     }
 
     function refresh() {
-        if (!root.enabled || refreshProcess.running || root.disconnecting)
+        if (refreshProcess.running || root.disconnecting)
             return;
         root.refreshing = true;
         refreshProcess.running = true;
@@ -48,7 +47,7 @@ Singleton {
         const helper = root.shellQuote(root.helperPath);
         const inner = root.runtimePythonShell()
             + ` "$PY" ${helper} login; `
-            + 'printf "\\nSign-in finished. You can close this terminal or press Enter.\\n"; read _';
+            + 'printf "\\nSign-in finished. Return to Vynx Settings and press Refresh now.\\n"; read _';
         Quickshell.execDetached(["sh", "-lc", `${terminal} sh -lc ${root.shellQuote(inner)}`]);
     }
 
@@ -57,6 +56,23 @@ Singleton {
             return;
         root.disconnecting = true;
         disconnectProcess.running = true;
+    }
+
+    function setPollingMinutes(value) {
+        const minutes = Math.max(5, Math.min(180, Math.round(Number(value))));
+        if (!Number.isFinite(minutes) || settingsProcess.running)
+            return;
+        root.pollingMinutes = minutes;
+        root.savingPollingInterval = true;
+        settingsProcess.command = [
+            "sh",
+            "-c",
+            root.runtimePythonShell() + ' exec "$PY" "$1" set-interval "$2"',
+            "vynx-apple-battery-settings",
+            root.helperPath,
+            String(minutes)
+        ];
+        settingsProcess.running = true;
     }
 
     function age(observedAt) {
@@ -96,32 +112,18 @@ Singleton {
         return merged;
     }
 
-    onEnabledChanged: {
-        if (root.enabled) {
-            root.refresh();
-        } else {
-            root.devices = [];
-            root.state = "disabled";
-        }
-    }
-
     onRefreshIntervalChanged: {
         if (refreshTimer.running)
             refreshTimer.restart();
     }
 
-    Component.onCompleted: {
-        if (root.enabled)
-            root.refresh();
-        else
-            root.state = "disabled";
-    }
+    Component.onCompleted: root.refresh()
 
     Timer {
         id: refreshTimer
         interval: root.state === "error" ? root.errorRetryInterval : root.refreshInterval
         repeat: true
-        running: root.enabled && (root.state === "connected" || root.state === "error")
+        running: root.state === "connected" || root.state === "error"
         onTriggered: root.refresh()
     }
 
@@ -148,6 +150,8 @@ Singleton {
                 try {
                     const payload = JSON.parse(text);
                     root.state = payload.state ?? "error";
+                    if (payload.pollingMinutes !== undefined)
+                        root.pollingMinutes = Math.max(5, Math.min(180, Number(payload.pollingMinutes)));
                     if (root.state === "connected") {
                         root.devices = root.mergeDevices(payload.devices);
                         root.lastRefresh = payload.observedAt ?? root.lastAttempt;
@@ -155,6 +159,26 @@ Singleton {
                 } catch (error) {
                     root.state = "error";
                     console.warn(`[AppleBatteryStatus] Invalid helper response: ${error.message}`);
+                }
+            }
+        }
+    }
+
+    Process {
+        id: settingsProcess
+        command: ["true"]
+
+        stdout: StdioCollector {
+            onStreamFinished: {
+                root.savingPollingInterval = false;
+                if (!text.length)
+                    return;
+                try {
+                    const payload = JSON.parse(text);
+                    if (payload.pollingMinutes !== undefined)
+                        root.pollingMinutes = Math.max(5, Math.min(180, Number(payload.pollingMinutes)));
+                } catch (error) {
+                    console.warn(`[AppleBatteryStatus] Invalid settings response: ${error.message}`);
                 }
             }
         }
