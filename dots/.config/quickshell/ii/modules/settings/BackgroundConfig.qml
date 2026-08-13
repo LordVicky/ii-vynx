@@ -1408,6 +1408,34 @@ ContentPage {
         icon: "monitor_heart"
         title: Translation.tr("Widget: Resources")
         widgetKey: "resources"
+
+        ContentSubsection {
+            title: Translation.tr("Network speed")
+
+            ConfigSelectionArray {
+                currentValue: Config.options.background.widgets.resources.networkMode
+                onSelected: newValue => {
+                    Config.options.background.widgets.resources.networkMode = newValue;
+                }
+                options: [
+                    { displayName: Translation.tr("Download"), icon: "download", value: "download" },
+                    { displayName: Translation.tr("Upload"), icon: "upload", value: "upload" },
+                    { displayName: Translation.tr("Total"), icon: "swap_vert", value: "total" }
+                ]
+            }
+        }
+
+        ConfigSpinBox {
+            icon: "av_timer"
+            text: Translation.tr("Polling interval (ms)")
+            value: Config.options.background.widgets.resources.pollingInterval
+            from: 100
+            to: 10000
+            stepSize: 100
+            onValueChanged: {
+                Config.options.background.widgets.resources.pollingInterval = value;
+            }
+        }
     }
 
     DesktopWidgetToggle {
@@ -1444,11 +1472,6 @@ ContentPage {
         icon: "lyrics"
         title: Translation.tr("Widget: Lyrics")
         widgetKey: "lyrics"
-    }
-    DesktopWidgetToggle {
-        icon: "swap_vert"
-        title: Translation.tr("Widget: Network")
-        widgetKey: "network"
     }
     DesktopWidgetToggle {
         icon: "content_paste"

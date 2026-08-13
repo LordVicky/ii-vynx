@@ -7,18 +7,36 @@ import qs.modules.common.functions
 import qs.modules.common.widgets
 import qs.modules.common.widgets.widgetCanvas
 import qs.modules.ii.background.widgets
+import "NetworkMetric.js" as NetworkMetric
 
 AbstractBackgroundWidget {
     id: root
     configEntryName: "resources"
     hoverEnabled: true
 
-    property real widgetWidth: 420
+    property real widgetWidth: 564
     property real cardSpacing: 12
     property real cardHeight: 120
-    property real cardWidth: (widgetWidth - cardSpacing * 2) / 3
+    property real cardWidth: (widgetWidth - cardSpacing * 3) / 4
     property bool isVertical: root.configEntry.vertical ?? false
     property bool hasBattery: Battery.available
+    readonly property string networkMode: root.configEntry.networkMode ?? "total"
+    readonly property real networkSpeed: root.networkMode === "download"
+        ? NetworkUsage.networkDownloadSpeed
+        : root.networkMode === "upload"
+            ? NetworkUsage.networkUploadSpeed
+            : NetworkUsage.networkTotalSpeed
+
+    Component.onCompleted: {
+        ResourceUsage.resourceWidgetInstances += 1;
+        NetworkUsage.activeInstances += 1;
+        NetworkUsage.resourceWidgetInstances += 1;
+    }
+    Component.onDestruction: {
+        ResourceUsage.resourceWidgetInstances = Math.max(0, ResourceUsage.resourceWidgetInstances - 1);
+        NetworkUsage.activeInstances = Math.max(0, NetworkUsage.activeInstances - 1);
+        NetworkUsage.resourceWidgetInstances = Math.max(0, NetworkUsage.resourceWidgetInstances - 1);
+    }
 
     // Live drag override. -1 means "not dragging", which lets widgetScale keep
     // its binding to the persisted config value; a plain assignment during drag
@@ -96,12 +114,13 @@ AbstractBackgroundWidget {
 
             Item { Layout.fillHeight: true }
 
-            StyledText {
+            AnimatedValueText {
+                Layout.fillWidth: true
                 text: statCard.value
-                font.pixelSize: root.scaled(Appearance.font.pixelSize.hugeass)
-                font.weight: Font.Bold
-                renderType: Text.QtRendering
-                color: Appearance.colors.colOnPrimaryContainer
+                pixelSize: root.scaled(Appearance.font.pixelSize.hugeass)
+                transitionOffset: root.scaled(4)
+                weight: Font.Bold
+                textColor: Appearance.colors.colOnPrimaryContainer
             }
 
             StyledText {
@@ -124,8 +143,8 @@ AbstractBackgroundWidget {
 
     Grid {
         id: row
-        columns: root.isVertical ? 1 : 3
-        rows: root.isVertical ? 3 : 1
+        columns: root.isVertical ? 1 : 4
+        rows: root.isVertical ? 4 : 1
         spacing: root.scaled(root.cardSpacing)
 
         Behavior on columns {
@@ -155,6 +174,14 @@ AbstractBackgroundWidget {
             shape: MaterialShape.Shape.Cookie12Sided
             bgColor: Appearance.colors.colTertiaryContainer
             shapeColor: Appearance.colors.colTertiary
+        }
+        StatCard {
+            icon: "swap_vert"
+            value: NetworkMetric.formatSpeed(root.networkSpeed)
+            label: Translation.tr("Network")
+            shape: MaterialShape.Shape.Cookie9Sided
+            bgColor: Appearance.colors.colSurfaceContainerHigh
+            shapeColor: Appearance.colors.colPrimary
         }
     }
     Rectangle {
