@@ -10,7 +10,6 @@ import qs.services
 import qs.modules.common
 import qs.modules.common.widgets
 import qs.modules.common.functions
-import "VerticalBarLifecycle.js" as Lifecycle
 
 Scope {
     id: bar
@@ -26,116 +25,19 @@ Scope {
             return screens.filter(screen => list.includes(screen.name));
         }
         model: variantModel
-        Item {
-            id: controller
+        LazyLoader {
+            id: barLoader
+            active: GlobalStates.barOpen && !GlobalStates.screenLocked
             required property ShellScreen modelData
-            property int monitorIndex: barVariant.variantModel.indexOf(controller.modelData)
-            property bool triggerHovered: false
-            property bool fullBarHovered: false
-            property bool superShow: false
-            property bool revealRequested: triggerHovered || fullBarHovered || superShow || unloadTimer.running
-            property var barLoader: fullBarLoader
+            property var monitorIndex: barVariant.variantModel.indexOf(barLoader.modelData)
+            component: PanelWindow { // Bar window
+                id: barRoot
+                screen: barLoader.modelData
+                property var brightnessMonitor: Brightness.getMonitorForScreen(barLoader.modelData)
 
-            function cancelUnload() {
-                unloadTimer.stop();
-            }
-
-            function scheduleUnload() {
-                if (!Config.options.bar.autoHide.enable || triggerHovered || fullBarHovered || superShow || !fullBarLoader.active)
-                    return;
-                unloadTimer.restart();
-            }
-
-            Timer {
-                id: unloadTimer
-                interval: 20000
-                repeat: false
-            }
-
-            Timer {
-                id: showBarTimer
-                interval: (Config?.options.bar.autoHide.showWhenPressingSuper.delay ?? 100)
-                repeat: false
-                onTriggered: {
-                    controller.superShow = true;
-                    controller.cancelUnload();
-                }
-            }
-
-            Connections {
-                target: GlobalStates
-                function onSuperDownChanged() {
-                    if (!Config?.options.bar.autoHide.showWhenPressingSuper.enable) return;
-                    if (GlobalStates.superDown) showBarTimer.restart();
-                    else {
-                        showBarTimer.stop();
-                        controller.superShow = false;
-                        controller.scheduleUnload();
-                    }
-                }
-            }
-
-            Connections {
-                target: Config.options.bar.autoHide
-                function onEnableChanged() {
-                    if (!Config.options.bar.autoHide.enable)
-                        controller.cancelUnload();
-                    else if (fullBarLoader.active)
-                        controller.scheduleUnload();
-                }
-            }
-
-            Component.onCompleted: unloadTimer.restart()
-
-            LazyLoader {
-                id: edgeTriggerLoader
-                active: Lifecycle.shouldKeepTrigger(Config.options.bar.autoHide.enable, GlobalStates.barOpen, GlobalStates.screenLocked)
-                component: PanelWindow {
-                    screen: controller.modelData
-                    exclusionMode: ExclusionMode.Ignore
-                    exclusiveZone: 0
-                    WlrLayershell.namespace: "quickshell:verticalBarTrigger"
-                    implicitWidth: Lifecycle.activationWidth(Config.options.bar.autoHide.hoverRegionWidth)
-                    color: "transparent"
-                    mask: Region {
-                        item: edgeHoverRegion
-                    }
-
-                    anchors {
-                        left: !Config.options.bar.bottom
-                        right: Config.options.bar.bottom
-                        top: true
-                        bottom: true
-                    }
-
-                    MouseArea {
-                        id: edgeHoverRegion
-                        anchors.fill: parent
-                        hoverEnabled: true
-
-                        onContainsMouseChanged: {
-                            controller.triggerHovered = containsMouse;
-                            if (containsMouse)
-                                controller.cancelUnload();
-                            else
-                                controller.scheduleUnload();
-                        }
-                    }
-                }
-            }
-
-            LazyLoader {
-                id: fullBarLoader
-                property int monitorIndex: controller.monitorIndex
-                active: Lifecycle.shouldLoadFullBar(Config.options.bar.autoHide.enable, controller.revealRequested, GlobalStates.barOpen, GlobalStates.screenLocked)
-                component: PanelWindow { // Bar window
-                    id: barRoot
-                    screen: controller.modelData
-                    property var brightnessMonitor: Brightness.getMonitorForScreen(controller.modelData)
-
-                    property int monitorIndex: controller.monitorIndex
-                    property bool hasActiveWindows: false
-                    property bool showBarBackground: barRoot.hasActiveWindows && Config.options.bar.barBackgroundStyle === 2 || Config.options.bar.barBackgroundStyle === 1
+                property int monitorIndex: barLoader.monitorIndex
+                property bool hasActiveWindows: false
+                property bool showBarBackground: barRoot.hasActiveWindows && Config.options.bar.barBackgroundStyle === 2 || Config.options.bar.barBackgroundStyle === 1
 
                 Connections {
                     enabled: Config.options.bar.barBackgroundStyle === 2
@@ -150,7 +52,26 @@ Scope {
                     }
                 }
                 
-                property bool superShow: controller.superShow
+                Timer {
+                    id: showBarTimer
+                    interval: (Config?.options.bar.autoHide.showWhenPressingSuper.delay ?? 100)
+                    repeat: false
+                    onTriggered: {
+                        barRoot.superShow = true
+                    }
+                }
+                Connections {
+                    target: GlobalStates
+                    function onSuperDownChanged() {
+                        if (!Config?.options.bar.autoHide.showWhenPressingSuper.enable) return;
+                        if (GlobalStates.superDown) showBarTimer.restart();
+                        else {
+                            showBarTimer.stop();
+                            barRoot.superShow = false;
+                        }
+                    }
+                }
+                property bool superShow: false
                 property bool mustShow: hoverRegion.containsMouse || superShow
                 exclusionMode: ExclusionMode.Ignore
                 exclusiveZone: (Config?.options.bar.autoHide.enable && (!mustShow || !Config?.options.bar.autoHide.pushWindows)) ? 0 :
@@ -183,14 +104,6 @@ Scope {
                     id: hoverRegion
                     hoverEnabled: true
                     anchors.fill: parent
-
-                    onContainsMouseChanged: {
-                        controller.fullBarHovered = containsMouse;
-                        if (containsMouse)
-                            controller.cancelUnload();
-                        else
-                            controller.scheduleUnload();
-                    }
 
                     Item {
                         id: hoverMaskRegion
@@ -310,7 +223,6 @@ Scope {
                     }
                 }
             }
-        }
         }
     }
 
