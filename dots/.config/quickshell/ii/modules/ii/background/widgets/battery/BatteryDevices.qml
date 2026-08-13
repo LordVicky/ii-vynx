@@ -67,7 +67,7 @@ QtObject {
         const appleDevices = AppleBatteryStatus.devices;
         for (let i = 0; i < appleDevices.length; ++i) {
             const device = appleDevices[i];
-            if (AppleBatteryStatus.isExpired(device))
+            if (device.batteryReliable === false || AppleBatteryStatus.isExpired(device))
                 continue;
 
             result.push({
