@@ -16,3 +16,22 @@ test("battery device sources and layout have persisted defaults", () => {
     assert.match(battery, /property bool showAppleBatteries: true/);
     assert.match(battery, /property int applePollingMinutes: 15/);
 });
+
+test("remote battery freshness advances independently of polling", () => {
+    const service = fs.readFileSync(
+        path.join(__dirname, "../dots/.config/quickshell/ii/services/AppleBatteryStatus.qml"),
+        "utf8"
+    );
+    const devices = fs.readFileSync(
+        path.join(__dirname, "../dots/.config/quickshell/ii/modules/ii/background/widgets/battery/BatteryDevices.qml"),
+        "utf8"
+    );
+
+    assert.match(service, /property double freshnessClock: Date\.now\(\)/);
+    assert.match(service, /id: freshnessTimer/);
+    assert.match(service, /running: root\.devices\.length > 0/);
+    assert.match(service, /root\.pruneExpiredDevices\(\)/);
+    assert.match(service, /payload\.state !== "notConfigured"/);
+    assert.match(service, /root\.state = "disconnectError"/);
+    assert.match(devices, /AppleBatteryStatus\.freshnessClock/);
+});
