@@ -54,3 +54,15 @@ test("clock popup-only work exists inside lazy content", () => {
     assert.match(lazyBody, /function getUpcomingTodos\(/);
     assert.doesNotMatch(source.slice(0, lazyStart), /property string todosSection/);
 });
+
+test("only the system tray overflow grid is lazy", () => {
+    const source = read("modules/ii/bar/SysTray.qml");
+    const itemSource = read("modules/ii/bar/SysTrayItem.qml");
+    const lazyStart = source.indexOf("lazyContent:");
+    const unpinnedModel = source.indexOf("model: root.unpinnedItems");
+    const pinnedModel = source.indexOf("model: ScriptModel");
+    assert.ok(lazyStart >= 0, "tray lazy content not found");
+    assert.ok(lazyStart < unpinnedModel && unpinnedModel < pinnedModel, "only unpinned items should be inside lazy overflow content");
+    assert.match(source.slice(lazyStart, pinnedModel), /GridLayout\s*\{[\s\S]*Repeater\s*\{/);
+    assert.match(itemSource, /Loader\s*\{\s*id:\s*menu[\s\S]*?active:\s*false/);
+});

@@ -63,7 +63,7 @@ Item {
     HyprlandFocusGrab {
         id: focusGrab
         active: false
-        windows: [trayOverflowLayout.QsWindow?.window, root.activeMenu]
+        windows: [overflowPopup.effectiveContentItem?.QsWindow?.window, root.activeMenu]
         onCleared: {
             root.trayOverflowOpen = false;
             if (root.activeMenu) {
@@ -114,23 +114,25 @@ Item {
                 hoverTarget: trayOverflowButton
                 active: root.trayOverflowOpen && root.unpinnedItems.length > 0
 
-                GridLayout {
-                    id: trayOverflowLayout
-                    anchors.centerIn: parent
-                    columns: Math.ceil(Math.sqrt(root.unpinnedItems.length))
-                    columnSpacing: 10
-                    rowSpacing: 10
+                lazyContent: Component {
+                    GridLayout {
+                        id: trayOverflowLayout
+                        anchors.centerIn: parent
+                        columns: Math.ceil(Math.sqrt(root.unpinnedItems.length))
+                        columnSpacing: 10
+                        rowSpacing: 10
 
-                    Repeater {
-                        model: root.unpinnedItems
+                        Repeater {
+                            model: root.unpinnedItems
 
-                        delegate: SysTrayItem {
-                            required property SystemTrayItem modelData
-                            item: modelData
-                            Layout.fillHeight: !root.vertical
-                            Layout.fillWidth: root.vertical
-                            onMenuClosed: root.releaseFocus();
-                            onMenuOpened: (qsWindow) => root.setExtraWindowAndGrabFocus(qsWindow);
+                            delegate: SysTrayItem {
+                                required property SystemTrayItem modelData
+                                item: modelData
+                                Layout.fillHeight: !root.vertical
+                                Layout.fillWidth: root.vertical
+                                onMenuClosed: root.releaseFocus()
+                                onMenuOpened: qsWindow => root.setExtraWindowAndGrabFocus(qsWindow)
+                            }
                         }
                     }
                 }
@@ -147,8 +149,8 @@ Item {
                 item: modelData
                 Layout.fillHeight: !root.vertical
                 Layout.fillWidth: root.vertical
-                onMenuClosed: root.releaseFocus();
-                onMenuOpened: (qsWindow) => {
+                onMenuClosed: root.releaseFocus()
+                onMenuOpened: qsWindow => {
                     root.setExtraWindowAndGrabFocus(qsWindow);
                 }
             }
