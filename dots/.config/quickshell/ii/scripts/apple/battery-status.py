@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 """Minimal Apple Find My battery bridge for Vynx.
 
-`login APPLE_ID` performs interactive authentication once and persists the
-pyicloud session. `status` is non-interactive: it reuses that session, emits a
-small normalized JSON payload, and exits.
+`login` performs interactive authentication once and persists only pyicloud's
+trusted session state plus the Apple Account identifier. `status` is fully
+non-interactive: it reuses that session, emits a small normalized JSON payload,
+and exits.
+
+Secrets are never accepted on command arguments or written into the repository.
 """
 
 from __future__ import annotations
@@ -19,8 +22,10 @@ from pathlib import Path
 from typing import Any
 
 MIN_PYICLOUD_VERSION = (2, 6, 5)
-CACHE_DIR = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache")) / "ii-vynx" / "apple"
-ACCOUNT_FILE = CACHE_DIR / "account"
+STATE_DIR = Path(
+    os.environ.get("XDG_STATE_HOME", Path.home() / ".local" / "state")
+) / "ii-vynx" / "apple"
+ACCOUNT_FILE = STATE_DIR / "account"
 
 
 class DependencyError(RuntimeError):
@@ -53,10 +58,10 @@ def pyicloud_service():
     return PyiCloudService
 
 
-def ensure_cache() -> None:
-    CACHE_DIR.mkdir(parents=True, exist_ok=True, mode=0o700)
+def ensure_state_dir() -> None:
+    STATE_DIR.mkdir(parents=True, exist_ok=True, mode=0o700)
     try:
-        CACHE_DIR.chmod(0o700)
+        STATE_DIR.chmod(0o700)
     except OSError:
         pass
 
@@ -70,7 +75,7 @@ def read_account() -> str | None:
 
 
 def write_account(apple_id: str) -> None:
-    ensure_cache()
+    ensure_state_dir()
     ACCOUNT_FILE.write_text(apple_id.strip() + "\n", encoding="utf-8")
     try:
         ACCOUNT_FILE.chmod(0o600)
@@ -102,17 +107,22 @@ def normalize_charging(value: Any) -> tuple[bool, bool]:
 
 
 def service(apple_id: str, password: str | None):
-    ensure_cache()
+    ensure_state_dir()
     return pyicloud_service()(
         apple_id,
         password,
-        cookie_directory=str(CACHE_DIR),
+        cookie_directory=str(STATE_DIR),
         with_family=False,
         refresh_interval=3600,
     )
 
 
-def login(apple_id: str) -> int:
+def login() -> int:
+    apple_id = input("Apple Account email: ").strip()
+    if not apple_id:
+        print("Apple Account email is required.", file=sys.stderr)
+        return 2
+
     password = getpass.getpass("Apple Account password: ")
     try:
         api = service(apple_id, password)
@@ -129,7 +139,7 @@ def login(apple_id: str) -> int:
             if not api.request_2fa_code():
                 print("Unable to complete this Apple 2FA method.", file=sys.stderr)
                 return 3
-            code = input("Apple verification code: ").strip()
+            code = getpass.getpass("Apple verification code: ").strip()
             if not api.validate_2fa_code(code):
                 print("Verification code rejected.", file=sys.stderr)
                 return 3
@@ -145,6 +155,8 @@ def login(apple_id: str) -> int:
         print(str(exc), file=sys.stderr)
         return 5
     finally:
+        # Python cannot guarantee zeroization of immutable strings, but dropping
+        # references promptly avoids retaining secrets beyond authentication.
         password = ""
 
 
@@ -231,18 +243,13 @@ def status() -> int:
 
 
 def main() -> int:
-    if len(sys.argv) < 2:
-        print("usage: battery-status.py login APPLE_ID | status", file=sys.stderr)
+    if len(sys.argv) != 2 or sys.argv[1] not in {"login", "status"}:
+        print("usage: battery-status.py login | status", file=sys.stderr)
         return 2
 
-    command = sys.argv[1]
-    if command == "login" and len(sys.argv) == 3:
-        return login(sys.argv[2])
-    if command == "status" and len(sys.argv) == 2:
-        return status()
-
-    print("usage: battery-status.py login APPLE_ID | status", file=sys.stderr)
-    return 2
+    if sys.argv[1] == "login":
+        return login()
+    return status()
 
 
 if __name__ == "__main__":
