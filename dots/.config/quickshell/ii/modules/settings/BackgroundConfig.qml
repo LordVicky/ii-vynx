@@ -1455,7 +1455,7 @@ ContentPage {
         icon: "graphic_eq"
         title: Translation.tr("Widget: Visualizer")
         widgetKey: "visualizer"
-        showBlur: false // Bar visualizer has no rectangular panel surface
+        showBlur: false // Bar visualizer has no panel surface
     }
 
     DesktopWidgetToggle {
