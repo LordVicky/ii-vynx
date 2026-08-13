@@ -19,26 +19,6 @@ QtObject {
         }
     }
 
-    function normalizeName(name) {
-        return String(name ?? "")
-            .toLowerCase()
-            .replace(/[^a-z0-9]/g, "");
-    }
-
-    function bluetoothHasSameName(name) {
-        const target = root.normalizeName(name);
-        if (!target.length)
-            return false;
-
-        const connected = BluetoothStatus.connectedDevices;
-        for (let i = 0; i < connected.length; ++i) {
-            const device = connected[i];
-            if (device.batteryAvailable && root.normalizeName(device.name) === target)
-                return true;
-        }
-        return false;
-    }
-
     readonly property var devices: {
         // lastAttempt is intentionally referenced so stale/expired remote
         // snapshots are recalculated after every low-frequency Apple poll.
@@ -84,12 +64,6 @@ QtObject {
         for (let i = 0; i < appleDevices.length; ++i) {
             const device = appleDevices[i];
             if (AppleBatteryStatus.isExpired(device))
-                continue;
-
-            // A live local Bluetooth reading is more useful than the same
-            // accessory's remote Find My snapshot. Keep matching conservative
-            // until real device payloads are validated.
-            if (root.bluetoothEnabled && root.bluetoothHasSameName(device.name))
                 continue;
 
             result.push({
