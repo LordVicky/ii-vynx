@@ -178,8 +178,15 @@ def disconnect() -> int:
         shutil.rmtree(STATE_DIR)
     except FileNotFoundError:
         pass
-    except OSError as exc:
-        print(f"Unable to remove Apple session state: {exc}", file=sys.stderr)
+    except OSError:
+        # Keep the machine-readable result on stdout so the QML service never
+        # mistakes a failed cleanup for a successful disconnect. Do not expose
+        # filesystem details or account information in the payload.
+        emit({
+            "state": "disconnectError",
+            "error": "sessionCleanupFailed",
+            "devices": [],
+        })
         return 4
     emit({"state": "notConfigured", "devices": []})
     return 0
