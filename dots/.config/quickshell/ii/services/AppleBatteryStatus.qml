@@ -11,6 +11,7 @@ Singleton {
     // One cheap probe on shell start; if Apple is not configured, polling stops.
     // Once configured, refresh remotely at a deliberately low cadence.
     readonly property int refreshInterval: 15 * 60 * 1000
+    readonly property int errorRetryInterval: 30 * 60 * 1000
     readonly property int staleAfter: 30 * 60 * 1000
     readonly property int expireAfter: 2 * 60 * 60 * 1000
 
@@ -46,7 +47,7 @@ Singleton {
     Component.onCompleted: root.refresh()
 
     Timer {
-        interval: root.refreshInterval
+        interval: root.state === "error" ? root.errorRetryInterval : root.refreshInterval
         repeat: true
         running: root.state === "connected" || root.state === "error"
         onTriggered: root.refresh()
