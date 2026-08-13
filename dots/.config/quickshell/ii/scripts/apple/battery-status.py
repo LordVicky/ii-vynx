@@ -117,6 +117,15 @@ def login(apple_id: str) -> int:
     try:
         api = service(apple_id, password)
         if api.requires_2fa:
+            security_keys = getattr(api, "security_key_names", None)
+            if security_keys:
+                print(
+                    "Security-key 2FA is not handled by this minimal helper; "
+                    "use pyicloud's `icloud auth login` CLI for this account.",
+                    file=sys.stderr,
+                )
+                return 3
+
             if not api.request_2fa_code():
                 print("Unable to complete this Apple 2FA method.", file=sys.stderr)
                 return 3
@@ -124,6 +133,11 @@ def login(apple_id: str) -> int:
             if not api.validate_2fa_code(code):
                 print("Verification code rejected.", file=sys.stderr)
                 return 3
+
+        if not api.is_trusted_session and not api.trust_session():
+            print("Apple session could not be marked as trusted.", file=sys.stderr)
+            return 3
+
         write_account(apple_id)
         print("Apple session saved.")
         return 0
