@@ -52,7 +52,7 @@ AbstractBackgroundWidget {
         let count = 0;
         for (let i = 0; i < deviceModel.count; ++i) {
             const device = deviceModel.get(i);
-            if (device.chargingKnown && device.charging)
+            if (!device.stale && device.chargingKnown && device.charging)
                 count++;
         }
         return count;
@@ -209,10 +209,10 @@ AbstractBackgroundWidget {
     function compactStatusText() {
         if (root.compactName === "")
             return "";
-        if (root.compactChargingKnown && root.compactCharging)
-            return root.compactName + " " + Translation.tr("charging");
         if (root.compactStale)
             return root.compactName + " · " + Translation.tr("stale");
+        if (root.compactChargingKnown && root.compactCharging)
+            return root.compactName + " " + Translation.tr("charging");
         if (root.compactSource === "bluetooth")
             return root.compactName + " " + Translation.tr("connected");
         return root.compactName;
@@ -383,7 +383,7 @@ AbstractBackgroundWidget {
                     height: card.scaled(root.rowHeight)
 
                     property real animatedPercentage: percentage
-                    readonly property bool chargingActive: chargingKnown && charging
+                    readonly property bool chargingActive: !stale && chargingKnown && charging
                     readonly property bool low: percentage <= (Config.options.battery.low / 100)
                     readonly property color percentageColor: chargingActive
                         ? Appearance.colors.colTertiary
@@ -544,7 +544,7 @@ AbstractBackgroundWidget {
             visible: root.compactMode && deviceModel.count > 0
 
             property real animatedPercentage: root.compactPercentage
-            readonly property bool chargingActive: root.compactChargingKnown && root.compactCharging
+            readonly property bool chargingActive: !root.compactStale && root.compactChargingKnown && root.compactCharging
             readonly property bool low: root.compactPercentage <= (Config.options.battery.low / 100)
             readonly property color levelColor: chargingActive
                 ? Appearance.colors.colTertiary
