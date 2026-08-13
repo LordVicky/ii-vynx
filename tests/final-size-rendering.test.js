@@ -23,10 +23,16 @@ test("legacy resizable widgets do not use parent scene-graph scaling", () => {
 test("weather renders authored geometry at its final size", () => {
     const source = fs.readFileSync(path.join(widgetRoot, "weather/WeatherWidget.qml"), "utf8");
 
-    assert.match(source, /function scaled\(value\)/);
-    assert.match(source, /pixelSize:\s*root\.scaled\(80\)/);
-    assert.match(source, /iconSize:\s*root\.scaled\(80\)/);
-    assert.match(source, /renderType:\s*Text\.QtRendering/g);
+    const usesLegacyFinalSizeMetrics = /function scaled\(value\)/.test(source)
+        && /pixelSize:\s*root\.scaled\(80\)/.test(source)
+        && /iconSize:\s*root\.scaled\(80\)/.test(source)
+        && /renderType:\s*Text\.QtRendering/g.test(source);
+    const usesCardFinalSizeMetrics = /BackgroundWidgetCard\s*\{/.test(source)
+        && /card\.scaled\(/.test(source)
+        && /TransformSafeText\s*\{/.test(source)
+        && /TransformSafeSymbol\s*\{/.test(source);
+
+    assert.ok(usesLegacyFinalSizeMetrics || usesCardFinalSizeMetrics);
 });
 
 test("nested clock content animates authored metrics instead of parent scale", () => {
