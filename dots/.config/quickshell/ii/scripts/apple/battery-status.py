@@ -175,6 +175,20 @@ def emit(payload: dict[str, Any]) -> None:
     print(json.dumps(payload, separators=(",", ":")))
 
 
+def state_for_exception(exc: Exception) -> str:
+    name = type(exc).__name__
+    if name in {
+        "PyiCloudAuthRequiredException",
+        "PyiCloudFailedLoginException",
+        "PyiCloudPasswordException",
+        "PyiCloud2FARequiredException",
+    }:
+        return "authenticationRequired"
+    if name == "PyiCloudAcceptTermsException":
+        return "termsRequired"
+    return "error"
+
+
 def status() -> int:
     apple_id = read_account()
     if not apple_id:
@@ -209,7 +223,7 @@ def status() -> int:
         return 5
     except Exception as exc:
         emit({
-            "state": "error",
+            "state": state_for_exception(exc),
             "error": type(exc).__name__,
             "devices": [],
         })
