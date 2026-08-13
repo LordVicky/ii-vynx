@@ -4,26 +4,26 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
 import Quickshell.Io
-import qs.modules.common
 
 Singleton {
     id: root
 
-    // Stay completely idle unless the Battery widget explicitly enables the
-    // Apple source. Remote battery readings only need a low polling cadence.
-    readonly property bool enabled: Config.options.background.widgets.battery?.showAppleBatteries ?? false
+    // One cheap probe on shell start; if Apple is not configured, polling stops.
+    // Once configured, refresh remotely at a deliberately low cadence.
     readonly property int refreshInterval: 15 * 60 * 1000
     readonly property int staleAfter: 30 * 60 * 1000
     readonly property int expireAfter: 2 * 60 * 60 * 1000
+
     property string state: "idle"
     property list<var> devices: []
     property double lastRefresh: 0
+    property double lastAttempt: 0
     property bool refreshing: false
 
     readonly property string helperPath: Quickshell.shellPath("scripts/apple/battery-status.py")
 
     function refresh() {
-        if (!root.enabled || refreshProcess.running)
+        if (refreshProcess.running)
             return;
         root.refreshing = true;
         refreshProcess.running = true;
@@ -32,7 +32,7 @@ Singleton {
     function age(observedAt) {
         if (!observedAt)
             return Number.POSITIVE_INFINITY;
-        return Math.max(0, Date.now() - observedAt);
+        return Math.max(0, root.lastAttempt - observedAt);
     }
 
     function isStale(device) {
@@ -43,25 +43,12 @@ Singleton {
         return root.age(device?.observedAt) >= root.expireAfter;
     }
 
-    onEnabledChanged: {
-        if (root.enabled)
-            root.refresh();
-        else {
-            root.state = "idle";
-            root.devices = [];
-            root.lastRefresh = 0;
-        }
-    }
-
     Component.onCompleted: root.refresh()
 
     Timer {
         interval: root.refreshInterval
         repeat: true
-        running: root.enabled
-            && root.state !== "notConfigured"
-            && root.state !== "authenticationRequired"
-            && root.state !== "dependencyMissing"
+        running: root.state === "connected" || root.state === "error"
         onTriggered: root.refresh()
     }
 
@@ -72,6 +59,8 @@ Singleton {
         stdout: StdioCollector {
             onStreamFinished: {
                 root.refreshing = false;
+                root.lastAttempt = Date.now();
+
                 if (!text.length) {
                     root.state = "error";
                     return;
@@ -82,10 +71,10 @@ Singleton {
                     root.state = payload.state ?? "error";
                     if (root.state === "connected") {
                         root.devices = payload.devices ?? [];
-                        root.lastRefresh = payload.observedAt ?? Date.now();
+                        root.lastRefresh = payload.observedAt ?? root.lastAttempt;
                     }
-                    // Keep the last successful in-memory snapshot on temporary
-                    // failures. BatteryDevices will age it out by observedAt.
+                    // Preserve the last successful in-memory snapshot on
+                    // transient errors. Consumers age it using lastAttempt.
                 } catch (error) {
                     root.state = "error";
                     console.warn(`[AppleBatteryStatus] Invalid helper response: ${error.message}`);
