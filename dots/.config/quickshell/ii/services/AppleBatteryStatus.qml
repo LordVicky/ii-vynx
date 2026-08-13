@@ -13,7 +13,7 @@ Singleton {
     readonly property int pollingMinutes: {
         const raw = Number(Config.options.background.widgets.battery?.applePollingMinutes ?? 15);
         const value = Number.isFinite(raw) ? Math.round(raw) : 15;
-        return Math.max(5, Math.min(180, value));
+        return Math.max(1, Math.min(180, value));
     }
     readonly property int refreshInterval: root.pollingMinutes * 60 * 1000
     readonly property int errorRetryInterval: Math.max(30 * 60 * 1000, root.refreshInterval * 2)
