@@ -1431,4 +1431,24 @@ ContentPage {
         title: Translation.tr("Widget: Battery")
         widgetKey: "battery"
     }
+    DesktopWidgetToggle {
+        icon: "lightbulb"
+        title: Translation.tr("Widget: OpenRGB")
+        widgetKey: "openRgb"
+
+        ContentSubsection {
+            title: Translation.tr("Profiles")
+
+            MaterialTextField {
+                Layout.fillWidth: true
+                placeholderText: Translation.tr("Profile directory (blank = auto-detect)")
+                text: Config.options.background.widgets.openRgb.profileDirectory
+                wrapMode: TextEdit.NoWrap
+                onEditingFinished: {
+                    Config.options.background.widgets.openRgb.profileDirectory = text.trim();
+                    OpenRgb.refresh();
+                }
+            }
+        }
+    }
 }

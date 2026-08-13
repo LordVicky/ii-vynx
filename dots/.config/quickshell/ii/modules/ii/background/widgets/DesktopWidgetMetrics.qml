@@ -16,8 +16,10 @@ QtObject {
     readonly property QtObject typography: QtObject {
         readonly property int caption: Appearance.font.pixelSize.smallest
         readonly property int supporting: Appearance.font.pixelSize.smaller
-        readonly property int primaryLabel: Appearance.font.pixelSize.large
-        readonly property int heading: Appearance.font.pixelSize.huge
+        readonly property int body: Appearance.font.pixelSize.normal
+        readonly property int actionLabel: Appearance.font.pixelSize.small
+        readonly property int primaryLabel: Appearance.font.pixelSize.huge
+        readonly property int heading: Appearance.font.pixelSize.hugeass
     }
 
     readonly property QtObject glyph: QtObject {
@@ -50,4 +52,5 @@ QtObject {
         readonly property int condensed: 56
         readonly property int compactBar: 72
     }
+
 }

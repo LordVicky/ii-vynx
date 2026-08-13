@@ -35,6 +35,7 @@ import qs.modules.ii.background.widgets.updates
 import qs.modules.ii.background.widgets.privacy
 import qs.modules.ii.background.widgets.songrec
 import qs.modules.ii.background.widgets.battery
+import qs.modules.ii.background.widgets.openrgb
 
 Variants {
     id: root
@@ -704,6 +705,22 @@ Variants {
                 FadeLoader {
                     shown: Config.options.background.widgets.battery.enable
                     sourceComponent: BatteryWidget {
+                        screenWidth: bgRoot.screen.width
+                        screenHeight: bgRoot.screen.height
+                        scaledScreenWidth: bgRoot.screen.width
+                        scaledScreenHeight: bgRoot.screen.height
+                        wallpaperScale: bgRoot.effectiveWallpaperScale
+                        wallpaperRenderX: wallpaper.x
+                        wallpaperRenderY: wallpaper.y
+                        wallpaperRenderWidth: wallpaper.width
+                        wallpaperRenderHeight: wallpaper.height
+                        wallpaperSourceItem: wallpaper
+                    }
+                }
+
+                FadeLoader {
+                    shown: Config.options.background.widgets.openRgb.enable
+                    sourceComponent: OpenRgbWidget {
                         screenWidth: bgRoot.screen.width
                         screenHeight: bgRoot.screen.height
                         scaledScreenWidth: bgRoot.screen.width

@@ -38,7 +38,7 @@ test("exposes the semantic metric groups used by desktop widgets", () => {
     for (const group of ["typography", "glyph", "control", "spacing", "padding", "height"])
         assert.match(qml, new RegExp(`${group}: QtObject`));
 
-    for (const property of ["caption", "supporting", "primaryLabel", "heading"])
+    for (const property of ["caption", "supporting", "body", "actionLabel", "primaryLabel", "heading"])
         assert.match(qml, new RegExp(`readonly property int ${property}:`));
 });
 

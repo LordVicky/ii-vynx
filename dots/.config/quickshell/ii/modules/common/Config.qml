@@ -403,6 +403,20 @@ Singleton {
                         property real blur: 0.6
                         property real scale: 1
                     }
+                    property JsonObject openRgb: JsonObject {
+                        property bool enable: false
+                        property string placementStrategy: "free"
+                        property real x: 1600
+                        property real y: 700
+                        property real blur: 0.8
+                        property real scale: 1
+                        property string layout: "spindle"
+                        property string profileDirectory: ""
+                        property string activeProfile: ""
+                        property string activeEffect: ""
+                        property string activeKind: ""
+                        property bool lightsEnabled: true
+                    }
                     property JsonObject customImage: JsonObject {
                         property bool enable: false
                         property string placementStrategy: "free"
