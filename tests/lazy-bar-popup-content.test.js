@@ -42,3 +42,15 @@ test("weather forecast work exists only inside lazy popup content", () => {
     assert.match(lazyBody, /HeroCard\s*\{/);
     assert.doesNotMatch(source.slice(0, lazyStart), /Component\.onCompleted:\s*fetchForecast/);
 });
+
+test("clock popup-only work exists inside lazy content", () => {
+    const source = read("modules/ii/bar/ClockWidgetPopup.qml");
+    assert.match(source, /stickyHover:\s*true[\s\S]*lazyContent:\s*Component\s*\{/);
+    const lazyStart = source.indexOf("lazyContent:");
+    assert.ok(lazyStart >= 0, "clock lazy content not found");
+    const lazyBody = source.slice(lazyStart);
+    assert.match(lazyBody, /ColumnLayout\s*\{/);
+    assert.match(lazyBody, /HeroCard\s*\{/);
+    assert.match(lazyBody, /function getUpcomingTodos\(/);
+    assert.doesNotMatch(source.slice(0, lazyStart), /property string todosSection/);
+});
