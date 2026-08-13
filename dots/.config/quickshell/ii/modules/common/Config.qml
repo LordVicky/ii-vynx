@@ -67,8 +67,19 @@ Singleton {
         path: root.filePath
         watchChanges: true
         blockWrites: root.blockWrites
-        onFileChanged: fileReloadTimer.restart()
-        onAdapterUpdated: fileWriteTimer.restart()
+        // Throttle, not debounce. These used to be restart(), which pushes the
+        // deadline back on every change - so while a slider is actually being
+        // dragged the deadline never arrives and nothing is written at all. The
+        // value only reached the file once you paused, and since Settings runs
+        // as its own process (qs -p settings.qml) and reaches the shell only
+        // through this file, the desktop went a whole drag without updating.
+        //
+        // Starting the timer only when it is idle keeps the coalescing - still
+        // one write per interval no matter how fast the changes arrive, and the
+        // trailing write always carries the latest state - while letting updates
+        // land *during* a drag instead of exclusively after it.
+        onFileChanged: if (!fileReloadTimer.running) fileReloadTimer.start()
+        onAdapterUpdated: if (!fileWriteTimer.running) fileWriteTimer.start()
         onLoaded: root.ready = true
         onLoadFailed: error => {
             if (error == FileViewError.FileNotFound) {
@@ -199,6 +210,7 @@ Singleton {
                 property bool showGrid: true
                 property bool showSnapLines: true
                 property real widgetTint: 0 // 0 = fully transparent frosted glass (macOS look), 1 = full themed tint
+                property real widgetBrightness: 0 // -1 = darken the frosted glass (for pale wallpapers), 0 = as-is, 1 = brighten
                 property bool parallaxBackdrop: true // widget frosted glass mirrors the live wallpaper (parallax + drag)
                 property string lockWall: ""
                 property JsonObject widgets: JsonObject {
@@ -259,11 +271,13 @@ Singleton {
                         property real y: 100
                         property real blur: 0.6
                         property real scale: 1
+                        property string layout: "platter" // "platter", "deck", "spindle"
+                        // What fills the deck's empty plinth corner. Deck only -
+                        // the other two layouts have no room for it.
+                        property string deckControls: "volume" // "volume", "toggles", "none"
                         property bool useAlbumColors: true
                         property bool hideAllButtons: false
                         property bool showPreviousToggle: true
-                        property bool tintArtCover: false
-                        property string backgroundShape: "Circle"  // Options: MaterialShape.Shape enum values as string
                         property JsonObject glow: JsonObject {
                             property bool enable: true
                             property real brightness: 10
