@@ -1455,7 +1455,7 @@ ContentPage {
         icon: "graphic_eq"
         title: Translation.tr("Widget: Visualizer")
         widgetKey: "visualizer"
-        showBlur: false // Bar visualizer has no panel surface
+        showBlur: false // Bar visualizer has no rectangular panel surface
     }
 
     DesktopWidgetToggle {
@@ -1514,6 +1514,20 @@ ContentPage {
                 checked: Config.options.background.widgets.battery.showBluetoothBatteries
                 onCheckedChanged: Config.options.background.widgets.battery.showBluetoothBatteries = checked
             }
+
+            ConfigSwitch {
+                buttonIcon: "devices"
+                text: Translation.tr("Apple device batteries")
+                checked: Config.options.background.widgets.battery.showAppleBatteries
+                onCheckedChanged: {
+                    Config.options.background.widgets.battery.showAppleBatteries = checked;
+                }
+            }
+        }
+
+        AppleBatterySettings {
+            Layout.fillWidth: true
+            visible: Config.options.background.widgets.battery.showAppleBatteries
         }
     }
     DesktopWidgetToggle {
