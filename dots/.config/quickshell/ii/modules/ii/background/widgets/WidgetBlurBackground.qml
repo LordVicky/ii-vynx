@@ -53,6 +53,20 @@ Item {
     property bool adaptiveContrast: true
     property Item contrastHost: null
 
+    // Backdrop exposure. Read straight from Config, like widgetTint, because this
+    // is a wallpaper-wide problem rather than a per-widget one - plumbing it
+    // through all eleven widgets would buy nothing.
+    //
+    // On a pale wallpaper frosted glass is white on white: the card dissolves into
+    // the background and the light-on-glass content goes with it. Pushing the
+    // backdrop down restores the contrast the glass is meant to provide, without
+    // touching the colour scheme or forcing an opaque tint. -1..1, 0 = stock.
+    readonly property real backdropBrightness: Config.options.background.widgetBrightness ?? 0
+    // Opacity of the scrim at the slider's ends. Calibrated against the
+    // brightness parameter this used to drive: 0.6 reproduces that range to
+    // within a few levels of luminance at every stop.
+    readonly property real _scrimMax: 0.6
+
     property string wallpaperPath: ""
     property real sourceWidth: 0
     property real sourceHeight: 0
@@ -341,6 +355,9 @@ Item {
                 // reading as flat grey haze. blurMax is the radius ceiling; `blur`
                 // scales within it, so raising the ceiling softens the whole range.
                 saturation: 0.35
+                // Deliberately constant. See the scrim below: routing the
+                // brightness slider through here instead makes dragging it
+                // re-run this blur chain, on every widget, every frame.
                 brightness: 0.04
                 blurEnabled: true
                 blurMax: root._blurMax
@@ -371,6 +388,29 @@ Item {
         }
     }
 
+    // Backdrop brightness, as a plain quad over the finished glass rather than a
+    // parameter fed into the MultiEffect above.
+    //
+    // The effect already exposes `brightness`, so driving it from the slider
+    // looked free - one fewer item, no extra draw call. It is not. A MultiEffect
+    // property change marks the whole effect dirty, so every frame of a slider
+    // drag re-runs the blur chain on all ~17 widgets at once, which is what made
+    // dragging crawl. Changing a Rectangle's opacity dirties one node: the
+    // cached blurred texture underneath is reused untouched, and the per-frame
+    // cost is a single alpha blend per widget.
+    //
+    // Blending toward black/white is not identical to an additive brightness
+    // shift, but it is calibrated to the same range, and it degrades better -
+    // additive crushed a dark wallpaper to flat black at the bottom of the
+    // slider, where this keeps the texture.
+    Rectangle {
+        id: scrim
+        anchors.fill: parent
+        visible: clipContent.visible && root.backdropBrightness !== 0
+        color: root.backdropBrightness < 0 ? "black" : "white"
+        opacity: Math.abs(root.backdropBrightness) * root._scrimMax
+    }
+
     Rectangle {
         anchors.fill: parent
         visible: opacity > 0
@@ -399,7 +439,12 @@ Item {
         radius: root.cornerRadius
         color: "transparent"
         border.width: 1
-        border.color: Qt.rgba(1, 1, 1, 0.12 * Math.max(0.35, root.blur))
+        // A white rim needs something darker to sit against. Once the backdrop is
+        // pushed up it has nothing left to contrast with and the edge disappears,
+        // so the rim crosses over to dark as brightness goes positive - still the
+        // lit-edge read, just from the other side.
+        readonly property real _rimDark: Math.max(0, root.backdropBrightness)
+        border.color: Qt.rgba(1 - _rimDark, 1 - _rimDark, 1 - _rimDark, (0.12 + 0.06 * _rimDark) * Math.max(0.35, root.blur))
         visible: root.blur > 0.001
     }
 

@@ -285,6 +285,7 @@ ContentPage {
     }
 
     ContentSection {
+        id: settingsWidgets
         icon: "widgets"
         title: Translation.tr("Desktop widgets")
 
@@ -315,15 +316,35 @@ ContentPage {
             }
         }
 
+        // Both sliders in this section share a wider-than-default label column:
+        // "Glass brightness (%)" does not fit the stock 120px, and the column
+        // only has to line up with its neighbours inside the same section.
+        readonly property real widgetSliderTextWidth: 150
+
         ConfigSlider {
             buttonIcon: "opacity"
             text: Translation.tr("Widget tint (%)")
+            textWidth: settingsWidgets.widgetSliderTextWidth
             value: Config.options.background.widgetTint * 100
             usePercentTooltip: false
             from: 0
             to: 100
             onValueChanged: {
                 Config.options.background.widgetTint = value / 100;
+            }
+        }
+
+        ConfigSlider {
+            buttonIcon: "brightness_6"
+            text: Translation.tr("Glass brightness (%)")
+            textWidth: settingsWidgets.widgetSliderTextWidth
+            value: Config.options.background.widgetBrightness * 100
+            usePercentTooltip: false
+            from: -100
+            to: 100
+            stopIndicatorValues: [0]
+            onValueChanged: {
+                Config.options.background.widgetBrightness = value / 100;
             }
         }
 
@@ -1077,19 +1098,6 @@ ContentPage {
                 }
             }
             
-            RippleButtonWithShape {
-                shapeString: Config.options.background.widgets.media.backgroundShape
-                implicitWidth: 60
-                extraIcon: "edit"
-
-                onClicked: {
-                    mediaBackgroundShapeLoader.active = !mediaBackgroundShapeLoader.active;
-                }
-                StyledToolTip {
-                    text: Translation.tr("Edit the material shape")
-                }
-            }
-
             Item {
                 Layout.fillWidth: true
             }
@@ -1121,32 +1129,76 @@ ContentPage {
         }
 
 
-        Loader { 
-            id: mediaBackgroundShapeLoader
-            active: false
-            visible: active
-            Layout.fillWidth: true
-            sourceComponent: ContentSubsection {
-                title: Translation.tr("Background shape")
-                
-                ConfigSelectionArray {
-                    currentValue: Config.options.background.widgets.media.backgroundShape
-                    onSelected: newValue => {
-                        Config.options.background.widgets.media.backgroundShape = newValue;
-                    }
-                    options: ([ 
-                        "Circle", "Square", "Slanted", "Arch", "Arrow", "SemiCircle", "Oval", "Pill", "Triangle",
-                        "Diamond", "ClamShell", "Pentagon", "Gem", "Sunny", "VerySunny", "Cookie4Sided", "Cookie6Sided", 
-                        "Cookie7Sided", "Cookie9Sided", "Cookie12Sided", "Ghostish", "Clover4Leaf", "Clover8Leaf", "Burst", 
-                        "SoftBurst", "Flower", "Puffy", "PuffyDiamond", "PixelCircle", "Bun", "Heart" 
-                    ]).map(icon => { 
-                        return { 
-                            displayName: "", 
-                            shape: icon, 
-                            value: icon 
-                        } 
-                    })
+        ContentSubsection {
+            title: Translation.tr("Layout")
+
+            ConfigSelectionArray {
+                currentValue: Config.options.background.widgets.media.layout
+                onSelected: newValue => {
+                    Config.options.background.widgets.media.layout = newValue;
                 }
+                options: [
+                    {
+                        displayName: Translation.tr("Platter"),
+                        icon: "album",
+                        value: "platter"
+                    },
+                    {
+                        displayName: Translation.tr("Deck"),
+                        icon: "crop_landscape",
+                        value: "deck"
+                    },
+                    {
+                        displayName: Translation.tr("Spindle"),
+                        icon: "crop_16_9",
+                        value: "spindle"
+                    }
+                ]
+            }
+        }
+
+        // Deck only — the corner this fills does not exist in the other two
+        // layouts, so the row would be a control that does nothing.
+        ContentSubsection {
+            visible: Config.options.background.widgets.media.layout === "deck"
+            title: Translation.tr("Deck corner")
+
+            ConfigSelectionArray {
+                currentValue: Config.options.background.widgets.media.deckControls
+                onSelected: newValue => {
+                    Config.options.background.widgets.media.deckControls = newValue;
+                }
+                options: [
+                    {
+                        displayName: Translation.tr("Volume"),
+                        icon: "tune",
+                        value: "volume"
+                    },
+                    {
+                        displayName: Translation.tr("Shuffle & repeat"),
+                        icon: "shuffle",
+                        value: "toggles"
+                    },
+                    {
+                        displayName: Translation.tr("Empty"),
+                        icon: "check_box_outline_blank",
+                        value: "none"
+                    }
+                ]
+            }
+        }
+
+        // Same control DesktopWidgetToggle gives every other widget; media has
+        // a bespoke section, so it never picked one up.
+        ConfigSpinBox {
+            from: 0
+            to: 100
+            stepSize: 5
+            icon: "blur_on"
+            text: Translation.tr("Frosted glass (%)")
+            value: Config.options.background.widgets.media.blur * 100
+            onValueChanged: {
+                Config.options.background.widgets.media.blur = value / 100;
             }
         }
 
@@ -1158,14 +1210,6 @@ ContentPage {
                 checked: Config.options.background.widgets.media.useAlbumColors
                 onCheckedChanged: {
                     Config.options.background.widgets.media.useAlbumColors = checked;
-                }
-            }
-            ConfigSwitch {
-                buttonIcon: "colors"
-                text: Translation.tr("Tint art cover")
-                checked: Config.options.background.widgets.media.tintArtCover
-                onCheckedChanged: {
-                    Config.options.background.widgets.media.tintArtCover = checked;
                 }
             }
         }

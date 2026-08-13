@@ -41,6 +41,13 @@ RowLayout {
             opacity: 1 - highlightOverlay.opacity
             id: labelWidget
             Layout.preferredWidth: root.textWidth
+            // The label column is a fixed width, but Text neither wraps nor
+            // clips by default, so anything wider than textWidth silently paints
+            // out over the slider instead of stopping at its boundary. Every
+            // English label happens to fit today; a translation need not, since
+            // these all come through Translation.tr. Eliding keeps a too-long
+            // label inside its column and costs nothing when it already fits.
+            elide: Text.ElideRight
             text: root.text
             color: Appearance.colors.colOnSecondaryContainer
         }
