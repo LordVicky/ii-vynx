@@ -27,6 +27,12 @@ AbstractBackgroundWidget {
 
     BatteryDevices { id: batteryDevices }
 
+    TapHandler {
+        acceptedButtons: Qt.LeftButton
+        gesturePolicy: TapHandler.ReleaseWithinBounds
+        onTapped: AppleBatteryStatus.refresh()
+    }
+
     readonly property int rowHeight: 36
     readonly property int rowSpacing: 8
     property int layoutRowCount: 1
