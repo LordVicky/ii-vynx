@@ -1,0 +1,199 @@
+import QtQuick
+import QtQuick.Effects
+import Qt5Compat.GraphicalEffects
+import qs
+import qs.modules.common
+
+/**
+ * Reusable frosted-glass / solid-tint panel background for desktop widgets.
+ *
+ * At blur = 0 it reads as an opaque, flat-tinted card (like the widgets looked
+ * before this feature existed). At blur = 1 it reads as a blurred crop of the
+ * wallpaper region directly behind the widget, with a light tint on top so
+ * content stays readable ("frosted glass"). Values in between blend the two.
+ *
+ * Usage: size it (anchors.fill: parent) over the widget's card/panel Rectangle,
+ * and feed it the host widget's own coordinates so the backdrop crop lines up:
+ *
+ *   WidgetBlurBackground {
+ *       anchors.fill: card
+ *       cornerRadius: card.radius
+ *       blur: root.blur                     // AbstractBackgroundWidget.blur (configEntry.blur)
+ *       wallpaperPath: root.wallpaperPath    // AbstractBackgroundWidget.wallpaperPath
+ *       sourceWidth: root.scaledScreenWidth
+ *       sourceHeight: root.scaledScreenHeight
+ *       offsetX: root.x
+ *       offsetY: root.y
+ *       wallpaperRenderX: root.wallpaperRenderX          // live wallpaper geometry
+ *       wallpaperRenderY: root.wallpaperRenderY           // passed down from Background.qml
+ *       wallpaperRenderWidth: root.wallpaperRenderWidth   // (0 = fall back to the static
+ *       wallpaperRenderHeight: root.wallpaperRenderHeight // sourceWidth/sourceHeight crop)
+ *       parallaxBackdrop: root.parallaxBackdrop
+ *   }
+ *
+ * There is no shared, unscaled "wallpaper" Image id in scope for widgets loaded via
+ * FadeLoader (they live in their own QML document), so this loads the wallpaper
+ * image directly from wallpaperPath instead of trying to reuse Background.qml's item.
+ * When wallpaperRenderX/Y/Width/Height are supplied (and parallaxBackdrop is true),
+ * the backdrop mirrors that live geometry exactly instead, so it tracks parallax
+ * panning and drag updates in real time.
+ */
+Item {
+    id: root
+
+    property real blur: 0.6 // 0 = opaque solid tint, 1 = clear frosted glass
+    property real cornerRadius: Appearance.rounding?.verylarge ?? 30
+    property color tintColor: Appearance.colors.colPrimaryContainer
+
+    property string wallpaperPath: ""
+    property real sourceWidth: 0
+    property real sourceHeight: 0
+    // Position (in the widget canvas' coordinate space) of the widget this
+    // background sits behind - i.e. the host widget's own x/y.
+    property real offsetX: 0
+    property real offsetY: 0
+
+    // Live geometry (in the widget canvas' coordinate space) of the real,
+    // on-screen `wallpaper` TransitionImage in Background.qml. When set
+    // (width/height > 0) and parallaxBackdrop is enabled, the backdrop below
+    // mirrors this exactly instead of using the static sourceWidth/sourceHeight
+    // crop, so it tracks parallax panning and stays correct while dragging.
+    property real wallpaperRenderX: 0
+    property real wallpaperRenderY: 0
+    property real wallpaperRenderWidth: 0
+    property real wallpaperRenderHeight: 0
+    property bool parallaxBackdrop: true
+
+    // The live wallpaper Item itself. Preferred over the numeric geometry above,
+    // because subtracting coordinates cannot survive the transform stack between
+    // the wallpaper and a widget: wallpaperItem scales both by defaultRatio,
+    // WidgetCanvas then applies its own scale about its CENTRE, and a widget adds
+    // a third scale of its own when resized. mapFromItem walks that whole chain,
+    // so the crop lines up at any zoom, parallax offset or widget scale.
+    // Extension widgets that don't pass an item fall back to the numeric path.
+    property Item wallpaperSourceItem: null
+
+    // Blur radius ceiling, and how far the blurred layer extends past the widget
+    // so the filter has real content to sample at the edges instead of fading
+    // into transparency. Full bleed would be _blurMax; two thirds is enough in
+    // practice because the outermost ring is under the rounded mask, and it keeps
+    // the layer meaningfully smaller.
+    readonly property real _blurMax: 96
+    readonly property real _blurBleed: Math.ceil(_blurMax * 0.67)
+    // Longest edge, in px, the wallpaper is decoded at for use as a backdrop.
+    readonly property int _backdropDecodeWidth: 1920
+
+    // Dependency tokens. mapFromItem is a function call, so a binding using it
+    // only re-evaluates when some property it *reads* changes. These are read in
+    // _backdropRect purely so the crop recomputes as things move.
+    property real hostScale: 1
+    readonly property bool _useItem: parallaxBackdrop && wallpaperSourceItem !== null && wallpaperSourceItem.width > 0
+    readonly property bool _useParallax: !_useItem && parallaxBackdrop && wallpaperRenderWidth > 0 && wallpaperRenderHeight > 0
+
+    readonly property rect _backdropRect: {
+        if (!_useItem)
+            return Qt.rect(0, 0, 0, 0);
+        // Read the animated inputs so this binding is re-evaluated when the
+        // wallpaper pans/zooms, the widget is dragged, or it is resized.
+        const _deps = [wallpaperSourceItem.x, wallpaperSourceItem.y, wallpaperSourceItem.width, wallpaperSourceItem.height, root.offsetX, root.offsetY, root.hostScale, root.width, root.height];
+        const topLeft = root.mapFromItem(wallpaperSourceItem, 0, 0);
+        const bottomRight = root.mapFromItem(wallpaperSourceItem, wallpaperSourceItem.width, wallpaperSourceItem.height);
+        return Qt.rect(topLeft.x, topLeft.y, bottomRight.x - topLeft.x, bottomRight.y - topLeft.y);
+    }
+
+    Item {
+        id: clipContent
+        anchors.fill: parent
+        clip: true
+        visible: root.blur > 0.001 && root.wallpaperPath !== ""
+
+        // The blurred layer lives on THIS item, not on the backdrop image, and it
+        // is only widget-sized (plus a blur-radius bleed margin). That matters a
+        // lot: `backdrop` is the size of the whole on-screen wallpaper, so putting
+        // layer.enabled on it allocated a full-wallpaper FBO *per widget* and ran
+        // the blur chain over all of it, when >99% of the result is thrown away by
+        // the clip. With ~17 widgets enabled that is what made wallpaper changes
+        // and shell reloads crawl - the wallpaper's width/height Behavior animates
+        // for 800ms, invalidating every one of those giant layers on every frame.
+        //
+        // Blurring a clipped item normally fades at the edges, because the filter
+        // samples transparency just past the boundary. The bleed margin below is
+        // the fix: the layer extends `_blurBleed` px beyond the widget on all
+        // sides, so the faded ring falls outside the visible area and is discarded
+        // by clipContent's clip and root's rounded mask.
+        Item {
+            id: blurSource
+            x: -root._blurBleed
+            y: -root._blurBleed
+            width: root.width + root._blurBleed * 2
+            height: root.height + root._blurBleed * 2
+            clip: true
+
+            layer.enabled: true
+            layer.effect: MultiEffect {
+                // macOS "vibrancy": the backdrop is not just blurred, it is pushed
+                // saturated and slightly brighter, which is what stops frosted glass
+                // reading as flat grey haze. blurMax is the radius ceiling; `blur`
+                // scales within it, so raising the ceiling softens the whole range.
+                saturation: 0.35
+                brightness: 0.04
+                blurEnabled: true
+                blurMax: root._blurMax
+                blur: root.blur
+            }
+
+            Image {
+                id: backdrop
+                // Positions come from root's coordinate space, shifted by the bleed
+                // margin because this item's origin sits above/left of root's.
+                x: root._blurBleed + (root._useItem ? root._backdropRect.x : root._useParallax ? (root.wallpaperRenderX - root.offsetX) : -root.offsetX)
+                y: root._blurBleed + (root._useItem ? root._backdropRect.y : root._useParallax ? (root.wallpaperRenderY - root.offsetY) : -root.offsetY)
+                width: Math.max(1, root._useItem ? root._backdropRect.width : root._useParallax ? root.wallpaperRenderWidth : root.sourceWidth)
+                height: Math.max(1, root._useItem ? root._backdropRect.height : root._useParallax ? root.wallpaperRenderHeight : root.sourceHeight)
+                source: root.wallpaperPath !== "" ? Qt.resolvedUrl(root.wallpaperPath) : ""
+                fillMode: Image.PreserveAspectCrop
+                asynchronous: true
+                cache: true
+                smooth: true
+                // Cap the decode. Every widget shares one entry in Qt's pixmap
+                // cache (same source + same sourceSize), so this is a single
+                // decode and a single texture for the whole desktop instead of a
+                // full-resolution one - a 4K wallpaper is 4x the pixels for detail
+                // that a blur destroys anyway. Keep it constant: varying it per
+                // widget would defeat the cache sharing and force a re-decode.
+                sourceSize.width: root._backdropDecodeWidth
+            }
+        }
+    }
+
+    Rectangle {
+        id: tint
+        anchors.fill: parent
+        color: root.tintColor
+        opacity: (1 - root.blur * 0.65) * (Config.options.background.widgetTint ?? 0)
+        Behavior on opacity {
+            animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
+        }
+    }
+
+    // Hairline highlight along the panel edge. Subtle, but it's what separates
+    // glass from a plain translucent rectangle - it reads as the lit rim of a
+    // physical pane rather than a hole cut in the wallpaper.
+    Rectangle {
+        anchors.fill: parent
+        radius: root.cornerRadius
+        color: "transparent"
+        border.width: 1
+        border.color: Qt.rgba(1, 1, 1, 0.12 * Math.max(0.35, root.blur))
+        visible: root.blur > 0.001
+    }
+
+    layer.enabled: true
+    layer.effect: OpacityMask {
+        maskSource: Rectangle {
+            width: root.width
+            height: root.height
+            radius: root.cornerRadius
+        }
+    }
+}

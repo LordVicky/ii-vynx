@@ -21,6 +21,12 @@ AbstractBackgroundWidget {
 
     configEntryName: "media"
 
+    // Live drag override. -1 means "not dragging", which lets widgetScale keep
+    // its binding to the persisted config value; a plain assignment during drag
+    // would break that binding permanently.
+    property real dragScale: -1
+    readonly property real widgetScale: dragScale >= 0 ? dragScale : (Config.options.background.widgets.media.scale ?? 1)
+
     readonly property bool useAlbumColors: Config.options.background.widgets.media.useAlbumColors
     readonly property bool useDynamicColors: root.useAlbumColors && root.currentPlayer != null 
     readonly property bool showPreviousToggle: Config.options.background.widgets.media.showPreviousToggle
@@ -72,8 +78,8 @@ AbstractBackgroundWidget {
 
     property list<real> visualizerPoints: [] 
 
-    implicitHeight: contentItem.implicitHeight
-    implicitWidth: contentItem.implicitWidth
+    implicitHeight: scaleWrapper.implicitHeight * root.widgetScale
+    implicitWidth: scaleWrapper.implicitWidth * root.widgetScale
 
     // 'Switch button' visiblity on hover
     property bool hovering: false
@@ -140,12 +146,43 @@ AbstractBackgroundWidget {
     }
 
     Item {
-        id: contentItem
-
+        id: scaleWrapper
         implicitWidth: root.widgetSize
         implicitHeight: root.widgetSize
+        width: implicitWidth
+        height: implicitHeight
+        transformOrigin: Item.TopLeft
+        scale: root.widgetScale
+        Behavior on scale { animation: Appearance.animation.elementResize.numberAnimation.createObject(this) }
 
-    
+    Item {
+        id: contentItem
+        anchors.fill: parent
+
+        // Soft frosted backing plate behind the art disc/shape, so this widget
+        // also honors the per-widget blur setting like the others. Unlike the
+        // panel-based widgets, media had no background plate before, so it only
+        // fades in as blur increases (blur = 0 keeps the original look untouched).
+        WidgetBlurBackground {
+            anchors.fill: parent
+            visible: root.blur > 0.01
+            opacity: root.blur
+            cornerRadius: contentItem.width / 2
+            blur: root.blur
+            wallpaperPath: root.wallpaperPath
+            sourceWidth: root.scaledScreenWidth
+            sourceHeight: root.scaledScreenHeight
+            wallpaperRenderX: root.wallpaperRenderX
+            wallpaperRenderY: root.wallpaperRenderY
+            wallpaperRenderWidth: root.wallpaperRenderWidth
+            wallpaperRenderHeight: root.wallpaperRenderHeight
+            parallaxBackdrop: root.parallaxBackdrop
+            wallpaperSourceItem: root.wallpaperSourceItem
+            hostScale: root.widgetScale
+            offsetX: root.x
+            offsetY: root.y
+        }
+
         Image { // using a loader somehow breaks the image
             id: blurredArt
             anchors.fill: parent
@@ -345,7 +382,16 @@ AbstractBackgroundWidget {
 
             }
         }
-        
+
+    }
+    }
+
+    WidgetResizeHandle {
+        hostWidget: root
+        currentScale: root.widgetScale
+        baseSize: scaleWrapper.implicitWidth
+        onRequestScale: (v) => root.dragScale = v
+        onRequestCommit: (v) => { Config.options.background.widgets.media.scale = v; root.dragScale = -1 }
     }
 
     component ControlButton : RippleButton {

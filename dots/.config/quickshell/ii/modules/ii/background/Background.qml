@@ -19,6 +19,22 @@ import qs.modules.ii.background.widgets
 import qs.modules.ii.background.widgets.clock
 import qs.modules.ii.background.widgets.weather
 import qs.modules.ii.background.widgets.media
+import qs.modules.ii.background.widgets.calendar
+import qs.modules.ii.background.widgets.notes
+import qs.modules.ii.background.widgets.resources
+import qs.modules.ii.background.widgets.worldclock
+import qs.modules.ii.background.widgets.usercard
+import qs.modules.ii.background.widgets.visualizer
+import qs.modules.ii.background.widgets.images
+import qs.modules.ii.background.widgets.todo
+import qs.modules.ii.background.widgets.pomodoro
+import qs.modules.ii.background.widgets.lyrics
+import qs.modules.ii.background.widgets.network
+import qs.modules.ii.background.widgets.clipboard
+import qs.modules.ii.background.widgets.updates
+import qs.modules.ii.background.widgets.privacy
+import qs.modules.ii.background.widgets.songrec
+import qs.modules.ii.background.widgets.battery
 
 Variants {
     id: root
@@ -105,6 +121,10 @@ Variants {
         WlrLayershell.layer: (GlobalStates.screenLocked && !scaleAnim.running) ? WlrLayer.Top : WlrLayer.Bottom
         // WlrLayershell.layer: WlrLayer.Bottom
         WlrLayershell.namespace: "quickshell:background"
+        // Only grab keyboard focus while a desktop widget's text field is actively
+        // being typed into (notes, world clock timezone search, ...); otherwise this
+        // background layer stays out of the way of Super/global shortcuts.
+        WlrLayershell.keyboardFocus: GlobalStates.desktopWidgetKeyboardFocus ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
         anchors {
             top: true
             bottom: true
@@ -224,8 +244,8 @@ Variants {
                         configEntry: cfg,
                         screenWidth: bgRoot.screen.width,
                         screenHeight: bgRoot.screen.height,
-                        scaledScreenWidth: bgRoot.screen.width / bgRoot.effectiveWallpaperScale,
-                        scaledScreenHeight: bgRoot.screen.height / bgRoot.effectiveWallpaperScale,
+                        scaledScreenWidth: bgRoot.screen.width,
+                        scaledScreenHeight: bgRoot.screen.height,
                         wallpaperScale: bgRoot.effectiveWallpaperScale
                     })
 
@@ -384,70 +404,16 @@ Variants {
 
             WidgetCanvas {
                 id: widgetCanvas
+                // Anchored to the screen viewport (wallpaperItem is always screen-sized),
+                // NOT to the wallpaper image - the wallpaper pans/zooms for parallax but
+                // widgets must stay put relative to the display, and be draggable across
+                // the full screen rather than being bounded by the (larger, panning)
+                // wallpaper's own bounds. This is the same geometry the old lock-only
+                // "centered" state used, just applied unconditionally.
+                anchors.fill: parent
                 scale: 1 - (defaultRatio - 1)
                 Behavior on scale {
                     animation: Appearance.animation.elementMove.numberAnimation.createObject(this)
-                }
-                anchors {
-                    left: wallpaper.left
-                    right: wallpaper.right
-                    top: wallpaper.top
-                    bottom: wallpaper.bottom
-                    horizontalCenter: undefined
-                    verticalCenter: undefined
-                    readonly property real parallaxFactor: Config.options.background.parallax.widgetsFactor
-                    leftMargin: {
-                        const xOnWallpaper = bgRoot.movableXSpace;
-                        const extraMove = (wallpaper.effectiveValueX * 2 * bgRoot.movableXSpace) * (parallaxFactor - 1);
-                        return xOnWallpaper - extraMove;
-                    }
-                    topMargin: {
-                        const yOnWallpaper = bgRoot.movableYSpace;
-                        const extraMove = (wallpaper.effectiveValueY * 2 * bgRoot.movableYSpace) * (parallaxFactor - 1);
-                        return yOnWallpaper - extraMove;
-                    }
-                    Behavior on leftMargin {
-                        animation: Appearance.animation.elementMove.numberAnimation.createObject(this)
-                    }
-                    Behavior on topMargin {
-                        animation: Appearance.animation.elementMove.numberAnimation.createObject(this)
-                    }
-                }
-                width: wallpaper.width
-                height: wallpaper.height
-                states: State {
-                    name: "centered"
-                    when: GlobalStates.screenLocked || bgRoot.wallpaperSafetyTriggered
-                    PropertyChanges {
-                        target: widgetCanvas
-                        width: parent.width
-                        height: parent.height
-                    }
-                    AnchorChanges {
-                        target: widgetCanvas
-                        anchors {
-                            left: undefined
-                            right: undefined
-                            top: undefined
-                            bottom: undefined
-                            horizontalCenter: parent.horizontalCenter
-                            verticalCenter: parent.verticalCenter
-                        }
-                    }
-                }
-
-                transitions: Transition {
-                    PropertyAnimation {
-                        properties: "width,height"
-                        duration: Appearance.animation.elementMove.duration
-                        easing.type: Appearance.animation.elementMove.type
-                        easing.bezierCurve: Appearance.animation.elementMove.bezierCurve
-                    }
-                    AnchorAnimation {
-                        duration: Appearance.animation.elementMove.duration
-                        easing.type: Appearance.animation.elementMove.type
-                        easing.bezierCurve: Appearance.animation.elementMove.bezierCurve
-                    }
                 }
 
                 FadeLoader {
@@ -455,9 +421,14 @@ Variants {
                     sourceComponent: WeatherWidget {
                         screenWidth: bgRoot.screen.width
                         screenHeight: bgRoot.screen.height
-                        scaledScreenWidth: bgRoot.screen.width / bgRoot.effectiveWallpaperScale
-                        scaledScreenHeight: bgRoot.screen.height / bgRoot.effectiveWallpaperScale
+                        scaledScreenWidth: bgRoot.screen.width
+                        scaledScreenHeight: bgRoot.screen.height
                         wallpaperScale: bgRoot.effectiveWallpaperScale
+                        wallpaperRenderX: wallpaper.x
+                        wallpaperRenderY: wallpaper.y
+                        wallpaperRenderWidth: wallpaper.width
+                        wallpaperRenderHeight: wallpaper.height
+                        wallpaperSourceItem: wallpaper
                     }
                 }
 
@@ -466,9 +437,14 @@ Variants {
                     sourceComponent: ClockWidget {
                         screenWidth: bgRoot.screen.width
                         screenHeight: bgRoot.screen.height
-                        scaledScreenWidth: bgRoot.screen.width / bgRoot.effectiveWallpaperScale
-                        scaledScreenHeight: bgRoot.screen.height / bgRoot.effectiveWallpaperScale
+                        scaledScreenWidth: bgRoot.screen.width
+                        scaledScreenHeight: bgRoot.screen.height
                         wallpaperScale: bgRoot.effectiveWallpaperScale
+                        wallpaperRenderX: wallpaper.x
+                        wallpaperRenderY: wallpaper.y
+                        wallpaperRenderWidth: wallpaper.width
+                        wallpaperRenderHeight: wallpaper.height
+                        wallpaperSourceItem: wallpaper
                         wallpaperSafetyTriggered: bgRoot.wallpaperSafetyTriggered
                         isCovered: bgRoot.isCovered
                     }
@@ -487,9 +463,14 @@ Variants {
                     sourceComponent: MediaWidget {
                         screenWidth: bgRoot.screen.width
                         screenHeight: bgRoot.screen.height
-                        scaledScreenWidth: bgRoot.screen.width / bgRoot.effectiveWallpaperScale
-                        scaledScreenHeight: bgRoot.screen.height / bgRoot.effectiveWallpaperScale
+                        scaledScreenWidth: bgRoot.screen.width
+                        scaledScreenHeight: bgRoot.screen.height
                         wallpaperScale: bgRoot.effectiveWallpaperScale
+                        wallpaperRenderX: wallpaper.x
+                        wallpaperRenderY: wallpaper.y
+                        wallpaperRenderWidth: wallpaper.width
+                        wallpaperRenderHeight: wallpaper.height
+                        wallpaperSourceItem: wallpaper
                     }
                     onLoaded: {
                         if (item && item.requestReset) {
@@ -498,6 +479,278 @@ Variants {
                                 mediaTimer.running = true
                             })
                         }
+                    }
+                }
+
+                FadeLoader {
+                    shown: Config.options.background.widgets.calendar.enable
+                    sourceComponent: CalendarWidget {
+                        screenWidth: bgRoot.screen.width
+                        screenHeight: bgRoot.screen.height
+                        scaledScreenWidth: bgRoot.screen.width
+                        scaledScreenHeight: bgRoot.screen.height
+                        wallpaperScale: bgRoot.effectiveWallpaperScale
+                        wallpaperRenderX: wallpaper.x
+                        wallpaperRenderY: wallpaper.y
+                        wallpaperRenderWidth: wallpaper.width
+                        wallpaperRenderHeight: wallpaper.height
+                        wallpaperSourceItem: wallpaper
+                    }
+                }
+
+                FadeLoader {
+                    shown: Config.options.background.widgets.notes.enable
+                    sourceComponent: NotesWidget {
+                        screenWidth: bgRoot.screen.width
+                        screenHeight: bgRoot.screen.height
+                        scaledScreenWidth: bgRoot.screen.width
+                        scaledScreenHeight: bgRoot.screen.height
+                        wallpaperScale: bgRoot.effectiveWallpaperScale
+                        wallpaperRenderX: wallpaper.x
+                        wallpaperRenderY: wallpaper.y
+                        wallpaperRenderWidth: wallpaper.width
+                        wallpaperRenderHeight: wallpaper.height
+                        wallpaperSourceItem: wallpaper
+                    }
+                }
+
+                FadeLoader {
+                    shown: Config.options.background.widgets.resources.enable
+                    sourceComponent: ResourcesWidget {
+                        screenWidth: bgRoot.screen.width
+                        screenHeight: bgRoot.screen.height
+                        scaledScreenWidth: bgRoot.screen.width
+                        scaledScreenHeight: bgRoot.screen.height
+                        wallpaperScale: bgRoot.effectiveWallpaperScale
+                        wallpaperRenderX: wallpaper.x
+                        wallpaperRenderY: wallpaper.y
+                        wallpaperRenderWidth: wallpaper.width
+                        wallpaperRenderHeight: wallpaper.height
+                        wallpaperSourceItem: wallpaper
+                    }
+                }
+
+                FadeLoader {
+                    shown: Config.options.background.widgets.worldClock.enable
+                    sourceComponent: WorldClockWidget {
+                        screenWidth: bgRoot.screen.width
+                        screenHeight: bgRoot.screen.height
+                        scaledScreenWidth: bgRoot.screen.width
+                        scaledScreenHeight: bgRoot.screen.height
+                        wallpaperScale: bgRoot.effectiveWallpaperScale
+                        wallpaperRenderX: wallpaper.x
+                        wallpaperRenderY: wallpaper.y
+                        wallpaperRenderWidth: wallpaper.width
+                        wallpaperRenderHeight: wallpaper.height
+                        wallpaperSourceItem: wallpaper
+                    }
+                }
+
+                FadeLoader {
+                    shown: Config.options.background.widgets.userCard.enable
+                    sourceComponent: UserCardWidget {
+                        screenWidth: bgRoot.screen.width
+                        screenHeight: bgRoot.screen.height
+                        scaledScreenWidth: bgRoot.screen.width
+                        scaledScreenHeight: bgRoot.screen.height
+                        wallpaperScale: bgRoot.effectiveWallpaperScale
+                        wallpaperRenderX: wallpaper.x
+                        wallpaperRenderY: wallpaper.y
+                        wallpaperRenderWidth: wallpaper.width
+                        wallpaperRenderHeight: wallpaper.height
+                        wallpaperSourceItem: wallpaper
+                    }
+                }
+
+                FadeLoader {
+                    shown: Config.options.background.widgets.todo.enable
+                    sourceComponent: TodoWidget {
+                        screenWidth: bgRoot.screen.width
+                        screenHeight: bgRoot.screen.height
+                        scaledScreenWidth: bgRoot.screen.width
+                        scaledScreenHeight: bgRoot.screen.height
+                        wallpaperScale: bgRoot.effectiveWallpaperScale
+                        wallpaperRenderX: wallpaper.x
+                        wallpaperRenderY: wallpaper.y
+                        wallpaperRenderWidth: wallpaper.width
+                        wallpaperRenderHeight: wallpaper.height
+                        wallpaperSourceItem: wallpaper
+                    }
+                }
+
+                FadeLoader {
+                    shown: Config.options.background.widgets.pomodoro.enable
+                    sourceComponent: PomodoroWidget {
+                        screenWidth: bgRoot.screen.width
+                        screenHeight: bgRoot.screen.height
+                        scaledScreenWidth: bgRoot.screen.width
+                        scaledScreenHeight: bgRoot.screen.height
+                        wallpaperScale: bgRoot.effectiveWallpaperScale
+                        wallpaperRenderX: wallpaper.x
+                        wallpaperRenderY: wallpaper.y
+                        wallpaperRenderWidth: wallpaper.width
+                        wallpaperRenderHeight: wallpaper.height
+                        wallpaperSourceItem: wallpaper
+                    }
+                }
+
+                FadeLoader {
+                    shown: Config.options.background.widgets.lyrics.enable
+                    sourceComponent: LyricsWidget {
+                        screenWidth: bgRoot.screen.width
+                        screenHeight: bgRoot.screen.height
+                        scaledScreenWidth: bgRoot.screen.width
+                        scaledScreenHeight: bgRoot.screen.height
+                        wallpaperScale: bgRoot.effectiveWallpaperScale
+                        wallpaperRenderX: wallpaper.x
+                        wallpaperRenderY: wallpaper.y
+                        wallpaperRenderWidth: wallpaper.width
+                        wallpaperRenderHeight: wallpaper.height
+                        wallpaperSourceItem: wallpaper
+                    }
+                }
+
+                FadeLoader {
+                    shown: Config.options.background.widgets.network.enable
+                    sourceComponent: NetworkWidget {
+                        screenWidth: bgRoot.screen.width
+                        screenHeight: bgRoot.screen.height
+                        scaledScreenWidth: bgRoot.screen.width
+                        scaledScreenHeight: bgRoot.screen.height
+                        wallpaperScale: bgRoot.effectiveWallpaperScale
+                        wallpaperRenderX: wallpaper.x
+                        wallpaperRenderY: wallpaper.y
+                        wallpaperRenderWidth: wallpaper.width
+                        wallpaperRenderHeight: wallpaper.height
+                        wallpaperSourceItem: wallpaper
+                    }
+                }
+
+                FadeLoader {
+                    shown: Config.options.background.widgets.clipboard.enable
+                    sourceComponent: ClipboardWidget {
+                        screenWidth: bgRoot.screen.width
+                        screenHeight: bgRoot.screen.height
+                        scaledScreenWidth: bgRoot.screen.width
+                        scaledScreenHeight: bgRoot.screen.height
+                        wallpaperScale: bgRoot.effectiveWallpaperScale
+                        wallpaperRenderX: wallpaper.x
+                        wallpaperRenderY: wallpaper.y
+                        wallpaperRenderWidth: wallpaper.width
+                        wallpaperRenderHeight: wallpaper.height
+                        wallpaperSourceItem: wallpaper
+                    }
+                }
+
+                FadeLoader {
+                    shown: Config.options.background.widgets.updates.enable
+                    sourceComponent: UpdatesWidget {
+                        screenWidth: bgRoot.screen.width
+                        screenHeight: bgRoot.screen.height
+                        scaledScreenWidth: bgRoot.screen.width
+                        scaledScreenHeight: bgRoot.screen.height
+                        wallpaperScale: bgRoot.effectiveWallpaperScale
+                        wallpaperRenderX: wallpaper.x
+                        wallpaperRenderY: wallpaper.y
+                        wallpaperRenderWidth: wallpaper.width
+                        wallpaperRenderHeight: wallpaper.height
+                        wallpaperSourceItem: wallpaper
+                    }
+                }
+
+                FadeLoader {
+                    shown: Config.options.background.widgets.privacy.enable
+                    sourceComponent: PrivacyWidget {
+                        screenWidth: bgRoot.screen.width
+                        screenHeight: bgRoot.screen.height
+                        scaledScreenWidth: bgRoot.screen.width
+                        scaledScreenHeight: bgRoot.screen.height
+                        wallpaperScale: bgRoot.effectiveWallpaperScale
+                        wallpaperRenderX: wallpaper.x
+                        wallpaperRenderY: wallpaper.y
+                        wallpaperRenderWidth: wallpaper.width
+                        wallpaperRenderHeight: wallpaper.height
+                        wallpaperSourceItem: wallpaper
+                    }
+                }
+
+                FadeLoader {
+                    shown: Config.options.background.widgets.songRec.enable
+                    sourceComponent: SongRecWidget {
+                        screenWidth: bgRoot.screen.width
+                        screenHeight: bgRoot.screen.height
+                        scaledScreenWidth: bgRoot.screen.width
+                        scaledScreenHeight: bgRoot.screen.height
+                        wallpaperScale: bgRoot.effectiveWallpaperScale
+                        wallpaperRenderX: wallpaper.x
+                        wallpaperRenderY: wallpaper.y
+                        wallpaperRenderWidth: wallpaper.width
+                        wallpaperRenderHeight: wallpaper.height
+                        wallpaperSourceItem: wallpaper
+                    }
+                }
+
+                FadeLoader {
+                    shown: Config.options.background.widgets.battery.enable
+                    sourceComponent: BatteryWidget {
+                        screenWidth: bgRoot.screen.width
+                        screenHeight: bgRoot.screen.height
+                        scaledScreenWidth: bgRoot.screen.width
+                        scaledScreenHeight: bgRoot.screen.height
+                        wallpaperScale: bgRoot.effectiveWallpaperScale
+                        wallpaperRenderX: wallpaper.x
+                        wallpaperRenderY: wallpaper.y
+                        wallpaperRenderWidth: wallpaper.width
+                        wallpaperRenderHeight: wallpaper.height
+                        wallpaperSourceItem: wallpaper
+                    }
+                }
+
+                FadeLoader {
+                    shown: Config.options.background.widgets.visualizer.enable
+                    sourceComponent: VisualizerWidget {
+                        screenWidth: bgRoot.screen.width
+                        screenHeight: bgRoot.screen.height
+                        scaledScreenWidth: bgRoot.screen.width
+                        scaledScreenHeight: bgRoot.screen.height
+                        wallpaperScale: bgRoot.effectiveWallpaperScale
+                        wallpaperRenderX: wallpaper.x
+                        wallpaperRenderY: wallpaper.y
+                        wallpaperRenderWidth: wallpaper.width
+                        wallpaperRenderHeight: wallpaper.height
+                        wallpaperSourceItem: wallpaper
+                    }
+                }
+
+                FadeLoader {
+                    shown: Config.options.background.widgets.images.enable
+                    sourceComponent: ImageConverterWidget {
+                        screenWidth: bgRoot.screen.width
+                        screenHeight: bgRoot.screen.height
+                        scaledScreenWidth: bgRoot.screen.width
+                        scaledScreenHeight: bgRoot.screen.height
+                        wallpaperScale: bgRoot.effectiveWallpaperScale
+                        wallpaperRenderX: wallpaper.x
+                        wallpaperRenderY: wallpaper.y
+                        wallpaperRenderWidth: wallpaper.width
+                        wallpaperRenderHeight: wallpaper.height
+                        wallpaperSourceItem: wallpaper
+                    }
+                }
+
+                FadeLoader {
+                    shown: Config.options.background.widgets.customImage.enable
+                    sourceComponent: CustomImage {
+                        screenWidth: bgRoot.screen.width
+                        screenHeight: bgRoot.screen.height
+                        scaledScreenWidth: bgRoot.screen.width
+                        scaledScreenHeight: bgRoot.screen.height
+                        wallpaperScale: bgRoot.effectiveWallpaperScale
+                        wallpaperRenderX: wallpaper.x
+                        wallpaperRenderY: wallpaper.y
+                        wallpaperRenderWidth: wallpaper.width
+                        wallpaperRenderHeight: wallpaper.height
+                        wallpaperSourceItem: wallpaper
                     }
                 }
             }

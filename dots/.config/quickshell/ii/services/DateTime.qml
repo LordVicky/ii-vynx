@@ -19,6 +19,13 @@ Singleton {
         }
     }
     property string time: Qt.locale().toString(clock.date, Config.options?.time.format ?? "hh:mm")
+    // Zero-padded 24h digits, used by glyph-based clock styles (e.g. PixelClock)
+    readonly property string paddedHours: (clock.date.getHours() < 10 ? "0" : "") + clock.date.getHours()
+    readonly property string paddedMinutes: (clock.date.getMinutes() < 10 ? "0" : "") + clock.date.getMinutes()
+    readonly property string digitH0: paddedHours.charAt(0)
+    readonly property string digitH1: paddedHours.charAt(1)
+    readonly property string digitM0: paddedMinutes.charAt(0)
+    readonly property string digitM1: paddedMinutes.charAt(1)
     property string shortDate: Qt.locale().toString(clock.date, Config.options?.time.shortDateFormat ?? "dd/MM")
     property string date: Qt.locale().toString(clock.date, Config.options?.time.dateWithYearFormat ?? "dd/MM/yyyy")
     property string longDate: Qt.locale().toString(clock.date, Config.options?.time.dateFormat ?? "dddd, dd/MM")

@@ -285,6 +285,59 @@ ContentPage {
     }
 
     ContentSection {
+        icon: "widgets"
+        title: Translation.tr("Desktop widgets")
+
+        ConfigSwitch {
+            buttonIcon: "lock"
+            text: Translation.tr("Lock widget positions")
+            checked: Config.options.background.widgetsLocked
+            onCheckedChanged: {
+                Config.options.background.widgetsLocked = checked;
+            }
+        }
+
+        ConfigSwitch {
+            buttonIcon: "straighten"
+            text: Translation.tr("Show snap lines while dragging")
+            checked: Config.options.background.showSnapLines
+            onCheckedChanged: {
+                Config.options.background.showSnapLines = checked;
+            }
+        }
+
+        ConfigSwitch {
+            buttonIcon: "grid_4x4"
+            text: Translation.tr("Show alignment grid while dragging")
+            checked: Config.options.background.showGrid
+            onCheckedChanged: {
+                Config.options.background.showGrid = checked;
+            }
+        }
+
+        ConfigSlider {
+            buttonIcon: "opacity"
+            text: Translation.tr("Widget tint (%)")
+            value: Config.options.background.widgetTint * 100
+            usePercentTooltip: false
+            from: 0
+            to: 100
+            onValueChanged: {
+                Config.options.background.widgetTint = value / 100;
+            }
+        }
+
+        ConfigSwitch {
+            buttonIcon: "blur_on"
+            text: Translation.tr("Live frosted glass (follows wallpaper & dragging)")
+            checked: Config.options.background.parallaxBackdrop
+            onCheckedChanged: {
+                Config.options.background.parallaxBackdrop = checked;
+            }
+        }
+    }
+
+    ContentSection {
         id: settingsClock
         icon: "clock_loader_40"
         title: Translation.tr("Widget: Clock")
@@ -372,6 +425,11 @@ ContentPage {
                             displayName: Translation.tr("Cookie"),
                             icon: "cookie",
                             value: "cookie"
+                        },
+                        {
+                            displayName: Translation.tr("Pixel"),
+                            icon: "grid_view",
+                            value: "pixel"
                         }
                     ]
                 }
@@ -395,6 +453,11 @@ ContentPage {
                             displayName: Translation.tr("Cookie"),
                             icon: "cookie",
                             value: "cookie"
+                        },
+                        {
+                            displayName: Translation.tr("Pixel"),
+                            icon: "grid_view",
+                            value: "pixel"
                         }
                     ]
                 }
@@ -1211,5 +1274,161 @@ ContentPage {
             }
 
         }
+    }
+
+    component DesktopWidgetToggle: ContentSection {
+        id: toggleSection
+        property string widgetKey: ""
+        property bool showBlur: true
+
+        ConfigRow {
+            Layout.fillWidth: true
+
+            ConfigSwitch {
+                Layout.fillWidth: false
+                buttonIcon: "check"
+                text: Translation.tr("Enable")
+                checked: Config.options.background.widgets[toggleSection.widgetKey].enable
+                onCheckedChanged: {
+                    Config.options.background.widgets[toggleSection.widgetKey].enable = checked;
+                }
+            }
+            Item {
+                Layout.fillWidth: true
+            }
+            ConfigSelectionArray {
+                Layout.fillWidth: false
+                currentValue: Config.options.background.widgets[toggleSection.widgetKey].placementStrategy
+                onSelected: newValue => {
+                    Config.options.background.widgets[toggleSection.widgetKey].placementStrategy = newValue;
+                }
+                options: [
+                    {
+                        displayName: Translation.tr("Draggable"),
+                        icon: "drag_pan",
+                        value: "free"
+                    },
+                    {
+                        displayName: Translation.tr("Least busy"),
+                        icon: "category",
+                        value: "leastBusy"
+                    },
+                    {
+                        displayName: Translation.tr("Most busy"),
+                        icon: "shapes",
+                        value: "mostBusy"
+                    },
+                ]
+            }
+        }
+
+        ConfigSpinBox {
+            visible: toggleSection.showBlur
+            from: 0
+            to: 100
+            stepSize: 5
+            icon: "blur_on"
+            text: Translation.tr("Frosted glass (%)")
+            value: Config.options.background.widgets[toggleSection.widgetKey].blur * 100
+            onValueChanged: {
+                Config.options.background.widgets[toggleSection.widgetKey].blur = value / 100;
+            }
+        }
+    }
+
+    DesktopWidgetToggle {
+        icon: "calendar_month"
+        title: Translation.tr("Widget: Calendar")
+        widgetKey: "calendar"
+    }
+
+    DesktopWidgetToggle {
+        icon: "public"
+        title: Translation.tr("Widget: World Clock")
+        widgetKey: "worldClock"
+    }
+
+    DesktopWidgetToggle {
+        icon: "sticky_note_2"
+        title: Translation.tr("Widget: Notes")
+        widgetKey: "notes"
+    }
+
+    DesktopWidgetToggle {
+        icon: "badge"
+        title: Translation.tr("Widget: User Card")
+        widgetKey: "userCard"
+    }
+
+    DesktopWidgetToggle {
+        icon: "monitor_heart"
+        title: Translation.tr("Widget: Resources")
+        widgetKey: "resources"
+    }
+
+    DesktopWidgetToggle {
+        icon: "image"
+        title: Translation.tr("Widget: Image Converter")
+        widgetKey: "images"
+    }
+
+    DesktopWidgetToggle {
+        icon: "photo_frame"
+        title: Translation.tr("Widget: Custom Image")
+        widgetKey: "customImage"
+        showBlur: false // Shaped image widget has no rectangular panel surface
+    }
+
+    DesktopWidgetToggle {
+        icon: "graphic_eq"
+        title: Translation.tr("Widget: Visualizer")
+        widgetKey: "visualizer"
+        showBlur: false // Bar visualizer has no panel surface
+    }
+
+    DesktopWidgetToggle {
+        icon: "checklist"
+        title: Translation.tr("Widget: To-do")
+        widgetKey: "todo"
+    }
+    DesktopWidgetToggle {
+        icon: "timer"
+        title: Translation.tr("Widget: Pomodoro")
+        widgetKey: "pomodoro"
+    }
+    DesktopWidgetToggle {
+        icon: "lyrics"
+        title: Translation.tr("Widget: Lyrics")
+        widgetKey: "lyrics"
+    }
+    DesktopWidgetToggle {
+        icon: "swap_vert"
+        title: Translation.tr("Widget: Network")
+        widgetKey: "network"
+    }
+    DesktopWidgetToggle {
+        icon: "content_paste"
+        title: Translation.tr("Widget: Clipboard")
+        widgetKey: "clipboard"
+    }
+    DesktopWidgetToggle {
+        icon: "system_update_alt"
+        title: Translation.tr("Widget: Updates")
+        widgetKey: "updates"
+    }
+    DesktopWidgetToggle {
+        icon: "shield"
+        title: Translation.tr("Widget: Privacy")
+        widgetKey: "privacy"
+    }
+    DesktopWidgetToggle {
+        icon: "music_note"
+        title: Translation.tr("Widget: Song Recognition")
+        widgetKey: "songRec"
+    }
+    DesktopWidgetToggle {
+        icon: "battery_full"
+        title: Translation.tr("Widget: Battery")
+        widgetKey: "battery"
     }
 }

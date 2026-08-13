@@ -15,6 +15,7 @@ Singleton {
 
     property bool barOpen: true
     property bool crosshairOpen: false
+    property bool desktopWidgetKeyboardFocus: false // Suppresses global shortcuts while typing in a desktop widget (notes, world clock settings, ...)
     property bool mediaControlsOpen: false
     property bool osdBrightnessOpen: false
     property bool osdVolumeOpen: false

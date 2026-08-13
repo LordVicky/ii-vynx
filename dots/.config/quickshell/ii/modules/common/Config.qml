@@ -195,6 +195,12 @@ Singleton {
 
             property JsonObject background: JsonObject {
                 property bool enable: true // if someone wants to use an external wallpaper manager, note that its not fully tested but it should just disable background.qml from being loaded
+                property bool widgetsLocked: false
+                property bool showGrid: true
+                property bool showSnapLines: true
+                property real widgetTint: 0 // 0 = fully transparent frosted glass (macOS look), 1 = full themed tint
+                property bool parallaxBackdrop: true // widget frosted glass mirrors the live wallpaper (parallax + drag)
+                property string lockWall: ""
                 property JsonObject widgets: JsonObject {
                     property JsonObject clock: JsonObject {
                         property bool enable: true
@@ -202,8 +208,10 @@ Singleton {
                         property string placementStrategy: "leastBusy" // "free", "leastBusy", "mostBusy"
                         property real x: 100
                         property real y: 100
-                        property string style: "cookie"        // Options: "cookie", "digital"
-                        property string styleLocked: "cookie"  // Options: "cookie", "digital"
+                        property real blur: 0.6
+                        property real scale: 1
+                        property string style: "cookie"        // Options: "cookie", "digital", "pixel"
+                        property string styleLocked: "cookie"  // Options: "cookie", "digital", "pixel"
                         property JsonObject cookie: JsonObject {
                             property bool aiStyling: false
                             property string aiStylingModel: "gemini" // Options "gemini", "openrouter"
@@ -236,6 +244,9 @@ Singleton {
                                 property real roundness: 0
                             }
                         }
+                        property JsonObject pixel: JsonObject {
+                            property string orientation: "vertical" // "vertical", "horizontal"
+                        }
                         property JsonObject quote: JsonObject {
                             property bool enable: false
                             property string text: ""
@@ -246,6 +257,8 @@ Singleton {
                         property string placementStrategy: "free" // "free", "leastBusy", "mostBusy"
                         property real x: 800
                         property real y: 100
+                        property real blur: 0.6
+                        property real scale: 1
                         property bool useAlbumColors: true
                         property bool hideAllButtons: false
                         property bool showPreviousToggle: true
@@ -267,6 +280,147 @@ Singleton {
                         property string placementStrategy: "free" // "free", "leastBusy", "mostBusy"
                         property real x: 400
                         property real y: 100
+                        property real blur: 0.6
+                        property real scale: 1
+                    }
+                    property JsonObject calendar: JsonObject {
+                        property bool enable: false
+                        property string placementStrategy: "free" // "free", "leastBusy", "mostBusy"
+                        property real x: 400
+                        property real y: 100
+                        property real blur: 0.6
+                        property string sizeMode: "2x2"
+                    }
+                    property JsonObject worldClock: JsonObject {
+                        property bool enable: false
+                        property list<string> timezones: ["Australia/Sydney", "Asia/Tokyo", "Europe/London", "America/New_York"]
+                        property string placementStrategy: "free"
+                        property real x: 400
+                        property real y: 100
+                        property real blur: 0.6
+                        property string sizeMode: "2x2"
+                    }
+                    property JsonObject notes: JsonObject {
+                        property bool enable: false
+                        property string placementStrategy: "free"
+                        property real x: 400
+                        property real y: 100
+                        property real blur: 0.6
+                        property real scale: 1
+                    }
+                    property JsonObject userCard: JsonObject {
+                        property bool enable: false
+                        property string placementStrategy: "free"
+                        property real x: 400
+                        property real y: 100
+                        property real blur: 0.6
+                        property real scale: 1
+                    }
+                    property JsonObject images: JsonObject {
+                        property bool enable: false
+                        property string placementStrategy: "free"
+                        property real x: 400
+                        property real y: 100
+                        property real blur: 0.6
+                        property real scale: 1
+                    }
+                    property JsonObject visualizer: JsonObject {
+                        property bool enable: false
+                        property string placementStrategy: "free"
+                        property real x: 0
+                        property real y: 0
+                        property real blur: 0.6
+                    }
+                    property JsonObject todo: JsonObject {
+                        property bool enable: false
+                        property string placementStrategy: "free"
+                        property real x: 400
+                        property real y: 400
+                        property real blur: 0.6
+                        property real scale: 1
+                    }
+                    property JsonObject pomodoro: JsonObject {
+                        property bool enable: false
+                        property string placementStrategy: "free"
+                        property real x: 700
+                        property real y: 400
+                        property real blur: 0.6
+                        property real scale: 1
+                    }
+                    property JsonObject lyrics: JsonObject {
+                        property bool enable: false
+                        property string placementStrategy: "free"
+                        property real x: 1000
+                        property real y: 400
+                        property real blur: 0.6
+                        property real scale: 1
+                    }
+                    property JsonObject network: JsonObject {
+                        property bool enable: false
+                        property string placementStrategy: "free"
+                        property real x: 400
+                        property real y: 700
+                        property real blur: 0.6
+                        property real scale: 1
+                    }
+                    property JsonObject clipboard: JsonObject {
+                        property bool enable: false
+                        property string placementStrategy: "free"
+                        property real x: 700
+                        property real y: 700
+                        property real blur: 0.6
+                        property real scale: 1
+                    }
+                    property JsonObject updates: JsonObject {
+                        property bool enable: false
+                        property string placementStrategy: "free"
+                        property real x: 1000
+                        property real y: 700
+                        property real blur: 0.6
+                        property real scale: 1
+                    }
+                    property JsonObject privacy: JsonObject {
+                        property bool enable: false
+                        property string placementStrategy: "free"
+                        property real x: 1300
+                        property real y: 400
+                        property real blur: 0.6
+                        property real scale: 1
+                    }
+                    property JsonObject songRec: JsonObject {
+                        property bool enable: false
+                        property string placementStrategy: "free"
+                        property real x: 1300
+                        property real y: 700
+                        property real blur: 0.6
+                        property real scale: 1
+                    }
+                    property JsonObject battery: JsonObject {
+                        property bool enable: false
+                        property string placementStrategy: "free"
+                        property real x: 1600
+                        property real y: 400
+                        property real blur: 0.6
+                        property real scale: 1
+                    }
+                    property JsonObject customImage: JsonObject {
+                        property bool enable: false
+                        property string placementStrategy: "free"
+                        property real x: 400
+                        property real y: 100
+                        property real blur: 0.6
+                        property string path: ""
+                        property string shape: "Cookie4Sided"
+                        property real size: 200
+                    }
+                    property JsonObject resources: JsonObject {
+                        property bool enable: false
+                        property string placementStrategy: "free"
+                        property real x: 400
+                        property real y: 100
+                        property real blur: 0.6
+                        property real scale: 1
+                        property bool vertical: false
                     }
                 }
                 property bool animateWallpaperChanges: true
@@ -550,6 +704,7 @@ Singleton {
             property JsonObject lock: JsonObject {
                 property bool useHyprlock: false
                 property bool launchOnStartup: false
+                property bool showWidgets: false
                 property JsonObject blur: JsonObject {
                     property bool enable: true
                     property real radius: 100

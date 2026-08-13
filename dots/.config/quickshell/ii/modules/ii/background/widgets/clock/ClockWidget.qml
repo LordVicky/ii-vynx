@@ -12,9 +12,16 @@ AbstractBackgroundWidget {
     id: root
 
     configEntryName: "clock"
+    hoverEnabled: true
 
-    implicitHeight: contentColumn.implicitHeight
-    implicitWidth: contentColumn.implicitWidth
+    // Live drag override. -1 means "not dragging", which lets widgetScale keep
+    // its binding to the persisted config value; a plain assignment during drag
+    // would break that binding permanently.
+    property real dragScale: -1
+    readonly property real widgetScale: dragScale >= 0 ? dragScale : (Config.options.background.widgets.clock.scale ?? 1)
+
+    implicitHeight: scaleWrapper.implicitHeight * root.widgetScale
+    implicitWidth: scaleWrapper.implicitWidth * root.widgetScale
 
     readonly property string clockStyle: GlobalStates.screenLocked ? Config.options.background.widgets.clock.styleLocked : Config.options.background.widgets.clock.style
     readonly property bool forceCenter: (GlobalStates.screenLocked && Config.options.lock.centerClock)
@@ -36,45 +43,97 @@ AbstractBackgroundWidget {
         return Text.AlignHCenter;
     }
 
-    Column {
-        id: contentColumn
-        anchors.centerIn: parent
-        spacing: 10
+    Item {
+        id: scaleWrapper
+        implicitWidth: contentColumn.implicitWidth
+        implicitHeight: contentColumn.implicitHeight
+        width: implicitWidth
+        height: implicitHeight
+        transformOrigin: Item.TopLeft
+        scale: root.widgetScale
+        Behavior on scale { animation: Appearance.animation.elementResize.numberAnimation.createObject(this) }
 
-        FadeLoader {
-            id: cookieClockLoader
-            anchors.horizontalCenter: parent.horizontalCenter
-            shown: root.clockStyle === "cookie" && (root.shouldShow)
-            fade: false
-            sourceComponent: Column {
-                spacing: 10
-                CookieClock {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    isCovered: root.isCovered
-                }
-                FadeLoader {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    shown: Config.options.background.widgets.clock.quote.enable && Config.options.background.widgets.clock.quote.text !== ""
-                    sourceComponent: CookieQuote {}
+        // Clock styles (cookie/digital/pixel) draw their own shapes/glyphs directly on
+        // the wallpaper with no card behind them. Like media, the frosted backing
+        // plate is additive here: invisible at blur = 0, fading in as blur increases.
+        WidgetBlurBackground {
+            anchors.centerIn: parent
+            width: contentColumn.implicitWidth + 40
+            height: contentColumn.implicitHeight + 32
+            visible: root.blur > 0.01
+            opacity: root.blur
+            cornerRadius: Appearance.rounding?.verylarge ?? 30
+            blur: root.blur
+            wallpaperPath: root.wallpaperPath
+            sourceWidth: root.scaledScreenWidth
+            sourceHeight: root.scaledScreenHeight
+            offsetX: root.x
+            offsetY: root.y
+            wallpaperRenderX: root.wallpaperRenderX
+            wallpaperRenderY: root.wallpaperRenderY
+            wallpaperRenderWidth: root.wallpaperRenderWidth
+            wallpaperRenderHeight: root.wallpaperRenderHeight
+            parallaxBackdrop: root.parallaxBackdrop
+            wallpaperSourceItem: root.wallpaperSourceItem
+            hostScale: root.widgetScale
+        }
+
+        Column {
+            id: contentColumn
+            anchors.centerIn: parent
+            spacing: 10
+
+            FadeLoader {
+                id: cookieClockLoader
+                anchors.horizontalCenter: parent.horizontalCenter
+                shown: root.clockStyle === "cookie" && (root.shouldShow)
+                fade: false
+                sourceComponent: Column {
+                    spacing: 10
+                    CookieClock {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        isCovered: root.isCovered
+                    }
+                    FadeLoader {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        shown: Config.options.background.widgets.clock.quote.enable && Config.options.background.widgets.clock.quote.text !== ""
+                        sourceComponent: CookieQuote {}
+                    }
                 }
             }
-        }
 
-        FadeLoader {
-            id: digitalClockLoader
-            anchors.horizontalCenter: parent.horizontalCenter
-            shown: root.clockStyle === "digital" && (root.shouldShow)
-            fade: false
-            sourceComponent: DigitalClock {
-                colText: root.colText
-                colTextSecondary: root.colTextSecondary
-                colTextTertiary: root.colTextTertiary
-                textHorizontalAlignment: root.textHorizontalAlignment
+            FadeLoader {
+                id: digitalClockLoader
+                anchors.horizontalCenter: parent.horizontalCenter
+                shown: root.clockStyle === "digital" && (root.shouldShow)
+                fade: false
+                sourceComponent: DigitalClock {
+                    colText: root.colText
+                    colTextSecondary: root.colTextSecondary
+                    colTextTertiary: root.colTextTertiary
+                    textHorizontalAlignment: root.textHorizontalAlignment
+                }
+            }
+
+            FadeLoader {
+                id: pixelClockLoader
+                anchors.horizontalCenter: parent.horizontalCenter
+                shown: root.clockStyle === "pixel" && (root.shouldShow)
+                fade: false
+                sourceComponent: PixelClock {}
+            }
+            StatusRow {
+                anchors.horizontalCenter: parent.horizontalCenter
             }
         }
-        StatusRow {
-            anchors.horizontalCenter: parent.horizontalCenter
-        }
+    }
+
+    WidgetResizeHandle {
+        hostWidget: root
+        currentScale: root.widgetScale
+        baseSize: scaleWrapper.implicitWidth
+        onRequestScale: (v) => root.dragScale = v
+        onRequestCommit: (v) => { Config.options.background.widgets.clock.scale = v; root.dragScale = -1 }
     }
 
     component StatusRow: Item {

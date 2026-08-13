@@ -15,8 +15,13 @@ Item {
     property int textHorizontalAlignment: Text.AlignHCenter
     property real gradientDensity: 1.0
 
+    // Supplied by the parent LyricScroller. This used to read `lyricScroller.rowHeight`,
+    // an id that exists in no document QML could resolve from here (ids are
+    // document-scoped), so the height binding silently evaluated to undefined.
+    property real rowHeight: 0
+
     width: parent.width
-    height: lyricScroller.rowHeight
+    height: lyricLineItem.rowHeight
     transformOrigin: lyricLineItem.textHorizontalAlignment === Text.AlignLeft  ? Item.Left  :
                  lyricLineItem.textHorizontalAlignment === Text.AlignRight ? Item.Right :
                                                                               Item.Center
