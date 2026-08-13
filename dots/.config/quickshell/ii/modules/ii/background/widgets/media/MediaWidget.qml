@@ -264,7 +264,14 @@ AbstractBackgroundWidget {
         id: coverArtDownloader
         property string targetFile: root.artUrl ?? ""
         property string artFilePath: root.artFilePath
-        command: ["bash", "-c", `[ -f '${artFilePath}' ] || curl -sSL '${targetFile}' -o '${artFilePath}'`]
+        command: [
+            "bash",
+            "-c",
+            `[ -f "$1" ] || curl -sSL -- "$2" -o "$1"`,
+            "download-cover",
+            artFilePath,
+            targetFile
+        ]
         onExited: (exitCode, exitStatus) => {
             root.downloaded = true;
         }
