@@ -76,6 +76,11 @@ ApplicationWindow {
             name: Translation.tr("About"),
             icon: "info",
             component: "modules/settings/About.qml"
+        },
+        {
+            name: Translation.tr("Apple Devices"),
+            icon: "devices",
+            component: "modules/settings/AppleDevicesConfig.qml"
         }
     ]
     
@@ -225,6 +230,7 @@ ApplicationWindow {
                             return
                         }
 
+                        
                         let length = SearchRegistry.getResultsRanked(searchInput.text).length
 
                         if (length == 0) {
@@ -258,9 +264,21 @@ ApplicationWindow {
                 }
             }
             
-
-            Item {
-                Layout.fillWidth: true
+            RippleButton {
+                id: topmostButton
+                buttonRadius: Appearance.rounding.full
+                implicitWidth: 35
+                implicitHeight: 35
+                onpressed: {
+                    root.flags =^ Qt.WindowStaysOnTopHint;
+                }
+                Layout.rightMargin: 10
+                contentItem: MaterialSymbol {
+                    anchors.centerIn: parent
+                    horizontalAlignment: Text.AlignHCenter
+                    text: "vertical_align_top"
+                    iconSize: 20
+                }
             }
 
             RippleButton {
