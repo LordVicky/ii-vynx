@@ -282,6 +282,7 @@ Singleton {
                         property real y: 100
                         property real blur: 0.6
                         property real scale: 1
+                        property string layout: "card"
                     }
                     property JsonObject calendar: JsonObject {
                         property bool enable: false
