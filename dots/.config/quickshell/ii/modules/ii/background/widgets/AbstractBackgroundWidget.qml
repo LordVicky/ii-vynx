@@ -16,6 +16,10 @@ AbstractWidget {
     required property int scaledScreenHeight
     required property real wallpaperScale
     property bool visibleWhenLocked: Config.options.lock.showWidgets
+    property color adaptiveSubtextColor: Appearance.colors.colSubtext
+    Behavior on adaptiveSubtextColor {
+        animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
+    }
     property var configEntry: Config.options.background.widgets[configEntryName]
     property string placementStrategy: configEntry.placementStrategy
     property real blur: configEntry?.blur ?? 0.6

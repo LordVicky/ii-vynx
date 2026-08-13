@@ -118,6 +118,17 @@ Variants {
         // Layer props
         screen: modelData
         exclusionMode: ExclusionMode.Ignore
+
+        // One request-driven 8×8 CPU sampler for every desktop widget. Keep it
+        // attached to an existing scene so Canvas can paint, but create it only
+        // for the first screen to avoid one wallpaper decoder per monitor.
+        Loader {
+            active: bgRoot.modelData === Quickshell.screens[0]
+            sourceComponent: WallpaperLuminanceCanvas {
+                sourceWidth: bgRoot.wallpaperWidth
+                sourceHeight: bgRoot.wallpaperHeight
+            }
+        }
         WlrLayershell.layer: (GlobalStates.screenLocked && !scaleAnim.running) ? WlrLayer.Top : WlrLayer.Bottom
         // WlrLayershell.layer: WlrLayer.Bottom
         WlrLayershell.namespace: "quickshell:background"

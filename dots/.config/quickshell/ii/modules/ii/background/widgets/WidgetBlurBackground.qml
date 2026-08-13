@@ -2,7 +2,10 @@ import QtQuick
 import QtQuick.Effects
 import Qt5Compat.GraphicalEffects
 import qs
+import qs.services
 import qs.modules.common
+import qs.modules.common.functions as CF
+import "AdaptiveContrast.js" as AdaptiveContrastMath
 
 /**
  * Reusable frosted-glass / solid-tint panel background for desktop widgets.
@@ -44,6 +47,11 @@ Item {
     property real blur: 0.6 // 0 = opaque solid tint, 1 = clear frosted glass
     property real cornerRadius: Appearance.rounding?.verylarge ?? 30
     property color tintColor: Appearance.colors.colPrimaryContainer
+    // Every frosted desktop widget shares the single request-driven wallpaper
+    // sampler. Individual callers can opt out, but readability is the safe
+    // default when cards can be dragged over arbitrary wallpaper regions.
+    property bool adaptiveContrast: true
+    property Item contrastHost: null
 
     property string wallpaperPath: ""
     property real sourceWidth: 0
@@ -72,6 +80,203 @@ Item {
     // so the crop lines up at any zoom, parallax offset or widget scale.
     // Extension widgets that don't pass an item fall back to the numeric path.
     property Item wallpaperSourceItem: null
+
+    property int _contrastClientId: -1
+    property real _sampledLuminance: -1
+    property double _lastContrastRequestMs: 0
+    property string _lastContrastCropSignature: ""
+    property bool _useDarkSubtext: false
+    readonly property real automaticScrimOpacity: root._sampledLuminance >= 0
+        ? AdaptiveContrastMath.automaticScrimOpacity(root._sampledLuminance)
+        : 0
+    readonly property color adaptiveSubtextColor: {
+        if (root._sampledLuminance < 0)
+            return Appearance.colors.colSubtext;
+        return CF.ColorUtils.colorWithLightness(
+            Appearance.colors.colOnLayer0,
+            root._useDarkSubtext ? 0.16 : 0.92
+        );
+    }
+
+    function ensureContrastClient() {
+        if (!root.adaptiveContrast || root._contrastClientId >= 0)
+            return;
+        root._contrastClientId = AdaptiveContrast.registerClient();
+    }
+
+    function normalizedWallpaperCrop() {
+        let left;
+        let top;
+        let right;
+        let bottom;
+        let displayWidth;
+        let displayHeight;
+
+        if (root._useItem) {
+            const topLeft = root.mapToItem(root.wallpaperSourceItem, 0, 0);
+            const topRight = root.mapToItem(root.wallpaperSourceItem, root.width, 0);
+            const bottomLeft = root.mapToItem(root.wallpaperSourceItem, 0, root.height);
+            const bottomRight = root.mapToItem(root.wallpaperSourceItem, root.width, root.height);
+            left = Math.min(topLeft.x, topRight.x, bottomLeft.x, bottomRight.x);
+            top = Math.min(topLeft.y, topRight.y, bottomLeft.y, bottomRight.y);
+            right = Math.max(topLeft.x, topRight.x, bottomLeft.x, bottomRight.x);
+            bottom = Math.max(topLeft.y, topRight.y, bottomLeft.y, bottomRight.y);
+            displayWidth = root.wallpaperSourceItem.width;
+            displayHeight = root.wallpaperSourceItem.height;
+        } else if (root._useParallax) {
+            left = root.offsetX - root.wallpaperRenderX;
+            top = root.offsetY - root.wallpaperRenderY;
+            right = left + root.width;
+            bottom = top + root.height;
+            displayWidth = root.wallpaperRenderWidth;
+            displayHeight = root.wallpaperRenderHeight;
+        } else {
+            left = root.offsetX;
+            top = root.offsetY;
+            right = left + root.width;
+            bottom = top + root.height;
+            displayWidth = root.sourceWidth;
+            displayHeight = root.sourceHeight;
+        }
+
+        if (![left, top, right, bottom, displayWidth, displayHeight].every(Number.isFinite)
+                || displayWidth <= 0 || displayHeight <= 0 || right <= left || bottom <= top)
+            return null;
+
+        return {
+            rect: Qt.rect(left / displayWidth, top / displayHeight,
+                (right - left) / displayWidth, (bottom - top) / displayHeight),
+            displaySize: Qt.size(displayWidth, displayHeight)
+        };
+    }
+
+    function clearContrastSample() {
+        root._sampledLuminance = -1;
+        root._useDarkSubtext = false;
+    }
+
+    function requestContrastSample() {
+        if (!root.adaptiveContrast)
+            return;
+        if (root.wallpaperPath === "" || root.width <= 0 || root.height <= 0) {
+            root.clearContrastSample();
+            return;
+        }
+        root.ensureContrastClient();
+        const crop = root.normalizedWallpaperCrop();
+        if (root._contrastClientId < 0 || crop === null) {
+            root.clearContrastSample();
+            return;
+        }
+        const rect = crop.rect;
+        const size = crop.displaySize;
+        const signature = `${root.wallpaperPath}:${Math.round(rect.x * size.width / 2)}:${Math.round(rect.y * size.height / 2)}:${Math.round(rect.width * size.width / 2)}:${Math.round(rect.height * size.height / 2)}`;
+        if (signature === root._lastContrastCropSignature)
+            return;
+        root._lastContrastCropSignature = signature;
+        root._lastContrastRequestMs = Date.now();
+        AdaptiveContrast.requestSample(root._contrastClientId, root.wallpaperPath, crop.rect, crop.displaySize);
+    }
+
+    function scheduleContrastSample() {
+        if (!root.adaptiveContrast)
+            return;
+        const remaining = 150 - (Date.now() - root._lastContrastRequestMs);
+        if (remaining <= 0) {
+            contrastThrottle.stop();
+            root.requestContrastSample();
+            return;
+        }
+        contrastThrottle.interval = Math.max(1, Math.ceil(remaining));
+        contrastThrottle.restart();
+    }
+
+    function scheduleContrastAfterBackdropSettles() {
+        if (root.adaptiveContrast)
+            backdropSettle.restart();
+    }
+
+    Component.onCompleted: {
+        root.ensureContrastClient();
+        root.scheduleContrastSample();
+    }
+    Component.onDestruction: {
+        if (root._contrastClientId >= 0)
+            AdaptiveContrast.unregisterClient(root._contrastClientId);
+    }
+    onAdaptiveContrastChanged: {
+        if (adaptiveContrast) {
+            root.ensureContrastClient();
+            root.scheduleContrastSample();
+        } else {
+            contrastThrottle.stop();
+            root.clearContrastSample();
+        }
+    }
+    onWallpaperPathChanged: {
+        root._sampledLuminance = -1;
+        root._lastContrastRequestMs = 0;
+        root._lastContrastCropSignature = "";
+        root.scheduleContrastSample();
+    }
+    onWidthChanged: root.scheduleContrastSample()
+    onHeightChanged: root.scheduleContrastSample()
+    onOffsetXChanged: root.scheduleContrastSample()
+    onOffsetYChanged: root.scheduleContrastSample()
+    onHostScaleChanged: root.scheduleContrastSample()
+    onSourceWidthChanged: root.scheduleContrastAfterBackdropSettles()
+    onSourceHeightChanged: root.scheduleContrastAfterBackdropSettles()
+    onWallpaperRenderXChanged: root.scheduleContrastAfterBackdropSettles()
+    onWallpaperRenderYChanged: root.scheduleContrastAfterBackdropSettles()
+    onWallpaperRenderWidthChanged: root.scheduleContrastAfterBackdropSettles()
+    onWallpaperRenderHeightChanged: root.scheduleContrastAfterBackdropSettles()
+
+    Connections {
+        target: root.wallpaperSourceItem
+        enabled: root.adaptiveContrast && root.wallpaperSourceItem !== null
+        function onXChanged() { root.scheduleContrastAfterBackdropSettles(); }
+        function onYChanged() { root.scheduleContrastAfterBackdropSettles(); }
+        function onWidthChanged() { root.scheduleContrastAfterBackdropSettles(); }
+        function onHeightChanged() { root.scheduleContrastAfterBackdropSettles(); }
+    }
+
+    Connections {
+        target: AdaptiveContrast
+        function onSampleReady(clientId, luminance) {
+            if (clientId !== root._contrastClientId)
+                return;
+            if (luminance < 0) {
+                root.clearContrastSample();
+                return;
+            }
+            const scrimOpacity = AdaptiveContrastMath.automaticScrimOpacity(luminance);
+            const effective = AdaptiveContrastMath.effectiveLuminance(luminance, scrimOpacity);
+            root._useDarkSubtext = AdaptiveContrastMath.shouldUseDarkText(effective, root._useDarkSubtext);
+            if (root._sampledLuminance < 0 || Math.abs(luminance - root._sampledLuminance) >= 0.025)
+                root._sampledLuminance = luminance;
+        }
+    }
+
+    Binding {
+        target: root.contrastHost
+        property: "adaptiveSubtextColor"
+        value: root.adaptiveSubtextColor
+        when: root.contrastHost !== null
+        restoreMode: Binding.RestoreBindingOrValue
+    }
+
+    Timer {
+        id: contrastThrottle
+        repeat: false
+        onTriggered: root.requestContrastSample()
+    }
+
+    Timer {
+        id: backdropSettle
+        interval: 250
+        repeat: false
+        onTriggered: root.requestContrastSample()
+    }
 
     // Blur radius ceiling, and how far the blurred layer extends past the widget
     // so the filter has real content to sample at the edges instead of fading
@@ -163,6 +368,16 @@ Item {
                 // widget would defeat the cache sharing and force a re-decode.
                 sourceSize.width: root._backdropDecodeWidth
             }
+        }
+    }
+
+    Rectangle {
+        anchors.fill: parent
+        visible: opacity > 0
+        color: "black"
+        opacity: root.adaptiveContrast ? root.automaticScrimOpacity : 0
+        Behavior on opacity {
+            animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
         }
     }
 
