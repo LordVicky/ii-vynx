@@ -9,6 +9,7 @@ import qs.modules.common
 Singleton {
     id: root
 
+    readonly property bool enabled: Config.options.background.widgets.battery?.showAppleBatteries ?? false
     property int pollingMinutes: 15
     readonly property int refreshInterval: root.pollingMinutes * 60 * 1000
     readonly property int errorRetryInterval: Math.max(30 * 60 * 1000, root.refreshInterval * 2)
@@ -36,7 +37,7 @@ Singleton {
     }
 
     function refresh() {
-        if (refreshProcess.running || root.disconnecting)
+        if (!root.enabled || refreshProcess.running || root.disconnecting)
             return;
         root.refreshing = true;
         refreshProcess.running = true;
@@ -112,18 +113,33 @@ Singleton {
         return merged;
     }
 
+    onEnabledChanged: {
+        if (root.enabled) {
+            root.refresh();
+        } else {
+            root.devices = [];
+            root.state = "disabled";
+            root.refreshing = false;
+        }
+    }
+
     onRefreshIntervalChanged: {
         if (refreshTimer.running)
             refreshTimer.restart();
     }
 
-    Component.onCompleted: root.refresh()
+    Component.onCompleted: {
+        if (root.enabled)
+            root.refresh();
+        else
+            root.state = "disabled";
+    }
 
     Timer {
         id: refreshTimer
         interval: root.state === "error" ? root.errorRetryInterval : root.refreshInterval
         repeat: true
-        running: root.state === "connected" || root.state === "error"
+        running: root.enabled && (root.state === "connected" || root.state === "error")
         onTriggered: root.refresh()
     }
 
