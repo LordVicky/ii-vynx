@@ -6,7 +6,9 @@ trusted session state plus the Apple Account identifier. `status` is fully
 non-interactive: it reuses that session, emits a small normalized JSON payload,
 and exits. `disconnect` removes Vynx's persisted Apple session state.
 
-Secrets are never accepted on command arguments or written into the repository.
+The non-secret polling preference is stored separately under XDG config so
+signing out does not reset it. Secrets are never accepted on command arguments
+or written into the repository.
 """
 
 from __future__ import annotations
@@ -23,10 +25,19 @@ from pathlib import Path
 from typing import Any
 
 MIN_PYICLOUD_VERSION = (2, 6, 5)
+MIN_POLLING_MINUTES = 5
+MAX_POLLING_MINUTES = 180
+DEFAULT_POLLING_MINUTES = 15
+
 STATE_DIR = Path(
     os.environ.get("XDG_STATE_HOME", Path.home() / ".local" / "state")
 ) / "ii-vynx" / "apple"
 ACCOUNT_FILE = STATE_DIR / "account"
+
+CONFIG_DIR = Path(
+    os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")
+) / "ii-vynx"
+SETTINGS_FILE = CONFIG_DIR / "apple-battery.json"
 
 
 class DependencyError(RuntimeError):
@@ -41,6 +52,44 @@ def parse_version(value: str) -> tuple[int, ...]:
             break
         result.append(int(digits))
     return tuple(result)
+
+
+def clamp_polling_minutes(value: Any) -> int:
+    try:
+        minutes = int(value)
+    except (TypeError, ValueError):
+        return DEFAULT_POLLING_MINUTES
+    return max(MIN_POLLING_MINUTES, min(MAX_POLLING_MINUTES, minutes))
+
+
+def ensure_private_dir(path: Path) -> None:
+    path.mkdir(parents=True, exist_ok=True, mode=0o700)
+    try:
+        path.chmod(0o700)
+    except OSError:
+        pass
+
+
+def read_polling_minutes() -> int:
+    try:
+        payload = json.loads(SETTINGS_FILE.read_text(encoding="utf-8"))
+    except (OSError, ValueError, TypeError):
+        return DEFAULT_POLLING_MINUTES
+    return clamp_polling_minutes(payload.get("pollingMinutes"))
+
+
+def write_polling_minutes(value: Any) -> int:
+    minutes = clamp_polling_minutes(value)
+    ensure_private_dir(CONFIG_DIR)
+    SETTINGS_FILE.write_text(
+        json.dumps({"pollingMinutes": minutes}, separators=(",", ":")) + "\n",
+        encoding="utf-8",
+    )
+    try:
+        SETTINGS_FILE.chmod(0o600)
+    except OSError:
+        pass
+    return minutes
 
 
 def pyicloud_service():
@@ -60,11 +109,7 @@ def pyicloud_service():
 
 
 def ensure_state_dir() -> None:
-    STATE_DIR.mkdir(parents=True, exist_ok=True, mode=0o700)
-    try:
-        STATE_DIR.chmod(0o700)
-    except OSError:
-        pass
+    ensure_private_dir(STATE_DIR)
 
 
 def read_account() -> str | None:
@@ -108,6 +153,7 @@ def normalize_charging(value: Any) -> tuple[bool, bool]:
 
 
 def battery_reliable(raw_status: Any, device_status: Any) -> bool:
+    """Reject observations that Find My explicitly makes unavailable-looking."""
     if isinstance(raw_status, str) and raw_status.strip().lower() == "unknown":
         return str(device_status) == "200"
     return True
@@ -162,6 +208,8 @@ def login() -> int:
         print(str(exc), file=sys.stderr)
         return 5
     finally:
+        # Python strings cannot be reliably zeroized, but do not retain the
+        # password reference after authentication completes.
         password = ""
 
 
@@ -173,7 +221,29 @@ def disconnect() -> int:
     except OSError as exc:
         print(f"Unable to remove Apple session state: {exc}", file=sys.stderr)
         return 4
-    print('{"state":"notConfigured","devices":[]}')
+    emit({
+        "state": "notConfigured",
+        "pollingMinutes": read_polling_minutes(),
+        "devices": [],
+    })
+    return 0
+
+
+def set_interval(raw_value: str) -> int:
+    try:
+        requested = int(raw_value)
+    except ValueError:
+        print("Polling interval must be an integer number of minutes.", file=sys.stderr)
+        return 2
+    if not MIN_POLLING_MINUTES <= requested <= MAX_POLLING_MINUTES:
+        print(
+            f"Polling interval must be between {MIN_POLLING_MINUTES} and "
+            f"{MAX_POLLING_MINUTES} minutes.",
+            file=sys.stderr,
+        )
+        return 2
+    minutes = write_polling_minutes(requested)
+    emit({"pollingMinutes": minutes})
     return 0
 
 
@@ -224,16 +294,25 @@ def state_for_exception(exc: Exception) -> str:
 
 
 def status() -> int:
+    polling_minutes = read_polling_minutes()
     apple_id = read_account()
     if not apple_id:
-        emit({"state": "notConfigured", "devices": []})
+        emit({
+            "state": "notConfigured",
+            "pollingMinutes": polling_minutes,
+            "devices": [],
+        })
         return 2
 
     observed_at = int(time.time() * 1000)
     try:
         api = service(apple_id, None)
         if api.requires_2fa:
-            emit({"state": "authenticationRequired", "devices": []})
+            emit({
+                "state": "authenticationRequired",
+                "pollingMinutes": polling_minutes,
+                "devices": [],
+            })
             return 3
 
         devices = []
@@ -245,12 +324,14 @@ def status() -> int:
         emit({
             "state": "connected",
             "observedAt": observed_at,
+            "pollingMinutes": polling_minutes,
             "devices": devices,
         })
         return 0
     except DependencyError as exc:
         emit({
             "state": "dependencyMissing",
+            "pollingMinutes": polling_minutes,
             "error": str(exc),
             "devices": [],
         })
@@ -258,6 +339,7 @@ def status() -> int:
     except Exception as exc:
         emit({
             "state": state_for_exception(exc),
+            "pollingMinutes": polling_minutes,
             "error": type(exc).__name__,
             "devices": [],
         })
@@ -265,15 +347,21 @@ def status() -> int:
 
 
 def main() -> int:
-    if len(sys.argv) != 2 or sys.argv[1] not in {"login", "status", "disconnect"}:
-        print("usage: battery-status.py login | status | disconnect", file=sys.stderr)
-        return 2
+    if len(sys.argv) == 2 and sys.argv[1] in {"login", "status", "disconnect"}:
+        if sys.argv[1] == "login":
+            return login()
+        if sys.argv[1] == "disconnect":
+            return disconnect()
+        return status()
 
-    if sys.argv[1] == "login":
-        return login()
-    if sys.argv[1] == "disconnect":
-        return disconnect()
-    return status()
+    if len(sys.argv) == 3 and sys.argv[1] == "set-interval":
+        return set_interval(sys.argv[2])
+
+    print(
+        "usage: battery-status.py login | status | disconnect | set-interval MINUTES",
+        file=sys.stderr,
+    )
+    return 2
 
 
 if __name__ == "__main__":
