@@ -169,7 +169,8 @@ def normalize_device(device: Any, observed_at: int) -> dict[str, Any] | None:
     if raw_id is None or percentage is None:
         return None
 
-    charging, charging_known = normalize_charging(data.get("batteryStatus"))
+    raw_battery_status = data.get("batteryStatus")
+    charging, charging_known = normalize_charging(raw_battery_status)
     name = data.get("name") or data.get("deviceDisplayName") or "Apple device"
     return {
         "id": stable_id(str(raw_id)),
@@ -177,6 +178,7 @@ def normalize_device(device: Any, observed_at: int) -> dict[str, Any] | None:
         "deviceClass": data.get("deviceClass"),
         "deviceModel": data.get("deviceModel") or data.get("rawDeviceModel"),
         "deviceStatus": data.get("deviceStatus"),
+        "batteryStatusRaw": raw_battery_status,
         "percentage": percentage,
         "charging": charging,
         "chargingKnown": charging_known,
