@@ -4,11 +4,10 @@ import qs.services
 import qs.modules.common
 import qs.modules.common.widgets
 
-ContentSection {
+ColumnLayout {
     id: root
-
-    icon: "devices"
-    title: Translation.tr("Apple devices")
+    Layout.fillWidth: true
+    spacing: 8
 
     function statusText() {
         if (AppleBatteryStatus.refreshing)
@@ -38,6 +37,7 @@ ContentSection {
     }
 
     ContentSubsection {
+        Layout.fillWidth: true
         title: Translation.tr("Apple Account")
 
         ConfigRow {
@@ -103,6 +103,7 @@ ContentSection {
     }
 
     ContentSubsection {
+        Layout.fillWidth: true
         title: Translation.tr("Battery polling")
 
         ConfigSpinBox {
