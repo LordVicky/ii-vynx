@@ -24,8 +24,6 @@ Singleton {
     property list<var> devices: []
     property double lastRefresh: 0
     property double lastAttempt: 0
-    // Unlike lastAttempt, this clock keeps advancing while normal polling is
-    // paused for authentication or Apple terms, so cached values still age out.
     property double freshnessClock: Date.now()
     property bool refreshing: false
     property bool disconnecting: false
@@ -63,9 +61,6 @@ Singleton {
     function disconnect() {
         if (disconnectProcess.running || refreshProcess.running)
             return;
-
-        // Stop presenting cached Apple data immediately. If cleanup fails, the
-        // service enters disconnectError instead of pretending it disconnected.
         root.devices = [];
         root.disconnecting = true;
         disconnectProcess.running = true;
@@ -150,8 +145,6 @@ Singleton {
         onTriggered: root.refresh()
     }
 
-    // Cached observations can remain visible while Apple requires a new sign-in
-    // or terms acceptance. Keep their age moving even though refreshTimer stops.
     Timer {
         id: freshnessTimer
         interval: 60 * 1000
@@ -179,8 +172,6 @@ Singleton {
                 root.lastAttempt = Date.now();
                 root.freshnessClock = root.lastAttempt;
 
-                // A poll can finish after the user disables the Apple source.
-                // Never allow that in-flight result to repopulate disabled devices.
                 if (!root.enabled) {
                     root.devices = [];
                     root.state = "disabled";
