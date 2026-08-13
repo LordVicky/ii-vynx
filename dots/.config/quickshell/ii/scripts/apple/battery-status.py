@@ -106,6 +106,19 @@ def normalize_charging(value: Any) -> tuple[bool, bool]:
     return False, False
 
 
+def battery_reliable(raw_status: Any, device_status: Any) -> bool:
+    """Reject only observations that are explicitly unavailable-looking.
+
+    We deliberately do not assign semantics to Apple's undocumented deviceStatus
+    codes. A 0% reading paired with batteryStatus=Unknown and a non-200 status was
+    observed on a MacBook where Find My did not provide usable battery state, so
+    mark that combination unreliable instead of presenting a likely false 0%.
+    """
+    if isinstance(raw_status, str) and raw_status.strip().lower() == "unknown":
+        return str(device_status) == "200"
+    return True
+
+
 def service(apple_id: str, password: str | None):
     ensure_state_dir()
     return pyicloud_service()(
@@ -170,6 +183,7 @@ def normalize_device(device: Any, observed_at: int) -> dict[str, Any] | None:
         return None
 
     raw_battery_status = data.get("batteryStatus")
+    device_status = data.get("deviceStatus")
     charging, charging_known = normalize_charging(raw_battery_status)
     name = data.get("name") or data.get("deviceDisplayName") or "Apple device"
     return {
@@ -177,8 +191,9 @@ def normalize_device(device: Any, observed_at: int) -> dict[str, Any] | None:
         "name": str(name),
         "deviceClass": data.get("deviceClass"),
         "deviceModel": data.get("deviceModel") or data.get("rawDeviceModel"),
-        "deviceStatus": data.get("deviceStatus"),
+        "deviceStatus": device_status,
         "batteryStatusRaw": raw_battery_status,
+        "batteryReliable": battery_reliable(raw_battery_status, device_status),
         "percentage": percentage,
         "charging": charging,
         "chargingKnown": charging_known,
