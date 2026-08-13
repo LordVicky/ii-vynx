@@ -7,7 +7,6 @@ QtObject {
 
     readonly property bool laptopEnabled: Config.options.background.widgets.battery?.showLaptopBattery ?? true
     readonly property bool bluetoothEnabled: Config.options.background.widgets.battery?.showBluetoothBatteries ?? true
-    readonly property bool appleEnabled: Config.options.background.widgets.battery?.showAppleBatteries ?? false
 
     function appleIcon(deviceClass) {
         switch (String(deviceClass ?? "").toLowerCase()) {
@@ -41,6 +40,9 @@ QtObject {
     }
 
     readonly property var devices: {
+        // lastAttempt is intentionally referenced so stale/expired remote
+        // snapshots are recalculated after every low-frequency Apple poll.
+        const appleClock = AppleBatteryStatus.lastAttempt;
         const result = [];
 
         if (root.laptopEnabled && Battery.available) {
@@ -78,31 +80,29 @@ QtObject {
             }
         }
 
-        if (root.appleEnabled) {
-            const appleDevices = AppleBatteryStatus.devices;
-            for (let i = 0; i < appleDevices.length; ++i) {
-                const device = appleDevices[i];
-                if (AppleBatteryStatus.isExpired(device))
-                    continue;
+        const appleDevices = AppleBatteryStatus.devices;
+        for (let i = 0; i < appleDevices.length; ++i) {
+            const device = appleDevices[i];
+            if (AppleBatteryStatus.isExpired(device))
+                continue;
 
-                // A live local Bluetooth reading is more useful than the same
-                // accessory's remote Find My snapshot. Name matching is kept
-                // deliberately conservative until real payloads are validated.
-                if (root.bluetoothEnabled && root.bluetoothHasSameName(device.name))
-                    continue;
+            // A live local Bluetooth reading is more useful than the same
+            // accessory's remote Find My snapshot. Keep matching conservative
+            // until real device payloads are validated.
+            if (root.bluetoothEnabled && root.bluetoothHasSameName(device.name))
+                continue;
 
-                result.push({
-                    id: device.id,
-                    source: "icloud",
-                    name: device.name || Translation.tr("Apple device"),
-                    icon: root.appleIcon(device.deviceClass),
-                    percentage: Math.max(0, Math.min(1, Number(device.percentage ?? 0))),
-                    charging: device.charging ?? false,
-                    chargingKnown: device.chargingKnown ?? false,
-                    observedAt: device.observedAt ?? AppleBatteryStatus.lastRefresh,
-                    stale: AppleBatteryStatus.isStale(device)
-                });
-            }
+            result.push({
+                id: device.id,
+                source: "icloud",
+                name: device.name || Translation.tr("Apple device"),
+                icon: root.appleIcon(device.deviceClass),
+                percentage: Math.max(0, Math.min(1, Number(device.percentage ?? 0))),
+                charging: device.charging ?? false,
+                chargingKnown: device.chargingKnown ?? false,
+                observedAt: device.observedAt ?? AppleBatteryStatus.lastRefresh,
+                stale: AppleBatteryStatus.isStale(device)
+            });
         }
 
         return result;
