@@ -9,14 +9,18 @@ QtObject {
     readonly property bool bluetoothEnabled: Config.options.background.widgets.battery?.showBluetoothBatteries ?? true
 
     function appleIcon(deviceClass) {
-        switch (String(deviceClass ?? "").toLowerCase()) {
-        case "iphone": return "smartphone";
-        case "ipad": return "tablet_mac";
-        case "watch": return "watch";
-        case "mac": return "laptop_mac";
-        case "airpods": return "headphones";
-        default: return "devices";
-        }
+        const kind = String(deviceClass ?? "").toLowerCase();
+        if (kind === "iphone" || kind.startsWith("iphone"))
+            return "smartphone";
+        if (kind === "ipad" || kind.startsWith("ipad"))
+            return "tablet_mac";
+        if (kind === "watch" || kind.startsWith("watch"))
+            return "watch";
+        if (kind === "mac" || kind.startsWith("macbook") || kind.startsWith("imac") || kind.startsWith("macmini") || kind.startsWith("macpro"))
+            return "laptop_mac";
+        if (kind === "airpods" || kind.startsWith("airpods"))
+            return "headphones";
+        return "devices";
     }
 
     readonly property var devices: {
