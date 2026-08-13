@@ -421,6 +421,8 @@ Singleton {
                         property real blur: 0.6
                         property real scale: 1
                         property bool vertical: false
+                        property string networkMode: "total"
+                        property int pollingInterval: 3000
                     }
                 }
                 property bool animateWallpaperChanges: true

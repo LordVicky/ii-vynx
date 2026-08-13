@@ -27,6 +27,7 @@ Singleton {
     property string cpuModel: "Unknown CPU"
     property string cpuFreq: "-- MHz"
     property string cpuTemp: "--°C"
+    property int resourceWidgetInstances: 0
 
     property string maxAvailableMemoryString: kbToGbString(ResourceUsage.memoryTotal)
     property string maxAvailableSwapString: kbToGbString(ResourceUsage.swapTotal)
@@ -66,7 +67,9 @@ Singleton {
     }
 
 	Timer {
-		interval: Config.options?.resources?.updateInterval ?? 3000
+        interval: root.resourceWidgetInstances > 0
+            ? (Config.options.background.widgets.resources.pollingInterval ?? 3000)
+            : (Config.options?.resources?.updateInterval ?? 3000)
         running: true 
         repeat: true
 		onTriggered: {
