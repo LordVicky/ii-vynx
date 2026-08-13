@@ -4,7 +4,7 @@
 `login` performs interactive authentication once and persists only pyicloud's
 trusted session state plus the Apple Account identifier. `status` is fully
 non-interactive: it reuses that session, emits a small normalized JSON payload,
-and exits.
+and exits. `disconnect` removes Vynx's persisted Apple session state.
 
 Secrets are never accepted on command arguments or written into the repository.
 """
@@ -15,6 +15,7 @@ import getpass
 import hashlib
 import json
 import os
+import shutil
 import sys
 import time
 from importlib.metadata import PackageNotFoundError, version
@@ -107,13 +108,6 @@ def normalize_charging(value: Any) -> tuple[bool, bool]:
 
 
 def battery_reliable(raw_status: Any, device_status: Any) -> bool:
-    """Reject only observations that are explicitly unavailable-looking.
-
-    We deliberately do not assign semantics to Apple's undocumented deviceStatus
-    codes. A 0% reading paired with batteryStatus=Unknown and a non-200 status was
-    observed on a MacBook where Find My did not provide usable battery state, so
-    mark that combination unreliable instead of presenting a likely false 0%.
-    """
     if isinstance(raw_status, str) and raw_status.strip().lower() == "unknown":
         return str(device_status) == "200"
     return True
@@ -168,9 +162,19 @@ def login() -> int:
         print(str(exc), file=sys.stderr)
         return 5
     finally:
-        # Python cannot guarantee zeroization of immutable strings, but dropping
-        # references promptly avoids retaining secrets beyond authentication.
         password = ""
+
+
+def disconnect() -> int:
+    try:
+        shutil.rmtree(STATE_DIR)
+    except FileNotFoundError:
+        pass
+    except OSError as exc:
+        print(f"Unable to remove Apple session state: {exc}", file=sys.stderr)
+        return 4
+    print('{"state":"notConfigured","devices":[]}')
+    return 0
 
 
 def normalize_device(device: Any, observed_at: int) -> dict[str, Any] | None:
@@ -261,12 +265,14 @@ def status() -> int:
 
 
 def main() -> int:
-    if len(sys.argv) != 2 or sys.argv[1] not in {"login", "status"}:
-        print("usage: battery-status.py login | status", file=sys.stderr)
+    if len(sys.argv) != 2 or sys.argv[1] not in {"login", "status", "disconnect"}:
+        print("usage: battery-status.py login | status | disconnect", file=sys.stderr)
         return 2
 
     if sys.argv[1] == "login":
         return login()
+    if sys.argv[1] == "disconnect":
+        return disconnect()
     return status()
 
 
