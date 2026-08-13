@@ -19,7 +19,6 @@ import qs.modules.ii.background.widgets
 import qs.modules.ii.background.widgets.clock
 import qs.modules.ii.background.widgets.weather
 import qs.modules.ii.background.widgets.media
-import qs.modules.ii.background.widgets.battery
 
 Variants {
     id: root
@@ -472,17 +471,6 @@ Variants {
                         wallpaperScale: bgRoot.effectiveWallpaperScale
                         wallpaperSafetyTriggered: bgRoot.wallpaperSafetyTriggered
                         isCovered: bgRoot.isCovered
-                    }
-                }
-
-                FadeLoader {
-                    shown: BatteryWidgetRuntimeConfig.ready
-                    sourceComponent: BatteryWidget {
-                        screenWidth: bgRoot.screen.width
-                        screenHeight: bgRoot.screen.height
-                        scaledScreenWidth: bgRoot.screen.width / bgRoot.effectiveWallpaperScale
-                        scaledScreenHeight: bgRoot.screen.height / bgRoot.effectiveWallpaperScale
-                        wallpaperScale: bgRoot.effectiveWallpaperScale
                     }
                 }
 
