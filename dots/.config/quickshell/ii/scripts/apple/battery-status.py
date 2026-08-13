@@ -176,6 +176,7 @@ def normalize_device(device: Any, observed_at: int) -> dict[str, Any] | None:
         "name": str(name),
         "deviceClass": data.get("deviceClass"),
         "deviceModel": data.get("deviceModel") or data.get("rawDeviceModel"),
+        "deviceStatus": data.get("deviceStatus"),
         "percentage": percentage,
         "charging": charging,
         "chargingKnown": charging_known,
