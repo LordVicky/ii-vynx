@@ -24,6 +24,9 @@ Singleton {
     property list<var> devices: []
     property double lastRefresh: 0
     property double lastAttempt: 0
+    // Unlike lastAttempt, this clock keeps advancing while normal polling is
+    // paused for authentication or Apple terms, so cached values still age out.
+    property double freshnessClock: Date.now()
     property bool refreshing: false
     property bool disconnecting: false
 
@@ -60,6 +63,10 @@ Singleton {
     function disconnect() {
         if (disconnectProcess.running || refreshProcess.running)
             return;
+
+        // Stop presenting cached Apple data immediately. If cleanup fails, the
+        // service enters disconnectError instead of pretending it disconnected.
+        root.devices = [];
         root.disconnecting = true;
         disconnectProcess.running = true;
     }
@@ -67,7 +74,7 @@ Singleton {
     function age(observedAt) {
         if (!observedAt)
             return Number.POSITIVE_INFINITY;
-        return Math.max(0, root.lastAttempt - observedAt);
+        return Math.max(0, root.freshnessClock - observedAt);
     }
 
     function isStale(device) {
@@ -76,6 +83,17 @@ Singleton {
 
     function isExpired(device) {
         return root.age(device?.observedAt) >= root.expireAfter;
+    }
+
+    function pruneExpiredDevices() {
+        const kept = [];
+        for (let i = 0; i < root.devices.length; ++i) {
+            const device = root.devices[i];
+            if (!root.isExpired(device))
+                kept.push(device);
+        }
+        if (kept.length !== root.devices.length)
+            root.devices = kept;
     }
 
     function mergeDevices(nextDevices) {
@@ -117,6 +135,7 @@ Singleton {
     }
 
     Component.onCompleted: {
+        root.freshnessClock = Date.now();
         if (root.enabled)
             root.refresh();
         else
@@ -129,6 +148,19 @@ Singleton {
         repeat: true
         running: root.enabled && (root.state === "connected" || root.state === "error")
         onTriggered: root.refresh()
+    }
+
+    // Cached observations can remain visible while Apple requires a new sign-in
+    // or terms acceptance. Keep their age moving even though refreshTimer stops.
+    Timer {
+        id: freshnessTimer
+        interval: 60 * 1000
+        repeat: true
+        running: root.devices.length > 0
+        onTriggered: {
+            root.freshnessClock = Date.now();
+            root.pruneExpiredDevices();
+        }
     }
 
     Process {
@@ -145,6 +177,7 @@ Singleton {
             onStreamFinished: {
                 root.refreshing = false;
                 root.lastAttempt = Date.now();
+                root.freshnessClock = root.lastAttempt;
 
                 // A poll can finish after the user disables the Apple source.
                 // Never allow that in-flight result to repopulate disabled devices.
@@ -187,10 +220,31 @@ Singleton {
         stdout: StdioCollector {
             onStreamFinished: {
                 root.disconnecting = false;
-                root.devices = [];
-                root.lastRefresh = 0;
                 root.lastAttempt = Date.now();
-                root.state = root.enabled ? "notConfigured" : "disabled";
+                root.freshnessClock = root.lastAttempt;
+
+                if (!root.enabled) {
+                    root.state = "disabled";
+                    return;
+                }
+
+                if (!text.length) {
+                    root.state = "disconnectError";
+                    return;
+                }
+
+                try {
+                    const payload = JSON.parse(text);
+                    if (payload.state !== "notConfigured") {
+                        root.state = "disconnectError";
+                        return;
+                    }
+                    root.lastRefresh = 0;
+                    root.state = "notConfigured";
+                } catch (error) {
+                    root.state = "disconnectError";
+                    console.warn(`[AppleBatteryStatus] Invalid disconnect response: ${error.message}`);
+                }
             }
         }
     }
