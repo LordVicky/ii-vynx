@@ -30,3 +30,15 @@ test("popup sizing and placement use effective content", () => {
     assert.match(source, /root\.effectiveContentItem\?\.implicitHeight/);
     assert.match(source, /root\.effectiveContentItem\.parent = contentContainer/);
 });
+
+test("weather forecast work exists only inside lazy popup content", () => {
+    const source = read("modules/ii/bar/weather/WeatherPopup.qml");
+    assert.match(source, /lazyContent:\s*Component\s*\{/);
+    const lazyStart = source.indexOf("lazyContent:");
+    assert.ok(lazyStart >= 0, "weather lazy content not found");
+    const lazyBody = source.slice(lazyStart);
+    assert.match(lazyBody, /Component\.onCompleted:\s*fetchForecast\(\)/);
+    assert.match(lazyBody, /Process\s*\{/);
+    assert.match(lazyBody, /HeroCard\s*\{/);
+    assert.doesNotMatch(source.slice(0, lazyStart), /Component\.onCompleted:\s*fetchForecast/);
+});
