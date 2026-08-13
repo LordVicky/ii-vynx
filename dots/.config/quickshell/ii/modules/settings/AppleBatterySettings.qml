@@ -9,6 +9,8 @@ ColumnLayout {
     Layout.fillWidth: true
     spacing: 8
 
+    property int pendingPollingMinutes: AppleBatteryStatus.pollingMinutes
+
     function statusText() {
         if (AppleBatteryStatus.refreshing)
             return Translation.tr("Checking Apple devices…");
@@ -34,6 +36,21 @@ ColumnLayout {
         if (!AppleBatteryStatus.lastRefresh)
             return Translation.tr("Never");
         return Qt.formatDateTime(new Date(AppleBatteryStatus.lastRefresh), "yyyy-MM-dd hh:mm");
+    }
+
+    Timer {
+        id: pollingSaveTimer
+        interval: 350
+        repeat: false
+        onTriggered: AppleBatteryStatus.setPollingMinutes(root.pendingPollingMinutes)
+    }
+
+    Connections {
+        target: AppleBatteryStatus
+        function onPollingMinutesChanged() {
+            if (!pollingSaveTimer.running)
+                root.pendingPollingMinutes = AppleBatteryStatus.pollingMinutes;
+        }
     }
 
     ContentSubsection {
@@ -109,13 +126,15 @@ ColumnLayout {
         ConfigSpinBox {
             icon: "schedule"
             text: Translation.tr("Polling interval (minutes)")
-            value: AppleBatteryStatus.pollingMinutes
+            value: root.pendingPollingMinutes
             from: 5
             to: 180
             stepSize: 5
             onValueChanged: {
-                if (value !== AppleBatteryStatus.pollingMinutes)
-                    AppleBatteryStatus.setPollingMinutes(value);
+                if (value === root.pendingPollingMinutes)
+                    return;
+                root.pendingPollingMinutes = value;
+                pollingSaveTimer.restart();
             }
         }
 
