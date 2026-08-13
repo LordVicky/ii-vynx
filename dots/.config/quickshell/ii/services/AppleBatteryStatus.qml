@@ -44,6 +44,31 @@ Singleton {
         return root.age(device?.observedAt) >= root.expireAfter;
     }
 
+    function mergeDevices(nextDevices) {
+        const next = nextDevices ?? [];
+        const merged = [];
+        const seen = {};
+
+        for (let i = 0; i < next.length; ++i) {
+            const device = next[i];
+            if (!device?.id)
+                continue;
+            seen[device.id] = true;
+            merged.push(device);
+        }
+
+        // Find My may omit a sleeping/offline device from one successful
+        // response. Keep the previous observation until its normal expiry.
+        for (let i = 0; i < root.devices.length; ++i) {
+            const device = root.devices[i];
+            if (!device?.id || seen[device.id] || root.isExpired(device))
+                continue;
+            merged.push(device);
+        }
+
+        return merged;
+    }
+
     Component.onCompleted: root.refresh()
 
     Timer {
@@ -71,7 +96,7 @@ Singleton {
                     const payload = JSON.parse(text);
                     root.state = payload.state ?? "error";
                     if (root.state === "connected") {
-                        root.devices = payload.devices ?? [];
+                        root.devices = root.mergeDevices(payload.devices);
                         root.lastRefresh = payload.observedAt ?? root.lastAttempt;
                     }
                     // Preserve the last successful in-memory snapshot on
