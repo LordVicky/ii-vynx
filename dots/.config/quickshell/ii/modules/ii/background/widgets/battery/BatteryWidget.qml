@@ -27,10 +27,14 @@ AbstractBackgroundWidget {
 
     BatteryDevices { id: batteryDevices }
 
-    TapHandler {
-        acceptedButtons: Qt.LeftButton
-        gesturePolicy: TapHandler.ReleaseWithinBounds
-        onTapped: AppleBatteryStatus.refresh()
+    // AbstractWidget is already a MouseArea. Listen to that click instead of
+    // stacking a TapHandler on top of its drag handler, which can lose the tap.
+    Connections {
+        target: root
+        function onClicked(mouse) {
+            if (mouse.button === Qt.LeftButton)
+                AppleBatteryStatus.refresh();
+        }
     }
 
     readonly property int rowHeight: 36
@@ -132,9 +136,6 @@ AbstractBackgroundWidget {
         if (deviceModel.count === 0)
             return "";
 
-        // A cached remote observation should not steal compact mode from a
-        // fresh local/Bluetooth/Find My reading. Fall back to stale entries
-        // only when every available battery observation is stale.
         let best = null;
         for (let i = 0; i < deviceModel.count; ++i) {
             const candidate = deviceModel.get(i);
