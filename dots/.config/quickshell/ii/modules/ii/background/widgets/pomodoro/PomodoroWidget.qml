@@ -45,14 +45,15 @@ AbstractBackgroundWidget {
 
         ColumnLayout {
             anchors.fill: parent
-            spacing: 6
+            spacing: card.scaled(6)
 
-            StyledText {
+            TransformSafeText {
                 Layout.fillWidth: true
                 horizontalAlignment: Text.AlignHCenter
                 text: root.phaseLabel
-                font.pixelSize: Appearance.font.pixelSize.smaller
-                font.weight: Font.DemiBold
+                basePixelSize: Appearance.font.pixelSize.smaller
+                scaleFactor: root.widgetScale
+                requestedWeight: Font.DemiBold
                 color: root.phaseColor
             }
 
@@ -63,24 +64,25 @@ AbstractBackgroundWidget {
                 CircularProgress {
                     anchors.centerIn: parent
                     implicitSize: Math.min(parent.width, parent.height)
-                    lineWidth: 6
+                    lineWidth: card.scaled(6)
                     value: root.progress
                     colPrimary: root.phaseColor
                     colSecondary: Appearance.colors.colSecondaryContainer
                 }
 
-                StyledText {
+                TransformSafeText {
                     anchors.centerIn: parent
                     text: root.formatTime(root.secondsLeft)
-                    font.pixelSize: Appearance.font.pixelSize.huge
-                    font.weight: Font.DemiBold
+                    basePixelSize: Appearance.font.pixelSize.huge
+                    scaleFactor: root.widgetScale
+                    requestedWeight: Font.DemiBold
                     color: Appearance.colors.colOnLayer0
                 }
             }
 
             RowLayout {
                 Layout.alignment: Qt.AlignHCenter
-                spacing: 10
+                spacing: card.scaled(10)
 
                 PomodoroButton {
                     icon: TimerService.pomodoroRunning ? "pause" : "play_arrow"
@@ -90,11 +92,12 @@ AbstractBackgroundWidget {
                     icon: "restart_alt"
                     onTriggered: TimerService.resetPomodoro()
                 }
-                StyledText {
+                TransformSafeText {
                     Layout.alignment: Qt.AlignVCenter
                     text: Translation.tr("Cycle %1/%2").arg(TimerService.pomodoroCycle + 1).arg(TimerService.cyclesBeforeLongBreak)
-                    font.pixelSize: Appearance.font.pixelSize.smallest
-                    color: Appearance.colors.colSubtext
+                    basePixelSize: Appearance.font.pixelSize.smallest
+                    scaleFactor: root.widgetScale
+                    color: root.adaptiveSubtextColor
                 }
             }
         }
@@ -105,15 +108,16 @@ AbstractBackgroundWidget {
         property string icon: ""
         signal triggered
 
-        implicitWidth: 30
-        implicitHeight: 30
-        radius: Appearance.rounding?.full ?? 15
+        implicitWidth: card.scaled(30)
+        implicitHeight: card.scaled(30)
+        radius: card.scaled(Appearance.rounding?.full ?? 15)
         color: buttonArea.containsMouse ? Appearance.colors.colPrimaryContainerHover : Appearance.colors.colPrimaryContainer
 
-        MaterialSymbol {
+        TransformSafeSymbol {
             anchors.centerIn: parent
             text: button.icon
-            iconSize: Appearance.font.pixelSize.normal
+            baseIconSize: Appearance.font.pixelSize.normal
+            scaleFactor: root.widgetScale
             color: Appearance.colors.colOnPrimaryContainer
         }
 

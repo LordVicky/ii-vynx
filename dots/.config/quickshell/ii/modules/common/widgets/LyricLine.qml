@@ -29,6 +29,7 @@ Item {
     property real currentLyricsSize: defaultLyricsSize
 
     property bool changeTextWeight: false
+    property int textRenderType: Text.NativeRendering
 
     StyledText {
         id: lyricText
@@ -43,6 +44,7 @@ Item {
         visible: !lyricLineItem.reallyUseGradient
         wrapMode: Text.Wrap
         maximumLineCount: 2
+        renderType: lyricLineItem.textRenderType
     }
 
     Item {
@@ -77,6 +79,7 @@ Item {
             elide: Text.ElideRight
             wrapMode: Text.Wrap
             maximumLineCount: 2
+            renderType: lyricLineItem.textRenderType
         }
     }
 }

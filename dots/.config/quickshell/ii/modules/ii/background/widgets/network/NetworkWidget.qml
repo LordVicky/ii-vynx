@@ -73,22 +73,24 @@ AbstractBackgroundWidget {
 
         ColumnLayout {
             anchors.fill: parent
-            spacing: 6
+            spacing: card.scaled(6)
 
             RowLayout {
                 Layout.fillWidth: true
-                spacing: 8
+                spacing: card.scaled(8)
 
-                MaterialSymbol {
+                TransformSafeSymbol {
                     text: "swap_vert"
-                    iconSize: Appearance.font.pixelSize.large
+                    baseIconSize: Appearance.font.pixelSize.large
+                    scaleFactor: root.widgetScale
                     color: Appearance.colors.colPrimary
                 }
-                StyledText {
+                TransformSafeText {
                     Layout.fillWidth: true
                     text: Translation.tr("Network")
-                    font.pixelSize: Appearance.font.pixelSize.normal
-                    font.weight: Font.DemiBold
+                    basePixelSize: Appearance.font.pixelSize.normal
+                    scaleFactor: root.widgetScale
+                    requestedWeight: Font.DemiBold
                     color: Appearance.colors.colOnLayer0
                 }
             }
@@ -113,12 +115,14 @@ AbstractBackgroundWidget {
                     values: root.downNormalised
                     color: Appearance.colors.colPrimary
                     fillOpacity: 0.35
+                    lineWidth: card.scaled(2)
                 }
                 Graph {
                     anchors.fill: parent
                     values: root.upNormalised
                     color: Appearance.colors.colTertiary
                     fillOpacity: 0.2
+                    lineWidth: card.scaled(2)
                 }
             }
         }
@@ -131,17 +135,19 @@ AbstractBackgroundWidget {
         property string label: ""
 
         Layout.fillWidth: true
-        spacing: 6
+        spacing: card.scaled(6)
 
-        MaterialSymbol {
+        TransformSafeSymbol {
             text: speedRow.icon
-            iconSize: Appearance.font.pixelSize.smaller
+            baseIconSize: Appearance.font.pixelSize.smaller
+            scaleFactor: root.widgetScale
             color: speedRow.iconColor
         }
-        StyledText {
+        TransformSafeText {
             Layout.fillWidth: true
             text: speedRow.label
-            font.pixelSize: Appearance.font.pixelSize.smaller
+            basePixelSize: Appearance.font.pixelSize.smaller
+            scaleFactor: root.widgetScale
             color: Appearance.colors.colOnLayer0
         }
     }

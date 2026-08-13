@@ -33,22 +33,24 @@ AbstractBackgroundWidget {
 
         ColumnLayout {
             anchors.fill: parent
-            spacing: 4
+            spacing: card.scaled(4)
 
             RowLayout {
                 Layout.fillWidth: true
-                spacing: 6
+                spacing: card.scaled(6)
 
-                MaterialSymbol {
+                TransformSafeSymbol {
                     text: "lyrics"
-                    iconSize: Appearance.font.pixelSize.normal
+                    baseIconSize: Appearance.font.pixelSize.normal
+                    scaleFactor: root.widgetScale
                     color: Appearance.colors.colPrimary
                 }
-                StyledText {
+                TransformSafeText {
                     Layout.fillWidth: true
                     text: MprisController.activePlayer?.trackTitle || Translation.tr("Nothing playing")
-                    font.pixelSize: Appearance.font.pixelSize.smaller
-                    font.weight: Font.DemiBold
+                    basePixelSize: Appearance.font.pixelSize.smaller
+                    scaleFactor: root.widgetScale
+                    requestedWeight: Font.DemiBold
                     color: Appearance.colors.colOnLayer0
                     elide: Text.ElideRight
                 }
@@ -61,11 +63,12 @@ AbstractBackgroundWidget {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 halfVisibleLines: 1
-                defaultLyricsSize: Appearance.font.pixelSize.normal
-                rowHeight: Math.max(24, Math.floor(height / 3))
+                defaultLyricsSize: Appearance.font.pixelSize.normal * root.widgetScale
+                rowHeight: Math.max(card.scaled(24), Math.floor(height / 3))
+                textRenderType: Text.QtRendering
             }
 
-            StyledText {
+            TransformSafeText {
                 Layout.fillWidth: true
                 Layout.fillHeight: !root.hasLyrics
                 visible: !root.hasLyrics
@@ -73,8 +76,9 @@ AbstractBackgroundWidget {
                 verticalAlignment: Text.AlignVCenter
                 wrapMode: Text.WordWrap
                 text: LyricsService.statusText || Translation.tr("No synced lyrics")
-                font.pixelSize: Appearance.font.pixelSize.smaller
-                color: Appearance.colors.colSubtext
+                basePixelSize: Appearance.font.pixelSize.smaller
+                scaleFactor: root.widgetScale
+                color: root.adaptiveSubtextColor
             }
         }
     }

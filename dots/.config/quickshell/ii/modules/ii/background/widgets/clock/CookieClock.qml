@@ -14,12 +14,13 @@ import qs.modules.ii.background.widgets.clock.minuteMarks
 
 Item {
     id: root
+    property real uiScale: 1
 
     readonly property string clockStyle: Config.options.background.widgets.clock.style
 
     property bool isCovered: false
 
-    property real implicitSize: 230
+    property real implicitSize: 230 * uiScale
 
     property color colShadow: Appearance.colors.colShadow
     property color colBackground: Appearance.colors.colPrimaryContainer
@@ -141,7 +142,7 @@ Item {
         anchors.centerIn: parent
         shown: Config.options.background.widgets.clock.cookie.hourMarks
         sourceComponent: HourMarks {
-            implicitSize: 135 * (1.75 - 0.75 * hourMarksLoader.opacity)
+            implicitSize: 135 * root.uiScale * (1.75 - 0.75 * hourMarksLoader.opacity)
             color: root.colOnBackground
             colOnBackground: ColorUtils.mix(root.colBackgroundInfo, root.colOnBackground, 0.5)
         }
@@ -152,13 +153,10 @@ Item {
         id: timeColumnLoader
         anchors.centerIn: parent
         shown: Config.options.background.widgets.clock.cookie.timeIndicators
-        scale: 1.4 - 0.4 * timeColumnLoader.shown
-        Behavior on scale {
-            animation: Appearance.animation.elementResize.numberAnimation.createObject(this)
-        }
 
         sourceComponent: TimeColumn {
             color: root.colBackgroundInfo
+            uiScale: root.uiScale * (1.4 - 0.4 * timeColumnLoader.shown)
         }
     }
 
@@ -210,7 +208,7 @@ Item {
         shown: Config.options.background.widgets.clock.cookie.minuteHandStyle !== "bold"
         sourceComponent: Rectangle {
             color: Config.options.background.widgets.clock.cookie.minuteHandStyle === "medium" ? root.colBackground : root.colMinuteHand
-            implicitWidth: 6
+            implicitWidth: 6 * root.uiScale
             implicitHeight: implicitWidth
             radius: width / 2
         }

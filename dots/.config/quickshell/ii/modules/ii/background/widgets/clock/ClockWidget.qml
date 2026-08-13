@@ -20,8 +20,10 @@ AbstractBackgroundWidget {
     property real dragScale: -1
     readonly property real widgetScale: dragScale >= 0 ? dragScale : (Config.options.background.widgets.clock.scale ?? 1)
 
-    implicitHeight: scaleWrapper.implicitHeight * root.widgetScale
-    implicitWidth: scaleWrapper.implicitWidth * root.widgetScale
+    function scaled(value) { return value * root.widgetScale }
+
+    implicitHeight: scaleWrapper.implicitHeight
+    implicitWidth: scaleWrapper.implicitWidth
 
     readonly property string clockStyle: GlobalStates.screenLocked ? Config.options.background.widgets.clock.styleLocked : Config.options.background.widgets.clock.style
     readonly property bool forceCenter: (GlobalStates.screenLocked && Config.options.lock.centerClock)
@@ -49,20 +51,20 @@ AbstractBackgroundWidget {
         implicitHeight: contentColumn.implicitHeight
         width: implicitWidth
         height: implicitHeight
-        transformOrigin: Item.TopLeft
-        scale: root.widgetScale
-        Behavior on scale { animation: Appearance.animation.elementResize.numberAnimation.createObject(this) }
+        Behavior on width { animation: Appearance.animation.elementResize.numberAnimation.createObject(this) }
+        Behavior on height { animation: Appearance.animation.elementResize.numberAnimation.createObject(this) }
 
         // Clock styles (cookie/digital/pixel) draw their own shapes/glyphs directly on
         // the wallpaper with no card behind them. Like media, the frosted backing
         // plate is additive here: invisible at blur = 0, fading in as blur increases.
         WidgetBlurBackground {
+            contrastHost: root
             anchors.centerIn: parent
-            width: contentColumn.implicitWidth + 40
-            height: contentColumn.implicitHeight + 32
+            width: contentColumn.implicitWidth + root.scaled(40)
+            height: contentColumn.implicitHeight + root.scaled(32)
             visible: root.blur > 0.01
             opacity: root.blur
-            cornerRadius: Appearance.rounding?.verylarge ?? 30
+            cornerRadius: root.scaled(Appearance.rounding?.verylarge ?? 30)
             blur: root.blur
             wallpaperPath: root.wallpaperPath
             sourceWidth: root.scaledScreenWidth
@@ -81,7 +83,7 @@ AbstractBackgroundWidget {
         Column {
             id: contentColumn
             anchors.centerIn: parent
-            spacing: 10
+            spacing: root.scaled(10)
 
             FadeLoader {
                 id: cookieClockLoader
@@ -89,15 +91,16 @@ AbstractBackgroundWidget {
                 shown: root.clockStyle === "cookie" && (root.shouldShow)
                 fade: false
                 sourceComponent: Column {
-                    spacing: 10
+                    spacing: root.scaled(10)
                     CookieClock {
                         anchors.horizontalCenter: parent.horizontalCenter
                         isCovered: root.isCovered
+                        uiScale: root.widgetScale
                     }
                     FadeLoader {
                         anchors.horizontalCenter: parent.horizontalCenter
                         shown: Config.options.background.widgets.clock.quote.enable && Config.options.background.widgets.clock.quote.text !== ""
-                        sourceComponent: CookieQuote {}
+                        sourceComponent: CookieQuote { uiScale: root.widgetScale }
                     }
                 }
             }
@@ -108,6 +111,7 @@ AbstractBackgroundWidget {
                 shown: root.clockStyle === "digital" && (root.shouldShow)
                 fade: false
                 sourceComponent: DigitalClock {
+                    uiScale: root.widgetScale
                     colText: root.colText
                     colTextSecondary: root.colTextSecondary
                     colTextTertiary: root.colTextTertiary
@@ -120,7 +124,7 @@ AbstractBackgroundWidget {
                 anchors.horizontalCenter: parent.horizontalCenter
                 shown: root.clockStyle === "pixel" && (root.shouldShow)
                 fade: false
-                sourceComponent: PixelClock {}
+                sourceComponent: PixelClock { uiScale: root.widgetScale }
             }
             StatusRow {
                 anchors.horizontalCenter: parent.horizontalCenter
@@ -131,7 +135,7 @@ AbstractBackgroundWidget {
     WidgetResizeHandle {
         hostWidget: root
         currentScale: root.widgetScale
-        baseSize: scaleWrapper.implicitWidth
+        baseSize: contentColumn.implicitWidth / Math.max(root.widgetScale, 0.01)
         onRequestScale: (v) => root.dragScale = v
         onRequestCommit: (v) => { Config.options.background.widgets.clock.scale = v; root.dragScale = -1 }
     }
@@ -151,9 +155,9 @@ AbstractBackgroundWidget {
             clip: true
             opacity: (safetyStatusText.shown || lockStatusText.shown) ? 1 : 0
             visible: opacity > 0
-            implicitHeight: statusTextRow.implicitHeight + 5 * 2
-            implicitWidth: statusTextRow.implicitWidth + 5 * 2
-            radius: Appearance.rounding.small
+            implicitHeight: statusTextRow.implicitHeight + root.scaled(5 * 2)
+            implicitWidth: statusTextRow.implicitWidth + root.scaled(5 * 2)
+            radius: root.scaled(Appearance.rounding.small)
             color: ColorUtils.transparentize(Appearance.colors.colSecondaryContainer, root.clockStyle === "cookie" ? 0 : 1)
 
             Behavior on implicitWidth {
@@ -169,10 +173,10 @@ AbstractBackgroundWidget {
             RowLayout {
                 id: statusTextRow
                 anchors.centerIn: parent
-                spacing: 14
+                spacing: root.scaled(14)
                 Item {
                     Layout.fillWidth: root.textHorizontalAlignment !== Text.AlignLeft
-                    implicitWidth: 1
+                    implicitWidth: root.scaled(1)
                 }
                 ClockStatusText {
                     id: safetyStatusText
@@ -188,7 +192,7 @@ AbstractBackgroundWidget {
                 }
                 Item {
                     Layout.fillWidth: root.textHorizontalAlignment !== Text.AlignRight
-                    implicitWidth: 1
+                    implicitWidth: root.scaled(1)
                 }
             }
         }
@@ -205,11 +209,12 @@ AbstractBackgroundWidget {
         Behavior on opacity {
             animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
         }
-        spacing: 4
+        spacing: root.scaled(4)
         MaterialSymbol {
             id: statusIconWidget
             anchors.verticalCenter: statusTextRow.verticalCenter
-            iconSize: Appearance.font.pixelSize.huge
+            iconSize: root.scaled(Appearance.font.pixelSize.huge)
+            renderType: Text.QtRendering
             color: statusTextRow.textColor
             style: Text.Raised
             styleColor: Appearance.colors.colShadow
@@ -220,11 +225,12 @@ AbstractBackgroundWidget {
             horizontalAlignment: root.textHorizontalAlignment
             anchors.verticalCenter: statusTextRow.verticalCenter
             font {
-                pixelSize: Appearance.font.pixelSize.large
+                pixelSize: root.scaled(Appearance.font.pixelSize.large)
                 weight: Font.Normal
             }
             style: Text.Raised
             styleColor: Appearance.colors.colShadow
+            renderType: Text.QtRendering
         }
     }
 }

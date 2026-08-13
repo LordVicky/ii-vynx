@@ -25,9 +25,10 @@ AbstractBackgroundWidget {
     // would break that binding permanently.
     property real dragScale: -1
     readonly property real widgetScale: dragScale >= 0 ? dragScale : (Config.options.background.widgets.resources.scale ?? 1)
+    function scaled(value) { return value * root.widgetScale; }
 
-    implicitWidth: scaleWrapper.implicitWidth * root.widgetScale
-    implicitHeight: scaleWrapper.implicitHeight * root.widgetScale
+    implicitWidth: scaleWrapper.implicitWidth
+    implicitHeight: scaleWrapper.implicitHeight
 
     component StatCard: Rectangle {
         id: statCard
@@ -38,17 +39,21 @@ AbstractBackgroundWidget {
         property color bgColor: Appearance.colors.colPrimaryContainer
         property color shapeColor: Appearance.colors.colPrimary
 
-        implicitWidth: root.cardWidth
-        implicitHeight: root.cardHeight
-        radius: Appearance.rounding?.verylarge ?? 30
+        implicitWidth: root.scaled(root.cardWidth)
+        implicitHeight: root.scaled(root.cardHeight)
+        radius: root.scaled(Appearance.rounding?.verylarge ?? 30)
         color: root.blur > 0 ? "transparent" : statCard.bgColor
 
         StyledRectangularShadow {
             target: statCard
             z: -2
+            blur: root.scaled(0.9 * Appearance.sizes.elevationMargin)
+            offset: Qt.vector2d(0, root.scaled(1))
+            spread: root.scaled(1)
         }
 
         WidgetBlurBackground {
+            contrastHost: root
             anchors.fill: parent
             visible: root.blur > 0
             z: -1
@@ -72,9 +77,9 @@ AbstractBackgroundWidget {
         ColumnLayout {
             anchors {
                 fill: parent
-                margins: 14
+                margins: root.scaled(14)
             }
-            spacing: -4
+            spacing: root.scaled(-4)
 
             MaterialShapeWrappedMaterialSymbol {
                 Layout.alignment: Qt.AlignRight
@@ -82,27 +87,28 @@ AbstractBackgroundWidget {
                 color: statCard.shapeColor
                 colSymbol: Appearance.colors.colOnPrimary
                 text: statCard.icon
-                iconSize: 18
+                iconSize: root.scaled(18)
                 fill: 1
-                padding: 6
-                implicitWidth: 34
-                implicitHeight: 34
+                padding: root.scaled(6)
+                implicitWidth: root.scaled(34)
+                implicitHeight: root.scaled(34)
             }
 
             Item { Layout.fillHeight: true }
 
             StyledText {
                 text: statCard.value
-                font.pixelSize: Appearance.font.pixelSize.hugeass
+                font.pixelSize: root.scaled(Appearance.font.pixelSize.hugeass)
                 font.weight: Font.Bold
+                renderType: Text.QtRendering
                 color: Appearance.colors.colOnPrimaryContainer
             }
 
             StyledText {
                 text: statCard.label
-                font.pixelSize: Appearance.font.pixelSize.small
-                color: Appearance.colors.colOnPrimaryContainer
-                opacity: 0.6
+                font.pixelSize: root.scaled(Appearance.font.pixelSize.small)
+                renderType: Text.QtRendering
+                color: root.adaptiveSubtextColor
             }
         }
     }
@@ -113,15 +119,14 @@ AbstractBackgroundWidget {
         implicitHeight: row.implicitHeight
         width: implicitWidth
         height: implicitHeight
-        transformOrigin: Item.TopLeft
-        scale: root.widgetScale
-        Behavior on scale { animation: Appearance.animation.elementResize.numberAnimation.createObject(this) }
+        Behavior on width { animation: Appearance.animation.elementResize.numberAnimation.createObject(this) }
+        Behavior on height { animation: Appearance.animation.elementResize.numberAnimation.createObject(this) }
 
     Grid {
         id: row
         columns: root.isVertical ? 1 : 3
         rows: root.isVertical ? 3 : 1
-        spacing: root.cardSpacing
+        spacing: root.scaled(root.cardSpacing)
 
         Behavior on columns {
             NumberAnimation { duration: 300; easing.type: Easing.OutCubic }
@@ -154,14 +159,14 @@ AbstractBackgroundWidget {
     }
     Rectangle {
         id: toggleHandle
-        width: 16
-        height: 16
-        radius: 6
+        width: root.scaled(16)
+        height: root.scaled(16)
+        radius: root.scaled(6)
         color: Appearance.colors.colOnPrimaryContainer
         anchors {
             left: parent.right
             top: parent.top
-            margins: -6
+            margins: root.scaled(-6)
         }
         opacity: root.containsMouse || toggleArea.containsMouse ? 0.7 : 0
         visible: opacity > 0 && !Config.options.background.widgetsLocked
@@ -173,7 +178,8 @@ AbstractBackgroundWidget {
         MaterialSymbol {
             anchors.centerIn: parent
             text: "rotate_right"
-            iconSize: 11
+            iconSize: root.scaled(11)
+            renderType: Text.QtRendering
             color: Appearance.colors.colPrimaryContainer
 
             RotationAnimation on rotation {
@@ -201,7 +207,7 @@ AbstractBackgroundWidget {
     WidgetResizeHandle {
         hostWidget: root
         currentScale: root.widgetScale
-        baseSize: scaleWrapper.implicitWidth
+        baseSize: root.isVertical ? root.cardWidth : root.widgetWidth
         onRequestScale: (v) => root.dragScale = v
         onRequestCommit: (v) => { Config.options.background.widgets.resources.scale = v; root.dragScale = -1 }
     }

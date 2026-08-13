@@ -11,11 +11,12 @@ import qs.modules.ii.background.widgets
 
 Item {
     id: root
+    property real uiScale: 1
 
     readonly property bool isVertical: Config.options.background.widgets.clock.pixel.orientation === "vertical"
 
-    implicitWidth: isVertical ? 276 : 420
-    implicitHeight: isVertical ? 252 : 150
+    implicitWidth: (isVertical ? 276 : 420) * uiScale
+    implicitHeight: (isVertical ? 252 : 150) * uiScale
 
     readonly property string glyphTopLeft: DateTime.digitH0
     readonly property string glyphTopRight: DateTime.digitH1
@@ -75,6 +76,7 @@ Item {
             }
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
+            renderType: Text.QtRendering
         }
 
         Item {

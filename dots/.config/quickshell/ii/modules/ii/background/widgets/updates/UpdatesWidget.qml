@@ -45,33 +45,36 @@ AbstractBackgroundWidget {
 
         RowLayout {
             anchors.fill: parent
-            spacing: 12
+            spacing: card.scaled(12)
 
-            MaterialSymbol {
+            TransformSafeSymbol {
                 text: Updates.available ? "system_update_alt" : "task_alt"
-                iconSize: Appearance.font.pixelSize.hugeass * 1.4
+                baseIconSize: Appearance.font.pixelSize.hugeass * 1.4
+                scaleFactor: root.widgetScale
                 color: root.statusColor
             }
 
             ColumnLayout {
                 Layout.fillWidth: true
-                spacing: 2
+                spacing: card.scaled(2)
 
-                StyledText {
+                TransformSafeText {
                     Layout.fillWidth: true
                     // The icon already carries the "all clear" state, so the big
                     // number only appears when there's actually a count to show.
                     visible: Updates.available
                     text: `${Updates.count}`
-                    font.pixelSize: Appearance.font.pixelSize.hugeass
-                    font.weight: Font.DemiBold
+                    basePixelSize: Appearance.font.pixelSize.hugeass
+                    scaleFactor: root.widgetScale
+                    requestedWeight: Font.DemiBold
                     color: Appearance.colors.colOnLayer0
                 }
-                StyledText {
+                TransformSafeText {
                     Layout.fillWidth: true
                     text: root.statusText
-                    font.pixelSize: Appearance.font.pixelSize.smaller
-                    color: Appearance.colors.colSubtext
+                    basePixelSize: Appearance.font.pixelSize.smaller
+                    scaleFactor: root.widgetScale
+                    color: root.adaptiveSubtextColor
                     wrapMode: Text.WordWrap
                 }
             }

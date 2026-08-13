@@ -6,6 +6,7 @@ import Qt5Compat.GraphicalEffects
 
 Item {
     id: root
+    property real uiScale: 1
 
     readonly property string quoteText: Config.options.background.widgets.clock.quote.text
 
@@ -16,8 +17,8 @@ Item {
         source: quoteBox 
         anchors.fill: quoteBox
         horizontalOffset: 0
-        verticalOffset: 2
-        radius: 12
+        verticalOffset: 2 * root.uiScale
+        radius: 12 * root.uiScale
         samples: radius * 2 + 1
         color: Appearance.colors.colShadow
         transparentBorder: true
@@ -26,20 +27,21 @@ Item {
     Rectangle {
         id: quoteBox
 
-        implicitWidth: quoteRow.implicitWidth + 8 * 2
-        implicitHeight: quoteRow.implicitHeight + 4 * 2
-        radius: Appearance.rounding.small
+        implicitWidth: quoteRow.implicitWidth + 8 * 2 * root.uiScale
+        implicitHeight: quoteRow.implicitHeight + 4 * 2 * root.uiScale
+        radius: Appearance.rounding.small * root.uiScale
         color: Appearance.colors.colSecondaryContainer
 
         Row {
             id: quoteRow
             anchors.centerIn: parent
-            spacing: 4
+            spacing: 4 * root.uiScale
             
             MaterialSymbol {
                 id: quoteIcon
                 anchors.top: parent.top
-                iconSize: Appearance.font.pixelSize.huge
+                iconSize: Appearance.font.pixelSize.huge * root.uiScale
+                renderType: Text.QtRendering
                 text: "format_quote"
                 color: Appearance.colors.colOnSecondaryContainer
             }
@@ -50,9 +52,10 @@ Item {
                 color: Appearance.colors.colOnSecondaryContainer
                 font {
                     family: Appearance.font.family.reading
-                    pixelSize: Appearance.font.pixelSize.large
+                    pixelSize: Appearance.font.pixelSize.large * root.uiScale
                     weight: Font.Normal
                 }
+                renderType: Text.QtRendering
             }
         }
     }

@@ -35,22 +35,24 @@ AbstractBackgroundWidget {
 
         ColumnLayout {
             anchors.fill: parent
-            spacing: 8
+            spacing: card.scaled(8)
 
             RowLayout {
                 Layout.fillWidth: true
-                spacing: 8
+                spacing: card.scaled(8)
 
-                MaterialSymbol {
+                TransformSafeSymbol {
                     text: root.anyActive ? "shield_lock" : "shield"
-                    iconSize: Appearance.font.pixelSize.large
+                    baseIconSize: Appearance.font.pixelSize.large
+                    scaleFactor: root.widgetScale
                     color: root.anyActive ? Appearance.colors.colError : Appearance.colors.colPrimary
                 }
-                StyledText {
+                TransformSafeText {
                     Layout.fillWidth: true
                     text: Translation.tr("Privacy")
-                    font.pixelSize: Appearance.font.pixelSize.normal
-                    font.weight: Font.DemiBold
+                    basePixelSize: Appearance.font.pixelSize.normal
+                    scaleFactor: root.widgetScale
+                    requestedWeight: Font.DemiBold
                     color: Appearance.colors.colOnLayer0
                 }
             }
@@ -77,23 +79,25 @@ AbstractBackgroundWidget {
         property bool active: false
 
         Layout.fillWidth: true
-        spacing: 6
+        spacing: card.scaled(6)
 
-        MaterialSymbol {
+        TransformSafeSymbol {
             text: privacyRow.icon
-            iconSize: Appearance.font.pixelSize.smaller
+            baseIconSize: Appearance.font.pixelSize.smaller
+            scaleFactor: root.widgetScale
             color: privacyRow.active ? Appearance.colors.colError : Appearance.colors.colSubtext
         }
-        StyledText {
+        TransformSafeText {
             Layout.fillWidth: true
             text: privacyRow.label
-            font.pixelSize: Appearance.font.pixelSize.smaller
-            color: privacyRow.active ? Appearance.colors.colOnLayer0 : Appearance.colors.colSubtext
+            basePixelSize: Appearance.font.pixelSize.smaller
+            scaleFactor: root.widgetScale
+            color: privacyRow.active ? Appearance.colors.colOnLayer0 : root.adaptiveSubtextColor
         }
         Rectangle {
-            implicitWidth: 8
-            implicitHeight: 8
-            radius: 4
+            implicitWidth: card.scaled(8)
+            implicitHeight: card.scaled(8)
+            radius: card.scaled(4)
             color: privacyRow.active ? Appearance.colors.colError : Appearance.colors.colOutlineVariant
         }
     }

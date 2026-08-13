@@ -44,56 +44,61 @@ AbstractBackgroundWidget {
 
         ColumnLayout {
             anchors.fill: parent
-            spacing: 8
+            spacing: card.scaled(8)
 
             RowLayout {
                 Layout.fillWidth: true
-                spacing: 8
+                spacing: card.scaled(8)
 
-                MaterialSymbol {
+                TransformSafeSymbol {
                     text: "checklist"
-                    iconSize: Appearance.font.pixelSize.large
+                    baseIconSize: Appearance.font.pixelSize.large
+                    scaleFactor: root.widgetScale
                     color: Appearance.colors.colPrimary
                 }
-                StyledText {
+                TransformSafeText {
                     Layout.fillWidth: true
                     text: Translation.tr("To-do")
-                    font.pixelSize: Appearance.font.pixelSize.normal
-                    font.weight: Font.DemiBold
+                    basePixelSize: Appearance.font.pixelSize.normal
+                    scaleFactor: root.widgetScale
+                    requestedWeight: Font.DemiBold
                     color: Appearance.colors.colOnLayer0
                 }
-                StyledText {
+                TransformSafeText {
                     text: `${root.openTasks.length}`
-                    font.pixelSize: Appearance.font.pixelSize.smaller
-                    color: Appearance.colors.colSubtext
+                    basePixelSize: Appearance.font.pixelSize.smaller
+                    scaleFactor: root.widgetScale
+                    color: root.adaptiveSubtextColor
                 }
             }
 
             StyledListView {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                spacing: 2
+                spacing: card.scaled(2)
                 clip: true
                 model: root.openTasks
 
                 delegate: Item {
                     required property var modelData
                     width: ListView.view.width
-                    implicitHeight: 26
+                    implicitHeight: card.scaled(26)
 
                     RowLayout {
                         anchors.fill: parent
-                        spacing: 6
+                        spacing: card.scaled(6)
 
-                        MaterialSymbol {
+                        TransformSafeSymbol {
                             text: "check_box_outline_blank"
-                            iconSize: Appearance.font.pixelSize.normal
+                            baseIconSize: Appearance.font.pixelSize.normal
+                            scaleFactor: root.widgetScale
                             color: taskArea.containsMouse ? Appearance.colors.colPrimary : Appearance.colors.colSubtext
                         }
-                        StyledText {
+                        TransformSafeText {
                             Layout.fillWidth: true
                             text: modelData.content
-                            font.pixelSize: Appearance.font.pixelSize.smaller
+                            basePixelSize: Appearance.font.pixelSize.smaller
+                            scaleFactor: root.widgetScale
                             color: Appearance.colors.colOnLayer0
                             elide: Text.ElideRight
                         }
@@ -109,21 +114,23 @@ AbstractBackgroundWidget {
                 }
             }
 
-            StyledText {
+            TransformSafeText {
                 Layout.fillWidth: true
                 visible: root.openTasks.length === 0
                 horizontalAlignment: Text.AlignHCenter
                 text: Todo.list.length === 0 ? Translation.tr("No tasks yet") : Translation.tr("All done")
-                font.pixelSize: Appearance.font.pixelSize.smaller
-                color: Appearance.colors.colSubtext
+                basePixelSize: Appearance.font.pixelSize.smaller
+                scaleFactor: root.widgetScale
+                color: root.adaptiveSubtextColor
             }
 
-            StyledText {
+            TransformSafeText {
                 Layout.fillWidth: true
                 visible: root.doneCount > 0
                 text: Translation.tr("%1 completed").arg(root.doneCount)
-                font.pixelSize: Appearance.font.pixelSize.smallest
-                color: Appearance.colors.colSubtext
+                basePixelSize: Appearance.font.pixelSize.smallest
+                scaleFactor: root.widgetScale
+                color: root.adaptiveSubtextColor
             }
         }
     }

@@ -33,22 +33,24 @@ AbstractBackgroundWidget {
 
         ColumnLayout {
             anchors.fill: parent
-            spacing: 8
+            spacing: card.scaled(8)
 
             RowLayout {
                 Layout.fillWidth: true
-                spacing: 8
+                spacing: card.scaled(8)
 
-                MaterialSymbol {
+                TransformSafeSymbol {
                     text: "graphic_eq"
-                    iconSize: Appearance.font.pixelSize.large
+                    baseIconSize: Appearance.font.pixelSize.large
+                    scaleFactor: root.widgetScale
                     color: SongRec.running ? Appearance.colors.colTertiary : Appearance.colors.colPrimary
                 }
-                StyledText {
+                TransformSafeText {
                     Layout.fillWidth: true
                     text: Translation.tr("Recognise")
-                    font.pixelSize: Appearance.font.pixelSize.normal
-                    font.weight: Font.DemiBold
+                    basePixelSize: Appearance.font.pixelSize.normal
+                    scaleFactor: root.widgetScale
+                    requestedWeight: Font.DemiBold
                     color: Appearance.colors.colOnLayer0
                 }
             }
@@ -56,43 +58,47 @@ AbstractBackgroundWidget {
             ColumnLayout {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                spacing: 2
+                spacing: card.scaled(2)
 
-                StyledText {
+                TransformSafeText {
                     Layout.fillWidth: true
                     text: root.hasResult ? SongRec.recognizedTrack.title : SongRec.running ? Translation.tr("Listening…") : Translation.tr("Nothing recognised yet")
-                    font.pixelSize: Appearance.font.pixelSize.smallie
-                    font.weight: Font.DemiBold
+                    basePixelSize: Appearance.font.pixelSize.smallie
+                    scaleFactor: root.widgetScale
+                    requestedWeight: Font.DemiBold
                     color: Appearance.colors.colOnLayer0
                     elide: Text.ElideRight
                 }
-                StyledText {
+                TransformSafeText {
                     Layout.fillWidth: true
                     visible: root.hasResult
                     text: SongRec.recognizedTrack.subtitle
-                    font.pixelSize: Appearance.font.pixelSize.smaller
-                    color: Appearance.colors.colSubtext
+                    basePixelSize: Appearance.font.pixelSize.smaller
+                    scaleFactor: root.widgetScale
+                    color: root.adaptiveSubtextColor
                     elide: Text.ElideRight
                 }
                 Item { Layout.fillHeight: true }
-                StyledText {
+                TransformSafeText {
                     Layout.fillWidth: true
                     text: Translation.tr("Source: %1").arg(SongRec.monitorSourceString)
-                    font.pixelSize: Appearance.font.pixelSize.smallest
-                    color: Appearance.colors.colSubtext
+                    basePixelSize: Appearance.font.pixelSize.smallest
+                    scaleFactor: root.widgetScale
+                    color: root.adaptiveSubtextColor
                 }
             }
 
             Rectangle {
                 Layout.fillWidth: true
-                implicitHeight: 30
-                radius: Appearance.rounding?.small ?? 12
+                implicitHeight: card.scaled(30)
+                radius: card.scaled(Appearance.rounding?.small ?? 12)
                 color: listenArea.containsMouse ? Appearance.colors.colPrimaryContainerHover : Appearance.colors.colPrimaryContainer
 
-                StyledText {
+                TransformSafeText {
                     anchors.centerIn: parent
                     text: SongRec.running ? Translation.tr("Stop") : Translation.tr("Listen")
-                    font.pixelSize: Appearance.font.pixelSize.smaller
+                    basePixelSize: Appearance.font.pixelSize.smaller
+                    scaleFactor: root.widgetScale
                     color: Appearance.colors.colOnPrimaryContainer
                 }
 

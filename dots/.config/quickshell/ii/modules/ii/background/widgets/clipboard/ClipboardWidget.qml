@@ -43,27 +43,30 @@ AbstractBackgroundWidget {
 
         ColumnLayout {
             anchors.fill: parent
-            spacing: 8
+            spacing: card.scaled(8)
 
             RowLayout {
                 Layout.fillWidth: true
-                spacing: 8
+                spacing: card.scaled(8)
 
-                MaterialSymbol {
+                TransformSafeSymbol {
                     text: "content_paste"
-                    iconSize: Appearance.font.pixelSize.large
+                    baseIconSize: Appearance.font.pixelSize.large
+                    scaleFactor: root.widgetScale
                     color: Appearance.colors.colPrimary
                 }
-                StyledText {
+                TransformSafeText {
                     Layout.fillWidth: true
                     text: Translation.tr("Clipboard")
-                    font.pixelSize: Appearance.font.pixelSize.normal
-                    font.weight: Font.DemiBold
+                    basePixelSize: Appearance.font.pixelSize.normal
+                    scaleFactor: root.widgetScale
+                    requestedWeight: Font.DemiBold
                     color: Appearance.colors.colOnLayer0
                 }
-                MaterialSymbol {
+                TransformSafeSymbol {
                     text: "refresh"
-                    iconSize: Appearance.font.pixelSize.normal
+                    baseIconSize: Appearance.font.pixelSize.normal
+                    scaleFactor: root.widgetScale
                     color: refreshArea.containsMouse ? Appearance.colors.colPrimary : Appearance.colors.colSubtext
 
                     MouseArea {
@@ -79,24 +82,25 @@ AbstractBackgroundWidget {
             StyledListView {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                spacing: 3
+                spacing: card.scaled(3)
                 clip: true
                 model: root.recentEntries
 
                 delegate: Rectangle {
                     required property string modelData
                     width: ListView.view.width
-                    implicitHeight: 28
-                    radius: Appearance.rounding?.verysmall ?? 8
+                    implicitHeight: card.scaled(28)
+                    radius: card.scaled(Appearance.rounding?.verysmall ?? 8)
                     color: entryArea.containsMouse ? Appearance.colors.colLayer1Hover : "transparent"
 
-                    StyledText {
+                    TransformSafeText {
                         anchors.fill: parent
-                        anchors.leftMargin: 8
-                        anchors.rightMargin: 8
+                        anchors.leftMargin: card.scaled(8)
+                        anchors.rightMargin: card.scaled(8)
                         verticalAlignment: Text.AlignVCenter
                         text: root.entryLabel(modelData)
-                        font.pixelSize: Appearance.font.pixelSize.smaller
+                        basePixelSize: Appearance.font.pixelSize.smaller
+                        scaleFactor: root.widgetScale
                         color: Appearance.colors.colOnLayer0
                         elide: Text.ElideRight
                     }
@@ -113,13 +117,14 @@ AbstractBackgroundWidget {
                 }
             }
 
-            StyledText {
+            TransformSafeText {
                 Layout.fillWidth: true
                 visible: root.recentEntries.length === 0
                 horizontalAlignment: Text.AlignHCenter
                 text: Translation.tr("Clipboard is empty")
-                font.pixelSize: Appearance.font.pixelSize.smaller
-                color: Appearance.colors.colSubtext
+                basePixelSize: Appearance.font.pixelSize.smaller
+                scaleFactor: root.widgetScale
+                color: root.adaptiveSubtextColor
             }
         }
     }

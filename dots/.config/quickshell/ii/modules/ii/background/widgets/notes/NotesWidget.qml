@@ -19,9 +19,10 @@ AbstractBackgroundWidget {
     // would break that binding permanently.
     property real dragScale: -1
     readonly property real widgetScale: dragScale >= 0 ? dragScale : (Config.options.background.widgets.notes.scale ?? 1)
+    function scaled(value) { return value * root.widgetScale; }
 
-    implicitWidth: scaleWrapper.implicitWidth * root.widgetScale
-    implicitHeight: scaleWrapper.implicitHeight * root.widgetScale
+    implicitWidth: scaleWrapper.implicitWidth
+    implicitHeight: scaleWrapper.implicitHeight
 
     property string mode: "list" // "list" | "edit"
     property var pendingNoteId: null
@@ -63,13 +64,12 @@ AbstractBackgroundWidget {
 
     Item {
         id: scaleWrapper
-        implicitWidth: 276
-        implicitHeight: 252
+        implicitWidth: root.scaled(276)
+        implicitHeight: root.scaled(252)
         width: implicitWidth
         height: implicitHeight
-        transformOrigin: Item.TopLeft
-        scale: root.widgetScale
-        Behavior on scale { animation: Appearance.animation.elementResize.numberAnimation.createObject(this) }
+        Behavior on width { animation: Appearance.animation.elementResize.numberAnimation.createObject(this) }
+        Behavior on height { animation: Appearance.animation.elementResize.numberAnimation.createObject(this) }
 
     Item {
         id: cardWrapper
@@ -97,15 +97,20 @@ AbstractBackgroundWidget {
             }
         }
 
-        StyledDropShadow { target: contentRect }
+        StyledDropShadow {
+            target: contentRect
+            radius: root.scaled(8)
+            samples: Math.max(1, Math.ceil(radius * 2 + 1))
+        }
 
         Rectangle {
             id: contentRect
             anchors.fill: parent
             color: "transparent"
-            radius: Appearance.rounding?.verylarge ?? 30
+            radius: root.scaled(Appearance.rounding?.verylarge ?? 30)
 
             WidgetBlurBackground {
+                contrastHost: root
                 anchors.fill: parent
                 cornerRadius: contentRect.radius
                 blur: root.blur
@@ -126,28 +131,29 @@ AbstractBackgroundWidget {
             // List
             ColumnLayout {
                 id: listPage
-                anchors { fill: parent; margins: 12 }
-                spacing: 10
+                anchors { fill: parent; margins: root.scaled(12) }
+                spacing: root.scaled(10)
                 visible: root.mode === "list"
 
                 RowLayout {
                     Layout.fillWidth: true
-                    spacing: 4
+                    spacing: root.scaled(4)
 
                     StyledText {
-                        Layout.topMargin: -4
-                        Layout.leftMargin: 8
-                        font.pixelSize: Appearance.font.pixelSize.huge
+                        Layout.topMargin: root.scaled(-4)
+                        Layout.leftMargin: root.scaled(8)
+                        font.pixelSize: root.scaled(Appearance.font.pixelSize.huge)
                         font.weight: Font.Medium
+                        renderType: Text.QtRendering
                         color: Appearance.colors.colOnPrimaryContainer
                         text: "Notes"
                     }
                     Item { Layout.fillWidth: true }
 
                     ToolbarPairedFab {
-                        Layout.rightMargin: 4
+                        Layout.rightMargin: root.scaled(4)
                         Layout.alignment: Qt.AlignVCenter
-                        baseSize: 38
+                        baseSize: root.scaled(38)
                         iconText: "add"
                         onClicked: root.openNewNote()
                     }
@@ -158,7 +164,7 @@ AbstractBackgroundWidget {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                     clip: true
-                    spacing: 6
+                    spacing: root.scaled(6)
                     model: Notes.list
 
                     delegate: SwipeDelegate {
@@ -167,7 +173,7 @@ AbstractBackgroundWidget {
                         required property int index
 
                         width: notesListView.width
-                        implicitHeight: 55
+                        implicitHeight: root.scaled(55)
                         padding: 0
                         background: null
                         clip: true
@@ -188,7 +194,7 @@ AbstractBackgroundWidget {
                         onClicked: root.openNote(noteCard.modelData)
 
                         contentItem: Rectangle {
-                            radius: Appearance.rounding.normal
+                            radius: root.scaled(Appearance.rounding.normal)
                             color: noteCard.bg
                             width: parent.width - Math.abs(noteCard.swipe.position) * 6
 
@@ -196,8 +202,10 @@ AbstractBackgroundWidget {
                                 anchors {
                                     left: parent.left; right: parent.right
                                     verticalCenter: parent.verticalCenter
-                                    leftMargin: 12; rightMargin: 12
+                                    leftMargin: root.scaled(12); rightMargin: root.scaled(12)
                                 }
+                                font.pixelSize: root.scaled(Appearance.font.pixelSize.normal)
+                                renderType: Text.QtRendering
                                 color: noteCard.fg
                                 text: noteCard.modelData.content
                                 elide: Text.ElideRight
@@ -206,16 +214,17 @@ AbstractBackgroundWidget {
                         }
 
                         swipe.right: Rectangle {
-                            width: 64
+                            width: root.scaled(64)
                             anchors.right: parent.right
                             height: parent.height
-                            radius: Appearance.rounding.normal
+                            radius: root.scaled(Appearance.rounding.normal)
                             color: Appearance.colors.colError
 
                             MaterialSymbol {
                                 anchors.centerIn: parent
                                 text: "delete"
-                                iconSize: Appearance.font.pixelSize.larger
+                                iconSize: root.scaled(Appearance.font.pixelSize.larger)
+                                renderType: Text.QtRendering
                                 color: Appearance.colors.colOnError
                             }
 
@@ -228,21 +237,22 @@ AbstractBackgroundWidget {
             // Edit
             ColumnLayout {
                 id: editPage
-                anchors { fill: parent; margins: 12 }
-                spacing: 10
+                anchors { fill: parent; margins: root.scaled(12) }
+                spacing: root.scaled(10)
                 visible: root.mode === "edit"
 
                 RowLayout {
                     Layout.fillWidth: true
-                    spacing: 4
+                    spacing: root.scaled(4)
 
                     Rectangle {
                         radius: Appearance.rounding.full
                         color: "transparent"
-                        implicitWidth: 28; implicitHeight: 28
+                        implicitWidth: root.scaled(28); implicitHeight: root.scaled(28)
                         MaterialSymbol {
                             anchors.centerIn: parent
-                            iconSize: Appearance.font.pixelSize.normal
+                            iconSize: root.scaled(Appearance.font.pixelSize.normal)
+                            renderType: Text.QtRendering
                             text: "arrow_back"
                             color: Appearance.colors.colOnPrimaryContainer
                         }
@@ -255,9 +265,9 @@ AbstractBackgroundWidget {
                     Item { Layout.fillWidth: true }
 
                     ToolbarPairedFab {
-                        Layout.rightMargin: 4
+                        Layout.rightMargin: root.scaled(4)
                         Layout.alignment: Qt.AlignVCenter
-                        baseSize: 38
+                        baseSize: root.scaled(38)
                         iconText: "save"
                         onClicked: root.saveAndBack()
                     }
@@ -266,17 +276,20 @@ AbstractBackgroundWidget {
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-                    radius: Appearance.rounding.normal
+                    radius: root.scaled(Appearance.rounding.normal)
                     color: Appearance.colors.colSurfaceContainerLow
 
                     TextArea {
                         id: editTextArea
                         anchors.fill: parent
-                        anchors.margins: 8
+                        anchors.margins: root.scaled(8)
                         text: root.editingText
                         wrapMode: TextArea.Wrap
                         placeholderText: "Type your note..."
                         color: Appearance.colors.colOnLayer0
+                        font.family: Appearance.font.family.main
+                        font.pixelSize: root.scaled(Appearance.font.pixelSize.normal)
+                        renderType: Text.QtRendering
                         background: null
                         onTextChanged: root.editingText = text
                         // Only suppress global shortcuts while this field actually has focus
@@ -297,7 +310,7 @@ AbstractBackgroundWidget {
     WidgetResizeHandle {
         hostWidget: root
         currentScale: root.widgetScale
-        baseSize: scaleWrapper.implicitWidth
+        baseSize: 276
         onRequestScale: (v) => root.dragScale = v
         onRequestCommit: (v) => { Config.options.background.widgets.notes.scale = v; root.dragScale = -1 }
     }

@@ -132,6 +132,7 @@ AbstractBackgroundWidget {
         }
 
         WidgetBlurBackground {
+            contrastHost: root
             anchors.fill: parent
             z: -1
             cornerRadius: card.radius
@@ -254,8 +255,7 @@ AbstractBackgroundWidget {
                                 text: modelData
                                 font.pixelSize: Appearance.font.pixelSize.smaller
                                 font.weight: Font.Bold
-                                color: Appearance.colors.colOnPrimaryContainer
-                                opacity: 0.5
+                                color: root.adaptiveSubtextColor
                             }
                         }
                     }
@@ -280,8 +280,8 @@ AbstractBackgroundWidget {
                                     font.weight: modelData.isToday ? Font.Bold : Font.Normal
                                     color: modelData.isToday
                                         ? Appearance.colors.colOnPrimary
-                                        : Appearance.colors.colOnPrimaryContainer
-                                    opacity: modelData.currentMonth ? 1.0 : 0.3
+                                        : root.adaptiveSubtextColor
+                                    opacity: modelData.currentMonth ? 1.0 : 0.55
                                 }
                             }
                         }
@@ -358,8 +358,7 @@ AbstractBackgroundWidget {
                             horizontalAlignment: Text.AlignHCenter
                             font.pixelSize: Appearance.font.pixelSize.smaller
                             font.weight: Font.Bold
-                            color: Appearance.colors.colOnPrimaryContainer
-                            opacity: 0.6
+                            color: root.adaptiveSubtextColor
                             text: modelData
                         }
                     }

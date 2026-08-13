@@ -21,6 +21,7 @@ AbstractBackgroundWidget {
     // would break that binding permanently.
     property real dragScale: -1
     readonly property real widgetScale: dragScale >= 0 ? dragScale : (Config.options.background.widgets.images.scale ?? 1)
+    function scaled(value) { return value * root.widgetScale; }
 
     property list<var> formatOptions: [
         { displayName: "PNG",  icon: "image",            value: "png"  },
@@ -43,8 +44,8 @@ AbstractBackgroundWidget {
     property int queueDone: 0
     property var batchPaths: []
 
-    implicitWidth:  scaleWrapper.implicitWidth * root.widgetScale
-    implicitHeight: scaleWrapper.implicitHeight * root.widgetScale
+    implicitWidth: scaleWrapper.implicitWidth
+    implicitHeight: scaleWrapper.implicitHeight
 
     Process {
         id: converter
@@ -150,21 +151,21 @@ AbstractBackgroundWidget {
 
     Item {
         id: scaleWrapper
-        implicitWidth: 276
-        implicitHeight: 252
+        implicitWidth: root.scaled(276)
+        implicitHeight: root.scaled(252)
         width: implicitWidth
         height: implicitHeight
-        transformOrigin: Item.TopLeft
-        scale: root.widgetScale
-        Behavior on scale { animation: Appearance.animation.elementResize.numberAnimation.createObject(this) }
+        Behavior on width { animation: Appearance.animation.elementResize.numberAnimation.createObject(this) }
+        Behavior on height { animation: Appearance.animation.elementResize.numberAnimation.createObject(this) }
 
     Rectangle {
         id: contentItem
         anchors.fill: parent
         color: "transparent"
-        radius: Appearance.rounding?.verylarge ?? 30
+        radius: root.scaled(Appearance.rounding?.verylarge ?? 30)
 
         WidgetBlurBackground {
+            contrastHost: root
             anchors.fill: parent
             cornerRadius: contentItem.radius
             blur: root.blur
@@ -188,24 +189,24 @@ AbstractBackgroundWidget {
                 left: parent.left
                 right: parent.right
                 top: parent.top
-                margins: 16
+                margins: root.scaled(16)
             }
-            spacing: 12
+            spacing: root.scaled(12)
 
             StyledText {
                 Layout.fillWidth: true
                 horizontalAlignment: Text.AlignHCenter
-                font.pixelSize: Appearance.font.pixelSize.smaller
-                color: Appearance.colors.colOnPrimaryContainer
-                opacity: 0.4
+                font.pixelSize: root.scaled(Appearance.font.pixelSize.smaller)
+                renderType: Text.QtRendering
+                color: root.adaptiveSubtextColor
                 text: "PNG · JPG · WEBP · AVIF · BMP · PDF · TIFF"
             }
 
             Rectangle {
                 id: dropZone
                 Layout.fillWidth: true
-                implicitHeight: 144
-                radius: Appearance.rounding.large
+                implicitHeight: root.scaled(144)
+                radius: root.scaled(Appearance.rounding.large)
                 color: {
                     switch (root.dropStatus) {
                         case "hover":      return Appearance.colors.colPrimaryContainer
@@ -227,26 +228,27 @@ AbstractBackgroundWidget {
                         default:           return Appearance.colors.colOnPrimaryContainer
                     }
                 }
-                border.width: root.dropStatus === "hover" ? 2 : 1
+                border.width: root.scaled(root.dropStatus === "hover" ? 2 : 1)
 
                 Behavior on color        { animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this) }
                 Behavior on border.color { animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this) }
 
                 MaterialLoadingIndicator {
                     anchors.centerIn: parent
-                    anchors.verticalCenterOffset: -14
+                    anchors.verticalCenterOffset: root.scaled(-14)
                     visible: root.dropStatus === "converting"
                     loading: root.dropStatus === "converting"
                     color: Appearance.colors.colPrimary
                     shapeColor: Appearance.colors.colOnPrimary
-                    implicitSize: 48
+                    implicitSize: root.scaled(48)
                 }
 
                 MaterialSymbol {
                     anchors.centerIn: parent
-                    anchors.verticalCenterOffset: -14
+                    anchors.verticalCenterOffset: root.scaled(-14)
                     visible: root.dropStatus !== "converting"
-                    iconSize: 32
+                    iconSize: root.scaled(32)
+                    renderType: Text.QtRendering
                     fill: root.dropStatus === "done" ? 1 : 0
                     color: {
                         switch (root.dropStatus) {
@@ -268,20 +270,21 @@ AbstractBackgroundWidget {
 
                 StyledText {
                     anchors.centerIn: parent
-                    anchors.verticalCenterOffset: 22
+                    anchors.verticalCenterOffset: root.scaled(22)
                     horizontalAlignment: Text.AlignHCenter
-                    font.pixelSize: Appearance.font.pixelSize.small
-                    width: parent.width - 24
+                    font.pixelSize: root.scaled(Appearance.font.pixelSize.small)
+                    renderType: Text.QtRendering
+                    width: parent.width - root.scaled(24)
                     wrapMode: Text.WrapAtWordBoundaryOrAnywhere
                     color: {
                         switch (root.dropStatus) {
                             case "hover":  return Appearance.colors.colPrimary
                             case "done":   return Appearance.colors.colTertiary
                             case "error":  return Appearance.colors.colError
-                            default:       return Appearance.colors.colOnLayer1
+                            default:       return root.adaptiveSubtextColor
                         }
                     }
-                    opacity: root.dropStatus === "idle" ? 0.6 : 1.0
+                    opacity: 1
                     text: {
                         switch (root.dropStatus) {
                             case "idle":       return "Drop image(s) here\nto convert to ." + root.selectedFormat.toUpperCase()
@@ -320,19 +323,20 @@ AbstractBackgroundWidget {
 
             RowLayout {
                 Layout.fillWidth: true
-                spacing: 8
+                spacing: root.scaled(8)
 
                 StyledText {
-                    Layout.leftMargin: 3
+                    Layout.leftMargin: root.scaled(3)
                     text: "Convert to:"
-                    font.pixelSize: Appearance.font.pixelSize.small
-                    color: Appearance.colors.colOnLayer1
-                    opacity: 0.7
+                    font.pixelSize: root.scaled(Appearance.font.pixelSize.small)
+                    renderType: Text.QtRendering
+                    color: root.adaptiveSubtextColor
                     Layout.alignment: Qt.AlignVCenter
                 }
 
                 StyledComboBox {
                     Layout.fillWidth: true
+                    uiScale: root.widgetScale
                     model: root.formatOptions
                     colBackground: Appearance.colors.colSurfaceContainerLow
                     colBackgroundHover: Appearance.colors.colSurfaceContainerLow
@@ -357,7 +361,7 @@ AbstractBackgroundWidget {
     WidgetResizeHandle {
         hostWidget: root
         currentScale: root.widgetScale
-        baseSize: scaleWrapper.implicitWidth
+        baseSize: 276
         onRequestScale: (v) => root.dragScale = v
         onRequestCommit: (v) => { Config.options.background.widgets.images.scale = v; root.dragScale = -1 }
     }

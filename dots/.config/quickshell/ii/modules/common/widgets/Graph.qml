@@ -14,6 +14,7 @@ Canvas {
     property int points: values.length
     property color color: Appearance.colors.colPrimary
     property real fillOpacity: 0.5
+    property real lineWidth: 2
     property var alignment: Graph.Alignment.Left
 
     onValuesChanged: root.requestPaint()
@@ -27,7 +28,7 @@ Canvas {
         var dx = width / (n - 1)
         ctx.strokeStyle = root.color
         ctx.fillStyle = ColorUtils.transparentize(root.color, 1 - root.fillOpacity)
-        ctx.lineWidth = 2
+        ctx.lineWidth = root.lineWidth
         ctx.beginPath()
         for (var i = 0; i < n; ++i) {
             var valueIndex = (root.alignment === Graph.Alignment.Right) ? root.values.length - n + i : i

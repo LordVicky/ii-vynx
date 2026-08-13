@@ -75,6 +75,7 @@ AbstractBackgroundWidget {
             radius: Appearance.rounding?.verylarge ?? 30
 
             WidgetBlurBackground {
+                contrastHost: root
                 anchors.fill: parent
                 cornerRadius: contentRect.radius
                 blur: root.blur
@@ -152,8 +153,7 @@ AbstractBackgroundWidget {
                     StyledText {
                         Layout.alignment: Qt.AlignRight
                         font.pixelSize: Appearance.font.pixelSize.small
-                        color: Appearance.colors.colOnPrimaryContainer
-                        opacity: 0.7
+                        color: root.adaptiveSubtextColor
                         text: root.localDate
                     }
                 }

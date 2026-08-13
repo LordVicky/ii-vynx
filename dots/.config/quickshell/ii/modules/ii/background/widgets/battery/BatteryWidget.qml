@@ -45,56 +45,60 @@ AbstractBackgroundWidget {
 
         RowLayout {
             anchors.fill: parent
-            spacing: 12
+            spacing: card.scaled(12)
             visible: root.hasBattery
 
             Item {
-                implicitWidth: 56
-                implicitHeight: 56
+                implicitWidth: card.scaled(56)
+                implicitHeight: card.scaled(56)
                 Layout.alignment: Qt.AlignVCenter
 
                 CircularProgress {
                     anchors.fill: parent
-                    implicitSize: 56
-                    lineWidth: 5
+                    implicitSize: card.scaled(56)
+                    lineWidth: card.scaled(5)
                     value: root.percent
                     colPrimary: root.levelColor
                     colSecondary: Appearance.colors.colSecondaryContainer
                 }
-                MaterialSymbol {
+                TransformSafeSymbol {
                     anchors.centerIn: parent
                     text: Battery.isCharging ? "bolt" : "battery_full"
-                    iconSize: Appearance.font.pixelSize.normal
+                    baseIconSize: Appearance.font.pixelSize.normal
+                    scaleFactor: root.widgetScale
                     color: root.levelColor
                 }
             }
 
             ColumnLayout {
                 Layout.fillWidth: true
-                spacing: 2
+                spacing: card.scaled(2)
 
-                StyledText {
+                TransformSafeText {
                     Layout.fillWidth: true
                     text: `${Math.round(root.percent * 100)}%`
-                    font.pixelSize: Appearance.font.pixelSize.hugeass
-                    font.weight: Font.DemiBold
+                    basePixelSize: Appearance.font.pixelSize.hugeass
+                    scaleFactor: root.widgetScale
+                    requestedWeight: Font.DemiBold
                     color: Appearance.colors.colOnLayer0
                 }
-                StyledText {
+                TransformSafeText {
                     Layout.fillWidth: true
                     text: Battery.isCharging ? Translation.tr("Charging") : Battery.isPluggedIn ? Translation.tr("Plugged in") : Translation.tr("On battery")
-                    font.pixelSize: Appearance.font.pixelSize.smaller
-                    color: Appearance.colors.colSubtext
+                    basePixelSize: Appearance.font.pixelSize.smaller
+                    scaleFactor: root.widgetScale
+                    color: root.adaptiveSubtextColor
                 }
             }
         }
 
-        StyledText {
+        TransformSafeText {
             anchors.centerIn: parent
             visible: !root.hasBattery
             text: Translation.tr("No battery detected")
-            font.pixelSize: Appearance.font.pixelSize.smaller
-            color: Appearance.colors.colSubtext
+            basePixelSize: Appearance.font.pixelSize.smaller
+            scaleFactor: root.widgetScale
+            color: root.adaptiveSubtextColor
         }
     }
 }

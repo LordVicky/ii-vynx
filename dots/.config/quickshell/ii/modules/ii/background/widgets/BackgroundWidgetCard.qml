@@ -32,6 +32,7 @@ Item {
     property real cornerRadius: Appearance.rounding?.verylarge ?? 30
     property real contentPadding: 16
     property bool showResizeHandle: true
+    readonly property real animatedWidth: scaleWrapper.width * scaleWrapper.scale
 
     signal requestScale(real newScale)  // live, during drag
     signal commitScale(real newScale)   // on release
@@ -39,27 +40,36 @@ Item {
     // Content goes into the padded area inside the frosted panel.
     default property alias content: contentHolder.data
 
+    function scaled(value) {
+        return value * card.scaleFactor;
+    }
+
     implicitWidth: baseWidth * scaleFactor
     implicitHeight: baseHeight * scaleFactor
 
     Item {
         id: scaleWrapper
-        width: card.baseWidth
-        height: card.baseHeight
-        transformOrigin: Item.TopLeft
-        scale: card.scaleFactor
-        Behavior on scale { animation: Appearance.animation.elementResize.numberAnimation.createObject(this) }
+        width: card.implicitWidth
+        height: card.implicitHeight
+        Behavior on width { animation: Appearance.animation.elementResize.numberAnimation.createObject(this) }
+        Behavior on height { animation: Appearance.animation.elementResize.numberAnimation.createObject(this) }
 
-        StyledDropShadow { target: contentRect }
+        StyledDropShadow {
+            target: contentRect
+            radius: card.scaled(8)
+            samples: Math.max(1, Math.ceil(radius * 2 + 1))
+        }
 
         Rectangle {
             id: contentRect
             anchors.fill: parent
             color: "transparent"
-            radius: card.cornerRadius
+            radius: card.scaled(card.cornerRadius)
 
             WidgetBlurBackground {
                 anchors.fill: parent
+                adaptiveContrast: true
+                contrastHost: card.host
                 cornerRadius: contentRect.radius
                 blur: card.host?.blur ?? 0.6
                 wallpaperPath: card.host?.wallpaperPath ?? ""
@@ -73,15 +83,13 @@ Item {
                 wallpaperRenderHeight: card.host?.wallpaperRenderHeight ?? 0
                 parallaxBackdrop: card.host?.parallaxBackdrop ?? true
                 wallpaperSourceItem: card.host?.wallpaperSourceItem ?? null
-                // This blur sits inside scaleWrapper, so it inherits the widget's
-                // resize scale; the crop has to recompute when that changes.
                 hostScale: card.scaleFactor
             }
 
             Item {
                 id: contentHolder
                 anchors.fill: parent
-                anchors.margins: card.contentPadding
+                anchors.margins: card.scaled(card.contentPadding)
             }
         }
     }

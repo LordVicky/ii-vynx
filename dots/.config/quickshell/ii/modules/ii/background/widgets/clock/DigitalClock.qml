@@ -7,7 +7,8 @@ import QtQuick.Layouts
 
 ColumnLayout {
     id: clockColumn
-    spacing: 4
+    property real uiScale: 1
+    spacing: 4 * uiScale
 
     readonly property bool colorful: Config.options.background.widgets.clock.digital.colorful
     readonly property bool showColon: Config.options.background.widgets.clock.digital.showColon
@@ -28,7 +29,7 @@ ColumnLayout {
             color: clockColumn.colText
             horizontalAlignment: Text.AlignHCenter
             font {
-                pixelSize: Config.options.background.widgets.clock.digital.font.size
+                pixelSize: Config.options.background.widgets.clock.digital.font.size * clockColumn.uiScale
                 weight: Config.options.background.widgets.clock.digital.font.weight
                 family: Config.options.background.widgets.clock.digital.font.family
                 variableAxes: ({
@@ -71,7 +72,7 @@ ColumnLayout {
     
 
     Loader {
-        Layout.topMargin: -40
+        Layout.topMargin: -40 * clockColumn.uiScale
         Layout.fillWidth: true
         active: clockColumn.isVertical
         visible: active
@@ -92,7 +93,7 @@ ColumnLayout {
     // Date
     ClockText {
         visible: Config.options.background.widgets.clock.digital.showDate
-        Layout.topMargin: -20
+        Layout.topMargin: -20 * clockColumn.uiScale
         Layout.fillWidth: true
         text: DateTime.longDate
         color: colorful ? clockColumn.colTextSecondary : clockColumn.colText
@@ -102,7 +103,7 @@ ColumnLayout {
     // Quote
     ClockText {
         visible: Config.options.background.widgets.clock.quote.enable && Config.options.background.widgets.clock.quote.text.length > 0
-        font.pixelSize: Appearance.font.pixelSize.normal
+        font.pixelSize: Appearance.font.pixelSize.normal * clockColumn.uiScale
         text: Config.options.background.widgets.clock.quote.text
         animateChange: false
         color: clockColumn.colTextSecondary

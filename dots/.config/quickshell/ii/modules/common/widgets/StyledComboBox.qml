@@ -10,6 +10,8 @@ import qs.modules.common.functions
 ComboBox {
     id: root
 
+    property real uiScale: 1
+
     property string buttonIcon: ""
     property real buttonRadius: Appearance.rounding.full
     property real topLeftRadius: buttonRadius
@@ -22,7 +24,7 @@ ComboBox {
     property color colBackgroundActive: Appearance.colors.colSecondaryContainerActive
 
     opacity: root.enabled ? 1 : 0.4
-    implicitHeight: 40
+    implicitHeight: 40 * root.uiScale
     Layout.fillWidth: true
 
     Behavior on opacity {
@@ -48,10 +50,11 @@ ComboBox {
     }
 
     indicator: MaterialSymbol {
-        x: root.width - width - 16
+        x: root.width - width - 16 * root.uiScale
         y: root.height / 2 - height / 2
         text: "keyboard_arrow_down"
-        iconSize: Appearance.font.pixelSize.larger
+        iconSize: Appearance.font.pixelSize.larger * root.uiScale
+        renderType: Text.QtRendering
         color: Appearance.colors.colOnSecondaryContainer
 
         rotation: root.popup.visible ? 180 : 0
@@ -67,9 +70,9 @@ ComboBox {
         RowLayout {
             id: buttonLayout
             anchors.fill: parent
-            spacing: 8
-            anchors.leftMargin: 16
-            anchors.rightMargin: 16
+            spacing: 8 * root.uiScale
+            anchors.leftMargin: 16 * root.uiScale
+            anchors.rightMargin: 16 * root.uiScale
 
             Loader {
                 Layout.alignment: Qt.AlignVCenter
@@ -82,7 +85,8 @@ ComboBox {
                         }
                         return root.buttonIcon;
                     }
-                    iconSize: Appearance.font.pixelSize.larger
+                    iconSize: Appearance.font.pixelSize.larger * root.uiScale
+                    renderType: Text.QtRendering
                     color: Appearance.colors.colOnSecondaryContainer
                 }
             }
@@ -94,6 +98,8 @@ ComboBox {
                 text: root.displayText
                 elide: Text.ElideRight
                 verticalAlignment: Text.AlignVCenter
+                font.pixelSize: Appearance.font.pixelSize.normal * root.uiScale
+                renderType: Text.QtRendering
             }
         }
     }
@@ -101,7 +107,7 @@ ComboBox {
     delegate: ItemDelegate {
         id: itemDelegate
         width: ListView.view ? ListView.view.width : root.width
-        implicitHeight: 40
+        implicitHeight: 40 * root.uiScale
 
         required property var model
         required property int index
@@ -120,7 +126,7 @@ ComboBox {
 
         background: Rectangle {
             anchors.fill: parent
-            radius: Appearance.rounding.small
+            radius: Appearance.rounding.small * root.uiScale
             color: itemDelegate.color
 
             Behavior on color {
@@ -135,25 +141,26 @@ ComboBox {
         }
 
         contentItem: RowLayout {
-            spacing: 8
-            anchors.leftMargin: 12
-            anchors.rightMargin: 12
+            spacing: 8 * root.uiScale
+            anchors.leftMargin: 12 * root.uiScale
+            anchors.rightMargin: 12 * root.uiScale
 
             Loader {
                 Layout.alignment: Qt.AlignVCenter
-                Layout.preferredHeight: Appearance.font.pixelSize.larger
+                Layout.preferredHeight: Appearance.font.pixelSize.larger * root.uiScale
                 active: typeof itemDelegate.model === 'object' && itemDelegate.model?.icon?.length > 0
                 visible: active
 
                 sourceComponent: Item {
                     implicitWidth: icon.implicitWidth
-                    implicitHeight: Appearance.font.pixelSize.larger
+                    implicitHeight: Appearance.font.pixelSize.larger * root.uiScale
 
                     MaterialSymbol {
                         id: icon
                         anchors.centerIn: parent
                         text: itemDelegate.model?.icon ?? ""
-                        iconSize: Appearance.font.pixelSize.larger
+                        iconSize: Appearance.font.pixelSize.larger * root.uiScale
+                        renderType: Text.QtRendering
                         color: itemDelegate.colText
                     }
                 }
@@ -161,20 +168,22 @@ ComboBox {
 
             StyledText {
                 Layout.fillWidth: true
-                Layout.preferredHeight: Appearance.font.pixelSize.larger
+                Layout.preferredHeight: Appearance.font.pixelSize.larger * root.uiScale
                 color: itemDelegate.colText
                 text: itemDelegate.model[root.textRole]
                 elide: Text.ElideRight
                 verticalAlignment: Text.AlignVCenter
+                font.pixelSize: Appearance.font.pixelSize.normal * root.uiScale
+                renderType: Text.QtRendering
             }
         }
     }
 
     popup: Popup {
-        y: root.height + 4
+        y: root.height + 4 * root.uiScale
         width: root.width
-        height: Math.min(listView.contentHeight + topPadding + bottomPadding, 300)
-        padding: 8
+        height: Math.min(listView.contentHeight + topPadding + bottomPadding, 300 * root.uiScale)
+        padding: 8 * root.uiScale
 
         enter: Transition {
             PropertyAnimation {
