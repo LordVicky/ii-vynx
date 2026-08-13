@@ -1497,6 +1497,24 @@ ContentPage {
         icon: "battery_full"
         title: Translation.tr("Widget: Battery")
         widgetKey: "battery"
+
+        ContentSubsection {
+            title: Translation.tr("Device sources")
+
+            ConfigSwitch {
+                buttonIcon: "laptop"
+                text: Translation.tr("Laptop battery")
+                checked: Config.options.background.widgets.battery.showLaptopBattery
+                onCheckedChanged: Config.options.background.widgets.battery.showLaptopBattery = checked
+            }
+
+            ConfigSwitch {
+                buttonIcon: "bluetooth"
+                text: Translation.tr("Bluetooth device batteries")
+                checked: Config.options.background.widgets.battery.showBluetoothBatteries
+                onCheckedChanged: Config.options.background.widgets.battery.showBluetoothBatteries = checked
+            }
+        }
     }
     DesktopWidgetToggle {
         icon: "lightbulb"

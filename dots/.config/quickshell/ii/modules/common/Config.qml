@@ -417,6 +417,9 @@ Singleton {
                         property real y: 400
                         property real blur: 0.6
                         property real scale: 1
+                        property string layout: "list"
+                        property bool showLaptopBattery: true
+                        property bool showBluetoothBatteries: true
                     }
                     property JsonObject openRgb: JsonObject {
                         property bool enable: false
