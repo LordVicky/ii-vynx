@@ -25,9 +25,9 @@ QtObject {
     }
 
     readonly property var devices: {
-        // lastAttempt is intentionally referenced so stale/expired remote
-        // snapshots are recalculated after every low-frequency Apple poll.
-        const appleClock = AppleBatteryStatus.lastAttempt;
+        // freshnessClock also advances while Apple polling is paused, so cached
+        // observations continue becoming stale and eventually expire.
+        const appleClock = AppleBatteryStatus.freshnessClock;
         const result = [];
 
         if (root.laptopEnabled && Battery.available) {
