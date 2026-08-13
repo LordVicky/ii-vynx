@@ -40,11 +40,13 @@ AbstractBackgroundWidget {
     property int recencySerial: 0
     property var deviceRecency: ({})
 
+    property string compactSource: ""
     property string compactName: ""
     property string compactIcon: "battery_full"
     property real compactPercentage: 0
     property bool compactCharging: false
     property bool compactChargingKnown: false
+    property bool compactStale: false
 
     readonly property int chargingCount: {
         let count = 0;
@@ -81,44 +83,67 @@ AbstractBackgroundWidget {
     function copyCompactDevice(id) {
         const index = root.indexOfDevice(id);
         if (index < 0) {
+            root.compactSource = "";
             root.compactName = "";
             root.compactIcon = "battery_full";
             root.compactPercentage = 0;
             root.compactCharging = false;
             root.compactChargingKnown = false;
+            root.compactStale = false;
             return;
         }
 
         const device = deviceModel.get(index);
+        root.compactSource = device.source;
         root.compactName = device.name;
         root.compactIcon = device.icon;
         root.compactPercentage = device.percentage;
         root.compactCharging = device.charging;
         root.compactChargingKnown = device.chargingKnown;
+        root.compactStale = device.stale;
+    }
+
+    function betterCompactCandidate(best, candidate) {
+        if (best === null)
+            return candidate;
+
+        const candidatePercent = Math.round(candidate.percentage * 100);
+        const bestPercent = Math.round(best.percentage * 100);
+        const delta = candidatePercent - bestPercent;
+
+        if (delta < -root.compactTieThreshold)
+            return candidate;
+
+        if (Math.abs(delta) <= root.compactTieThreshold
+                && root.recencyOf(candidate.deviceId) > root.recencyOf(best.deviceId)) {
+            return candidate;
+        }
+
+        return best;
     }
 
     function bestCompactCandidate() {
         if (deviceModel.count === 0)
             return "";
 
-        let best = deviceModel.get(0);
-        for (let i = 1; i < deviceModel.count; ++i) {
+        // A cached remote observation should not steal compact mode from a
+        // fresh local/Bluetooth/Find My reading. Fall back to stale entries
+        // only when every available battery observation is stale.
+        let best = null;
+        for (let i = 0; i < deviceModel.count; ++i) {
             const candidate = deviceModel.get(i);
-            const candidatePercent = Math.round(candidate.percentage * 100);
-            const bestPercent = Math.round(best.percentage * 100);
-            const delta = candidatePercent - bestPercent;
-
-            if (delta < -root.compactTieThreshold) {
-                best = candidate;
+            if (candidate.stale)
                 continue;
-            }
-
-            if (Math.abs(delta) <= root.compactTieThreshold
-                    && root.recencyOf(candidate.deviceId) > root.recencyOf(best.deviceId)) {
-                best = candidate;
-            }
+            best = root.betterCompactCandidate(best, candidate);
         }
-        return best.deviceId;
+
+        if (best !== null)
+            return best.deviceId;
+
+        for (let i = 0; i < deviceModel.count; ++i)
+            best = root.betterCompactCandidate(best, deviceModel.get(i));
+
+        return best?.deviceId ?? "";
     }
 
     function desiredCompactDevice() {
@@ -138,6 +163,12 @@ AbstractBackgroundWidget {
 
         const current = deviceModel.get(currentIndex);
         const candidate = deviceModel.get(candidateIndex);
+
+        if (current.stale && !candidate.stale)
+            return candidateId;
+        if (!current.stale && candidate.stale)
+            return root.compactDeviceId;
+
         const currentPercent = Math.round(current.percentage * 100);
         const candidatePercent = Math.round(candidate.percentage * 100);
         const advantage = currentPercent - candidatePercent;
@@ -175,6 +206,18 @@ AbstractBackgroundWidget {
         root.requestCompactDevice(root.desiredCompactDevice());
     }
 
+    function compactStatusText() {
+        if (root.compactName === "")
+            return "";
+        if (root.compactChargingKnown && root.compactCharging)
+            return root.compactName + " " + Translation.tr("charging");
+        if (root.compactStale)
+            return root.compactName + " · " + Translation.tr("stale");
+        if (root.compactSource === "bluetooth")
+            return root.compactName + " " + Translation.tr("connected");
+        return root.compactName;
+    }
+
     function syncDevices() {
         const incoming = batteryDevices.devices;
         const incomingIds = [];
@@ -193,7 +236,9 @@ AbstractBackgroundWidget {
                     icon: device.icon,
                     percentage: device.percentage,
                     charging: device.charging,
-                    chargingKnown: device.chargingKnown
+                    chargingKnown: device.chargingKnown,
+                    observedAt: device.observedAt ?? 0,
+                    stale: device.stale ?? false
                 });
                 if (root.initialDeviceSyncDone)
                     root.touchDevice(device.id);
@@ -211,6 +256,8 @@ AbstractBackgroundWidget {
             deviceModel.setProperty(currentIndex, "percentage", device.percentage);
             deviceModel.setProperty(currentIndex, "charging", device.charging);
             deviceModel.setProperty(currentIndex, "chargingKnown", device.chargingKnown);
+            deviceModel.setProperty(currentIndex, "observedAt", device.observedAt ?? 0);
+            deviceModel.setProperty(currentIndex, "stale", device.stale ?? false);
         }
 
         for (let i = deviceModel.count - 1; i >= 0; --i) {
@@ -329,6 +376,8 @@ AbstractBackgroundWidget {
                     required property real percentage
                     required property bool charging
                     required property bool chargingKnown
+                    required property double observedAt
+                    required property bool stale
 
                     width: ListView.view.width
                     height: card.scaled(root.rowHeight)
@@ -362,10 +411,12 @@ AbstractBackgroundWidget {
 
                         TransformSafeText {
                             Layout.fillWidth: true
-                            text: deviceRow.name
+                            text: deviceRow.stale
+                                ? deviceRow.name + " · " + Translation.tr("stale")
+                                : deviceRow.name
                             basePixelSize: Appearance.font.pixelSize.small
                             scaleFactor: root.widgetScale
-                            color: Appearance.colors.colOnLayer0
+                            color: deviceRow.stale ? root.adaptiveSubtextColor : Appearance.colors.colOnLayer0
                             elide: Text.ElideRight
                         }
 
@@ -551,11 +602,7 @@ AbstractBackgroundWidget {
                     anchors.bottom: parent.bottom
                     height: card.scaled(20)
                     verticalAlignment: Text.AlignVCenter
-                    text: root.compactName === ""
-                        ? ""
-                        : root.compactChargingKnown && root.compactCharging
-                            ? root.compactName + " " + Translation.tr("charging")
-                            : root.compactName + " " + Translation.tr("connected")
+                    text: root.compactStatusText()
                     basePixelSize: Appearance.font.pixelSize.smaller
                     scaleFactor: root.widgetScale
                     color: root.adaptiveSubtextColor
