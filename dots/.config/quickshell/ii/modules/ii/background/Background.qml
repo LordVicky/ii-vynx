@@ -82,7 +82,7 @@ Variants {
 
         readonly property bool isScrollingLayout: Persistent.states.hyprland.layout === "scrolling"
 
-        property var zoomLevels: {
+        property var zoomLevels: {  // has to be reverted compared to background
             "in": { default: 1.04, zoomed: 1 },
             "out": { default: 1, zoomed: 1.04 }
         }
@@ -97,12 +97,14 @@ Variants {
 
         property real scaleAnimated: GlobalStates.overviewOpen && showOpeningAnimation ? zoomedRatio : defaultRatio
         Behavior on scaleAnimated {
-            animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
+            animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
         }
 
+        // Layer props
         screen: modelData
         exclusionMode: ExclusionMode.Ignore
         WlrLayershell.layer: (GlobalStates.screenLocked && !scaleAnim.running) ? WlrLayer.Top : WlrLayer.Bottom
+        // WlrLayershell.layer: WlrLayer.Bottom
         WlrLayershell.namespace: "quickshell:background"
         anchors {
             top: true
@@ -121,8 +123,10 @@ Variants {
 
         onWallpaperPathChanged: {
             bgRoot.updateZoomScale();
+            // Clock position gets updated after zoom scale is updated
         }
 
+        // Wallpaper zoom scale
         function updateZoomScale() {
             getWallpaperSizeProc.path = bgRoot.wallpaperPath;
             getWallpaperSizeProc.running = true;
@@ -141,8 +145,10 @@ Variants {
                     bgRoot.wallpaperHeight = height;
 
                     if (width <= screenWidth || height <= screenHeight) {
+                        // Undersized/perfectly sized wallpapers
                         bgRoot.effectiveWallpaperScale = Math.max(screenWidth / width, screenHeight / height);
                     } else {
+                        // Oversized = can be zoomed for parallax, yay
                         bgRoot.effectiveWallpaperScale = Math.min(bgRoot.preferredWallpaperScale, width / screenWidth, height / screenHeight);
                     }
                 }
@@ -174,6 +180,7 @@ Variants {
         }
 
         function refreshExtensionBgWidgets() {
+            // Destroy all existing extension widget objects
             for (let i = 0; i < _extensionBgWidgetEntries.length; i++) {
                 let entry = _extensionBgWidgetEntries[i]
                 if (entry) {
@@ -254,6 +261,7 @@ Variants {
                     })
                 }
             }
+
         }
 
         Component.onCompleted: {
@@ -283,10 +291,12 @@ Variants {
                 animation: Appearance.animation.elementMoveEnter.numberAnimation.createObject(this)
             }
 
+            // Wallpaper
             TransitionImage {
                 id: wallpaper
                 visible: !blurLoader.active
                 opacity: bgRoot.wallpaperIsVideo ? 0 : 1
+                // Range = groups that workspaces span on
                 property int chunkSize: Config?.options.bar.workspaces.shown ?? 10
                 property int lower: Math.floor(bgRoot.firstWorkspaceId / chunkSize) * chunkSize
                 property int upper: Math.ceil(bgRoot.lastWorkspaceId / chunkSize) * chunkSize
@@ -295,12 +305,14 @@ Variants {
                     let result = 0.5;
                     if (Config.options.background.parallax.enableWorkspace && !bgRoot.verticalParallax) {
                         result = ((bgRoot.monitor.activeWorkspace?.id - lower) / range);
+
                     }
                     return result;
                 }
                 property real sidebarOffsetX: {
                     if (!Config.options.background.parallax.enableSidebar) return 0;
                     return (0.15 * GlobalStates.effectiveRightOpen - 0.15 * GlobalStates.effectiveLeftOpen);
+
                 }
                 property real valueY: {
                     let result = 0.5;
@@ -493,7 +505,7 @@ Variants {
                     }
                     onLoaded: {
                         if (item && item.requestReset) {
-                            item.requestReset.connect(() => {
+                            item.requestReset.connect(() => { // hard reset
                                 mediaLoader.enableLoading = false
                                 mediaTimer.running = true
                             })
