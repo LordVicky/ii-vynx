@@ -10,6 +10,8 @@ LazyLoader {
     id: root
     property Item hoverTarget
     default property Item contentItem
+    property Component lazyContent: null
+    readonly property Item effectiveContentItem: contentItem ?? item?.lazyContentItem ?? null
     property real popupBackgroundMargin: 0
     property int popupRadius: Appearance.rounding.large
     property bool animate: true
@@ -55,7 +57,14 @@ LazyLoader {
 
     component: PanelWindow {
         id: popupWindow
+        property alias lazyContentItem: lazyContentLoader.item
         color: "transparent"
+
+        Loader {
+            id: lazyContentLoader
+            active: root.lazyContent !== null
+            sourceComponent: root.lazyContent
+        }
 
         readonly property real screenWidth: popupWindow.screen?.width ?? 0
         readonly property real screenHeight: popupWindow.screen?.height ?? 0
@@ -115,9 +124,9 @@ LazyLoader {
 
         property real animProgress: 0.0
         readonly property Item heroItem: {
-            if (!root.contentItem) return null;
-            for (let i = 0; i < root.contentItem.children.length; i++) {
-                let child = root.contentItem.children[i];
+            if (!root.effectiveContentItem) return null;
+            for (let i = 0; i < root.effectiveContentItem.children.length; i++) {
+                let child = root.effectiveContentItem.children[i];
                 if (child.visible && child.width > 0) return child;
             }
             return null;
@@ -138,8 +147,8 @@ LazyLoader {
             id: popupBackground
             readonly property real margin: 10
             
-            readonly property real targetWidth: (root.contentItem?.implicitWidth ?? 0) + margin * 2
-            readonly property real targetHeight: (root.contentItem?.implicitHeight ?? 0) + margin * 2
+            readonly property real targetWidth: (root.effectiveContentItem?.implicitWidth ?? 0) + margin * 2
+            readonly property real targetHeight: (root.effectiveContentItem?.implicitHeight ?? 0) + margin * 2
 
             property bool isVertical: Config.options.bar.vertical
             property bool isBottom: Config.options.bar.bottom
@@ -195,7 +204,7 @@ LazyLoader {
             
             width: targetWidth
             height: {
-                if (!root.animate || !root.contentItem || !heroItem || targetHeight <= heroHeight + margin * 2) return _commitHeight;
+                if (!root.animate || !root.effectiveContentItem || !heroItem || targetHeight <= heroHeight + margin * 2) return _commitHeight;
                 return (heroHeight + margin * 2) + (_commitHeight - (heroHeight + margin * 2)) * popupWindow.animProgress;
             }
 
@@ -209,15 +218,15 @@ LazyLoader {
                 clip: true
 
                 Component.onCompleted: {
-                    if (root.contentItem) {
-                        root.contentItem.parent = contentContainer;
-                        root.contentItem.anchors.centerIn = undefined;
-                        root.contentItem.anchors.top = contentContainer.top;
-                        root.contentItem.anchors.left = contentContainer.left;
-                        root.contentItem.anchors.right = contentContainer.right;
+                    if (root.effectiveContentItem) {
+                        root.effectiveContentItem.parent = contentContainer;
+                        root.effectiveContentItem.anchors.centerIn = undefined;
+                        root.effectiveContentItem.anchors.top = contentContainer.top;
+                        root.effectiveContentItem.anchors.left = contentContainer.left;
+                        root.effectiveContentItem.anchors.right = contentContainer.right;
 
-                        for (let i = 0; i < root.contentItem.children.length; i++) {
-                            let child = root.contentItem.children[i];
+                        for (let i = 0; i < root.effectiveContentItem.children.length; i++) {
+                            let child = root.effectiveContentItem.children[i];
 
                             child.opacity = Qt.binding(() => {
                                 if (!root.animate) return 1.0;
