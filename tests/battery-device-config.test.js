@@ -13,4 +13,6 @@ test("battery device sources and layout have persisted defaults", () => {
     assert.match(battery, /property string layout: "list"/);
     assert.match(battery, /property bool showLaptopBattery: true/);
     assert.match(battery, /property bool showBluetoothBatteries: true/);
+    assert.match(battery, /property bool showAppleBatteries: true/);
+    assert.match(battery, /property int applePollingMinutes: 15/);
 });

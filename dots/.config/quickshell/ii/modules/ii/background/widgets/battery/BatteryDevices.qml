@@ -7,8 +7,27 @@ QtObject {
 
     readonly property bool laptopEnabled: Config.options.background.widgets.battery.showLaptopBattery
     readonly property bool bluetoothEnabled: Config.options.background.widgets.battery.showBluetoothBatteries
+    readonly property bool appleEnabled: Config.options.background.widgets.battery.showAppleBatteries
+
+    function appleIcon(deviceClass) {
+        const kind = String(deviceClass ?? "").toLowerCase();
+        if (kind === "iphone" || kind.startsWith("iphone"))
+            return "smartphone";
+        if (kind === "ipad" || kind.startsWith("ipad"))
+            return "tablet_mac";
+        if (kind === "watch" || kind.startsWith("watch"))
+            return "watch";
+        if (kind === "mac" || kind.startsWith("macbook") || kind.startsWith("imac") || kind.startsWith("macmini") || kind.startsWith("macpro"))
+            return "laptop_mac";
+        if (kind === "airpods" || kind.startsWith("airpods"))
+            return "headphones";
+        return "devices";
+    }
 
     readonly property var devices: {
+        // lastAttempt is intentionally referenced so stale/expired remote
+        // snapshots are recalculated after every low-frequency Apple poll.
+        const appleClock = AppleBatteryStatus.lastAttempt;
         const result = [];
 
         if (root.laptopEnabled && Battery.available) {
@@ -19,7 +38,9 @@ QtObject {
                 icon: "laptop",
                 percentage: Math.max(0, Math.min(1, Battery.percentage)),
                 charging: Battery.isCharging,
-                chargingKnown: true
+                chargingKnown: true,
+                observedAt: Date.now(),
+                stale: false
             });
         }
 
@@ -37,7 +58,30 @@ QtObject {
                     icon: Icons.getBluetoothDeviceMaterialSymbol(device.icon || ""),
                     percentage: Math.max(0, Math.min(1, device.battery)),
                     charging: false,
-                    chargingKnown: false
+                    chargingKnown: false,
+                    observedAt: Date.now(),
+                    stale: false
+                });
+            }
+        }
+
+        if (root.appleEnabled) {
+            const appleDevices = AppleBatteryStatus.devices;
+            for (let i = 0; i < appleDevices.length; ++i) {
+                const device = appleDevices[i];
+                if (device.batteryReliable === false || AppleBatteryStatus.isExpired(device))
+                    continue;
+
+                result.push({
+                    id: device.id,
+                    source: "icloud",
+                    name: device.name || Translation.tr("Apple device"),
+                    icon: root.appleIcon(device.deviceClass),
+                    percentage: Math.max(0, Math.min(1, Number(device.percentage ?? 0))),
+                    charging: device.charging ?? false,
+                    chargingKnown: device.chargingKnown ?? false,
+                    observedAt: device.observedAt ?? AppleBatteryStatus.lastRefresh,
+                    stale: AppleBatteryStatus.isStale(device)
                 });
             }
         }
