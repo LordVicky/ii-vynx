@@ -80,7 +80,17 @@ Singleton {
 
     Process {
         id: refreshProcess
-        command: ["python3", root.helperPath, "status"]
+
+        // During development, pyicloud lives in a dedicated venv rather than
+        // Fedora's system Python. Prefer the eventual production venv, fall
+        // back to the Phase 4 validation venv, then finally system python3.
+        command: [
+            "sh",
+            "-c",
+            'if [ -x "$HOME/.local/share/ii-vynx/apple-venv/bin/python" ]; then exec "$HOME/.local/share/ii-vynx/apple-venv/bin/python" "$1" status; elif [ -x "$HOME/.local/share/ii-vynx/apple-test-venv/bin/python" ]; then exec "$HOME/.local/share/ii-vynx/apple-test-venv/bin/python" "$1" status; else exec python3 "$1" status; fi',
+            "vynx-apple-battery",
+            root.helperPath
+        ]
 
         stdout: StdioCollector {
             onStreamFinished: {
