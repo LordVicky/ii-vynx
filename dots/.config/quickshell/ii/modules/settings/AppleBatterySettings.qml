@@ -110,9 +110,9 @@ ColumnLayout {
             icon: "schedule"
             text: Translation.tr("Polling interval (minutes)")
             value: Config.options.background.widgets.battery.applePollingMinutes
-            from: 5
+            from: 1
             to: 180
-            stepSize: 5
+            stepSize: 1
             onValueChanged: {
                 Config.options.background.widgets.battery.applePollingMinutes = value;
             }
@@ -121,8 +121,17 @@ ColumnLayout {
         StyledText {
             Layout.fillWidth: true
             wrapMode: Text.Wrap
-            text: Translation.tr("15 minutes is recommended. Shorter intervals update faster but cause more Apple requests and wakeups. Clicking the Battery desktop widget also performs an immediate refresh.")
+            text: Translation.tr("15 minutes is the default. 5–15 minutes is recommended. Clicking the Battery desktop widget also performs an immediate refresh.")
             color: Appearance.colors.colSubtext
+            font.pixelSize: Appearance.font.pixelSize.smaller
+        }
+
+        StyledText {
+            Layout.fillWidth: true
+            visible: Config.options.background.widgets.battery.applePollingMinutes < 5
+            wrapMode: Text.Wrap
+            text: Translation.tr("Frequent polling may increase Apple requests and wakeups without improving Find My freshness.")
+            color: Appearance.colors.colError
             font.pixelSize: Appearance.font.pixelSize.smaller
         }
     }
