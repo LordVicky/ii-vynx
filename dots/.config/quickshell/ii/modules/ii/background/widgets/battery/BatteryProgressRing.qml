@@ -43,8 +43,8 @@ Item {
     Shape {
         id: chargingBolt
         anchors.centerIn: parent
-        width: root.ringSize * 0.28
-        height: width
+        width: root.ringSize * 0.24
+        height: root.ringSize * 0.34
         visible: root.charging
         preferredRendererType: Shape.CurveRenderer
 
