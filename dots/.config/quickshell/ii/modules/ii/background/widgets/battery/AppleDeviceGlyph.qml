@@ -45,24 +45,6 @@ Item {
         visible: root.watch
 
         Rectangle {
-            anchors.horizontalCenter: parent.horizontalCenter
-            y: 0
-            width: Math.round(root.width * 0.28)
-            height: Math.round(root.height * 0.3)
-            radius: Math.round(width * 0.18)
-            color: root.color
-        }
-
-        Rectangle {
-            anchors.horizontalCenter: parent.horizontalCenter
-            anchors.bottom: parent.bottom
-            width: Math.round(root.width * 0.28)
-            height: Math.round(root.height * 0.3)
-            radius: Math.round(width * 0.18)
-            color: root.color
-        }
-
-        Rectangle {
             id: watchCase
             anchors.centerIn: parent
             width: Math.round(root.width * 0.62)
