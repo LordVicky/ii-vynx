@@ -118,6 +118,49 @@ test("high battery color uses a true green hue", () => {
     assert.match(widget, /vividBatteryColor\(Appearance\.m3colors\.m3success, 0\.39, 0\.62, 0\.58\)/);
 });
 
+test("Apple battery devices use dedicated glyphs in list and compact layouts", () => {
+    const devices = fs.readFileSync(
+        path.join(__dirname, "../dots/.config/quickshell/ii/modules/ii/background/widgets/battery/BatteryDevices.qml"),
+        "utf8"
+    );
+    const widget = fs.readFileSync(
+        path.join(__dirname, "../dots/.config/quickshell/ii/modules/ii/background/widgets/battery/BatteryWidget.qml"),
+        "utf8"
+    );
+    const ring = fs.readFileSync(
+        path.join(__dirname, "../dots/.config/quickshell/ii/modules/ii/background/widgets/battery/BatteryProgressRing.qml"),
+        "utf8"
+    );
+
+    assert.match(devices, /function appleCustomIcon\(deviceClass\)/);
+    assert.match(devices, /return "apple-iphone-symbolic\.svg"/);
+    assert.match(devices, /return "apple-watch-symbolic\.svg"/);
+    assert.match(devices, /return "apple-airpods-symbolic\.svg"/);
+    assert.match(devices, /customIcon: root\.appleCustomIcon\(device\.deviceClass\)/);
+
+    assert.match(widget, /property string compactCustomIcon: ""/);
+    assert.match(widget, /required property string customIcon/);
+    assert.match(widget, /customIcon: device\.customIcon/);
+    assert.match(widget, /deviceModel\.setProperty\(currentIndex, "customIcon", device\.customIcon\)/);
+    assert.match(widget, /CustomIcon \{[\s\S]*source: deviceRow\.customIcon[\s\S]*colorize: true/);
+    assert.match(widget, /centerCustomIcon: root\.compactCustomIcon/);
+
+    assert.match(ring, /property string centerCustomIcon: ""/);
+    assert.match(ring, /CustomIcon \{[\s\S]*source: root\.centerCustomIcon[\s\S]*colorize: true/);
+
+    for (const filename of [
+        "apple-iphone-symbolic.svg",
+        "apple-watch-symbolic.svg",
+        "apple-airpods-symbolic.svg"
+    ]) {
+        const glyph = fs.readFileSync(
+            path.join(__dirname, "../dots/.config/quickshell/ii/assets/icons", filename),
+            "utf8"
+        );
+        assert.match(glyph, /viewBox="0 0 24 24"/);
+    }
+});
+
 test("remote battery freshness advances independently of polling", () => {
     const service = fs.readFileSync(
         path.join(__dirname, "../dots/.config/quickshell/ii/services/AppleBatteryStatus.qml"),

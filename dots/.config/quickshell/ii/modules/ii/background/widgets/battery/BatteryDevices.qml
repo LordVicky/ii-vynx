@@ -24,6 +24,17 @@ QtObject {
         return "devices";
     }
 
+    function appleCustomIcon(deviceClass) {
+        const kind = String(deviceClass ?? "").toLowerCase();
+        if (kind === "iphone" || kind.startsWith("iphone"))
+            return "apple-iphone-symbolic.svg";
+        if (kind === "watch" || kind.startsWith("watch"))
+            return "apple-watch-symbolic.svg";
+        if (kind === "airpods" || kind.startsWith("airpods"))
+            return "apple-airpods-symbolic.svg";
+        return "";
+    }
+
     readonly property var devices: {
         // freshnessClock also advances while Apple polling is paused, so cached
         // observations continue becoming stale and eventually expire.
@@ -36,6 +47,7 @@ QtObject {
                 source: "laptop",
                 name: Translation.tr("Laptop"),
                 icon: "laptop",
+                customIcon: "",
                 percentage: Math.max(0, Math.min(1, Battery.percentage)),
                 charging: Battery.isCharging,
                 chargingKnown: true,
@@ -56,6 +68,7 @@ QtObject {
                     source: "bluetooth",
                     name: device.name || Translation.tr("Bluetooth device"),
                     icon: Icons.getBluetoothDeviceMaterialSymbol(device.icon || ""),
+                    customIcon: "",
                     percentage: Math.max(0, Math.min(1, device.battery)),
                     charging: false,
                     chargingKnown: false,
@@ -77,6 +90,7 @@ QtObject {
                     source: "icloud",
                     name: device.name || Translation.tr("Apple device"),
                     icon: root.appleIcon(device.deviceClass),
+                    customIcon: root.appleCustomIcon(device.deviceClass),
                     percentage: Math.max(0, Math.min(1, Number(device.percentage ?? 0))),
                     charging: device.charging ?? false,
                     chargingKnown: device.chargingKnown ?? false,

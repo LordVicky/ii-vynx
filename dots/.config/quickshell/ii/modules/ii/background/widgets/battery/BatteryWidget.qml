@@ -65,6 +65,7 @@ AbstractBackgroundWidget {
     property string compactSource: ""
     property string compactName: ""
     property string compactIcon: "battery_full"
+    property string compactCustomIcon: ""
     property real compactPercentage: 0
     property bool compactCharging: false
     property bool compactChargingKnown: false
@@ -98,6 +99,7 @@ AbstractBackgroundWidget {
             root.compactSource = "";
             root.compactName = "";
             root.compactIcon = "battery_full";
+            root.compactCustomIcon = "";
             root.compactPercentage = 0;
             root.compactCharging = false;
             root.compactChargingKnown = false;
@@ -109,6 +111,7 @@ AbstractBackgroundWidget {
         root.compactSource = device.source;
         root.compactName = device.name;
         root.compactIcon = device.icon;
+        root.compactCustomIcon = device.customIcon;
         root.compactPercentage = device.percentage;
         root.compactCharging = device.charging;
         root.compactChargingKnown = device.chargingKnown;
@@ -243,6 +246,7 @@ AbstractBackgroundWidget {
                     source: device.source,
                     name: device.name,
                     icon: device.icon,
+                    customIcon: device.customIcon,
                     percentage: device.percentage,
                     charging: device.charging,
                     chargingKnown: device.chargingKnown,
@@ -262,6 +266,7 @@ AbstractBackgroundWidget {
             deviceModel.setProperty(currentIndex, "source", device.source);
             deviceModel.setProperty(currentIndex, "name", device.name);
             deviceModel.setProperty(currentIndex, "icon", device.icon);
+            deviceModel.setProperty(currentIndex, "customIcon", device.customIcon);
             deviceModel.setProperty(currentIndex, "percentage", device.percentage);
             deviceModel.setProperty(currentIndex, "charging", device.charging);
             deviceModel.setProperty(currentIndex, "chargingKnown", device.chargingKnown);
@@ -346,6 +351,7 @@ AbstractBackgroundWidget {
                     required property string source
                     required property string name
                     required property string icon
+                    required property string customIcon
                     required property real percentage
                     required property bool charging
                     required property bool chargingKnown
@@ -375,8 +381,20 @@ AbstractBackgroundWidget {
                         Item {
                             Layout.preferredWidth: card.scaled(36)
                             Layout.preferredHeight: card.scaled(root.rowHeight)
+
+                            CustomIcon {
+                                anchors.centerIn: parent
+                                width: card.scaled(22)
+                                height: width
+                                visible: deviceRow.customIcon.length > 0
+                                source: deviceRow.customIcon
+                                colorize: true
+                                color: root.adaptiveSubtextColor
+                            }
+
                             TransformSafeSymbol {
                                 anchors.fill: parent
+                                visible: deviceRow.customIcon.length === 0
                                 text: deviceRow.icon
                                 horizontalAlignment: Text.AlignHCenter
                                 verticalAlignment: Text.AlignVCenter
@@ -489,6 +507,7 @@ AbstractBackgroundWidget {
                 percentage: compactContent.animatedPercentage
                 ringColor: compactContent.levelColor
                 centerIcon: root.compactIcon
+                centerCustomIcon: root.compactCustomIcon
                 charging: compactContent.chargingActive
                 scaleFactor: root.widgetScale
             }

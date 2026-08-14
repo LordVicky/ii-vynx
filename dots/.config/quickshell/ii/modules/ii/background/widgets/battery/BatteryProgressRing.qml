@@ -12,6 +12,7 @@ Item {
     property real ringSize: 56
     property real lineWidth: 5
     property string centerIcon: ""
+    property string centerCustomIcon: ""
     property string centerText: ""
     property bool charging: false
     property real scaleFactor: 1
@@ -31,7 +32,7 @@ Item {
 
     TransformSafeSymbol {
         anchors.fill: parent
-        visible: !root.charging && root.centerIcon.length > 0
+        visible: !root.charging && root.centerCustomIcon.length === 0 && root.centerIcon.length > 0
         text: root.centerIcon
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
@@ -39,6 +40,16 @@ Item {
         scaleFactor: root.scaleFactor
         color: root.ringColor
         Behavior on color { animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this) }
+    }
+
+    CustomIcon {
+        anchors.centerIn: parent
+        width: root.ringSize * 0.42
+        height: width
+        visible: !root.charging && root.centerCustomIcon.length > 0
+        source: root.centerCustomIcon
+        colorize: true
+        color: root.ringColor
     }
 
     Shape {
@@ -87,7 +98,7 @@ Item {
 
     TransformSafeText {
         anchors.fill: parent
-        visible: !root.charging && root.centerIcon.length === 0 && root.centerText.length > 0
+        visible: !root.charging && root.centerCustomIcon.length === 0 && root.centerIcon.length === 0 && root.centerText.length > 0
         text: root.centerText
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
