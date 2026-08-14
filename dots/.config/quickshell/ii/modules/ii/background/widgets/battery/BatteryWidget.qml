@@ -559,30 +559,14 @@ AbstractBackgroundWidget {
 
             Behavior on animatedPercentage { animation: Appearance.animation.elementMoveSmall.numberAnimation.createObject(this) }
 
-            Item {
-                implicitWidth: card.scaled(56)
-                implicitHeight: card.scaled(56)
+            BatteryProgressRing {
                 Layout.alignment: Qt.AlignVCenter
-
-                CircularProgress {
-                    anchors.fill: parent
-                    implicitSize: card.scaled(56)
-                    lineWidth: card.scaled(5)
-                    value: compactContent.animatedPercentage
-                    colPrimary: compactContent.levelColor
-                    colSecondary: Appearance.colors.colSecondaryContainer
-                }
-
-                TransformSafeSymbol {
-                    anchors.fill: parent
-                    text: root.compactIcon
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                    baseIconSize: Appearance.font.pixelSize.normal
-                    scaleFactor: root.widgetScale
-                    color: compactContent.levelColor
-                    Behavior on color { animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this) }
-                }
+                ringSize: card.scaled(56)
+                lineWidth: card.scaled(5)
+                percentage: compactContent.animatedPercentage
+                ringColor: compactContent.levelColor
+                centerIcon: root.compactIcon
+                scaleFactor: root.widgetScale
             }
 
             Item {
