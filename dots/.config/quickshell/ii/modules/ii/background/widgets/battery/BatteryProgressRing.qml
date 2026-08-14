@@ -43,43 +43,43 @@ Item {
     Shape {
         id: chargingBolt
         anchors.centerIn: parent
-        width: root.ringSize * 0.24
-        height: root.ringSize * 0.34
+        width: root.ringSize * 0.27
+        height: root.ringSize * 0.31
         visible: root.charging
         preferredRendererType: Shape.CurveRenderer
 
         ShapePath {
             fillColor: root.ringColor
             strokeColor: root.ringColor
-            strokeWidth: Math.max(0.8, chargingBolt.width * 0.09)
+            strokeWidth: Math.max(0.6, chargingBolt.width * 0.055)
             joinStyle: ShapePath.RoundJoin
             capStyle: ShapePath.RoundCap
 
-            startX: chargingBolt.width * 0.58
-            startY: chargingBolt.height * 0.08
+            startX: chargingBolt.width * 0.62
+            startY: chargingBolt.height * 0.06
             PathLine {
                 x: chargingBolt.width * 0.22
-                y: chargingBolt.height * 0.53
+                y: chargingBolt.height * 0.52
             }
             PathLine {
-                x: chargingBolt.width * 0.47
-                y: chargingBolt.height * 0.53
+                x: chargingBolt.width * 0.50
+                y: chargingBolt.height * 0.52
             }
             PathLine {
-                x: chargingBolt.width * 0.34
-                y: chargingBolt.height * 0.92
+                x: chargingBolt.width * 0.36
+                y: chargingBolt.height * 0.94
             }
             PathLine {
-                x: chargingBolt.width * 0.79
+                x: chargingBolt.width * 0.80
                 y: chargingBolt.height * 0.40
             }
             PathLine {
-                x: chargingBolt.width * 0.53
+                x: chargingBolt.width * 0.52
                 y: chargingBolt.height * 0.40
             }
             PathLine {
-                x: chargingBolt.width * 0.58
-                y: chargingBolt.height * 0.08
+                x: chargingBolt.width * 0.62
+                y: chargingBolt.height * 0.06
             }
         }
     }
