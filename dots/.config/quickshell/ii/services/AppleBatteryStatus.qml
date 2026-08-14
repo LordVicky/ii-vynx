@@ -51,11 +51,13 @@ Singleton {
         if (!root.enabled)
             return;
         const terminal = String(Config.options.apps?.terminal ?? "kitty -1").trim() || "kitty -1";
-        const helper = root.shellQuote(root.helperPath);
         const inner = root.runtimePythonShell()
-            + ` "$PY" ${helper} login; `
-            + 'printf "\\nSign-in finished. Return to Vynx Settings and press Refresh now.\\n"; read _';
-        Quickshell.execDetached(["sh", "-lc", `${terminal} sh -lc ${root.shellQuote(inner)}`]);
+            + ' "$PY" "$1" login; status=$?; '
+            + 'if [ $status -eq 0 ]; then '
+            + 'printf "\\nSign-in finished. Return to Vynx Settings and press Refresh now.\\n"; '
+            + 'else printf "\\nSign-in failed (exit %s). Review the error above.\\n" "$status"; fi; '
+            + 'read _; exit $status';
+        Quickshell.execDetached(["sh", "-lc", `${terminal} sh -lc ${root.shellQuote(inner)} vynx-apple-battery-login ${root.shellQuote(root.helperPath)}`]);
     }
 
     function disconnect() {

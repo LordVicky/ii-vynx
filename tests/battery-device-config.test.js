@@ -35,3 +35,18 @@ test("remote battery freshness advances independently of polling", () => {
     assert.match(service, /root\.state = "disconnectError"/);
     assert.match(devices, /AppleBatteryStatus\.freshnessClock/);
 });
+
+test("Apple sign-in passes the helper as a positional argument and reports failures", () => {
+    const service = fs.readFileSync(
+        path.join(__dirname, "../dots/.config/quickshell/ii/services/AppleBatteryStatus.qml"),
+        "utf8"
+    );
+
+    const login = service.match(/function openLogin\(\) \{([\s\S]*?)\n    \}/)?.[1] ?? "";
+    assert.match(login, /"\$1" login/);
+    assert.match(login, /vynx-apple-battery-login/);
+    assert.match(login, /root\.shellQuote\(root\.helperPath\)/);
+    assert.match(login, /if \[ \$status -eq 0 \]/);
+    assert.match(login, /Sign-in failed/);
+    assert.doesNotMatch(login, /const helper = root\.shellQuote/);
+});
