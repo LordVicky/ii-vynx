@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Shapes
 import qs.modules.common
 import qs.modules.common.widgets
 import qs.modules.ii.background.widgets
@@ -39,14 +40,48 @@ Item {
         Behavior on color { animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this) }
     }
 
-    TransformSafeSymbol {
+    Shape {
+        id: chargingBolt
         anchors.centerIn: parent
+        width: root.ringSize * 0.28
+        height: width
         visible: root.charging
-        text: "bolt"
-        baseIconSize: Appearance.font.pixelSize.normal
-        scaleFactor: root.scaleFactor
-        color: root.ringColor
-        Behavior on color { animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this) }
+        preferredRendererType: Shape.CurveRenderer
+
+        ShapePath {
+            fillColor: root.ringColor
+            strokeColor: root.ringColor
+            strokeWidth: Math.max(0.8, chargingBolt.width * 0.09)
+            joinStyle: ShapePath.RoundJoin
+            capStyle: ShapePath.RoundCap
+
+            startX: chargingBolt.width * 0.58
+            startY: chargingBolt.height * 0.08
+            PathLine {
+                x: chargingBolt.width * 0.22
+                y: chargingBolt.height * 0.53
+            }
+            PathLine {
+                x: chargingBolt.width * 0.47
+                y: chargingBolt.height * 0.53
+            }
+            PathLine {
+                x: chargingBolt.width * 0.34
+                y: chargingBolt.height * 0.92
+            }
+            PathLine {
+                x: chargingBolt.width * 0.79
+                y: chargingBolt.height * 0.40
+            }
+            PathLine {
+                x: chargingBolt.width * 0.53
+                y: chargingBolt.height * 0.40
+            }
+            PathLine {
+                x: chargingBolt.width * 0.58
+                y: chargingBolt.height * 0.08
+            }
+        }
     }
 
     TransformSafeText {

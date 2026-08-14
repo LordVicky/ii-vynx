@@ -71,10 +71,13 @@ test("shared battery rings render charging inside the ring", () => {
 
     assert.match(ring, /property bool charging: false/);
     assert.match(ring, /visible: root\.charging/);
-    assert.match(ring, /TransformSafeSymbol \{[\s\S]*anchors\.centerIn: parent[\s\S]*visible: root\.charging/);
-    assert.match(ring, /text: "bolt"/);
-    assert.match(ring, /baseIconSize: Appearance\.font\.pixelSize\.normal/);
-    assert.match(ring, /color: root\.ringColor/);
+    assert.match(ring, /import QtQuick\.Shapes/);
+    assert.match(ring, /Shape \{[\s\S]*id: chargingBolt[\s\S]*anchors\.centerIn: parent/);
+    assert.match(ring, /width: root\.ringSize \* 0\.28/);
+    assert.match(ring, /fillColor: root\.ringColor/);
+    assert.match(ring, /strokeColor: root\.ringColor/);
+    assert.match(ring, /joinStyle: ShapePath\.RoundJoin/);
+    assert.match(ring, /capStyle: ShapePath\.RoundCap/);
     assert.doesNotMatch(ring, /Canvas \{/);
     assert.doesNotMatch(ring, /chargingOverlay/);
     assert.doesNotMatch(ring, /chargingColor/);
