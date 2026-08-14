@@ -52,16 +52,18 @@ MouseArea {
     StyledPopup {
         hoverTarget: indicator
         animate: false
-        contentItem: HeroCard {
-            compactMode: true
-            anchors.centerIn: parent
-            icon: "cast_connected"
+        lazyContent: Component {
+            HeroCard {
+                compactMode: true
+                anchors.centerIn: parent
+                icon: "cast_connected"
 
-            title: stateFile.text().trim()
-            subtitle: Translation.tr("is using your screen")
+                title: stateFile.text().trim()
+                subtitle: Translation.tr("is using your screen")
 
-            pillText: Translation.tr("Sharing..")
-            pillIcon: "screen_share"
+                pillText: Translation.tr("Sharing..")
+                pillIcon: "screen_share"
+            }
         }
     }
 }

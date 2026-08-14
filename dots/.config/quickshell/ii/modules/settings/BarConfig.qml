@@ -753,6 +753,15 @@ ContentPage {
     ContentSection {
         icon: "tooltip"
         title: Translation.tr("Tooltips")
+        ConfigSwitch {
+            buttonIcon: "tooltip"
+            text: Translation.tr("Enable hover popups")
+            Layout.fillWidth: true
+            checked: Config.options.bar.tooltips.enable
+            onCheckedChanged: {
+                Config.options.bar.tooltips.enable = checked;
+            }
+        }
         ConfigRow {
             ConfigSwitch {
                 buttonIcon: "ads_click"

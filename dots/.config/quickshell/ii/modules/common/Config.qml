@@ -621,6 +621,7 @@ Singleton {
                     ]
                 }
                 property JsonObject tooltips: JsonObject {
+                    property bool enable: true
                     property bool clickToShow: false
                     property bool compactPopups: false
                     property bool showSwap: false

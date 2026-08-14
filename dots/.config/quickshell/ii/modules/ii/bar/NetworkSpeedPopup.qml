@@ -36,9 +36,10 @@ StyledPopup {
         }
     }
 
-    ColumnLayout {
-        anchors.centerIn: parent
-        spacing: 12
+    lazyContent: Component {
+        ColumnLayout {
+            anchors.centerIn: parent
+            spacing: 12
 
         HeroCard {
             id: networkHero
@@ -54,11 +55,11 @@ StyledPopup {
             pillIcon: !Network.ethernet ? "signal_wifi_4_bar" : ""
         }
 
-        ColumnLayout {
-            Layout.fillWidth: true
-            spacing: 8
+            ColumnLayout {
+                Layout.fillWidth: true
+                spacing: 8
 
-            InfoPill {
+                InfoPill {
                 icon: "download"
                 text: Translation.tr("Download: ") + formatSpeed(NetworkUsage.networkDownloadSpeed)
                 containerColor: Appearance.colors.colPrimaryContainer
@@ -67,7 +68,7 @@ StyledPopup {
                 textColor: Appearance.colors.colOnPrimaryContainer
             }
 
-            InfoPill {
+                InfoPill {
                 icon: "upload"
                 text: Translation.tr("Upload: ") + formatSpeed(NetworkUsage.networkUploadSpeed)
                 containerColor: Appearance.colors.colSecondaryContainer
@@ -76,7 +77,7 @@ StyledPopup {
                 textColor: Appearance.colors.colOnSecondaryContainer
             }
 
-            InfoPill {
+                InfoPill {
                 visible: !Config.options.bar.tooltips.compactPopups
                 icon: "data_usage"
                 text: Translation.tr("Usage: ") + formatTotal(NetworkUsage.networkDownloadTotal + NetworkUsage.networkUploadTotal)
@@ -84,6 +85,7 @@ StyledPopup {
                 shapeColor: Appearance.colors.colTertiary
                 symbolColor: Appearance.colors.colOnTertiary
                 textColor: Appearance.colors.colOnTertiaryContainer
+                }
             }
         }
     }

@@ -112,6 +112,7 @@ Item {
             StyledPopup {
                 id: overflowPopup
                 hoverTarget: trayOverflowButton
+                respectGlobalEnable: false
                 active: root.trayOverflowOpen && root.unpinnedItems.length > 0
 
                 lazyContent: Component {

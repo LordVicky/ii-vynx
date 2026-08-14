@@ -48,7 +48,9 @@ MouseArea {
         StyledPopup {
             hoverTarget: indicator
             animate: false
-            contentItem: PopupContent {}
+            lazyContent: Component {
+                PopupContent {}
+            }
         }
     }
 

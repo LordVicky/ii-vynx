@@ -74,3 +74,28 @@ test("only the system tray overflow grid is lazy", () => {
     assert.match(source.slice(lazyStart, pinnedModel), /GridLayout\s*\{[\s\S]*Repeater\s*\{/);
     assert.match(itemSource, /Loader\s*\{\s*id:\s*menu[\s\S]*?active:\s*false/);
 });
+
+test("bar hover popups can be disabled and fully unloaded without disabling the tray overflow", () => {
+    const config = read("modules/common/Config.qml");
+    const settings = read("modules/settings/BarConfig.qml");
+    const popup = read("modules/ii/bar/StyledPopup.qml");
+    const tray = read("modules/ii/bar/SysTray.qml");
+
+    assert.match(config, /property JsonObject tooltips:\s*JsonObject\s*\{[\s\S]*?property bool enable:\s*true/);
+    assert.match(settings, /checked:\s*Config\.options\.bar\.tooltips\.enable/);
+    assert.match(popup, /property bool respectGlobalEnable:\s*true/);
+    assert.match(popup, /active:\s*\(!respectGlobalEnable \|\| Config\.options\.bar\.tooltips\.enable\)/);
+    assert.match(tray, /id:\s*overflowPopup[\s\S]*?respectGlobalEnable:\s*false/);
+
+    for (const file of ["NetworkSpeedPopup.qml", "MediaPopup.qml", "ResourcesPopup.qml", "BatteryPopup.qml"]) {
+        const source = read(`modules/ii/bar/${file}`);
+        assert.match(source, /lazyContent:\s*Component\s*\{/, `${file} must unload its content`);
+        assert.doesNotMatch(source, /contentItem:/, `${file} must not retain eager popup content`);
+    }
+
+    for (const file of ["RecordIndicator.qml", "ScreenShareIndicator.qml"]) {
+        const source = read(`modules/ii/bar/${file}`);
+        assert.match(source, /StyledPopup\s*\{[\s\S]*?lazyContent:\s*Component\s*\{/, `${file} must unload its popup content`);
+        assert.doesNotMatch(source, /contentItem:/, `${file} must not retain eager popup content`);
+    }
+});

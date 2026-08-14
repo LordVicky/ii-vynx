@@ -16,17 +16,19 @@ StyledPopup {
     readonly property string cleanedTitle: StringUtils.cleanMusicTitle(activePlayer?.trackTitle) || Translation.tr("No media")
 
     animate: false // We have to disable the animation if we have only one card
-    contentItem: HeroCard {
-        id: mediaHero
-        compactMode: true
-        adaptiveWidth: true
-        anchors.centerIn: parent
-        icon: "music_note"
+    lazyContent: Component {
+        HeroCard {
+            id: mediaHero
+            compactMode: true
+            adaptiveWidth: true
+            anchors.centerIn: parent
+            icon: "music_note"
 
-        title: activePlayer?.trackArtist || Translation.tr("Unknown Artist")
-        subtitle: activePlayer ? activePlayer.trackTitle : Translation.tr("No media")
+            title: activePlayer?.trackArtist || Translation.tr("Unknown Artist")
+            subtitle: activePlayer ? activePlayer.trackTitle : Translation.tr("No media")
 
-        pillText: activePlayer ? (activePlayer.playbackState == MprisPlaybackState.Playing ? Translation.tr("Playing") : Translation.tr("Paused")) : ""
-        pillIcon: activePlayer ? (activePlayer.playbackState == MprisPlaybackState.Playing ? "play_arrow" : "pause") : ""
+            pillText: activePlayer ? (activePlayer.playbackState == MprisPlaybackState.Playing ? Translation.tr("Playing") : Translation.tr("Paused")) : ""
+            pillIcon: activePlayer ? (activePlayer.playbackState == MprisPlaybackState.Playing ? "play_arrow" : "pause") : ""
+        }
     }
 }

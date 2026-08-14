@@ -14,10 +14,11 @@ StyledPopup {
         return (kb / (1024 * 1024)).toFixed(1) + " GB";
     }
 
-    ColumnLayout {
-        id: columnLayout
-        anchors.centerIn: parent
-        spacing: 12
+    lazyContent: Component {
+        ColumnLayout {
+            id: columnLayout
+            anchors.centerIn: parent
+            spacing: 12
 
         HeroCard {
             id: resourcesHero
@@ -30,11 +31,11 @@ StyledPopup {
             pillIcon: "device_thermostat"
         }
 
-        ColumnLayout {
-            Layout.fillWidth: true
-            spacing: 8
+            ColumnLayout {
+                Layout.fillWidth: true
+                spacing: 8
 
-            RowLayout {
+                RowLayout {
                 Layout.fillWidth: true
                 spacing: 8
 
@@ -80,7 +81,7 @@ StyledPopup {
                 }
             }
 
-            RowLayout {
+                RowLayout {
                 Layout.fillWidth: true
                 spacing: 8
                 visible: Config.options.bar.tooltips.showSwap
@@ -96,6 +97,7 @@ StyledPopup {
                     resourceValueText: `${root.formatGB(ResourceUsage.diskUsed).split(" ")[0]} / ${root.formatGB(ResourceUsage.diskTotal)}`
                     resourcePercentage: ResourceUsage.diskUsedPercentage
                     highlightColor: Appearance.colors.colTertiary
+                }
                 }
             }
         }
