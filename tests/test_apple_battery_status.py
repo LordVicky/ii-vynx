@@ -73,6 +73,39 @@ class AppleBatteryStatusTests(unittest.TestCase):
 
         self.assertFalse(APPLE.find_my_session_usable(ChallengedApi()))
 
+    def test_login_stores_password_only_for_a_reusable_find_my_session(self):
+        authenticated = type(
+            "AuthenticatedApi",
+            (),
+            {"requires_2fa": False, "requires_2sa": False,
+             "is_trusted_session": True},
+        )()
+        persisted = type(
+            "PersistedApi",
+            (),
+            {"requires_2fa": False, "requires_2sa": False, "devices": [object()]},
+        )()
+
+        with patch("builtins.input", return_value="user@example.com"), patch.object(
+            APPLE.getpass, "getpass", return_value="secret"
+        ), patch.object(APPLE, "service", side_effect=[authenticated, persisted]), patch.object(
+            APPLE, "store_password"
+        ) as store, patch.object(APPLE, "delete_password") as delete, patch.object(
+            APPLE, "write_account"
+        ) as write:
+            self.assertEqual(APPLE.login(), 0)
+
+        store.assert_called_once_with("user@example.com", "secret")
+        delete.assert_not_called()
+        write.assert_called_once_with("user@example.com")
+
+    def test_disconnect_removes_the_keyring_password(self):
+        with patch.object(APPLE, "read_account", return_value="user@example.com"), patch.object(
+            APPLE, "delete_password"
+        ) as delete, patch.object(APPLE.shutil, "rmtree"):
+            self.assertEqual(APPLE.disconnect(), 0)
+        delete.assert_called_once_with("user@example.com")
+
 
 if __name__ == "__main__":
     unittest.main()

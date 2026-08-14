@@ -130,6 +130,22 @@ def service(apple_id: str, password: str | None):
     )
 
 
+def store_password(apple_id: str, password: str) -> None:
+    from pyicloud.utils import store_password_in_keyring
+
+    store_password_in_keyring(apple_id, password)
+
+
+def delete_password(apple_id: str) -> None:
+    from pyicloud.utils import delete_password_in_keyring
+
+    try:
+        delete_password_in_keyring(apple_id)
+    except Exception as exc:
+        if type(exc).__name__ != "PasswordDeleteError":
+            raise
+
+
 def complete_authentication(api: Any) -> bool:
     if api.requires_2fa:
         security_keys = getattr(api, "security_key_names", None)
@@ -195,13 +211,18 @@ def login() -> int:
         return 2
 
     password = getpass.getpass("Apple Account password: ")
+    password_stored = False
     try:
         api = service(apple_id, password)
         if not complete_authentication(api):
             return 3
 
+        store_password(apple_id, password)
+        password_stored = True
         persisted_api = service(apple_id, None)
         if not find_my_session_usable(persisted_api):
+            delete_password(apple_id)
+            password_stored = False
             print(
                 "Apple authentication did not produce a reusable Find My session. "
                 "Sign-in was not saved.",
@@ -215,6 +236,11 @@ def login() -> int:
     except DependencyError as exc:
         print(str(exc), file=sys.stderr)
         return 5
+    except Exception as exc:
+        if password_stored:
+            delete_password(apple_id)
+        print(f"Apple sign-in failed: {type(exc).__name__}", file=sys.stderr)
+        return 4
     finally:
         # Python strings cannot be reliably zeroized, but do not retain the
         # password reference after authentication completes.
@@ -222,7 +248,10 @@ def login() -> int:
 
 
 def disconnect() -> int:
+    apple_id = read_account()
     try:
+        if apple_id:
+            delete_password(apple_id)
         shutil.rmtree(STATE_DIR)
     except FileNotFoundError:
         pass
