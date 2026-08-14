@@ -84,8 +84,13 @@ test("bar hover popups can be disabled and fully unloaded without disabling the 
     assert.match(config, /property JsonObject tooltips:\s*JsonObject\s*\{[\s\S]*?property bool enable:\s*true/);
     assert.match(settings, /checked:\s*Config\.options\.bar\.tooltips\.enable/);
     assert.match(popup, /property bool respectGlobalEnable:\s*true/);
-    assert.match(popup, /active:\s*\(!respectGlobalEnable \|\| Config\.options\.bar\.tooltips\.enable\)/);
-    assert.match(tray, /id:\s*overflowPopup[\s\S]*?respectGlobalEnable:\s*false/);
+    assert.match(popup, /property bool requestedActive:/);
+    assert.match(popup, /active:\s*\(!respectGlobalEnable \|\| Config\.options\.bar\.tooltips\.enable\)\s*&&\s*requestedActive/);
+    assert.match(tray, /id:\s*overflowPopup[\s\S]*?respectGlobalEnable:\s*false[\s\S]*?requestedActive:/);
+
+    const verticalMedia = read("modules/ii/verticalBar/VerticalMedia.qml");
+    assert.match(verticalMedia, /Bar\.MediaPopup\s*\{[\s\S]*?requestedActive:/);
+    assert.doesNotMatch(verticalMedia, /Bar\.MediaPopup\s*\{[\s\S]*?\n\s*active:/);
 
     for (const file of ["NetworkSpeedPopup.qml", "MediaPopup.qml", "ResourcesPopup.qml", "BatteryPopup.qml"]) {
         const source = read(`modules/ii/bar/${file}`);

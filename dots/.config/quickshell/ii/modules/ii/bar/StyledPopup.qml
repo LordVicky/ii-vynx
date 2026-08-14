@@ -21,8 +21,9 @@ LazyLoader {
     property bool _popupHovered: false
     property bool _stickyActive: false
     property bool _targetHovered: hoverTarget ? hoverTarget.containsMouse : false
+    property bool requestedActive: stickyHover ? _stickyActive : (hoverTarget && hoverTarget.containsMouse)
 
-    active: (!respectGlobalEnable || Config.options.bar.tooltips.enable) && (stickyHover ? _stickyActive : (hoverTarget && hoverTarget.containsMouse))
+    active: (!respectGlobalEnable || Config.options.bar.tooltips.enable) && requestedActive
 
     // I have NO FUCKING IDEA why we cant use a normal timer here
     // Because if we do, we FUCKING cannot reference the timer from anywhere
