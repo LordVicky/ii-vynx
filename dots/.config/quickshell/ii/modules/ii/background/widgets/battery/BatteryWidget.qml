@@ -365,6 +365,9 @@ AbstractBackgroundWidget {
                     readonly property bool chargingActive: !stale && chargingKnown && charging
                     readonly property bool low: percentage <= (Config.options.battery.low / 100)
                     readonly property bool high: percentage >= 0.9
+                    readonly property color foregroundColor: stale
+                        ? root.adaptiveSubtextColor
+                        : Appearance.colors.colOnLayer0
                     readonly property color percentageColor: high
                         ? root.vividBatteryColor(Appearance.m3colors.m3success, 0.39, 0.62, 0.58)
                         : chargingActive
@@ -390,7 +393,7 @@ AbstractBackgroundWidget {
                                 source: deviceRow.customIcon
                                 sourceScale: 2
                                 colorize: true
-                                color: root.adaptiveSubtextColor
+                                color: deviceRow.foregroundColor
                             }
 
                             TransformSafeSymbol {
@@ -401,7 +404,7 @@ AbstractBackgroundWidget {
                                 verticalAlignment: Text.AlignVCenter
                                 baseIconSize: Appearance.font.pixelSize.larger
                                 scaleFactor: root.widgetScale
-                                color: root.adaptiveSubtextColor
+                                color: deviceRow.foregroundColor
                             }
                         }
 
@@ -412,7 +415,7 @@ AbstractBackgroundWidget {
                                 : deviceRow.name
                             basePixelSize: Appearance.font.pixelSize.small
                             scaleFactor: root.widgetScale
-                            color: deviceRow.stale ? root.adaptiveSubtextColor : Appearance.colors.colOnLayer0
+                            color: deviceRow.foregroundColor
                             elide: Text.ElideRight
                         }
 

@@ -148,6 +148,10 @@ test("Apple battery devices use dedicated glyphs in list and compact layouts", (
     assert.match(widget, /deviceModel\.setProperty\(currentIndex, "customIcon", device\.customIcon\)/);
     assert.match(widget, /CustomIcon \{[\s\S]*source: deviceRow\.customIcon[\s\S]*colorize: true/);
     assert.match(widget, /source: deviceRow\.customIcon[\s\S]*sourceScale: 2/);
+    assert.match(widget, /readonly property color foregroundColor: stale[\s\S]*\? root\.adaptiveSubtextColor[\s\S]*: Appearance\.colors\.colOnLayer0/);
+    assert.match(widget, /source: deviceRow\.customIcon[\s\S]*color: deviceRow\.foregroundColor/);
+    assert.match(widget, /text: deviceRow\.icon[\s\S]*color: deviceRow\.foregroundColor/);
+    assert.match(widget, /text: deviceRow\.stale[\s\S]*color: deviceRow\.foregroundColor/);
     assert.match(widget, /centerCustomIcon: root\.compactCustomIcon/);
 
     assert.match(ring, /property string centerCustomIcon: ""/);
