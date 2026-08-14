@@ -27,11 +27,11 @@ AbstractBackgroundWidget {
 
     BatteryDevices { id: batteryDevices }
 
-    // AbstractWidget is already a MouseArea. Listen to that click instead of
-    // stacking a TapHandler on top of its drag handler, which can lose the tap.
+    // AbstractWidget is already a draggable MouseArea. A small pointer movement
+    // can cancel `clicked`, so start the refresh from the left-button press.
     Connections {
         target: root
-        function onClicked(mouse) {
+        function onPressed(mouse) {
             if (mouse.button === Qt.LeftButton)
                 AppleBatteryStatus.refresh();
         }
