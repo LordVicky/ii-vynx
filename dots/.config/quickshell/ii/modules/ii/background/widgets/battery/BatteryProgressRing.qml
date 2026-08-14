@@ -48,6 +48,7 @@ Item {
         scaleFactor: root.scaleFactor
         requestedWeight: Font.DemiBold
         color: root.ringColor
+        Behavior on color { animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this) }
         fontSizeMode: Text.Fit
         minimumPixelSize: Appearance.font.pixelSize.smallest * root.scaleFactor
     }
