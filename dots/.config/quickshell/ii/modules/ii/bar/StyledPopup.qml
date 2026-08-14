@@ -246,7 +246,9 @@ LazyLoader {
                 return (heroHeight + margin * 2) + (_commitHeight - (heroHeight + margin * 2)) * popupWindow.animProgress;
             }
 
-            color: Appearance.m3colors.m3surfaceContainer
+            // Respect the shell transparency setting so Hyprland's layer blur can
+            // remain visible behind popups.
+            color: Appearance.colors.colBackgroundSurfaceContainer
             radius: root.popupRadius
 
             Item {
