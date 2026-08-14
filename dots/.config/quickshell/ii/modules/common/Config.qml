@@ -420,6 +420,8 @@ Singleton {
                         property string layout: "list"
                         property bool showLaptopBattery: true
                         property bool showBluetoothBatteries: true
+                        property bool showAppleBatteries: true
+                        property int applePollingMinutes: 15
                     }
                     property JsonObject openRgb: JsonObject {
                         property bool enable: false

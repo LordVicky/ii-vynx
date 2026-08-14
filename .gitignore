@@ -15,3 +15,14 @@ __pycache__/
 
 # Emacs auto backup file
 *~
+
+# Never commit Apple/iCloud authentication artifacts or local probe output.
+# Runtime state belongs under XDG_STATE_HOME, outside this repository.
+**/apple-auth/
+**/icloud-auth/
+**/pyicloud-session/
+**/pyicloud-cookie*
+**/apple-findmy*.json
+**/findmy-probe*.json
+**/.apple-account
+**/.icloud-session
