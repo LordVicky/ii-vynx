@@ -73,8 +73,9 @@ test("shared battery rings render charging inside the ring", () => {
     assert.match(ring, /visible: root\.charging/);
     assert.match(ring, /import QtQuick\.Shapes/);
     assert.match(ring, /Shape \{[\s\S]*id: chargingBolt[\s\S]*anchors\.centerIn: parent/);
-    assert.match(ring, /width: root\.ringSize \* 0\.27/);
-    assert.match(ring, /height: root\.ringSize \* 0\.31/);
+    assert.match(ring, /readonly property bool smallRing: ringSize <= 40 \* scaleFactor/);
+    assert.match(ring, /width: root\.ringSize \* \(root\.smallRing \? 0\.34 : 0\.27\)/);
+    assert.match(ring, /height: root\.ringSize \* \(root\.smallRing \? 0\.40 : 0\.31\)/);
     assert.match(ring, /strokeWidth: Math\.max\(0\.6, chargingBolt\.width \* 0\.055\)/);
     assert.match(ring, /fillColor: root\.ringColor/);
     assert.match(ring, /strokeColor: root\.ringColor/);

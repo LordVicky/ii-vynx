@@ -15,6 +15,7 @@ Item {
     property string centerText: ""
     property bool charging: false
     property real scaleFactor: 1
+    readonly property bool smallRing: ringSize <= 40 * scaleFactor
 
     implicitWidth: ringSize
     implicitHeight: ringSize
@@ -43,8 +44,8 @@ Item {
     Shape {
         id: chargingBolt
         anchors.centerIn: parent
-        width: root.ringSize * 0.27
-        height: root.ringSize * 0.31
+        width: root.ringSize * (root.smallRing ? 0.34 : 0.27)
+        height: root.ringSize * (root.smallRing ? 0.40 : 0.31)
         visible: root.charging
         preferredRendererType: Shape.CurveRenderer
 
