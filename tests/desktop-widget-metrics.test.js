@@ -35,11 +35,19 @@ test("declares the desktop widget presentation tiers", () => {
 test("exposes the semantic metric groups used by desktop widgets", () => {
     const qml = source();
 
-    for (const group of ["typography", "glyph", "control", "spacing", "padding", "height"])
+    for (const group of ["typography", "glyph", "control", "spacing", "padding", "height", "canvas"])
         assert.match(qml, new RegExp(`${group}: QtObject`));
 
     for (const property of ["caption", "supporting", "body", "actionLabel", "primaryLabel", "heading"])
         assert.match(qml, new RegExp(`readonly property int ${property}:`));
+});
+
+test("provides shared standard and compact card widths", () => {
+    const qml = source();
+
+    assert.equal(numericProperty(qml, "canvas", "standard"), 276);
+    assert.equal(numericProperty(qml, "canvas", "compact"), 220);
+    assert.ok(numericProperty(qml, "canvas", "compact") < numericProperty(qml, "canvas", "standard"));
 });
 
 test("keeps geometry tokens positive and ordered by prominence", () => {

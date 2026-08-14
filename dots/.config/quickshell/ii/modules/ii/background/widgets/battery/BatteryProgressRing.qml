@@ -12,6 +12,7 @@ Item {
     property real lineWidth: 5
     property string centerIcon: ""
     property string centerText: ""
+    property bool charging: false
     property real scaleFactor: 1
 
     implicitWidth: ringSize
@@ -28,7 +29,7 @@ Item {
 
     TransformSafeSymbol {
         anchors.fill: parent
-        visible: root.centerIcon.length > 0
+        visible: !root.charging && root.centerIcon.length > 0
         text: root.centerIcon
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
@@ -38,9 +39,19 @@ Item {
         Behavior on color { animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this) }
     }
 
+    TransformSafeSymbol {
+        anchors.centerIn: parent
+        visible: root.charging
+        text: "bolt"
+        baseIconSize: Appearance.font.pixelSize.normal
+        scaleFactor: root.scaleFactor
+        color: root.ringColor
+        Behavior on color { animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this) }
+    }
+
     TransformSafeText {
         anchors.fill: parent
-        visible: root.centerIcon.length === 0 && root.centerText.length > 0
+        visible: !root.charging && root.centerIcon.length === 0 && root.centerText.length > 0
         text: root.centerText
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter

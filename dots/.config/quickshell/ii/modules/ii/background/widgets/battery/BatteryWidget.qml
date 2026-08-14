@@ -25,6 +25,16 @@ AbstractBackgroundWidget {
         Config.options.background.widgets.battery.layout = root.layoutOrder[(index + 1) % root.layoutOrder.length];
     }
 
+    function vividBatteryColor(color, hueOverride = -1, saturationFloor = 0.45, lightnessOverride = -1) {
+        const source = Qt.color(color);
+        const saturation = Math.min(1, Math.max(saturationFloor, source.hslSaturation * 1.75));
+        const lightness = lightnessOverride >= 0
+            ? lightnessOverride
+            : Math.min(0.84, Math.max(0.6, source.hslLightness * 1.08));
+        const hue = hueOverride >= 0 ? hueOverride : source.hslHue;
+        return Qt.hsla(hue, saturation, lightness, source.a);
+    }
+
     BatteryDevices { id: batteryDevices }
 
     // AbstractWidget is already a draggable MouseArea. A small pointer movement
@@ -304,7 +314,9 @@ AbstractBackgroundWidget {
         id: card
         host: root
         scaleFactor: root.widgetScale
-        baseWidth: root.compactMode ? 220 : 360
+        baseWidth: root.compactMode
+            ? DesktopWidgetMetrics.canvas.compact
+            : DesktopWidgetMetrics.canvas.standard
         baseHeight: root.compactMode ? 132 : root.listAuthoredHeight
 
         onRequestScale: v => root.dragScale = v
@@ -346,9 +358,13 @@ AbstractBackgroundWidget {
                     property real animatedPercentage: percentage
                     readonly property bool chargingActive: !stale && chargingKnown && charging
                     readonly property bool low: percentage <= (Config.options.battery.low / 100)
-                    readonly property color percentageColor: chargingActive
-                        ? Appearance.colors.colTertiary
-                        : low ? Appearance.colors.colError : Appearance.colors.colOnLayer0
+                    readonly property bool high: percentage >= 0.9
+                    readonly property color percentageColor: high
+                        ? root.vividBatteryColor(Appearance.m3colors.m3success, 0.39, 0.62, 0.58)
+                        : chargingActive
+                        ? root.vividBatteryColor(Appearance.colors.colTertiary)
+                        : low ? root.vividBatteryColor(Appearance.colors.colError, 0.0, 0.75, 0.58)
+                              : Appearance.colors.colOnLayer0
 
                     Behavior on animatedPercentage { animation: Appearance.animation.elementMoveSmall.numberAnimation.createObject(this) }
 
@@ -381,55 +397,15 @@ AbstractBackgroundWidget {
                             elide: Text.ElideRight
                         }
 
-                        Item {
-                            id: chargingSlot
-                            readonly property real expandedWidth: chargingPill.implicitWidth
-                            property real animatedWidth: deviceRow.chargingActive ? expandedWidth : 0
-                            Layout.preferredWidth: animatedWidth
-                            Layout.preferredHeight: card.scaled(26)
-                            clip: true
-                            opacity: deviceRow.chargingActive ? 1 : 0
-                            Behavior on animatedWidth { animation: Appearance.animation.elementMoveSmall.numberAnimation.createObject(this) }
-                            Behavior on opacity { animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this) }
-
-                            Rectangle {
-                                id: chargingPill
-                                anchors.right: parent.right
-                                anchors.verticalCenter: parent.verticalCenter
-                                implicitWidth: chargingPillContent.implicitWidth + card.scaled(16)
-                                implicitHeight: card.scaled(26)
-                                radius: card.scaled(Appearance.rounding.full)
-                                color: Appearance.colors.colTertiaryContainer
-
-                                RowLayout {
-                                    id: chargingPillContent
-                                    anchors.centerIn: parent
-                                    spacing: card.scaled(4)
-                                    TransformSafeSymbol {
-                                        text: "bolt"
-                                        baseIconSize: Appearance.font.pixelSize.smallie
-                                        scaleFactor: root.widgetScale
-                                        color: Appearance.colors.colTertiary
-                                    }
-                                    TransformSafeText {
-                                        text: Translation.tr("Charging")
-                                        basePixelSize: Appearance.font.pixelSize.smaller
-                                        scaleFactor: root.widgetScale
-                                        requestedWeight: Font.DemiBold
-                                        color: Appearance.colors.colOnTertiaryContainer
-                                    }
-                                }
-                            }
-                        }
-
                         BatteryProgressRing {
                             Layout.preferredWidth: card.scaled(root.rowHeight)
                             Layout.preferredHeight: card.scaled(root.rowHeight)
                             ringSize: card.scaled(root.rowHeight)
-                            lineWidth: card.scaled(3)
+                            lineWidth: card.scaled(4)
                             percentage: deviceRow.animatedPercentage
                             ringColor: deviceRow.percentageColor
                             centerText: `${Math.round(deviceRow.animatedPercentage * 100)}`
+                            charging: deviceRow.chargingActive
                             scaleFactor: root.widgetScale
                         }
                     }
@@ -496,19 +472,24 @@ AbstractBackgroundWidget {
             property real animatedPercentage: root.compactPercentage
             readonly property bool chargingActive: !root.compactStale && root.compactChargingKnown && root.compactCharging
             readonly property bool low: root.compactPercentage <= (Config.options.battery.low / 100)
-            readonly property color levelColor: chargingActive
-                ? Appearance.colors.colTertiary
-                : low ? Appearance.colors.colError : Appearance.colors.colPrimary
+            readonly property bool high: root.compactPercentage >= 0.9
+            readonly property color levelColor: high
+                ? root.vividBatteryColor(Appearance.m3colors.m3success, 0.39, 0.62, 0.58)
+                : chargingActive
+                ? root.vividBatteryColor(Appearance.colors.colTertiary)
+                : low ? root.vividBatteryColor(Appearance.colors.colError, 0.0, 0.75, 0.58)
+                      : Appearance.colors.colPrimary
 
             Behavior on animatedPercentage { animation: Appearance.animation.elementMoveSmall.numberAnimation.createObject(this) }
 
             BatteryProgressRing {
                 Layout.alignment: Qt.AlignVCenter
                 ringSize: card.scaled(56)
-                lineWidth: card.scaled(5)
+                lineWidth: card.scaled(6)
                 percentage: compactContent.animatedPercentage
                 ringColor: compactContent.levelColor
                 centerIcon: root.compactIcon
+                charging: compactContent.chargingActive
                 scaleFactor: root.widgetScale
             }
 

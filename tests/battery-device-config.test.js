@@ -17,6 +17,101 @@ test("battery device sources and layout have persisted defaults", () => {
     assert.match(battery, /property int applePollingMinutes: 15/);
 });
 
+test("battery card uses shared desktop widget canvas widths", () => {
+    const widget = fs.readFileSync(
+        path.join(__dirname, "../dots/.config/quickshell/ii/modules/ii/background/widgets/battery/BatteryWidget.qml"),
+        "utf8"
+    );
+
+    assert.match(widget, /DesktopWidgetMetrics\.canvas\.compact/);
+    assert.match(widget, /DesktopWidgetMetrics\.canvas\.standard/);
+});
+
+test("battery rings use the success color from 90 percent upward", () => {
+    const widget = fs.readFileSync(
+        path.join(__dirname, "../dots/.config/quickshell/ii/modules/ii/background/widgets/battery/BatteryWidget.qml"),
+        "utf8"
+    );
+
+    assert.match(widget, /percentage >= 0\.9/);
+    assert.match(widget, /Appearance\.m3colors\.m3success/);
+});
+
+test("battery status colors are boosted for wallpaper contrast", () => {
+    const widget = fs.readFileSync(
+        path.join(__dirname, "../dots/.config/quickshell/ii/modules/ii/background/widgets/battery/BatteryWidget.qml"),
+        "utf8"
+    );
+
+    assert.match(widget, /function vividBatteryColor\(color, hueOverride = -1, saturationFloor = 0\.45, lightnessOverride = -1\)/);
+    assert.match(widget, /Math\.max\(saturationFloor, source\.hslSaturation \* 1\.75\)/);
+    assert.match(widget, /Math\.max\(0\.6, source\.hslLightness \* 1\.08\)/);
+    assert.match(widget, /vividBatteryColor\(Appearance\.colors\.colError/);
+    assert.match(widget, /vividBatteryColor\(Appearance\.colors\.colTertiary\)/);
+});
+
+test("low battery color uses an Apple-style red hue", () => {
+    const widget = fs.readFileSync(
+        path.join(__dirname, "../dots/.config/quickshell/ii/modules/ii/background/widgets/battery/BatteryWidget.qml"),
+        "utf8"
+    );
+
+    assert.match(widget, /vividBatteryColor\(Appearance\.colors\.colError, 0\.0, 0\.75, 0\.58\)/);
+});
+
+test("shared battery rings render charging inside the ring", () => {
+    const ring = fs.readFileSync(
+        path.join(__dirname, "../dots/.config/quickshell/ii/modules/ii/background/widgets/battery/BatteryProgressRing.qml"),
+        "utf8"
+    );
+    const widget = fs.readFileSync(
+        path.join(__dirname, "../dots/.config/quickshell/ii/modules/ii/background/widgets/battery/BatteryWidget.qml"),
+        "utf8"
+    );
+
+    assert.match(ring, /property bool charging: false/);
+    assert.match(ring, /visible: root\.charging/);
+    assert.match(ring, /TransformSafeSymbol \{[\s\S]*anchors\.centerIn: parent[\s\S]*visible: root\.charging/);
+    assert.match(ring, /text: "bolt"/);
+    assert.match(ring, /baseIconSize: Appearance\.font\.pixelSize\.normal/);
+    assert.match(ring, /color: root\.ringColor/);
+    assert.doesNotMatch(ring, /Canvas \{/);
+    assert.doesNotMatch(ring, /chargingOverlay/);
+    assert.doesNotMatch(ring, /chargingColor/);
+    assert.match(widget, /charging: deviceRow\.chargingActive/);
+    assert.match(widget, /charging: compactContent\.chargingActive/);
+    assert.doesNotMatch(widget, /chargingColor:/);
+});
+
+test("battery full rows no longer render a separate charging indicator", () => {
+    const widget = fs.readFileSync(
+        path.join(__dirname, "../dots/.config/quickshell/ii/modules/ii/background/widgets/battery/BatteryWidget.qml"),
+        "utf8"
+    );
+
+    assert.doesNotMatch(widget, /id: chargingSlot/);
+    assert.doesNotMatch(widget, /text: "bolt"/);
+});
+
+test("battery ring thickness changes without changing ring sizes", () => {
+    const widget = fs.readFileSync(
+        path.join(__dirname, "../dots/.config/quickshell/ii/modules/ii/background/widgets/battery/BatteryWidget.qml"),
+        "utf8"
+    );
+
+    assert.match(widget, /ringSize: card\.scaled\(root\.rowHeight\)[\s\S]*lineWidth: card\.scaled\(4\)/);
+    assert.match(widget, /ringSize: card\.scaled\(56\)[\s\S]*lineWidth: card\.scaled\(6\)/);
+});
+
+test("high battery color uses a true green hue", () => {
+    const widget = fs.readFileSync(
+        path.join(__dirname, "../dots/.config/quickshell/ii/modules/ii/background/widgets/battery/BatteryWidget.qml"),
+        "utf8"
+    );
+
+    assert.match(widget, /vividBatteryColor\(Appearance\.m3colors\.m3success, 0\.39, 0\.62, 0\.58\)/);
+});
+
 test("remote battery freshness advances independently of polling", () => {
     const service = fs.readFileSync(
         path.join(__dirname, "../dots/.config/quickshell/ii/services/AppleBatteryStatus.qml"),

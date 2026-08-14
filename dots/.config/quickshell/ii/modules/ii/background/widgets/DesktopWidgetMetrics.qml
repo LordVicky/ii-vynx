@@ -53,4 +53,11 @@ QtObject {
         readonly property int compactBar: 72
     }
 
+    // Shared authored card widths keep equivalent desktop widget layouts on
+    // the same canvas while allowing compact presentations to stay smaller.
+    readonly property QtObject canvas: QtObject {
+        readonly property int standard: 276
+        readonly property int compact: 220
+    }
+
 }
