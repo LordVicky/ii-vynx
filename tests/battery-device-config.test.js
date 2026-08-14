@@ -164,6 +164,8 @@ test("Apple battery devices use dedicated glyphs in list and compact layouts", (
     assert.match(appleGlyph, /readonly property bool iphone:/);
     assert.match(appleGlyph, /readonly property bool watch:/);
     assert.match(appleGlyph, /readonly property bool airpods:/);
+    assert.match(appleGlyph, /id: watchCase[\s\S]*width: Math\.round\(root\.width \* 0\.62\)[\s\S]*height: Math\.round\(root\.height \* 0\.76\)/);
+    assert.match(appleGlyph, /width: Math\.round\(root\.width \* 0\.28\)[\s\S]*height: Math\.round\(root\.height \* 0\.3\)/);
     assert.doesNotMatch(appleGlyph, /CustomIcon|ColorOverlay|IconImage/);
 
     for (const filename of [

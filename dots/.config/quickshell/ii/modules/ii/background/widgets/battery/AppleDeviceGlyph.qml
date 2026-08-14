@@ -47,27 +47,27 @@ Item {
         Rectangle {
             anchors.horizontalCenter: parent.horizontalCenter
             y: 0
-            width: Math.round(root.width * 0.34)
-            height: Math.round(root.height * 0.28)
-            radius: Math.round(width * 0.12)
+            width: Math.round(root.width * 0.28)
+            height: Math.round(root.height * 0.3)
+            radius: Math.round(width * 0.18)
             color: root.color
         }
 
         Rectangle {
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.bottom: parent.bottom
-            width: Math.round(root.width * 0.34)
-            height: Math.round(root.height * 0.28)
-            radius: Math.round(width * 0.12)
+            width: Math.round(root.width * 0.28)
+            height: Math.round(root.height * 0.3)
+            radius: Math.round(width * 0.18)
             color: root.color
         }
 
         Rectangle {
             id: watchCase
             anchors.centerIn: parent
-            width: Math.round(root.width * 0.72)
-            height: Math.round(root.height * 0.68)
-            radius: Math.round(width * 0.25)
+            width: Math.round(root.width * 0.62)
+            height: Math.round(root.height * 0.76)
+            radius: Math.round(width * 0.28)
             color: "transparent"
             border.width: Math.max(2, Math.round(root.width * 0.1))
             border.color: root.color
@@ -75,10 +75,10 @@ Item {
         }
 
         Rectangle {
-            x: watchCase.x + watchCase.width - 1
+            x: watchCase.x + watchCase.width - 0.5
             anchors.verticalCenter: watchCase.verticalCenter
             width: Math.max(2, Math.round(root.width * 0.09))
-            height: Math.round(root.height * 0.2)
+            height: Math.round(root.height * 0.16)
             radius: width / 2
             color: root.color
         }
