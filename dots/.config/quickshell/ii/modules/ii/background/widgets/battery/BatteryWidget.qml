@@ -40,7 +40,7 @@ AbstractBackgroundWidget {
     readonly property int rowHeight: 36
     readonly property int rowSpacing: 8
     property int layoutRowCount: 1
-    readonly property real listAuthoredHeight: 88 + layoutRowCount * 44
+    readonly property real listAuthoredHeight: 24 + layoutRowCount * 44
 
     readonly property int compactSwitchThreshold: 5
     readonly property int compactTieThreshold: 2
@@ -57,16 +57,6 @@ AbstractBackgroundWidget {
     property bool compactCharging: false
     property bool compactChargingKnown: false
     property bool compactStale: false
-
-    readonly property int chargingCount: {
-        let count = 0;
-        for (let i = 0; i < deviceModel.count; ++i) {
-            const device = deviceModel.get(i);
-            if (!device.stale && device.chargingKnown && device.charging)
-                count++;
-        }
-        return count;
-    }
 
     implicitWidth: card.implicitWidth
     implicitHeight: card.implicitHeight
@@ -326,44 +316,6 @@ AbstractBackgroundWidget {
             spacing: card.scaled(8)
             visible: !root.compactMode
 
-            Item {
-                Layout.fillWidth: true
-                Layout.preferredHeight: card.scaled(36)
-
-                Rectangle {
-                    anchors.left: parent.left
-                    anchors.verticalCenter: parent.verticalCenter
-                    width: card.scaled(36)
-                    height: card.scaled(36)
-                    radius: card.scaled(Appearance.rounding.full)
-                    color: root.chargingCount > 0 ? Appearance.colors.colTertiaryContainer : Appearance.colors.colPrimaryContainer
-
-                    Behavior on color { animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this) }
-
-                    TransformSafeSymbol {
-                        anchors.fill: parent
-                        text: "battery_full"
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
-                        baseIconSize: Appearance.font.pixelSize.normal
-                        scaleFactor: root.widgetScale
-                        color: root.chargingCount > 0 ? Appearance.colors.colTertiary : Appearance.colors.colPrimary
-                        Behavior on color { animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this) }
-                    }
-                }
-
-                TransformSafeText {
-                    anchors.right: parent.right
-                    anchors.verticalCenter: parent.verticalCenter
-                    text: `${deviceModel.count}`
-                    basePixelSize: Appearance.font.pixelSize.smaller
-                    scaleFactor: root.widgetScale
-                    color: root.adaptiveSubtextColor
-                    opacity: (root.containsMouse || layoutToggleArea.containsMouse) ? 0 : 1
-                    Behavior on opacity { NumberAnimation { duration: 150 } }
-                }
-            }
-
             ListView {
                 id: deviceList
                 Layout.fillWidth: true
@@ -468,15 +420,15 @@ AbstractBackgroundWidget {
                             }
                         }
 
-                        TransformSafeText {
-                            Layout.preferredWidth: card.scaled(42)
-                            horizontalAlignment: Text.AlignRight
-                            text: `${Math.round(deviceRow.animatedPercentage * 100)}%`
-                            basePixelSize: Appearance.font.pixelSize.small
+                        BatteryProgressRing {
+                            Layout.preferredWidth: card.scaled(root.rowHeight)
+                            Layout.preferredHeight: card.scaled(root.rowHeight)
+                            ringSize: card.scaled(root.rowHeight)
+                            lineWidth: card.scaled(3)
+                            percentage: deviceRow.animatedPercentage
+                            ringColor: deviceRow.percentageColor
+                            centerText: `${Math.round(deviceRow.animatedPercentage * 100)}`
                             scaleFactor: root.widgetScale
-                            requestedWeight: deviceRow.chargingActive ? Font.DemiBold : Font.Normal
-                            color: deviceRow.percentageColor
-                            Behavior on color { animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this) }
                         }
                     }
                 }
@@ -531,17 +483,6 @@ AbstractBackgroundWidget {
                 }
             }
 
-            TransformSafeText {
-                Layout.fillWidth: true
-                Layout.preferredHeight: card.scaled(12)
-                visible: deviceModel.count > 0 || shrinkTimer.running
-                opacity: root.chargingCount > 0 ? 1 : 0
-                text: root.chargingCount === 1 ? Translation.tr("1 charging") : Translation.tr("%1 charging").arg(root.chargingCount)
-                basePixelSize: Appearance.font.pixelSize.smaller
-                scaleFactor: root.widgetScale
-                color: root.adaptiveSubtextColor
-                Behavior on opacity { animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this) }
-            }
         }
 
         RowLayout {
