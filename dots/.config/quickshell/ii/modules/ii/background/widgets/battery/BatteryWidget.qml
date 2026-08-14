@@ -40,7 +40,9 @@ AbstractBackgroundWidget {
     readonly property int rowHeight: 36
     readonly property int rowSpacing: 8
     property int layoutRowCount: 1
-    readonly property real listAuthoredHeight: 24 + layoutRowCount * 44
+    readonly property real listAuthoredHeight: 2 * card.contentPadding
+        + layoutRowCount * root.rowHeight
+        + Math.max(0, layoutRowCount - 1) * root.rowSpacing
 
     readonly property int compactSwitchThreshold: 5
     readonly property int compactTieThreshold: 2
