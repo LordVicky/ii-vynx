@@ -23,12 +23,20 @@ test("lazy content is owned by the active popup window", () => {
     assert.match(componentBody, /active:\s*root\.lazyContent\s*!==\s*null/);
 });
 
+test("lazy content is attached after the loader creates its item", () => {
+    const source = read("modules/ii/bar/StyledPopup.qml");
+    assert.match(source, /function attachContentItem\(content\)/);
+    assert.match(source, /if \(!content \|\| !contentContainer\)\s*return/);
+    assert.match(source, /id:\s*lazyContentLoader[\s\S]*?onItemChanged:\s*popupWindow\.attachContentItem\(item\)/);
+    assert.match(source, /Component\.onCompleted:\s*popupWindow\.attachContentItem\(root\.effectiveContentItem\)/);
+});
+
 test("popup sizing and placement use effective content", () => {
     const source = read("modules/ii/bar/StyledPopup.qml");
     assert.doesNotMatch(source, /root\.contentItem\?\.implicit/);
     assert.match(source, /root\.effectiveContentItem\?\.implicitWidth/);
     assert.match(source, /root\.effectiveContentItem\?\.implicitHeight/);
-    assert.match(source, /root\.effectiveContentItem\.parent = contentContainer/);
+    assert.match(source, /content\.parent = contentContainer/);
 });
 
 test("weather forecast work exists only inside lazy popup content", () => {
