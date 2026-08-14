@@ -146,7 +146,7 @@ test("Apple battery devices use dedicated glyphs in list and compact layouts", (
     assert.match(widget, /required property string customIcon/);
     assert.match(widget, /customIcon: device\.customIcon/);
     assert.match(widget, /deviceModel\.setProperty\(currentIndex, "customIcon", device\.customIcon\)/);
-    assert.match(widget, /CustomIcon \{[\s\S]*source: deviceRow\.customIcon[\s\S]*colorize: true/);
+    assert.match(widget, /AppleDeviceGlyph \{[\s\S]*source: deviceRow\.customIcon/);
     assert.match(widget, /readonly property color foregroundColor: stale[\s\S]*\? root\.adaptiveSubtextColor[\s\S]*: Appearance\.colors\.colOnLayer0/);
     assert.match(widget, /source: deviceRow\.customIcon[\s\S]*color: deviceRow\.foregroundColor/);
     assert.match(widget, /text: deviceRow\.icon[\s\S]*color: deviceRow\.foregroundColor/);
@@ -154,8 +154,17 @@ test("Apple battery devices use dedicated glyphs in list and compact layouts", (
     assert.match(widget, /centerCustomIcon: root\.compactCustomIcon/);
 
     assert.match(ring, /property string centerCustomIcon: ""/);
-    assert.match(ring, /CustomIcon \{[\s\S]*source: root\.centerCustomIcon[\s\S]*colorize: true/);
+    assert.match(ring, /AppleDeviceGlyph \{[\s\S]*source: root\.centerCustomIcon/);
     assert.doesNotMatch(customIcon, /sourceSize/);
+
+    const appleGlyph = fs.readFileSync(
+        path.join(__dirname, "../dots/.config/quickshell/ii/modules/ii/background/widgets/battery/AppleDeviceGlyph.qml"),
+        "utf8"
+    );
+    assert.match(appleGlyph, /readonly property bool iphone:/);
+    assert.match(appleGlyph, /readonly property bool watch:/);
+    assert.match(appleGlyph, /readonly property bool airpods:/);
+    assert.doesNotMatch(appleGlyph, /CustomIcon|ColorOverlay|IconImage/);
 
     for (const filename of [
         "apple-iphone-symbolic.svg",

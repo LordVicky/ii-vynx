@@ -385,13 +385,12 @@ AbstractBackgroundWidget {
                             Layout.preferredWidth: card.scaled(36)
                             Layout.preferredHeight: card.scaled(root.rowHeight)
 
-                            CustomIcon {
+                            AppleDeviceGlyph {
                                 anchors.centerIn: parent
                                 width: card.scaled(22)
                                 height: width
                                 visible: deviceRow.customIcon.length > 0
                                 source: deviceRow.customIcon
-                                colorize: true
                                 color: deviceRow.foregroundColor
                             }
 

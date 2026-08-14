@@ -42,13 +42,12 @@ Item {
         Behavior on color { animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this) }
     }
 
-    CustomIcon {
+    AppleDeviceGlyph {
         anchors.centerIn: parent
         width: root.ringSize * 0.42
         height: width
         visible: !root.charging && root.centerCustomIcon.length > 0
         source: root.centerCustomIcon
-        colorize: true
         color: root.ringColor
     }
 
