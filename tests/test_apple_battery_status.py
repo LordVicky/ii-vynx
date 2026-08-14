@@ -1,6 +1,7 @@
 import importlib.util
 import pathlib
 import unittest
+from unittest.mock import patch
 
 
 SOURCE = pathlib.Path(__file__).parents[1] / "dots/.config/quickshell/ii/scripts/apple/battery-status.py"
@@ -30,6 +31,47 @@ class AppleBatteryStatusTests(unittest.TestCase):
         self.assertTrue(APPLE.battery_reliable("Unknown", "200"))
         self.assertFalse(APPLE.battery_reliable("Unknown", "203"))
         self.assertTrue(APPLE.battery_reliable("NotCharging", "203"))
+
+    def test_two_step_authentication_uses_a_trusted_device(self):
+        device = {"deviceName": "Test iPhone"}
+
+        class Api:
+            requires_2fa = False
+            requires_2sa = True
+            is_trusted_session = False
+            trusted_devices = [device]
+
+            def send_verification_code(self, selected):
+                self.selected = selected
+                return True
+
+            def validate_verification_code(self, selected, code):
+                self.code = code
+                self.is_trusted_session = True
+                return selected is device and code == "123456"
+
+        api = Api()
+        with patch("builtins.input", return_value="0"), patch.object(
+            APPLE.getpass, "getpass", return_value="123456"
+        ):
+            self.assertTrue(APPLE.complete_authentication(api))
+        self.assertIs(api.selected, device)
+        self.assertEqual(api.code, "123456")
+
+    def test_saved_session_must_open_find_my_before_login_succeeds(self):
+        class Api:
+            requires_2fa = False
+            requires_2sa = False
+            devices = [object()]
+
+        self.assertTrue(APPLE.find_my_session_usable(Api()))
+
+        class ChallengedApi:
+            requires_2fa = True
+            requires_2sa = False
+            devices = []
+
+        self.assertFalse(APPLE.find_my_session_usable(ChallengedApi()))
 
 
 if __name__ == "__main__":

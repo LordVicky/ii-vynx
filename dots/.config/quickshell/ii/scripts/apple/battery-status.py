@@ -130,6 +130,64 @@ def service(apple_id: str, password: str | None):
     )
 
 
+def complete_authentication(api: Any) -> bool:
+    if api.requires_2fa:
+        security_keys = getattr(api, "security_key_names", None)
+        if security_keys:
+            print(
+                "Security-key 2FA is not handled by this minimal helper; "
+                "use pyicloud's `icloud auth login` CLI for this account.",
+                file=sys.stderr,
+            )
+            return False
+
+        if not api.request_2fa_code():
+            print("Unable to request an Apple verification code.", file=sys.stderr)
+            return False
+        code = getpass.getpass("Apple verification code: ").strip()
+        if not api.validate_2fa_code(code):
+            print("Verification code rejected.", file=sys.stderr)
+            return False
+
+    elif api.requires_2sa:
+        devices = api.trusted_devices
+        if not devices:
+            print("Apple did not provide a trusted device for verification.", file=sys.stderr)
+            return False
+
+        print("Choose a trusted device for the verification code:")
+        for index, device in enumerate(devices):
+            label = device.get("deviceName") or device.get("phoneNumber") or "Trusted device"
+            print(f"  {index}: {label}")
+        try:
+            selected = devices[int(input("Trusted device number: ").strip() or "0")]
+        except (ValueError, IndexError):
+            print("Invalid trusted device selection.", file=sys.stderr)
+            return False
+        if not api.send_verification_code(selected):
+            print("Apple could not send a verification code.", file=sys.stderr)
+            return False
+        code = getpass.getpass("Apple verification code: ").strip()
+        if not api.validate_verification_code(selected, code):
+            print("Verification code rejected.", file=sys.stderr)
+            return False
+
+    if not api.is_trusted_session and not api.trust_session():
+        print("Apple session could not be marked as trusted.", file=sys.stderr)
+        return False
+    return True
+
+
+def find_my_session_usable(api: Any) -> bool:
+    if api.requires_2fa or api.requires_2sa:
+        return False
+    try:
+        list(api.devices)
+    except Exception:
+        return False
+    return True
+
+
 def login() -> int:
     apple_id = input("Apple Account email: ").strip()
     if not apple_id:
@@ -139,30 +197,20 @@ def login() -> int:
     password = getpass.getpass("Apple Account password: ")
     try:
         api = service(apple_id, password)
-        if api.requires_2fa:
-            security_keys = getattr(api, "security_key_names", None)
-            if security_keys:
-                print(
-                    "Security-key 2FA is not handled by this minimal helper; "
-                    "use pyicloud's `icloud auth login` CLI for this account.",
-                    file=sys.stderr,
-                )
-                return 3
+        if not complete_authentication(api):
+            return 3
 
-            if not api.request_2fa_code():
-                print("Unable to complete this Apple 2FA method.", file=sys.stderr)
-                return 3
-            code = getpass.getpass("Apple verification code: ").strip()
-            if not api.validate_2fa_code(code):
-                print("Verification code rejected.", file=sys.stderr)
-                return 3
-
-        if not api.is_trusted_session and not api.trust_session():
-            print("Apple session could not be marked as trusted.", file=sys.stderr)
+        persisted_api = service(apple_id, None)
+        if not find_my_session_usable(persisted_api):
+            print(
+                "Apple authentication did not produce a reusable Find My session. "
+                "Sign-in was not saved.",
+                file=sys.stderr,
+            )
             return 3
 
         write_account(apple_id)
-        print("Apple session saved.")
+        print("Apple session saved and Find My access verified.")
         return 0
     except DependencyError as exc:
         print(str(exc), file=sys.stderr)
