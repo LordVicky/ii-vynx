@@ -1,6 +1,7 @@
 import QtQuick
 import qs.modules.common
 import qs.modules.common.widgets
+import qs.modules.ii.background.widgets
 
 Item {
     id: root
@@ -34,6 +35,7 @@ Item {
         baseIconSize: Appearance.font.pixelSize.normal
         scaleFactor: root.scaleFactor
         color: root.ringColor
+        Behavior on color { animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this) }
     }
 
     TransformSafeText {
