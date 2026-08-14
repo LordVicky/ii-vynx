@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-    <rect x="5.5" y="1.5" width="13" height="21" rx="3" fill="none" stroke="#000" stroke-width="1.8"/>
-    <rect x="9" y="3.2" width="6" height="1.8" rx="0.9" fill="#000"/>
+    <path fill="#000" fill-rule="evenodd" d="M8 1h8a3 3 0 0 1 3 3v16a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3V4a3 3 0 0 1 3-3Zm.5 2.5h7a1 1 0 0 1 1 1v15a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-15a1 1 0 0 1 1-1Z"/>
+    <rect x="9" y="4.2" width="6" height="1.6" rx="0.8" fill="#000"/>
 </svg>

@@ -131,6 +131,10 @@ test("Apple battery devices use dedicated glyphs in list and compact layouts", (
         path.join(__dirname, "../dots/.config/quickshell/ii/modules/ii/background/widgets/battery/BatteryProgressRing.qml"),
         "utf8"
     );
+    const customIcon = fs.readFileSync(
+        path.join(__dirname, "../dots/.config/quickshell/ii/modules/common/widgets/CustomIcon.qml"),
+        "utf8"
+    );
 
     assert.match(devices, /function appleCustomIcon\(deviceClass\)/);
     assert.match(devices, /return "apple-iphone-symbolic\.svg"/);
@@ -143,10 +147,16 @@ test("Apple battery devices use dedicated glyphs in list and compact layouts", (
     assert.match(widget, /customIcon: device\.customIcon/);
     assert.match(widget, /deviceModel\.setProperty\(currentIndex, "customIcon", device\.customIcon\)/);
     assert.match(widget, /CustomIcon \{[\s\S]*source: deviceRow\.customIcon[\s\S]*colorize: true/);
+    assert.match(widget, /source: deviceRow\.customIcon[\s\S]*sourceScale: 2/);
     assert.match(widget, /centerCustomIcon: root\.compactCustomIcon/);
 
     assert.match(ring, /property string centerCustomIcon: ""/);
     assert.match(ring, /CustomIcon \{[\s\S]*source: root\.centerCustomIcon[\s\S]*colorize: true/);
+    assert.match(ring, /source: root\.centerCustomIcon[\s\S]*sourceScale: 2/);
+
+    assert.match(customIcon, /property real sourceScale: 1/);
+    assert.match(customIcon, /sourceSize\.width: Math\.ceil\(root\.width \* root\.sourceScale\)/);
+    assert.match(customIcon, /sourceSize\.height: Math\.ceil\(root\.height \* root\.sourceScale\)/);
 
     for (const filename of [
         "apple-iphone-symbolic.svg",
@@ -158,6 +168,7 @@ test("Apple battery devices use dedicated glyphs in list and compact layouts", (
             "utf8"
         );
         assert.match(glyph, /viewBox="0 0 24 24"/);
+        assert.doesNotMatch(glyph, /stroke=/);
     }
 });
 
