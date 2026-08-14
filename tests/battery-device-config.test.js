@@ -147,7 +147,6 @@ test("Apple battery devices use dedicated glyphs in list and compact layouts", (
     assert.match(widget, /customIcon: device\.customIcon/);
     assert.match(widget, /deviceModel\.setProperty\(currentIndex, "customIcon", device\.customIcon\)/);
     assert.match(widget, /CustomIcon \{[\s\S]*source: deviceRow\.customIcon[\s\S]*colorize: true/);
-    assert.match(widget, /source: deviceRow\.customIcon[\s\S]*sourceScale: 2/);
     assert.match(widget, /readonly property color foregroundColor: stale[\s\S]*\? root\.adaptiveSubtextColor[\s\S]*: Appearance\.colors\.colOnLayer0/);
     assert.match(widget, /source: deviceRow\.customIcon[\s\S]*color: deviceRow\.foregroundColor/);
     assert.match(widget, /text: deviceRow\.icon[\s\S]*color: deviceRow\.foregroundColor/);
@@ -156,11 +155,7 @@ test("Apple battery devices use dedicated glyphs in list and compact layouts", (
 
     assert.match(ring, /property string centerCustomIcon: ""/);
     assert.match(ring, /CustomIcon \{[\s\S]*source: root\.centerCustomIcon[\s\S]*colorize: true/);
-    assert.match(ring, /source: root\.centerCustomIcon[\s\S]*sourceScale: 2/);
-
-    assert.match(customIcon, /property real sourceScale: 1/);
-    assert.match(customIcon, /sourceSize\.width: Math\.ceil\(root\.width \* root\.sourceScale\)/);
-    assert.match(customIcon, /sourceSize\.height: Math\.ceil\(root\.height \* root\.sourceScale\)/);
+    assert.doesNotMatch(customIcon, /sourceSize/);
 
     for (const filename of [
         "apple-iphone-symbolic.svg",

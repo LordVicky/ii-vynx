@@ -48,7 +48,6 @@ Item {
         height: width
         visible: !root.charging && root.centerCustomIcon.length > 0
         source: root.centerCustomIcon
-        sourceScale: 2
         colorize: true
         color: root.ringColor
     }

@@ -391,7 +391,6 @@ AbstractBackgroundWidget {
                                 height: width
                                 visible: deviceRow.customIcon.length > 0
                                 source: deviceRow.customIcon
-                                sourceScale: 2
                                 colorize: true
                                 color: deviceRow.foregroundColor
                             }
