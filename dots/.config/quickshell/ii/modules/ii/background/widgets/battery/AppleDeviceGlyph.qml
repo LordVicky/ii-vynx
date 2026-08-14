@@ -32,8 +32,8 @@ Item {
         Rectangle {
             anchors.horizontalCenter: phoneBody.horizontalCenter
             y: phoneBody.y + phoneBody.border.width
-            width: Math.round(root.width * 0.27)
-            height: Math.max(2, Math.round(root.height * 0.07))
+            width: root.width * 0.216
+            height: Math.max(1.5, root.height * 0.056)
             radius: height / 2
             color: root.color
             antialiasing: true
