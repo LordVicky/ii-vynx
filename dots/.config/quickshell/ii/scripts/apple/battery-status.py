@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """Minimal Apple Find My battery bridge for Vynx.
 
-`login` performs interactive authentication once and persists only pyicloud's
-trusted session state plus the Apple Account identifier. `status` is fully
-non-interactive: it reuses that session, emits a small normalized JSON payload,
-and exits. `disconnect` removes Vynx's persisted Apple session state.
+`login` performs interactive authentication once, stores the password in the
+desktop keyring, and persists pyicloud's trusted session state plus the Apple
+Account identifier. `status` is fully non-interactive: it reuses the keyring
+credential and session, emits a small normalized JSON payload, and exits.
+`disconnect` removes both the keyring credential and persisted session state.
 
 Secrets are never accepted on command arguments or written into the repository.
 """
@@ -68,8 +69,33 @@ def pyicloud_service():
     return PyiCloudService
 
 
+def configure_secure_keyring() -> None:
+    try:
+        import keyring
+        from keyring.backends.SecretService import Keyring as SecretServiceKeyring
+
+        backend = SecretServiceKeyring()
+        _ = backend.priority
+        keyring.set_keyring(backend)
+    except Exception as exc:
+        raise DependencyError(
+            "An encrypted Secret Service keyring is required; refusing plaintext credential storage"
+        ) from exc
+
+
 def ensure_state_dir() -> None:
     ensure_private_dir(STATE_DIR)
+
+
+def harden_state_permissions() -> None:
+    ensure_state_dir()
+    for child in STATE_DIR.iterdir():
+        if child.is_symlink() or not child.is_file():
+            continue
+        try:
+            child.chmod(0o600)
+        except OSError:
+            pass
 
 
 def read_account() -> str | None:
@@ -121,22 +147,28 @@ def battery_reliable(raw_status: Any, device_status: Any) -> bool:
 
 def service(apple_id: str, password: str | None):
     ensure_state_dir()
-    return pyicloud_service()(
-        apple_id,
-        password,
-        cookie_directory=str(STATE_DIR),
-        with_family=False,
-        refresh_interval=3600,
-    )
+    configure_secure_keyring()
+    try:
+        return pyicloud_service()(
+            apple_id,
+            password,
+            cookie_directory=str(STATE_DIR),
+            with_family=False,
+            refresh_interval=3600,
+        )
+    finally:
+        harden_state_permissions()
 
 
 def store_password(apple_id: str, password: str) -> None:
+    configure_secure_keyring()
     from pyicloud.utils import store_password_in_keyring
 
     store_password_in_keyring(apple_id, password)
 
 
 def delete_password(apple_id: str) -> None:
+    configure_secure_keyring()
     from pyicloud.utils import delete_password_in_keyring
 
     try:

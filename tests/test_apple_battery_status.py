@@ -1,5 +1,6 @@
 import importlib.util
 import pathlib
+import tempfile
 import unittest
 from unittest.mock import patch
 
@@ -105,6 +106,16 @@ class AppleBatteryStatusTests(unittest.TestCase):
         ) as delete, patch.object(APPLE.shutil, "rmtree"):
             self.assertEqual(APPLE.disconnect(), 0)
         delete.assert_called_once_with("user@example.com")
+
+    def test_session_artifacts_are_private(self):
+        with tempfile.TemporaryDirectory() as directory:
+            state = pathlib.Path(directory)
+            session = state / "account.session"
+            session.write_text("token", encoding="utf-8")
+            session.chmod(0o644)
+            with patch.object(APPLE, "STATE_DIR", state):
+                APPLE.harden_state_permissions()
+            self.assertEqual(session.stat().st_mode & 0o777, 0o600)
 
 
 if __name__ == "__main__":

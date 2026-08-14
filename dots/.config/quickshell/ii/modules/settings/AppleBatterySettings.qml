@@ -80,6 +80,14 @@ ColumnLayout {
             font.pixelSize: Appearance.font.pixelSize.smaller
         }
 
+        StyledText {
+            Layout.fillWidth: true
+            wrapMode: Text.Wrap
+            text: Translation.tr("Your Apple password is stored in the encrypted system keyring for background refreshes and removed when you press Disconnect.")
+            color: Appearance.colors.colSubtext
+            font.pixelSize: Appearance.font.pixelSize.smaller
+        }
+
         ConfigRow {
             Layout.fillWidth: true
 

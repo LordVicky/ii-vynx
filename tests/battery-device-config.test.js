@@ -50,3 +50,13 @@ test("Apple sign-in passes the helper as a positional argument and reports failu
     assert.match(login, /Sign-in failed/);
     assert.doesNotMatch(login, /const helper = root\.shellQuote/);
 });
+
+test("Apple settings disclose keyring storage and disconnect cleanup", () => {
+    const settings = fs.readFileSync(
+        path.join(__dirname, "../dots/.config/quickshell/ii/modules/settings/AppleBatterySettings.qml"),
+        "utf8"
+    );
+
+    assert.match(settings, /encrypted system keyring/);
+    assert.match(settings, /removed when you press Disconnect/);
+});
