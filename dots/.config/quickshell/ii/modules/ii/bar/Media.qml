@@ -22,7 +22,7 @@ Item {
     readonly property int maxWidth: 300
 
     property bool useFixedSize: Config.options.bar.mediaPlayer.useFixedSize
-    readonly property bool lyricsEnabled: Config.options.bar.mediaPlayer.lyrics.enable
+    readonly property bool lyricsEnabled: Config.options.lyricsService.enable && Config.options.bar.mediaPlayer.lyrics.enable
     readonly property bool useGradientMask: Config.options.bar.mediaPlayer.lyrics.useGradientMask
     readonly property string lyricsStyle: Config.options.bar.mediaPlayer.lyrics.style
     readonly property bool artworkEnabled: Config.options.bar.mediaPlayer.artwork.enable
@@ -33,7 +33,7 @@ Item {
 
     property int textMetricsSpacing: artworkEnabled ? 70 : 50 // text metrics returns width without spacing
     property int textMetricsAdvance: Math.min(textMetrics.advanceWidth + textMetricsSpacing, Config.options.bar.mediaPlayer.maxSize)
-    implicitWidth: LyricsService.hasSyncedLines && root.lyricsEnabled ? lyricsCustomSize : useFixedSize ? customSize : textMetricsAdvance
+    implicitWidth: root.lyricsEnabled && LyricsService.hasSyncedLines ? lyricsCustomSize : useFixedSize ? customSize : textMetricsAdvance
     implicitHeight: Appearance.sizes.barHeight
 
     Behavior on implicitWidth {
@@ -41,7 +41,13 @@ Item {
     }
 
     Component.onCompleted: {
-        LyricsService.initiliazeLyrics()
+        if (root.lyricsEnabled)
+            LyricsService.initiliazeLyrics()
+    }
+
+    onLyricsEnabledChanged: {
+        if (root.lyricsEnabled)
+            LyricsService.initiliazeLyrics()
     }
 
     readonly property string artSource: activePlayer?.trackArtUrl && activePlayer.trackArtUrl !== "" ? activePlayer.trackArtUrl : ""
@@ -150,7 +156,7 @@ Item {
     }
 
     StyledText {
-        visible: (!LyricsService.hasSyncedLines || !lyricsEnabled)
+        visible: !root.lyricsEnabled || !LyricsService.hasSyncedLines
         anchors {
             horizontalCenter: parent.horizontalCenter
             horizontalCenterOffset: artworkEnabled ? 0 : mediaCircProgSlot.width / 2
