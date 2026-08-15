@@ -53,6 +53,12 @@ Item {
     property bool adaptiveContrast: true
     property Item contrastHost: null
 
+    // AbstractBackgroundWidget inherits AbstractWidget, whose `dragging`
+    // property tracks the real drag interaction. Keep adaptive-contrast sampling
+    // asleep while the card is stationary.
+    readonly property bool contrastSamplingActive:
+        root.contrastHost?.dragging ?? false
+
     // Backdrop exposure. Read straight from Config, like widgetTint, because this
     // is a wallpaper-wide problem rather than a per-widget one - plumbing it
     // through all eleven widgets would buy nothing.
@@ -193,7 +199,7 @@ Item {
     }
 
     function scheduleContrastSample() {
-        if (!root.adaptiveContrast)
+        if (!root.adaptiveContrast || !root.contrastSamplingActive)
             return;
         const remaining = 150 - (Date.now() - root._lastContrastRequestMs);
         if (remaining <= 0) {
@@ -206,13 +212,12 @@ Item {
     }
 
     function scheduleContrastAfterBackdropSettles() {
-        if (root.adaptiveContrast)
+        if (root.adaptiveContrast && root.contrastSamplingActive)
             backdropSettle.restart();
     }
 
     Component.onCompleted: {
         root.ensureContrastClient();
-        root.scheduleContrastSample();
     }
     Component.onDestruction: {
         if (root._contrastClientId >= 0)
@@ -224,7 +229,23 @@ Item {
             root.scheduleContrastSample();
         } else {
             contrastThrottle.stop();
+            backdropSettle.stop();
             root.clearContrastSample();
+        }
+    }
+
+    onContrastSamplingActiveChanged: {
+        if (!root.adaptiveContrast)
+            return;
+
+        if (root.contrastSamplingActive) {
+            root.scheduleContrastSample();
+        } else {
+            // Guarantee a sample for the released/snapped final position.
+            contrastThrottle.stop();
+            backdropSettle.stop();
+            root._lastContrastCropSignature = "";
+            root.requestContrastSample();
         }
     }
     onWallpaperPathChanged: {
