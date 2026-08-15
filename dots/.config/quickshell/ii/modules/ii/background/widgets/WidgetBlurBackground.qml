@@ -53,11 +53,17 @@ Item {
     property bool adaptiveContrast: true
     property Item contrastHost: null
 
+    // The existing Desktop widgets > Live frosted glass switch is the resource
+    // lifetime gate. Off means tint-only: no wallpaper backdrop decode, blur FBO,
+    // rounded-mask FBO or adaptive wallpaper sampling remains active.
+    readonly property bool glassEnabled: Config.options.background.parallaxBackdrop ?? true
+    readonly property bool adaptiveContrastActive: root.glassEnabled && root.adaptiveContrast
+
     // AbstractBackgroundWidget inherits AbstractWidget, whose `dragging`
     // property tracks the real drag interaction. Keep adaptive-contrast sampling
     // asleep while the card is stationary.
     readonly property bool contrastSamplingActive:
-        root.contrastHost?.dragging ?? false
+        root.adaptiveContrastActive && (root.contrastHost?.dragging ?? false)
 
     // Backdrop exposure. Read straight from Config, like widgetTint, because this
     // is a wallpaper-wide problem rather than a per-widget one - plumbing it
@@ -119,9 +125,19 @@ Item {
     }
 
     function ensureContrastClient() {
-        if (!root.adaptiveContrast || root._contrastClientId >= 0)
+        if (!root.adaptiveContrastActive || root._contrastClientId >= 0)
             return;
         root._contrastClientId = AdaptiveContrast.registerClient();
+    }
+
+    function releaseContrastClient() {
+        contrastThrottle.stop();
+        backdropSettle.stop();
+        if (root._contrastClientId >= 0) {
+            AdaptiveContrast.unregisterClient(root._contrastClientId);
+            root._contrastClientId = -1;
+        }
+        root.clearContrastSample();
     }
 
     function normalizedWallpaperCrop() {
@@ -176,7 +192,7 @@ Item {
     }
 
     function requestContrastSample() {
-        if (!root.adaptiveContrast)
+        if (!root.adaptiveContrastActive)
             return;
         if (root.wallpaperPath === "" || root.width <= 0 || root.height <= 0) {
             root.clearContrastSample();
@@ -199,7 +215,7 @@ Item {
     }
 
     function scheduleContrastSample() {
-        if (!root.adaptiveContrast || !root.contrastSamplingActive)
+        if (!root.adaptiveContrastActive || !root.contrastSamplingActive)
             return;
         const remaining = 150 - (Date.now() - root._lastContrastRequestMs);
         if (remaining <= 0) {
@@ -212,7 +228,7 @@ Item {
     }
 
     function scheduleContrastAfterBackdropSettles() {
-        if (root.adaptiveContrast && root.contrastSamplingActive)
+        if (root.adaptiveContrastActive && root.contrastSamplingActive)
             backdropSettle.restart();
     }
 
@@ -224,18 +240,24 @@ Item {
             AdaptiveContrast.unregisterClient(root._contrastClientId);
     }
     onAdaptiveContrastChanged: {
-        if (adaptiveContrast) {
+        if (root.adaptiveContrastActive) {
             root.ensureContrastClient();
             root.scheduleContrastSample();
         } else {
-            contrastThrottle.stop();
-            backdropSettle.stop();
-            root.clearContrastSample();
+            root.releaseContrastClient();
+        }
+    }
+    onGlassEnabledChanged: {
+        if (root.adaptiveContrastActive) {
+            root.ensureContrastClient();
+            root.scheduleContrastSample();
+        } else {
+            root.releaseContrastClient();
         }
     }
 
     onContrastSamplingActiveChanged: {
-        if (!root.adaptiveContrast)
+        if (!root.adaptiveContrastActive)
             return;
 
         if (root.contrastSamplingActive) {
@@ -268,7 +290,7 @@ Item {
 
     Connections {
         target: root.wallpaperSourceItem
-        enabled: root.adaptiveContrast && root.wallpaperSourceItem !== null
+        enabled: root.adaptiveContrastActive && root.wallpaperSourceItem !== null
         function onXChanged() { root.scheduleContrastAfterBackdropSettles(); }
         function onYChanged() { root.scheduleContrastAfterBackdropSettles(); }
         function onWidthChanged() { root.scheduleContrastAfterBackdropSettles(); }
@@ -277,6 +299,7 @@ Item {
 
     Connections {
         target: AdaptiveContrast
+        enabled: root.adaptiveContrastActive
         function onSampleReady(clientId, luminance) {
             if (clientId !== root._contrastClientId)
                 return;
@@ -296,7 +319,7 @@ Item {
         target: root.contrastHost
         property: "adaptiveSubtextColor"
         value: root.adaptiveSubtextColor
-        when: root.contrastHost !== null
+        when: root.adaptiveContrastActive && root.contrastHost !== null
         restoreMode: Binding.RestoreBindingOrValue
     }
 
@@ -345,7 +368,7 @@ Item {
         id: clipContent
         anchors.fill: parent
         clip: true
-        visible: root.blur > 0.001 && root.wallpaperPath !== ""
+        visible: root.glassEnabled && root.blur > 0.001 && root.wallpaperPath !== ""
 
         // The blurred layer lives on THIS item, not on the backdrop image, and it
         // is only widget-sized (plus a blur-radius bleed margin). That matters a
@@ -369,7 +392,7 @@ Item {
             height: root.height + root._blurBleed * 2
             clip: true
 
-            layer.enabled: true
+            layer.enabled: root.glassEnabled && clipContent.visible
             layer.effect: MultiEffect {
                 // macOS "vibrancy": the backdrop is not just blurred, it is pushed
                 // saturated and slightly brighter, which is what stops frosted glass
@@ -393,7 +416,7 @@ Item {
                 y: root._blurBleed + (root._useItem ? root._backdropRect.y : root._useParallax ? (root.wallpaperRenderY - root.offsetY) : -root.offsetY)
                 width: Math.max(1, root._useItem ? root._backdropRect.width : root._useParallax ? root.wallpaperRenderWidth : root.sourceWidth)
                 height: Math.max(1, root._useItem ? root._backdropRect.height : root._useParallax ? root.wallpaperRenderHeight : root.sourceHeight)
-                source: root.wallpaperPath !== "" ? Qt.resolvedUrl(root.wallpaperPath) : ""
+                source: root.glassEnabled && root.wallpaperPath !== "" ? Qt.resolvedUrl(root.wallpaperPath) : ""
                 fillMode: Image.PreserveAspectCrop
                 asynchronous: true
                 cache: true
@@ -427,7 +450,7 @@ Item {
     Rectangle {
         id: scrim
         anchors.fill: parent
-        visible: clipContent.visible && root.backdropBrightness !== 0
+        visible: root.glassEnabled && clipContent.visible && root.backdropBrightness !== 0
         color: root.backdropBrightness < 0 ? "black" : "white"
         opacity: Math.abs(root.backdropBrightness) * root._scrimMax
     }
@@ -436,7 +459,7 @@ Item {
         anchors.fill: parent
         visible: opacity > 0
         color: "black"
-        opacity: root.adaptiveContrast ? root.automaticScrimOpacity : 0
+        opacity: root.adaptiveContrastActive ? root.automaticScrimOpacity : 0
         Behavior on opacity {
             animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
         }
@@ -445,8 +468,14 @@ Item {
     Rectangle {
         id: tint
         anchors.fill: parent
+        radius: root.cornerRadius
         color: root.tintColor
-        opacity: (1 - root.blur * 0.65) * (Config.options.background.widgetTint ?? 0)
+        // With glass disabled this is the only panel background. Keep the
+        // configured per-widget tint color and tint amount, but remove the blur
+        // attenuation because there is no glass layer to blend against.
+        opacity: root.glassEnabled
+            ? (1 - root.blur * 0.65) * (Config.options.background.widgetTint ?? 0)
+            : (Config.options.background.widgetTint ?? 0)
         Behavior on opacity {
             animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
         }
@@ -466,10 +495,12 @@ Item {
         // lit-edge read, just from the other side.
         readonly property real _rimDark: Math.max(0, root.backdropBrightness)
         border.color: Qt.rgba(1 - _rimDark, 1 - _rimDark, 1 - _rimDark, (0.12 + 0.06 * _rimDark) * Math.max(0.35, root.blur))
-        visible: root.blur > 0.001
+        visible: root.glassEnabled && root.blur > 0.001
     }
 
-    layer.enabled: true
+    // The rounded-mask layer owns another offscreen texture. Tint-only mode uses
+    // the tint Rectangle's radius directly so this FBO can be released as well.
+    layer.enabled: root.glassEnabled
     layer.effect: OpacityMask {
         maskSource: Rectangle {
             width: root.width

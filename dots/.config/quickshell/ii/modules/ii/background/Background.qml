@@ -46,10 +46,16 @@ Variants {
 
         required property var modelData
 
-        // Hide when fullscreen
+        // Keep the lightweight background window/fullscreen detector alive, but
+        // release expensive wallpaper/widget resources while this monitor is hidden
+        // by fullscreen. Locking overrides fullscreen so the lock background can load.
         property list<HyprlandWorkspace> workspacesForMonitor: Hyprland.workspaces.values.filter(workspace => workspace.monitor && workspace.monitor.name == monitor.name)
         property var activeWorkspaceWithFullscreen: workspacesForMonitor.filter(workspace => ((workspace.toplevels.values.filter(window => window.wayland?.fullscreen)[0] != undefined) && workspace.active))[0]
-        visible: GlobalStates.screenLocked || (!(activeWorkspaceWithFullscreen != undefined)) || !Config?.options.background.hideWhenFullscreen
+        readonly property bool hiddenByFullscreen: !GlobalStates.screenLocked
+            && (Config?.options.background.hideWhenFullscreen ?? false)
+            && activeWorkspaceWithFullscreen !== undefined
+        readonly property bool backgroundContentActive: !hiddenByFullscreen
+        visible: backgroundContentActive
 
         // Workspaces
         property HyprlandMonitor monitor: Hyprland.monitorFor(modelData)
@@ -196,6 +202,7 @@ Variants {
 
         property var _extensionBgWidgetEntries: []
         property var _pendingWidgetSaves: ({})
+        property bool _backgroundReady: false
 
         Timer {
             id: bgWidgetSaveTimer
@@ -221,6 +228,12 @@ Variants {
             }
             _extensionBgWidgetEntries = []
 
+            // Fullscreen hiding is a lifetime boundary, not just a visibility
+            // change. Do not recreate extension widget trees until the background
+            // becomes active again.
+            if (!bgRoot.backgroundContentActive)
+                return
+
             let list = ExtensionManager.getContributionPoint("backgroundWidgets")
 
             for (let wi = 0; wi < list.length; wi++) {
@@ -235,6 +248,11 @@ Variants {
                 let comp = ExtensionManager.loadExtensionQmlComponent(fullPath)
 
                 let createWidget = (comp, entry, fullPath, extId, wid, x, y, strat) => {
+                    // Async extension component loads may finish after fullscreen
+                    // was entered. Avoid resurrecting a hidden background widget.
+                    if (!bgRoot.backgroundContentActive)
+                        return
+
                     let savedWidgetConfig = ExtensionManager.getExtensionWidgetConfig(extId, wid)
                     let savedX = savedWidgetConfig ? savedWidgetConfig.x : x
                     let savedY = savedWidgetConfig ? savedWidgetConfig.y : y
@@ -295,7 +313,13 @@ Variants {
 
         }
 
+        onBackgroundContentActiveChanged: {
+            if (bgRoot._backgroundReady)
+                refreshExtensionBgWidgets()
+        }
+
         Component.onCompleted: {
+            bgRoot._backgroundReady = true
             refreshExtensionBgWidgets()
             if (!mediaModeOpen && Config.options.appearance.palette.type.startsWith("scheme")) {
                 Wallpapers.apply(Config.options.background.wallpaperPath)
@@ -322,11 +346,15 @@ Variants {
                 animation: Appearance.animation.elementMoveEnter.numberAnimation.createObject(this)
             }
 
-            // Wallpaper
-            TransitionImage {
+            // Wallpaper. The Loader is the fullscreen lifetime boundary: when
+            // inactive it destroys TransitionImage and both of its Image/transition
+            // trees, releasing the decoded wallpaper and scenegraph textures.
+            Loader {
                 id: wallpaper
-                visible: !blurLoader.active
+                active: bgRoot.backgroundContentActive
+                visible: active && !blurLoader.active
                 opacity: bgRoot.wallpaperIsVideo ? 0 : 1
+
                 // Range = groups that workspaces span on
                 property int chunkSize: Config?.options.bar.workspaces.shown ?? 10
                 property int lower: Math.floor(bgRoot.firstWorkspaceId / chunkSize) * chunkSize
@@ -357,9 +385,6 @@ Variants {
                 x: -(bgRoot.movableXSpace) - (effectiveValueX - 0.5) * 2 * bgRoot.movableXSpace
                 y: -(bgRoot.movableYSpace) - (effectiveValueY - 0.5) * 2 * bgRoot.movableYSpace
 
-                imageSource: bgRoot.wallpaperSafetyTriggered ? "" : bgRoot.wallpaperPath
-                animated: !bgRoot.wallpaperIsVideo
-                fillMode: Image.PreserveAspectCrop
                 Behavior on x {
                     NumberAnimation {
                         duration: 600
@@ -386,11 +411,18 @@ Variants {
                 }
                 width: bgRoot.wallpaperWidth / bgRoot.wallpaperToScreenRatio * bgRoot.effectiveWallpaperScale
                 height: bgRoot.wallpaperHeight / bgRoot.wallpaperToScreenRatio * bgRoot.effectiveWallpaperScale
+
+                sourceComponent: TransitionImage {
+                    anchors.fill: parent
+                    imageSource: bgRoot.wallpaperSafetyTriggered ? "" : bgRoot.wallpaperPath
+                    animated: !bgRoot.wallpaperIsVideo
+                    fillMode: Image.PreserveAspectCrop
+                }
             }
 
             Loader {
                 id: blurLoader
-                active: Config.options.lock.blur.enable && (GlobalStates.screenLocked || scaleAnim.running)
+                active: bgRoot.backgroundContentActive && Config.options.lock.blur.enable && (GlobalStates.screenLocked || scaleAnim.running)
                 anchors.fill: wallpaper
                 scale: GlobalStates.screenLocked ? Config.options.lock.blur.extraZoom : 1
                 Behavior on scale {
@@ -429,7 +461,7 @@ Variants {
                 }
 
                 FadeLoader {
-                    shown: Config.options.background.widgets.weather.enable
+                    shown: bgRoot.backgroundContentActive && Config.options.background.widgets.weather.enable
                     sourceComponent: WeatherWidget {
                         screenWidth: bgRoot.screen.width
                         screenHeight: bgRoot.screen.height
@@ -445,7 +477,7 @@ Variants {
                 }
 
                 FadeLoader {
-                    shown: Config.options.background.widgets.clock.enable
+                    shown: bgRoot.backgroundContentActive && Config.options.background.widgets.clock.enable
                     sourceComponent: ClockWidget {
                         screenWidth: bgRoot.screen.width
                         screenHeight: bgRoot.screen.height
@@ -471,7 +503,7 @@ Variants {
                 FadeLoader {
                     id: mediaLoader
                     property bool enableLoading: true
-                    shown: Config.options.background.widgets.media.enable && enableLoading
+                    shown: bgRoot.backgroundContentActive && Config.options.background.widgets.media.enable && enableLoading
                     sourceComponent: MediaWidget {
                         screenWidth: bgRoot.screen.width
                         screenHeight: bgRoot.screen.height
@@ -495,7 +527,7 @@ Variants {
                 }
 
                 FadeLoader {
-                    shown: Config.options.background.widgets.calendar.enable
+                    shown: bgRoot.backgroundContentActive && Config.options.background.widgets.calendar.enable
                     sourceComponent: CalendarWidget {
                         screenWidth: bgRoot.screen.width
                         screenHeight: bgRoot.screen.height
@@ -511,7 +543,7 @@ Variants {
                 }
 
                 FadeLoader {
-                    shown: Config.options.background.widgets.notes.enable
+                    shown: bgRoot.backgroundContentActive && Config.options.background.widgets.notes.enable
                     sourceComponent: NotesWidget {
                         screenWidth: bgRoot.screen.width
                         screenHeight: bgRoot.screen.height
@@ -527,7 +559,7 @@ Variants {
                 }
 
                 FadeLoader {
-                    shown: Config.options.background.widgets.resources.enable
+                    shown: bgRoot.backgroundContentActive && Config.options.background.widgets.resources.enable
                     sourceComponent: ResourcesWidget {
                         screenWidth: bgRoot.screen.width
                         screenHeight: bgRoot.screen.height
@@ -543,7 +575,7 @@ Variants {
                 }
 
                 FadeLoader {
-                    shown: Config.options.background.widgets.worldClock.enable
+                    shown: bgRoot.backgroundContentActive && Config.options.background.widgets.worldClock.enable
                     sourceComponent: WorldClockWidget {
                         screenWidth: bgRoot.screen.width
                         screenHeight: bgRoot.screen.height
@@ -559,7 +591,7 @@ Variants {
                 }
 
                 FadeLoader {
-                    shown: Config.options.background.widgets.userCard.enable
+                    shown: bgRoot.backgroundContentActive && Config.options.background.widgets.userCard.enable
                     sourceComponent: UserCardWidget {
                         screenWidth: bgRoot.screen.width
                         screenHeight: bgRoot.screen.height
@@ -575,7 +607,7 @@ Variants {
                 }
 
                 FadeLoader {
-                    shown: Config.options.background.widgets.todo.enable
+                    shown: bgRoot.backgroundContentActive && Config.options.background.widgets.todo.enable
                     sourceComponent: TodoWidget {
                         screenWidth: bgRoot.screen.width
                         screenHeight: bgRoot.screen.height
@@ -591,7 +623,7 @@ Variants {
                 }
 
                 FadeLoader {
-                    shown: Config.options.background.widgets.pomodoro.enable
+                    shown: bgRoot.backgroundContentActive && Config.options.background.widgets.pomodoro.enable
                     sourceComponent: PomodoroWidget {
                         screenWidth: bgRoot.screen.width
                         screenHeight: bgRoot.screen.height
@@ -607,7 +639,7 @@ Variants {
                 }
 
                 FadeLoader {
-                    shown: Config.options.background.widgets.lyrics.enable
+                    shown: bgRoot.backgroundContentActive && Config.options.background.widgets.lyrics.enable
                     sourceComponent: LyricsWidget {
                         screenWidth: bgRoot.screen.width
                         screenHeight: bgRoot.screen.height
@@ -623,7 +655,7 @@ Variants {
                 }
 
                 FadeLoader {
-                    shown: Config.options.background.widgets.clipboard.enable
+                    shown: bgRoot.backgroundContentActive && Config.options.background.widgets.clipboard.enable
                     sourceComponent: ClipboardWidget {
                         screenWidth: bgRoot.screen.width
                         screenHeight: bgRoot.screen.height
@@ -639,7 +671,7 @@ Variants {
                 }
 
                 FadeLoader {
-                    shown: Config.options.background.widgets.updates.enable
+                    shown: bgRoot.backgroundContentActive && Config.options.background.widgets.updates.enable
                     sourceComponent: UpdatesWidget {
                         screenWidth: bgRoot.screen.width
                         screenHeight: bgRoot.screen.height
@@ -655,7 +687,7 @@ Variants {
                 }
 
                 FadeLoader {
-                    shown: Config.options.background.widgets.privacy.enable
+                    shown: bgRoot.backgroundContentActive && Config.options.background.widgets.privacy.enable
                     sourceComponent: PrivacyWidget {
                         screenWidth: bgRoot.screen.width
                         screenHeight: bgRoot.screen.height
@@ -671,7 +703,7 @@ Variants {
                 }
 
                 FadeLoader {
-                    shown: Config.options.background.widgets.songRec.enable
+                    shown: bgRoot.backgroundContentActive && Config.options.background.widgets.songRec.enable
                     sourceComponent: SongRecWidget {
                         screenWidth: bgRoot.screen.width
                         screenHeight: bgRoot.screen.height
@@ -687,7 +719,7 @@ Variants {
                 }
 
                 FadeLoader {
-                    shown: Config.options.background.widgets.battery.enable
+                    shown: bgRoot.backgroundContentActive && Config.options.background.widgets.battery.enable
                     sourceComponent: BatteryWidget {
                         screenWidth: bgRoot.screen.width
                         screenHeight: bgRoot.screen.height
@@ -703,7 +735,7 @@ Variants {
                 }
 
                 FadeLoader {
-                    shown: Config.options.background.widgets.openRgb.enable
+                    shown: bgRoot.backgroundContentActive && Config.options.background.widgets.openRgb.enable
                     sourceComponent: OpenRgbWidget {
                         screenWidth: bgRoot.screen.width
                         screenHeight: bgRoot.screen.height
@@ -719,7 +751,7 @@ Variants {
                 }
 
                 FadeLoader {
-                    shown: Config.options.background.widgets.visualizer.enable
+                    shown: bgRoot.backgroundContentActive && Config.options.background.widgets.visualizer.enable
                     sourceComponent: VisualizerWidget {
                         screenWidth: bgRoot.screen.width
                         screenHeight: bgRoot.screen.height
@@ -735,7 +767,7 @@ Variants {
                 }
 
                 FadeLoader {
-                    shown: Config.options.background.widgets.images.enable
+                    shown: bgRoot.backgroundContentActive && Config.options.background.widgets.images.enable
                     sourceComponent: ImageConverterWidget {
                         screenWidth: bgRoot.screen.width
                         screenHeight: bgRoot.screen.height
@@ -751,7 +783,7 @@ Variants {
                 }
 
                 FadeLoader {
-                    shown: Config.options.background.widgets.customImage.enable
+                    shown: bgRoot.backgroundContentActive && Config.options.background.widgets.customImage.enable
                     sourceComponent: CustomImage {
                         screenWidth: bgRoot.screen.width
                         screenHeight: bgRoot.screen.height
@@ -774,15 +806,16 @@ Variants {
 
             onPressed: {
                 if (!monitor.focused && Config.options.background.mediaMode.togglePerMonitor) return
-                mediaModeLoader.active = !mediaModeLoader.active
-                LyricsService.mediaModeOpenCount += mediaModeLoader.active ? 1 : -1
+                mediaModeLoader.requestedActive = !mediaModeLoader.requestedActive
+                LyricsService.mediaModeOpenCount += mediaModeLoader.requestedActive ? 1 : -1
             }
         }
         
         Loader {
             id: mediaModeLoader
             anchors.fill: parent
-            active: false
+            property bool requestedActive: false
+            active: bgRoot.backgroundContentActive && requestedActive
             asynchronous: true
             sourceComponent: MediaMode {}
             opacity: status === Loader.Ready ? 1 : 0
