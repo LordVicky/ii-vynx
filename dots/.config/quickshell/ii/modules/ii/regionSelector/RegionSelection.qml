@@ -409,6 +409,7 @@ PanelWindow {
             y: root.dragging ? root.regionY + root.regionHeight : mouseArea.mouseY
             action: root.action
             selectionMode: root.selectionMode
+            aiAvailable: root.aiAvailable
         }
 
         // Window regions
