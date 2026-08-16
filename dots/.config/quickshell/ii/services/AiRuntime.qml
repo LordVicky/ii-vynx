@@ -26,6 +26,7 @@ Scope {
     readonly property string apiKeyEnvVarName: "API_KEY"
 
     signal responseFinished()
+    property bool shuttingDown: false
 
     property string systemPrompt: {
         let prompt = Config.options?.ai?.systemPrompt ?? "";
@@ -671,6 +672,7 @@ Scope {
         property ApiStrategy currentStrategy
 
         function markDone() {
+            if (root.shuttingDown || !requester.message) return;
             requester.message.done = true;
             if (root.postResponseHook) {
                 root.postResponseHook();
@@ -681,7 +683,9 @@ Scope {
         }
 
         function makeRequest() {
+            if (root.shuttingDown) return;
             const model = models[currentModelId];
+            if (!model) return;
 
             // Fetch API keys if needed
             if (model?.requires_key && !KeyringStorage.loaded) KeyringStorage.fetchKeyringData();
@@ -767,7 +771,7 @@ Scope {
 
         stdout: SplitParser {
             onRead: data => {
-                if (data.length === 0) return;
+                if (root.shuttingDown || data.length === 0) return;
                 if (requester.message.thinking) requester.message.thinking = false;
                 // console.log("[Ai] Raw response line: ", data);
 
@@ -798,6 +802,7 @@ Scope {
         }
 
         onExited: (exitCode, exitStatus) => {
+            if (root.shuttingDown || !requester.message || !requester.currentStrategy) return;
             const result = requester.currentStrategy.onRequestFinished(requester.message);
             
             if (result.finished) {
@@ -814,7 +819,7 @@ Scope {
     }
 
     function sendUserMessage(message) {
-        if (message.length === 0) return;
+        if (root.shuttingDown || message.length === 0 || !root.models[root.currentModelId]) return;
         root.addMessage(message, "user");
         requester.makeRequest();
     }
@@ -829,6 +834,7 @@ Scope {
             decodeImageAndAttachProc.exec(["bash", "-c", `[ -f ${imageDecodeFilePath} ] || echo '${CF.StringUtils.shellSingleQuoteEscape(entry)}' | ${Cliphist.cliphistBinary} decode > '${imageDecodeFilePath}'`]);
         }
         onExited: (exitCode, exitStatus) => {
+            if (root.shuttingDown) return;
             if (exitCode === 0) {
                 root.attachFile(imageDecodeFilePath);
             } else {
@@ -846,6 +852,7 @@ Scope {
         id: handleClipboardTimer
         interval: 450
         onTriggered: {
+            if (root.shuttingDown) return;
             const currentClipboardEntry = Cliphist.entries[0];
             const cleanCliphistEntry = CF.StringUtils.cleanCliphistEntry(currentClipboardEntry);
             if (/^\d+\t\[\[.*binary data.*\d+x\d+.*\]\]$/.test(currentClipboardEntry)) {
@@ -933,6 +940,7 @@ Scope {
             }
         }
         onExited: (exitCode, exitStatus) => {
+            if (root.shuttingDown || !commandExecutionProc.message) return;
             commandExecutionProc.message.functionResponse += `[[ Command exited with code ${exitCode} (${exitStatus}) ]]\n`;
             requester.makeRequest(); // Continue
         }
@@ -1065,6 +1073,8 @@ Scope {
         }
     }
     function shutdown() {
+        if (root.shuttingDown) return;
+        root.shuttingDown = true;
         handleClipboardTimer.stop();
         getOllamaModels.running = false;
         getDefaultPrompts.running = false;
