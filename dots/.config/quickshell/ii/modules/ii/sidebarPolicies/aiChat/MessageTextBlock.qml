@@ -18,7 +18,7 @@ ColumnLayout {
     property bool renderMarkdown: true
     property bool enableMouseSelection: false
     property var segmentContent: ({})
-    property var messageData: {}
+    property var messageData: null
     property bool done: true
     property bool forceDisableChunkSplitting: false
 
@@ -130,7 +130,7 @@ ColumnLayout {
             visible: opacity > 0
             opacity: fadeChunkSplitting ? (textLinesRepeater.textLineOpacities[index] ?? (root.messageData.done ? 1 : 0)) : 1
             Connections {
-                target: root.messageData
+                target: root.messageData ?? null
                 function onDoneChanged() {
                     if (root.messageData.done) {
                         textLinesRepeater.textLineOpacities[textArea.index] = 1

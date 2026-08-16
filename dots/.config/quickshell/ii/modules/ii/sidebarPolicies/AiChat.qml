@@ -1022,7 +1022,7 @@ Inline w/ backslash and round brackets \\(e^{i\\pi} + 1 = 0\\)
 
                     symbol: currentModel?.icon ?? "neurology"
                     text: currentModel?.name ?? Translation.tr("No model")
-                    tooltipText: root.ai.modelReady ? Translation.tr("Current model: %1\nSet it with %2model MODEL").arg(currentModel.name).arg(root.commandPrefix) : Translation.tr("Waiting for a local AI model...")
+                    tooltipText: root.ai.modelReady && currentModel\n                        ? Translation.tr("Current model: %1\nSet it with %2model MODEL").arg(currentModel.name).arg(root.commandPrefix)\n                        : Translation.tr("Waiting for a local AI model...")
                 }
 
                 ApiInputBoxIndicator {
