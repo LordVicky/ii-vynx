@@ -8,6 +8,8 @@ CONFIG_DIR="$XDG_CONFIG_HOME/quickshell/$QUICKSHELL_CONFIG_NAME"
 CACHE_DIR="$XDG_CACHE_HOME/quickshell"
 STATE_DIR="$XDG_STATE_HOME/quickshell"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=../lib/policy.sh
+source "$SCRIPT_DIR/../lib/policy.sh"
 SHELL_CONFIG_FILE="$XDG_CONFIG_HOME/illogical-impulse/config.json"
 MATUGEN_DIR="$XDG_CONFIG_HOME/matugen"
 terminalscheme="$SCRIPT_DIR/terminal/scheme-base.json"
@@ -161,6 +163,10 @@ set_thumbnail_path() {
 categorize_wallpaper() {
     local target_payload="$1"
 
+    if ! ai_online_allowed; then
+        return
+    fi
+
     if [[ -z "$ai_script" || ! -f "$target_payload" ]]; then
         return
     fi
@@ -219,7 +225,7 @@ switch() {
     aiStylingModel=$(jq -r '.background.widgets.clock.cookie.aiStylingModel' "$SHELL_CONFIG_FILE")
     ai_script=""
 
-    if [[ "$aiStylingEnabled" == "true" ]]; then
+    if ai_online_allowed && [[ "$aiStylingEnabled" == "true" ]]; then
         if [[ "$aiStylingModel" == "gemini" ]]; then  
             ai_script="$SCRIPT_DIR/../ai/gemini-categorize-wallpaper.sh"
         elif [[ "$aiStylingModel" == "openrouter" ]]; then  

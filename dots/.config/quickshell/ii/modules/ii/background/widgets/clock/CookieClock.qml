@@ -17,6 +17,7 @@ Item {
     property real uiScale: 1
 
     readonly property string clockStyle: Config.options.background.widgets.clock.style
+    readonly property bool aiStylingEffective: AiPolicy.onlineAllowed && Config.options.background.widgets.clock.cookie.aiStyling
 
     property bool isCovered: false
 
@@ -48,7 +49,7 @@ Item {
     }
 
     function setClockPreset(category) {
-        if (!Config.options.background.widgets.clock.cookie.aiStyling) return;
+        if (!root.aiStylingEffective) return;
         if (category === "") return;
         print("[Cookie clock] Setting clock preset for category: " + category)
         // "abstract", "anime", "city", "minimalist", "landscape", "plants", "person", "space"
@@ -71,9 +72,11 @@ Item {
 
     FileView {
         id: categoryFileView
-        path: Config.ready ? Directories.generatedWallpaperCategoryPath : ""
-        watchChanges: true
-        onFileChanged: this.reload()
+        path: Config.ready && root.aiStylingEffective ? Directories.generatedWallpaperCategoryPath : ""
+        watchChanges: root.aiStylingEffective
+        onFileChanged: {
+            if (root.aiStylingEffective) this.reload();
+        }
         onLoaded: {
             root.setClockPreset(categoryFileView.text().trim())
         }

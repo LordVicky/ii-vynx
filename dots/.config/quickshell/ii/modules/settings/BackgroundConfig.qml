@@ -702,6 +702,7 @@ ContentPage {
                 Layout.fillWidth: false
                 
                 ConfigSwitch {
+                    enabled: AiPolicy.onlineAllowed
                     buttonIcon: "wand_stars"
                     text: Translation.tr("Auto style the cookie clock preset")
                     checked: Config.options.background.widgets.clock.cookie.aiStyling
@@ -709,18 +710,20 @@ ContentPage {
                         Config.options.background.widgets.clock.cookie.aiStyling = checked;
                     }
                     StyledToolTip {
-                        text: Translation.tr("Uses the preferred AI to categorize the wallpaper then picks a preset based on it.\nYou'll need to set API key on the left sidebar first.\nImages are downscaled for performance, but just to be safe,\ndo not select wallpapers with sensitive information.\nBoth AI models does the same thing, but Gemini has strict quotas.")
+                        text: AiPolicy.onlineAllowed
+                            ? Translation.tr("Uses the preferred AI to categorize the wallpaper then picks a preset based on it.\nYou'll need to set API key on the left sidebar first.\nImages are downscaled for performance, but just to be safe,\ndo not select wallpapers with sensitive information.\nBoth AI models does the same thing, but Gemini has strict quotas.")
+                            : Translation.tr("Requires AI policy: Yes. The saved clock AI styling preference will be preserved.")
                     }
                 }
 
                 StyledText {
                     Layout.rightMargin: 6
                     text: Translation.tr("with")
-                    opacity: Config.options.background.widgets.clock.cookie.aiStyling ? 1 : 0.4
+                    opacity: AiPolicy.onlineAllowed && Config.options.background.widgets.clock.cookie.aiStyling ? 1 : 0.4
                 }
 
                 ConfigSelectionArray {
-                    enabled: Config.options.background.widgets.clock.cookie.aiStyling
+                    enabled: AiPolicy.onlineAllowed && Config.options.background.widgets.clock.cookie.aiStyling
                     currentValue: Config.options.background.widgets.clock.cookie.aiStylingModel
                     onSelected: newValue => {
                         Config.options.background.widgets.clock.cookie.aiStylingModel = newValue;
