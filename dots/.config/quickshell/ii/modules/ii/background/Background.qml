@@ -55,7 +55,11 @@ Variants {
             && (Config?.options.background.hideWhenFullscreen ?? false)
             && activeWorkspaceWithFullscreen !== undefined
         readonly property bool backgroundContentActive: !hiddenByFullscreen
-        visible: backgroundContentActive
+        // Keep the layer surface mapped across fullscreen transitions. Quickshell/Qt
+        // can crash while reparenting the PanelWindow item tree during rapid
+        // layer-surface teardown/recreation; fullscreen is only a content lifetime
+        // boundary here, not a window lifetime boundary.
+        visible: true
 
         // Workspaces
         property HyprlandMonitor monitor: Hyprland.monitorFor(modelData)
@@ -142,7 +146,7 @@ Variants {
         // Only grab keyboard focus while a desktop widget's text field is actively
         // being typed into (notes, world clock timezone search, ...); otherwise this
         // background layer stays out of the way of Super/global shortcuts.
-        WlrLayershell.keyboardFocus: GlobalStates.desktopWidgetKeyboardFocus ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
+        WlrLayershell.keyboardFocus: bgRoot.backgroundContentActive && GlobalStates.desktopWidgetKeyboardFocus ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
         anchors {
             top: true
             bottom: true
@@ -150,6 +154,8 @@ Variants {
             right: true
         }
         color: {
+            if (!bgRoot.backgroundContentActive)
+                return "transparent";
             if (!bgRoot.wallpaperSafetyTriggered || bgRoot.wallpaperIsVideo)
                 return "transparent";
             return CF.ColorUtils.mix(Appearance.colors.colLayer0, Appearance.colors.colPrimary, 0.75);
