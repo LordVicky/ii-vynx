@@ -55,7 +55,7 @@ ShellRoot {
     LazyLoader {
         id: aiRuntimeLoader
         active: false
-        component: AiRuntime {}
+        component: PolicyAiRuntime {}
         onItemChanged: RuntimeServices.ai = item ?? null
     }
 
@@ -111,4 +111,3 @@ ShellRoot {
         onPressed: root.cyclePanelFamily()
     }
 }
-
