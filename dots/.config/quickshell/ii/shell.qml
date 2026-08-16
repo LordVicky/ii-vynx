@@ -19,7 +19,21 @@ import Quickshell.Hyprland
 ShellRoot {
     id: root
 
-    
+    function applyAiPolicy() {
+        // Policy mode changes are lifetime boundaries. Recreate even for
+        // Yes <-> Local so remote-only objects cannot survive Local mode.
+        if (aiRuntimeLoader.item)
+            aiRuntimeLoader.item.shutdown();
+        aiRuntimeLoader.active = false;
+        RuntimeServices.ai = null;
+
+        if (AiPolicy.enabled) {
+            Qt.callLater(() => {
+                if (AiPolicy.enabled)
+                    aiRuntimeLoader.active = true;
+            });
+        }
+    }
 
     // Stuff for every panel family
     ReloadPopup {}
@@ -32,8 +46,29 @@ ShellRoot {
         Cliphist.refresh()
         Wallpapers.load()
         Updates.load()
+        root.applyAiPolicy()
     }
 
+
+    // Optional AI runtime. The implementation object only exists while the
+    // policy permits AI and is fully recreated on every policy-mode transition.
+    LazyLoader {
+        id: aiRuntimeLoader
+        active: false
+        component: AiRuntime {}
+        onItemChanged: RuntimeServices.ai = item ?? null
+    }
+
+    Connections {
+        target: AiPolicy
+        function onModeChanged() { root.applyAiPolicy(); }
+    }
+
+    Component.onDestruction: {
+        if (aiRuntimeLoader.item)
+            aiRuntimeLoader.item.shutdown();
+        RuntimeServices.ai = null;
+    }
 
     // Panel families
     property list<string> families: ["ii", "waffle"]
