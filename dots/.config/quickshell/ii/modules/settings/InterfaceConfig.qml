@@ -374,6 +374,17 @@ ContentPage {
         title: Translation.tr("Overlay: General")
 
         ConfigSwitch {
+            buttonIcon: "power_settings_new"
+            text: Translation.tr("Enable Super+G overlay")
+            checked: Config.options.policies.overlay
+            onCheckedChanged: {
+                Config.options.policies.overlay = checked;
+            }
+            StyledToolTip {
+                text: Translation.tr("Disable to unload the Super+G overlay, its widgets, shortcut, and overlay-owned runtime.")
+            }
+        }
+        ConfigSwitch {
             buttonIcon: "high_density"
             text: Translation.tr("Enable opening zoom animation")
             checked: Config.options.overlay.openingZoomAnimation

@@ -16,6 +16,12 @@ Scope {
     property Component regionComponent: Component {
         Region {}
     }
+
+    Component.onDestruction: {
+        GlobalStates.overlayOpen = false;
+        OverlayContext.pinnedWidgetIdentifiers = [];
+        OverlayContext.clickableWidgets = [];
+    }
     
     Loader {
         id: overlayLoader
