@@ -12,6 +12,7 @@ import org.kde.syntaxhighlighting
 
 ColumnLayout {
     id: root
+    required property var ai
     // These are needed on the parent loader
     property bool editing: false
     property bool renderMarkdown: true
@@ -263,7 +264,7 @@ ColumnLayout {
                                     font.pixelSize: Appearance.font.pixelSize.small
                                     color: Appearance.colors.colOnLayer2
                                 }
-                                onClicked: Ai.rejectCommand(root.messageData)
+                                onClicked: root.ai.rejectCommand(root.messageData)
                             }
                             GroupButton {
                                 toggled: true
@@ -272,7 +273,7 @@ ColumnLayout {
                                     font.pixelSize: Appearance.font.pixelSize.small
                                     color: Appearance.colors.colOnPrimary
                                 }
-                                onClicked: Ai.approveCommand(root.messageData)
+                                onClicked: root.ai.approveCommand(root.messageData)
                             }
                         }
                     }

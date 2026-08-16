@@ -22,10 +22,11 @@ ShellRoot {
     function applyAiPolicy() {
         // Policy mode changes are lifetime boundaries. Recreate even for
         // Yes <-> Local so remote-only objects cannot survive Local mode.
-        if (aiRuntimeLoader.item)
-            aiRuntimeLoader.item.shutdown();
-        aiRuntimeLoader.active = false;
+        const runtime = aiRuntimeLoader.item;
         RuntimeServices.ai = null;
+        if (runtime)
+            runtime.shutdown();
+        aiRuntimeLoader.active = false;
 
         if (AiPolicy.enabled) {
             Qt.callLater(() => {
@@ -65,9 +66,10 @@ ShellRoot {
     }
 
     Component.onDestruction: {
-        if (aiRuntimeLoader.item)
-            aiRuntimeLoader.item.shutdown();
+        const runtime = aiRuntimeLoader.item;
         RuntimeServices.ai = null;
+        if (runtime)
+            runtime.shutdown();
     }
 
     // Panel families

@@ -29,6 +29,7 @@ PanelWindow {
     }
 
     enum SnipAction { Copy, Edit, Search, CharRecognition, Record, RecordWithSound, AskAI } 
+    readonly property bool aiAvailable: AiPolicy.enabled && RuntimeServices.ai !== null && RuntimeServices.ai.modelReady
     enum SelectionMode { RectCorners, Circle }
     enum Phase { Select, Post }
     property var action: RegionSelection.SnipAction.Copy
@@ -277,7 +278,7 @@ PanelWindow {
             root.action = root.mouseButton === Qt.RightButton ? RegionSelection.SnipAction.Edit : RegionSelection.SnipAction.Copy;
         }
         if (root.action === RegionSelection.SnipAction.Search || root.action === RegionSelection.SnipAction.AskAI) {
-            root.action = root.mouseButton === Qt.RightButton ? RegionSelection.SnipAction.AskAI : RegionSelection.SnipAction.Search;
+            root.action = root.aiAvailable && root.mouseButton === Qt.RightButton ? RegionSelection.SnipAction.AskAI : RegionSelection.SnipAction.Search;
         }
         
         const screenshotDir = Config.options.screenSnip.savePath !== "" ? //
@@ -293,8 +294,8 @@ PanelWindow {
             screenshotDir
         )
         Quickshell.execDetached(command);
-        if (root.action === RegionSelection.SnipAction.AskAI) {
-            Ai.handleClipboardAndAttach();
+        if (root.action === RegionSelection.SnipAction.AskAI && root.aiAvailable) {
+            RuntimeServices.ai.handleClipboardAndAttach();
             GlobalStates.policiesPanelOpen = true
         }
         if (root.action == RegionSelection.SnipAction.Record || root.action == RegionSelection.SnipAction.RecordWithSound) {

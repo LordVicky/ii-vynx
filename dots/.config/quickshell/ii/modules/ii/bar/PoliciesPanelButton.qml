@@ -25,7 +25,7 @@ RippleButton {
     }
 
     Connections {
-        target: Ai
+        target: RuntimeServices.ai
         function onResponseFinished() {
             if (GlobalStates.sidebarLeftOpen) return;
             leftSidebarButton.showPing = true;

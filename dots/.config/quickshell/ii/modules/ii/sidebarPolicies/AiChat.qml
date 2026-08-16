@@ -14,6 +14,7 @@ import Quickshell.Io
 
 Item {
     id: root
+    required property var ai
     property real padding: 4
     property var inputField: messageInputField
     property string commandPrefix: "/"
@@ -42,7 +43,7 @@ Item {
             }
         }
         if ((event.modifiers & Qt.ControlModifier) && (event.modifiers & Qt.ShiftModifier) && event.key === Qt.Key_O) {
-            Ai.clearMessages();
+            root.ai.clearMessages();
         }
     }
 
@@ -51,7 +52,7 @@ Item {
             name: "attach",
             description: Translation.tr("Attach a file. Only works with Gemini."),
             execute: args => {
-                Ai.attachFile(args.join(" ").trim());
+                root.ai.attachFile(args.join(" ").trim());
             }
         },
         {
@@ -74,12 +75,12 @@ Item {
             execute: args => {
                 // console.log(args)
                 if (args.length == 0 || args[0] == "get") {
-                    Ai.addMessage(Translation.tr("Usage: %1tool TOOL_NAME").arg(root.commandPrefix), Ai.interfaceRole);
+                    root.ai.addMessage(Translation.tr("Usage: %1tool TOOL_NAME").arg(root.commandPrefix), root.ai.interfaceRole);
                 } else {
                     const tool = args[0];
-                    const switched = Ai.setTool(tool);
+                    const switched = root.ai.setTool(tool);
                     if (switched) {
-                        Ai.addMessage(Translation.tr("Tool set to: %1").arg(tool), Ai.interfaceRole);
+                        root.ai.addMessage(Translation.tr("Tool set to: %1").arg(tool), root.ai.interfaceRole);
                     }
                 }
             }
@@ -89,10 +90,10 @@ Item {
             description: Translation.tr("Set the system prompt for the model."),
             execute: args => {
                 if (args.length === 0 || args[0] === "get") {
-                    Ai.printPrompt();
+                    root.ai.printPrompt();
                     return;
                 }
-                Ai.loadPrompt(args.join(" ").trim());
+                root.ai.loadPrompt(args.join(" ").trim());
             }
         },
         {
@@ -100,9 +101,9 @@ Item {
             description: Translation.tr("Set API key"),
             execute: args => {
                 if (args[0] == "get") {
-                    Ai.printApiKey();
+                    root.ai.printApiKey();
                 } else {
-                    Ai.setApiKey(args[0]);
+                    root.ai.setApiKey(args[0]);
                 }
             }
         },
@@ -112,10 +113,10 @@ Item {
             execute: args => {
                 const joinedArgs = args.join(" ");
                 if (joinedArgs.trim().length == 0) {
-                    Ai.addMessage(Translation.tr("Usage: %1save CHAT_NAME").arg(root.commandPrefix), Ai.interfaceRole);
+                    root.ai.addMessage(Translation.tr("Usage: %1save CHAT_NAME").arg(root.commandPrefix), root.ai.interfaceRole);
                     return;
                 }
-                Ai.saveChat(joinedArgs);
+                root.ai.saveChat(joinedArgs);
             }
         },
         {
@@ -124,10 +125,10 @@ Item {
             execute: args => {
                 const joinedArgs = args.join(" ");
                 if (joinedArgs.trim().length == 0) {
-                    Ai.addMessage(Translation.tr("Usage: %1load CHAT_NAME").arg(root.commandPrefix), Ai.interfaceRole);
+                    root.ai.addMessage(Translation.tr("Usage: %1load CHAT_NAME").arg(root.commandPrefix), root.ai.interfaceRole);
                     return;
                 }
-                Ai.loadChat(joinedArgs);
+                root.ai.loadChat(joinedArgs);
             }
         },
         {
@@ -135,7 +136,7 @@ Item {
             description: Translation.tr("Clear chat history"),
             execute: () => {
 
-                Ai.clearMessages();
+                root.ai.clearMessages();
             }
         },
         {
@@ -144,10 +145,10 @@ Item {
             execute: args => {
                 // console.log(args)
                 if (args.length == 0 || args[0] == "get") {
-                    Ai.printTemperature();
+                    root.ai.printTemperature();
                 } else {
                     const temp = parseFloat(args[0]);
-                    Ai.setTemperature(temp);
+                    root.ai.setTemperature(temp);
                 }
             }
         },
@@ -155,7 +156,7 @@ Item {
             name: "test",
             description: Translation.tr("Markdown test"),
             execute: () => {
-                Ai.addMessage(`
+                root.ai.addMessage(`
 <think>
 A longer think block to test revealing animation
 OwO wem ipsum dowo sit amet, consekituwet awipiscing ewit, sed do eiuwsmod tempow inwididunt ut wabowe et dowo mawa. Ut enim ad minim weniam, quis nostwud exeucitation uwuwamcow bowowis nisi ut awiquip ex ea commowo consequat. Duuis aute iwuwe dowo in wepwependewit in wowuptate velit esse ciwwum dowo eu fugiat nuwa pawiatuw. Excepteuw sint occaecat cupidatat non pwowoident, sunt in cuwpa qui officia desewunt mowit anim id est wabowum. Meouw! >w<
@@ -204,7 +205,7 @@ Inline w/ double dollar signs: $$\\int_0^\\infty e^{-x^2} dx = \\frac{\\sqrt{\\p
 Inline w/ backslash and square brackets \\[\\int_0^\\infty \\frac{1}{x^2} dx = \\infty\\]
 
 Inline w/ backslash and round brackets \\(e^{i\\pi} + 1 = 0\\)
-`, Ai.interfaceRole);
+`, root.ai.interfaceRole);
             }
         },
     ]
@@ -218,10 +219,10 @@ Inline w/ backslash and round brackets \\(e^{i\\pi} + 1 = 0\\)
             if (commandObj) {
                 commandObj.execute(args);
             } else {
-                Ai.addMessage(Translation.tr("Unknown command: ") + command, Ai.interfaceRole);
+                root.ai.addMessage(Translation.tr("Unknown command: ") + command, root.ai.interfaceRole);
             }
-        } else {
-            Ai.sendUserMessage(inputText);
+        } else if (root.ai.modelReady) {
+            root.ai.sendUserMessage(inputText);
         }
 
         // Always scroll to bottom when user sends a message
@@ -239,7 +240,7 @@ Inline w/ backslash and round brackets \\(e^{i\\pi} + 1 = 0\\)
         }
         onExited: (exitCode, exitStatus) => {
             if (exitCode === 0) {
-                Ai.attachFile(imageDecodeFilePath);
+                root.ai.attachFile(imageDecodeFilePath);
             } else {
                 console.error("[AiChat] Failed to decode image in clipboard content");
             }
@@ -336,24 +337,24 @@ Inline w/ backslash and round brackets \\(e^{i\\pi} + 1 = 0\\)
                     spacing: 10
 
                     StatusItem {
-                        icon: Ai.currentModelHasApiKey ? "key" : "key_off"
+                        icon: root.ai.currentModelHasApiKey ? "key" : "key_off"
                         statusText: ""
-                        description: Ai.currentModelHasApiKey ? Translation.tr("API key is set\nChange with /key YOUR_API_KEY") : Translation.tr("No API key\nSet it with /key YOUR_API_KEY")
+                        description: root.ai.currentModelHasApiKey ? Translation.tr("API key is set\nChange with /key YOUR_API_KEY") : Translation.tr("No API key\nSet it with /key YOUR_API_KEY")
                     }
                     StatusSeparator {}
                     StatusItem {
                         icon: "device_thermostat"
-                        statusText: Ai.temperature.toFixed(1)
+                        statusText: root.ai.temperature.toFixed(1)
                         description: Translation.tr("Temperature\nChange with /temp VALUE")
                     }
                     StatusSeparator {
-                        visible: Ai.tokenCount.total > 0
+                        visible: root.ai.tokenCount.total > 0
                     }
                     StatusItem {
-                        visible: Ai.tokenCount.total > 0
+                        visible: root.ai.tokenCount.total > 0
                         icon: "token"
-                        statusText: Ai.tokenCount.total
-                        description: Translation.tr("Total token count\nInput: %1\nOutput: %2").arg(Ai.tokenCount.input).arg(Ai.tokenCount.output)
+                        statusText: root.ai.tokenCount.total
+                        description: Translation.tr("Total token count\nInput: %1\nOutput: %2").arg(root.ai.tokenCount.input).arg(root.ai.tokenCount.output)
                     }
                 }
             }
@@ -389,17 +390,18 @@ Inline w/ backslash and round brackets \\(e^{i\\pi} + 1 = 0\\)
                 add: null // Prevent function calls from being janky
 
                 model: ScriptModel {
-                    values: Ai.messageIDs.filter(id => {
-                        const message = Ai.messageByID[id];
+                    values: root.ai.messageIDs.filter(id => {
+                        const message = root.ai.messageByID[id];
                         return message?.visibleToUser ?? true;
                     })
                 }
                 delegate: AiMessage {
+                    ai: root.ai
                     required property var modelData
                     required property int index
                     messageIndex: index
                     messageData: {
-                        Ai.messageByID[modelData];
+                        root.ai.messageByID[modelData];
                     }
                     messageInputField: root.inputField
                 }
@@ -414,7 +416,7 @@ Inline w/ backslash and round brackets \\(e^{i\\pi} + 1 = 0\\)
                 title: Translation.tr("Large language models")
                 
                 rotateIconWithShape: true
-                shown: Ai.messageIDs.length === 0
+                shown: root.ai.messageIDs.length === 0
                 description: Translation.tr("Type /key to get started with online models\nCtrl+O to expand sidebar\nCtrl+P to pin sidebar\nCtrl+D to detach sidebar")
 
                 triggerAnimationOn: GlobalStates.policiesPanelOpen
@@ -438,7 +440,7 @@ Inline w/ backslash and round brackets \\(e^{i\\pi} + 1 = 0\\)
             height: item?.implicitHeight
             Layout.alignment: Qt.AlignHCenter
 
-            active: Config.options.sidebar.ai.showProviderAndModelButtons && Ai.messageIDs.length === 0
+            active: AiPolicy.onlineAllowed && Config.options.sidebar.ai.showProviderAndModelButtons && root.ai.messageIDs.length === 0
             visible: active
 
             sourceComponent: Item {
@@ -459,7 +461,7 @@ Inline w/ backslash and round brackets \\(e^{i\\pi} + 1 = 0\\)
                         currentValue: Persistent.states.ai.provider
                         onSelected: newValue => {
                             Persistent.states.ai.provider = newValue;
-                            Persistent.states.ai.model = Ai.modelsOfProviders[providerSelector.currentValue][0].value
+                            Persistent.states.ai.model = root.ai.modelsOfProviders[providerSelector.currentValue][0].value
                         }
                         
                         
@@ -507,10 +509,10 @@ Inline w/ backslash and round brackets \\(e^{i\\pi} + 1 = 0\\)
 
                         buttonIcon: "wand_stars"
                         textRole: "title"
-                        model: Ai.modelsOfProviders[providerSelector.currentValue]
+                        model: root.ai.modelsOfProviders[providerSelector.currentValue]
                         enabled: true
                         currentIndex: {
-                            const models = Ai.modelsOfProviders[providerSelector.currentValue];
+                            const models = root.ai.modelsOfProviders[providerSelector.currentValue];
                             for (var i = 0; i < models.length; i++) {
                                 if (models[i].value === Persistent.states.ai.model) {
                                     return i;
@@ -520,7 +522,7 @@ Inline w/ backslash and round brackets \\(e^{i\\pi} + 1 = 0\\)
                         }
 
                         function updateModel(index = 0) {
-                            Persistent.states.ai.model = Ai.modelsOfProviders[providerSelector.currentValue][index].value
+                            Persistent.states.ai.model = root.ai.modelsOfProviders[providerSelector.currentValue][index].value
                         }
 
                         onActivated: index => updateModel(index)
@@ -629,8 +631,8 @@ Inline w/ backslash and round brackets \\(e^{i\\pi} + 1 = 0\\)
                     right: parent.right
                     margins: visible ? 5 : 0
                 }
-                filePath: Ai.pendingFilePath
-                onRemove: Ai.attachFile("")
+                filePath: root.ai.pendingFilePath
+                onRemove: root.ai.attachFile("")
             }
 
             DropArea {
@@ -666,7 +668,7 @@ Inline w/ backslash and round brackets \\(e^{i\\pi} + 1 = 0\\)
                     if (drop.hasUrls) {
                         for (var i = 0; i < drop.urls.length; i++) {
                             console.log("[AI Chat] Dropped file:", drop.urls[i])
-                            Ai.attachFile(drop.urls[i])
+                            root.ai.attachFile(drop.urls[i])
                         }
                         drop.accept(Qt.CopyAction)
                     }
@@ -696,7 +698,8 @@ Inline w/ backslash and round brackets \\(e^{i\\pi} + 1 = 0\\)
                         wrapMode: TextArea.Wrap
                         padding: 10
                         color: activeFocus ? Appearance.m3colors.m3onSurface : Appearance.m3colors.m3onSurfaceVariant
-                        placeholderText: Translation.tr('Message the model... "%1" for commands').arg(root.commandPrefix)
+                        placeholderText: root.ai.modelReady ? Translation.tr('Message the model... "%1" for commands').arg(root.commandPrefix) : Translation.tr("Waiting for a local AI model...")
+                        enabled: root.ai.modelReady
 
                         background: null
 
@@ -709,7 +712,7 @@ Inline w/ backslash and round brackets \\(e^{i\\pi} + 1 = 0\\)
                             } else if (messageInputField.text.startsWith(`${root.commandPrefix}provider`)) {
                                 root.suggestionQuery = messageInputField.text.split(" ")[1] ?? "";
                                 
-                                const providers = Object.keys(Ai.models)
+                                const providers = Object.keys(root.ai.models)
                                 
                                 const providerResults = Fuzzy.go(root.suggestionQuery, providers.map(p => ({
                                     name: Fuzzy.prepare(p),
@@ -721,7 +724,7 @@ Inline w/ backslash and round brackets \\(e^{i\\pi} + 1 = 0\\)
                                 
                                 root.suggestionList = providerResults.map(result => {
                                     const providerName = result.target;
-                                    const providerInfo = Ai.models[providerName];
+                                    const providerInfo = root.ai.models[providerName];
                                     return {
                                         name: `${messageInputField.text.trim().split(" ").length == 1 ? (root.commandPrefix + "provider ") : ""}${providerName}`,
                                         displayName: providerInfo.name.split(" -")[0], // Remove " - model name"
@@ -731,7 +734,7 @@ Inline w/ backslash and round brackets \\(e^{i\\pi} + 1 = 0\\)
                             } else if (messageInputField.text.startsWith(`${root.commandPrefix}model`)) {
                                 root.suggestionQuery = messageInputField.text.split(" ")[1] ?? "";
                             
-                                const providerModels = Ai.modelsOfProviders[Persistent.states.ai.provider] || [];
+                                const providerModels = root.ai.modelsOfProviders[Persistent.states.ai.provider] || [];
                             
                                 const modelList = providerModels.map(model => ({
                                     name: Fuzzy.prepare(model.value),
@@ -750,12 +753,12 @@ Inline w/ backslash and round brackets \\(e^{i\\pi} + 1 = 0\\)
                                     return {
                                         name: `${messageInputField.text.trim().split(" ").length == 1 ? (root.commandPrefix + "model ") : ""}${model.value}`,
                                         displayName: model.title,
-                                        description: model.modelProvider ? `Provider: ${model.modelProvider}` : `${Ai.currentProvider} model`
+                                        description: model.modelProvider ? `Provider: ${model.modelProvider}` : `${Persistent.states.ai.provider} model`
                                     };
                                 });
                             } else if (messageInputField.text.startsWith(`${root.commandPrefix}prompt`)) {
                                 root.suggestionQuery = messageInputField.text.split(" ")[1] ?? "";
-                                const promptFileResults = Fuzzy.go(root.suggestionQuery, Ai.promptFiles.map(file => {
+                                const promptFileResults = Fuzzy.go(root.suggestionQuery, root.ai.promptFiles.map(file => {
                                     return {
                                         name: Fuzzy.prepare(file),
                                         obj: file
@@ -773,7 +776,7 @@ Inline w/ backslash and round brackets \\(e^{i\\pi} + 1 = 0\\)
                                 });
                             } else if (messageInputField.text.startsWith(`${root.commandPrefix}save`)) {
                                 root.suggestionQuery = messageInputField.text.split(" ")[1] ?? "";
-                                const promptFileResults = Fuzzy.go(root.suggestionQuery, Ai.savedChats.map(file => {
+                                const promptFileResults = Fuzzy.go(root.suggestionQuery, root.ai.savedChats.map(file => {
                                     return {
                                         name: Fuzzy.prepare(file),
                                         obj: file
@@ -792,7 +795,7 @@ Inline w/ backslash and round brackets \\(e^{i\\pi} + 1 = 0\\)
                                 });
                             } else if (messageInputField.text.startsWith(`${root.commandPrefix}load`)) {
                                 root.suggestionQuery = messageInputField.text.split(" ")[1] ?? "";
-                                const promptFileResults = Fuzzy.go(root.suggestionQuery, Ai.savedChats.map(file => {
+                                const promptFileResults = Fuzzy.go(root.suggestionQuery, root.ai.savedChats.map(file => {
                                     return {
                                         name: Fuzzy.prepare(file),
                                         obj: file
@@ -811,7 +814,7 @@ Inline w/ backslash and round brackets \\(e^{i\\pi} + 1 = 0\\)
                                 });
                             } else if (messageInputField.text.startsWith(`${root.commandPrefix}tool`)) {
                                 root.suggestionQuery = messageInputField.text.split(" ")[1] ?? "";
-                                const toolResults = Fuzzy.go(root.suggestionQuery, Ai.availableTools.map(tool => {
+                                const toolResults = Fuzzy.go(root.suggestionQuery, root.ai.availableTools.map(tool => {
                                     return {
                                         name: Fuzzy.prepare(tool),
                                         obj: tool
@@ -825,7 +828,7 @@ Inline w/ backslash and round brackets \\(e^{i\\pi} + 1 = 0\\)
                                     return {
                                         name: `${messageInputField.text.trim().split(" ").length == 1 ? (root.commandPrefix + "tool ") : ""}${tool.target}`,
                                         displayName: toolName,
-                                        description: Ai.toolDescriptions[toolName]
+                                        description: root.ai.toolDescriptions[toolName]
                                     };
                                 });
                             } else if (messageInputField.text.startsWith(root.commandPrefix)) {
@@ -885,15 +888,15 @@ Inline w/ backslash and round brackets \\(e^{i\\pi} + 1 = 0\\)
                                 } else if (cleanCliphistEntry.startsWith("file://")) {
                                     // First entry = currently copied entry = image?
                                     const fileName = decodeURIComponent(cleanCliphistEntry);
-                                    Ai.attachFile(fileName);
+                                    root.ai.attachFile(fileName);
                                     event.accepted = true;
                                     return;
                                 }
                                 event.accepted = false; // No image, let text pasting proceed
                             } else if (event.key === Qt.Key_Escape) {
                                 // Esc to detach file
-                                if (Ai.pendingFilePath.length > 0) {
-                                    Ai.attachFile("");
+                                if (root.ai.pendingFilePath.length > 0) {
+                                    root.ai.attachFile("");
                                     event.accepted = true;
                                 } else {
                                     event.accepted = false;
@@ -943,15 +946,15 @@ Inline w/ backslash and round brackets \\(e^{i\\pi} + 1 = 0\\)
                                 } else if (cleanCliphistEntry.startsWith("file://")) {
                                     // First entry = currently copied entry = image?
                                     const fileName = decodeURIComponent(cleanCliphistEntry);
-                                    Ai.attachFile(fileName);
+                                    root.ai.attachFile(fileName);
                                     event.accepted = true;
                                     return;
                                 }
                                 event.accepted = false; // No image, let text pasting proceed
                             } else if (event.key === Qt.Key_Escape) {
                                 // Esc to detach file
-                                if (Ai.pendingFilePath.length > 0) {
-                                    Ai.attachFile("");
+                                if (root.ai.pendingFilePath.length > 0) {
+                                    root.ai.attachFile("");
                                     event.accepted = true;
                                 } else {
                                     event.accepted = false;
@@ -967,7 +970,7 @@ Inline w/ backslash and round brackets \\(e^{i\\pi} + 1 = 0\\)
                     implicitWidth: 40
                     implicitHeight: 40
                     buttonRadius: Appearance.rounding.small
-                    enabled: messageInputField.text.length > 0
+                    enabled: root.ai.modelReady && messageInputField.text.length > 0
                     toggled: enabled
 
                     MouseArea {
@@ -1013,20 +1016,20 @@ Inline w/ backslash and round brackets \\(e^{i\\pi} + 1 = 0\\)
                 ]
 
                 ApiInputBoxIndicator {
-                    // Model indicator
-                    property string currentProvider: Persistent.states.ai.provider
-                    property string providerIcon: currentProvider === "openrouter" ? "openrouter-symbolic" : currentProvider === "google" ? "spark-symbolic" : "mistral-symbolic"
+                    // Effective runtime model indicator. In Local-only mode this
+                    // intentionally ignores a saved online provider preference.
+                    property var currentModel: root.ai.getModel()
 
-                    symbol: providerIcon
-                    text: Persistent.states.ai.model // TODO: add a readable version
-                    tooltipText: Translation.tr("Current model: %1\nSet it with %2model MODEL").arg(Ai.getModel().name).arg(root.commandPrefix)
+                    symbol: currentModel?.icon ?? "neurology"
+                    text: currentModel?.name ?? Translation.tr("No model")
+                    tooltipText: root.ai.modelReady ? Translation.tr("Current model: %1\nSet it with %2model MODEL").arg(currentModel.name).arg(root.commandPrefix) : Translation.tr("Waiting for a local AI model...")
                 }
 
                 ApiInputBoxIndicator {
                     // Tool indicator
                     icon: "service_toolbox"
-                    text: Ai.currentTool.charAt(0).toUpperCase() + Ai.currentTool.slice(1)
-                    tooltipText: Translation.tr("Current tool: %1\nSet it with %2tool TOOL").arg(Ai.currentTool).arg(root.commandPrefix)
+                    text: root.ai.currentTool.charAt(0).toUpperCase() + root.ai.currentTool.slice(1)
+                    tooltipText: Translation.tr("Current tool: %1\nSet it with %2tool TOOL").arg(root.ai.currentTool).arg(root.commandPrefix)
                 }
 
                 Item {

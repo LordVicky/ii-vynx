@@ -12,7 +12,8 @@ Item {
     required property var scopeRoot
     property int sidebarPadding: 10
     anchors.fill: parent
-    property bool aiChatEnabled: Config.options.policies.ai !== 0  
+    property bool aiChatEnabled: AiPolicy.enabled && RuntimeServices.ai !== null
+    property var aiChatPage: null
     property bool translatorEnabled: Config.options.policies.translator !== 0
     property bool animeEnabled: Config.options.policies.weeb !== 0  
     property bool animeCloset: Config.options.policies.weeb === 2  
@@ -38,6 +39,27 @@ Item {
         ...root.extensionPages.map(p => ({icon: p.icon, name: p.title}))
     ]
     property int tabCount: swipeView.count
+
+    function syncAiChatPage() {
+        if (root.aiChatEnabled) {
+            if (!root.aiChatPage)
+                root.aiChatPage = aiChat.createObject(swipeView, { "ai": RuntimeServices.ai });
+            return;
+        }
+        if (root.aiChatPage) {
+            const page = root.aiChatPage;
+            root.aiChatPage = null;
+            page.destroy();
+        }
+    }
+
+    onAiChatEnabledChanged: {
+        if (!root.aiChatEnabled)
+            root.syncAiChatPage();
+        else
+            Qt.callLater(root.syncAiChatPage);
+    }
+    Component.onCompleted: Qt.callLater(root.syncAiChatPage)
 
     function focusActiveItem() {
         swipeView.currentItem.forceActiveFocus()
@@ -129,7 +151,7 @@ Item {
                 }
 
                 contentChildren: [
-                    ...(root.aiChatEnabled ? [aiChat.createObject()] : []),
+                    ...(root.aiChatPage ? [root.aiChatPage] : []),
                     ...(root.translatorEnabled ? [translator.createObject()] : []),
                     ...((root.tabButtonList.length === 0 || (!root.aiChatEnabled && !root.translatorEnabled && root.animeCloset)) ? [placeholder.createObject()] : []),
                     ...(root.animeEnabled ? [anime.createObject()] : []),
