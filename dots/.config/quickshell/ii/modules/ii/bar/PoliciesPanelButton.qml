@@ -8,6 +8,8 @@ RippleButton {
     id: leftSidebarButton
 
     property bool showPing: false
+    property var sidebarExtensionPages: []
+    readonly property bool animeBooruActive: sidebarExtensionPages.some(page => page.identifier === "anime-booru")
 
     property real buttonPadding: 5
     implicitWidth: distroIcon.width + buttonPadding * 2
@@ -19,6 +21,14 @@ RippleButton {
     colBackgroundToggledHover: Appearance.colors.colSecondaryContainerHover
     colRippleToggled: Appearance.colors.colSecondaryContainerActive
     toggled: GlobalStates.sidebarLeftOpen
+
+    function refreshSidebarExtensionPages() {
+        sidebarExtensionPages = ExtensionManager.ready
+            ? ExtensionManager.getContributionPoint("sidebarLeftPages")
+            : [];
+    }
+
+    Component.onCompleted: refreshSidebarExtensionPages()
 
     onPressed: {
         GlobalStates.sidebarLeftOpen = !GlobalStates.sidebarLeftOpen;
@@ -33,10 +43,24 @@ RippleButton {
     }
 
     Connections {
-        target: Booru
-        function onResponseFinished() {
-            if (GlobalStates.sidebarLeftOpen) return;
-            leftSidebarButton.showPing = true;
+        target: ExtensionManager
+        function onRefreshExtensions() { leftSidebarButton.refreshSidebarExtensionPages(); }
+        function onExtensionInstalled() { leftSidebarButton.refreshSidebarExtensionPages(); }
+        function onExtensionRemoved() { leftSidebarButton.refreshSidebarExtensionPages(); }
+        function onExtensionToggled() { leftSidebarButton.refreshSidebarExtensionPages(); }
+    }
+
+    Loader {
+        active: leftSidebarButton.animeBooruActive
+        visible: false
+        sourceComponent: Item {
+            Connections {
+                target: Booru
+                function onResponseFinished() {
+                    if (GlobalStates.sidebarLeftOpen) return;
+                    leftSidebarButton.showPing = true;
+                }
+            }
         }
     }
 
