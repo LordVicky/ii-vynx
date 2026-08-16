@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=../lib/policy.sh
+source "$SCRIPT_DIR/../lib/policy.sh"
+require_online_ai || exit $?
+
 if [[ -z "$1" ]]; then
     echo "Usage: $0 <image_path> [model] [prompt]"
     echo "Tip: set GEMINI_WALLPAPER_MODEL and/or GEMINI_WALLPAPER_PROMPT to provide defaults."

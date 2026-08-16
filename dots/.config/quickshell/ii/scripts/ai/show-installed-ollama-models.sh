@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=../lib/policy.sh
+source "$SCRIPT_DIR/../lib/policy.sh"
+require_local_ai || exit $?
+
 # Get the list, skip the header, and extract the first column (model names)
 model_names=$(ollama list | tail -n +2 | awk '{print $1}')
 

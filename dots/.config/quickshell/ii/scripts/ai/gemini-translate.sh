@@ -7,6 +7,9 @@ fi
 
 # Variables
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=../lib/policy.sh
+source "$SCRIPT_DIR/../lib/policy.sh"
+require_online_ai || exit $?
 XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
 SHELL_CONFIG_DIR="$XDG_CONFIG_HOME/illogical-impulse"
 SHELL_CONFIG_FILE="${SHELL_CONFIG_DIR}/config.json"

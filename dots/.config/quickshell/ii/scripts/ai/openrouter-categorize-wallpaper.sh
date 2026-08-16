@@ -2,6 +2,11 @@
 
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=../lib/policy.sh
+source "$SCRIPT_DIR/../lib/policy.sh"
+require_online_ai || exit $?
+
 
 ENUMS=("abstract" "anime" "city" "minimalist" "landscape" "plants" "person" "space")
 
