@@ -79,8 +79,11 @@ Scope {
 
     // Gemini: https://ai.google.dev/gemini-api/docs/function-calling
     // OpenAI: https://platform.openai.com/docs/guides/function-calling
-    property string currentTool: Config?.options.ai.tool ?? "search"
+    property string currentTool: AiPolicy.onlineAllowed ? (Config?.options.ai.tool ?? "search") : "none"
     property var tools: {
+        if (!AiPolicy.onlineAllowed)
+            return { "openai": { "none": [] } };
+        return {
         "gemini": {
             "functions": [{"functionDeclarations": [
                 {
@@ -243,13 +246,14 @@ Scope {
             "search": [],
             "none": [],
         }
+        };
     }
     property list<var> availableTools: Object.keys(root.tools[models[currentModelId]?.api_format]) ?? []
-    property var toolDescriptions: {
+    property var toolDescriptions: AiPolicy.onlineAllowed ? {
         "functions": Translation.tr("Commands, edit configs, search.\nTakes an extra turn to switch to search mode if that's needed"),
         "search": Translation.tr("Gives the model search capabilities (immediately)"),
         "none": Translation.tr("Disable tools")
-    }
+    } : ({ "none": Translation.tr("Disable tools") })
 
     readonly property string currentModel: Persistent.states.ai.model
     // Model properties:
@@ -313,7 +317,7 @@ Scope {
     property var modelList: Object.keys(root.models)
     property var currentModelId: Persistent.states?.ai?.provider || modelList[0]
 
-    property var baseModels: {
+    property var baseModels: AiPolicy.onlineAllowed ? {
         "openrouter": [
             {title: "Gemini 2.5 Flash-Lite", value: "gemini-2.5-flash-lite", modelProvider: "google"},
         ],
@@ -323,9 +327,10 @@ Scope {
             { title: "Gemini 3 Flash Preview", value: "gemini-3-flash-preview" }
         ],
         "others": []
-    }
+    } : ({})
 
     property var modelsOfProviders: {
+        if (!AiPolicy.onlineAllowed) return {};
         let providers = {}
         for (let key in baseModels) {
             providers[key] = baseModels[key].slice()
