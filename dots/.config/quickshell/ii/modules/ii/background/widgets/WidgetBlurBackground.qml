@@ -132,6 +132,11 @@ Item {
         return status === Image.Null || status === Image.Loading;
     }
     property bool _backdropReady: false
+    // Resizing changes both sourceRect and textureSize. On some RHI paths a
+    // one-shot scheduleUpdate() can leave the old frozen texture stretched into
+    // the newly allocated size. Keep the capture live only while size/scale is
+    // actually changing, then freeze it and capture the settled final geometry.
+    property bool _resizeCaptureLive: false
 
     property int _contrastClientId: -1
     property real _sampledLuminance: -1
@@ -173,6 +178,13 @@ Item {
         if (!root._backdropReady || backdropCapture.sourceItem === null || backdropCapture.live)
             return;
         backdropCapture.scheduleUpdate();
+    }
+
+    function holdBackdropLiveForResize() {
+        if (!root._backdropReady || backdropCapture.sourceItem === null)
+            return;
+        root._resizeCaptureLive = true;
+        resizeCaptureSettle.restart();
     }
 
     function normalizedWallpaperCrop() {
@@ -317,11 +329,11 @@ Item {
     }
     onWidthChanged: {
         root.scheduleContrastSample();
-        root.scheduleBackdropUpdate();
+        root.holdBackdropLiveForResize();
     }
     onHeightChanged: {
         root.scheduleContrastSample();
-        root.scheduleBackdropUpdate();
+        root.holdBackdropLiveForResize();
     }
     onOffsetXChanged: {
         root.scheduleContrastSample();
@@ -333,7 +345,7 @@ Item {
     }
     onHostScaleChanged: {
         root.scheduleContrastSample();
-        root.scheduleBackdropUpdate();
+        root.holdBackdropLiveForResize();
     }
     onSourceWidthChanged: {
         root.scheduleContrastAfterBackdropSettles();
@@ -422,6 +434,13 @@ Item {
         onTriggered: root.requestContrastSample()
     }
 
+    Timer {
+        id: resizeCaptureSettle
+        interval: 80
+        repeat: false
+        onTriggered: root._resizeCaptureLive = false
+    }
+
     // Blur radius ceiling, and how far the blurred layer extends past the widget
     // so the filter has real content to sample at the edges instead of fading
     // into transparency. Full bleed would be _blurMax; two thirds is enough in
@@ -503,11 +522,11 @@ Item {
                 readonly property Item captureItem: root._useSharedBackdrop
                     ? root.wallpaperSourceItem : fallbackBackdrop
                 // Nulling sourceItem remains the lifetime boundary. Keep live true
-                // while null so Qt releases the capture texture; when a static
-                // source exists, freeze it and update only through scheduleUpdate().
+                // while null so Qt releases the capture texture; static sources
+                // freeze except during wallpaper transitions/loads and resize.
                 sourceItem: clipContent.visible ? captureItem : null
                 hideSource: false
-                live: sourceItem === null || root._sharedBackdropLive
+                live: sourceItem === null || root._sharedBackdropLive || root._resizeCaptureLive
                 recursive: false
                 onSourceItemChanged: root.scheduleBackdropUpdate()
                 onLiveChanged: {
