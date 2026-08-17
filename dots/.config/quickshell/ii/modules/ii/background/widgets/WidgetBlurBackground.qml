@@ -34,12 +34,10 @@ import "AdaptiveContrast.js" as AdaptiveContrastMath
  *       parallaxBackdrop: root.parallaxBackdrop
  *   }
  *
- * There is no shared, unscaled "wallpaper" Image id in scope for widgets loaded via
- * FadeLoader (they live in their own QML document), so this loads the wallpaper
- * image directly from wallpaperPath instead of trying to reuse Background.qml's item.
- * When wallpaperRenderX/Y/Width/Height are supplied (and parallaxBackdrop is true),
- * the backdrop mirrors that live geometry exactly instead, so it tracks parallax
- * panning and drag updates in real time.
+ * Built-in widgets receive Background.qml's live wallpaper Loader through
+ * wallpaperSourceItem. Their glass samples only the card-sized region of that
+ * already-rendered source, avoiding a second wallpaper Image per widget. Extension
+ * widgets that do not provide the live item keep the wallpaperPath fallback.
  */
 Item {
     id: root
@@ -343,7 +341,7 @@ Item {
     // the layer meaningfully smaller.
     readonly property real _blurMax: 96
     readonly property real _blurBleed: Math.ceil(_blurMax * 0.67)
-    // Longest edge, in px, the wallpaper is decoded at for use as a backdrop.
+    // Longest edge, in px, used only by the extension/video fallback Image.
     readonly property int _backdropDecodeWidth: 1920
 
     // Dependency tokens. mapFromItem is a function call, so a binding using it
@@ -352,6 +350,12 @@ Item {
     property real hostScale: 1
     readonly property bool _useItem: parallaxBackdrop && wallpaperSourceItem !== null && wallpaperSourceItem.width > 0
     readonly property bool _useParallax: !_useItem && parallaxBackdrop && wallpaperRenderWidth > 0 && wallpaperRenderHeight > 0
+    // Video wallpapers feed thumbnailPath to widgets while the live wallpaper
+    // Loader points at the video path itself. Only share the live source when it
+    // represents the same image the widget would otherwise load.
+    readonly property bool _useSharedBackdrop: root._useItem
+        && root.wallpaperPath !== ""
+        && root.wallpaperPath === Config.options.background.wallpaperPath
 
     readonly property rect _backdropRect: {
         if (!_useItem)
@@ -370,20 +374,14 @@ Item {
         clip: true
         visible: root.glassEnabled && root.blur > 0.001 && root.wallpaperPath !== ""
 
-        // The blurred layer lives on THIS item, not on the backdrop image, and it
-        // is only widget-sized (plus a blur-radius bleed margin). That matters a
-        // lot: `backdrop` is the size of the whole on-screen wallpaper, so putting
-        // layer.enabled on it allocated a full-wallpaper FBO *per widget* and ran
-        // the blur chain over all of it, when >99% of the result is thrown away by
-        // the clip. With ~17 widgets enabled that is what made wallpaper changes
-        // and shell reloads crawl - the wallpaper's width/height Behavior animates
-        // for 800ms, invalidating every one of those giant layers on every frame.
-        //
-        // Blurring a clipped item normally fades at the edges, because the filter
-        // samples transparency just past the boundary. The bleed margin below is
-        // the fix: the layer extends `_blurBleed` px beyond the widget on all
-        // sides, so the faded ring falls outside the visible area and is discarded
-        // by clipContent's clip and root's rounded mask.
+        // Keep the blur input widget-sized plus the existing bleed margin. For
+        // built-in image wallpapers the input texture now comes from a card-sized
+        // ShaderEffectSource crop of Background.qml's already-rendered wallpaper,
+        // rather than a second Image object loading wallpaperPath in every widget.
+        // The ShaderEffectSource replaces the old blurSource layer FBO; it is not
+        // an additional render target. Extensions and video thumbnails retain the
+        // old Image path as a compatibility fallback, but that Image has no source
+        // while the shared live source is usable.
         Item {
             id: blurSource
             x: -root._blurBleed
@@ -392,8 +390,68 @@ Item {
             height: root.height + root._blurBleed * 2
             clip: true
 
-            layer.enabled: root.glassEnabled && clipContent.visible
-            layer.effect: MultiEffect {
+            Image {
+                id: fallbackBackdrop
+                visible: false
+                // Keep the exact old geometry for extension widgets and video
+                // thumbnail fallback, including live-item placement when present.
+                x: root._blurBleed + (root._useItem ? root._backdropRect.x : root._useParallax ? (root.wallpaperRenderX - root.offsetX) : -root.offsetX)
+                y: root._blurBleed + (root._useItem ? root._backdropRect.y : root._useParallax ? (root.wallpaperRenderY - root.offsetY) : -root.offsetY)
+                width: Math.max(1, root._useItem ? root._backdropRect.width : root._useParallax ? root.wallpaperRenderWidth : root.sourceWidth)
+                height: Math.max(1, root._useItem ? root._backdropRect.height : root._useParallax ? root.wallpaperRenderHeight : root.sourceHeight)
+                source: !root._useSharedBackdrop && root.glassEnabled && root.wallpaperPath !== ""
+                    ? Qt.resolvedUrl(root.wallpaperPath) : ""
+                fillMode: Image.PreserveAspectCrop
+                asynchronous: true
+                cache: true
+                smooth: true
+                sourceSize.width: root._backdropDecodeWidth
+            }
+
+            ShaderEffectSource {
+                id: backdropCapture
+                anchors.fill: parent
+                visible: false
+                readonly property Item captureItem: root._useSharedBackdrop
+                    ? root.wallpaperSourceItem : fallbackBackdrop
+                // Nulling sourceItem is the lifetime boundary: glass-off releases
+                // this card-sized capture texture instead of merely hiding it.
+                sourceItem: clipContent.visible ? captureItem : null
+                hideSource: false
+                live: true
+                recursive: false
+                // Match the old layer's logical card+bleed extent rather than
+                // allowing sourceRect transforms to inflate the capture texture.
+                textureSize: sourceItem !== null
+                    ? Qt.size(Math.max(1, Math.ceil(blurSource.width)), Math.max(1, Math.ceil(blurSource.height)))
+                    : Qt.size(0, 0)
+                sourceRect: {
+                    const item = backdropCapture.captureItem;
+                    if (item === null || !clipContent.visible)
+                        return Qt.rect(0, 0, 0, 0);
+                    // mapToItem handles wallpaper parallax, the wallpaperItem /
+                    // WidgetCanvas transform stack, widget dragging and scaling.
+                    // Explicit dependency reads make the binding update when the
+                    // inputs to that transform change.
+                    const _deps = [item.x, item.y, item.width, item.height,
+                        root.offsetX, root.offsetY, root.hostScale, root.width, root.height,
+                        root.wallpaperRenderX, root.wallpaperRenderY,
+                        root.wallpaperRenderWidth, root.wallpaperRenderHeight];
+                    const topLeft = blurSource.mapToItem(item, 0, 0);
+                    const topRight = blurSource.mapToItem(item, blurSource.width, 0);
+                    const bottomLeft = blurSource.mapToItem(item, 0, blurSource.height);
+                    const bottomRight = blurSource.mapToItem(item, blurSource.width, blurSource.height);
+                    const left = Math.min(topLeft.x, topRight.x, bottomLeft.x, bottomRight.x);
+                    const top = Math.min(topLeft.y, topRight.y, bottomLeft.y, bottomRight.y);
+                    const right = Math.max(topLeft.x, topRight.x, bottomLeft.x, bottomRight.x);
+                    const bottom = Math.max(topLeft.y, topRight.y, bottomLeft.y, bottomRight.y);
+                    return Qt.rect(left, top, Math.max(1, right - left), Math.max(1, bottom - top));
+                }
+            }
+
+            MultiEffect {
+                anchors.fill: parent
+                source: backdropCapture
                 // macOS "vibrancy": the backdrop is not just blurred, it is pushed
                 // saturated and slightly brighter, which is what stops frosted glass
                 // reading as flat grey haze. blurMax is the radius ceiling; `blur`
@@ -406,28 +464,6 @@ Item {
                 blurEnabled: true
                 blurMax: root._blurMax
                 blur: root.blur
-            }
-
-            Image {
-                id: backdrop
-                // Positions come from root's coordinate space, shifted by the bleed
-                // margin because this item's origin sits above/left of root's.
-                x: root._blurBleed + (root._useItem ? root._backdropRect.x : root._useParallax ? (root.wallpaperRenderX - root.offsetX) : -root.offsetX)
-                y: root._blurBleed + (root._useItem ? root._backdropRect.y : root._useParallax ? (root.wallpaperRenderY - root.offsetY) : -root.offsetY)
-                width: Math.max(1, root._useItem ? root._backdropRect.width : root._useParallax ? root.wallpaperRenderWidth : root.sourceWidth)
-                height: Math.max(1, root._useItem ? root._backdropRect.height : root._useParallax ? root.wallpaperRenderHeight : root.sourceHeight)
-                source: root.glassEnabled && root.wallpaperPath !== "" ? Qt.resolvedUrl(root.wallpaperPath) : ""
-                fillMode: Image.PreserveAspectCrop
-                asynchronous: true
-                cache: true
-                smooth: true
-                // Cap the decode. Every widget shares one entry in Qt's pixmap
-                // cache (same source + same sourceSize), so this is a single
-                // decode and a single texture for the whole desktop instead of a
-                // full-resolution one - a 4K wallpaper is 4x the pixels for detail
-                // that a blur destroys anyway. Keep it constant: varying it per
-                // widget would defeat the cache sharing and force a re-decode.
-                sourceSize.width: root._backdropDecodeWidth
             }
         }
     }
