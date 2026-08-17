@@ -356,6 +356,11 @@ Item {
     readonly property bool _useSharedBackdrop: root._useItem
         && root.wallpaperPath !== ""
         && root.wallpaperPath === Config.options.background.wallpaperPath
+    // Hyprglass-style downsampling: strong blur hides the lower input resolution,
+    // while halving both dimensions cuts the capture/effect pixel count to 25%.
+    // Weak blur stays full-resolution to avoid visible pixelation, and the
+    // extension/video fallback remains byte-for-byte on the old 1x geometry.
+    readonly property real _blurDownscale: root._useSharedBackdrop && root.blur >= 0.35 ? 2 : 1
 
     readonly property rect _backdropRect: {
         if (!_useItem)
@@ -386,8 +391,14 @@ Item {
             id: blurSource
             x: -root._blurBleed
             y: -root._blurBleed
-            width: root.width + root._blurBleed * 2
-            height: root.height + root._blurBleed * 2
+            // Run the strong shared-wallpaper blur in a half-size local coordinate
+            // space and scale the finished result back to the exact original
+            // card+bleed extent. This makes both ShaderEffectSource and MultiEffect
+            // operate on one quarter of the pixels without changing crop geometry.
+            width: (root.width + root._blurBleed * 2) / root._blurDownscale
+            height: (root.height + root._blurBleed * 2) / root._blurDownscale
+            scale: root._blurDownscale
+            transformOrigin: Item.TopLeft
             clip: true
 
             Image {
@@ -420,8 +431,8 @@ Item {
                 hideSource: false
                 live: true
                 recursive: false
-                // Match the old layer's logical card+bleed extent rather than
-                // allowing sourceRect transforms to inflate the capture texture.
+                // Match the blur pipeline's local size. At 2x downscale this is a
+                // half-width/half-height texture; at 1x the old allocation remains.
                 textureSize: sourceItem !== null
                     ? Qt.size(Math.max(1, Math.ceil(blurSource.width)), Math.max(1, Math.ceil(blurSource.height)))
                     : Qt.size(0, 0)
@@ -431,6 +442,8 @@ Item {
                         return Qt.rect(0, 0, 0, 0);
                     // mapToItem handles wallpaper parallax, the wallpaperItem /
                     // WidgetCanvas transform stack, widget dragging and scaling.
+                    // blurSource's scale is part of that transform, so mapping the
+                    // half-size local bounds still covers the full physical card.
                     // Explicit dependency reads make the binding update when the
                     // inputs to that transform change.
                     const _deps = [item.x, item.y, item.width, item.height,
@@ -462,7 +475,9 @@ Item {
                 // re-run this blur chain, on every widget, every frame.
                 brightness: 0.04
                 blurEnabled: true
-                blurMax: root._blurMax
+                // Keep the apparent physical radius stable after the parent is
+                // scaled back up: 48 local px at 2x ~= the previous 96 physical px.
+                blurMax: root._blurMax / root._blurDownscale
                 blur: root.blur
             }
         }
