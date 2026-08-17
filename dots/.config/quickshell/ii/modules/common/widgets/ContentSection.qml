@@ -7,9 +7,11 @@ import qs.modules.common.widgets
 
 ColumnLayout {
     id: root
+    property var shape: undefined
     property string title
     property string icon: ""
     property string tooltip: ""
+    property var bgColor: Appearance.colors.colSecondaryContainer
     property list<string> stringMap: []
     default property alias contentData: sectionContent.data
 
@@ -40,11 +42,24 @@ ColumnLayout {
 
     RowLayout {
         spacing: 6
+
         OptionalMaterialSymbol {
+            visible: root.shape === undefined || root.shape === null
             opacity: 1 - highlightOverlay.opacity
             icon: root.icon
             iconSize: Appearance.font.pixelSize.hugeass
         }
+
+        MaterialShapeWrappedMaterialSymbol {
+            visible: root.shape !== undefined && root.shape !== null
+            opacity: 1 - highlightOverlay.opacity
+            text: root.icon
+            iconSize: Appearance.font.pixelSize.large + 1
+            padding: 6
+            shape: root.shape ?? MaterialShape.Shape.Clover4Leaf
+            color: root.bgColor
+        }
+
         StyledText {
             opacity: 1 - highlightOverlay.opacity
             text: root.title
@@ -52,18 +67,20 @@ ColumnLayout {
             font.weight: Font.Medium
             color: Appearance.colors.colOnSecondaryContainer
         }
+
         MaterialSymbol {
             opacity: 1 - highlightOverlay.opacity
             visible: root.tooltip && root.tooltip.length > 0
             text: "info"
             iconSize: Appearance.font.pixelSize.larger
-            
             color: Appearance.colors.colOnSecondaryContainer
+
             MouseArea {
                 id: infoMouseArea
                 anchors.fill: parent
                 hoverEnabled: true
                 cursorShape: Qt.WhatsThisCursor
+
                 StyledToolTip {
                     extraVisibleCondition: false
                     alternativeVisibleCondition: infoMouseArea.containsMouse
@@ -71,6 +88,7 @@ ColumnLayout {
                 }
             }
         }
+
         HighlightOverlay {
             id: highlightOverlay
             visible: false
@@ -81,6 +99,5 @@ ColumnLayout {
         id: sectionContent
         Layout.fillWidth: true
         spacing: 4
-
     }
 }
