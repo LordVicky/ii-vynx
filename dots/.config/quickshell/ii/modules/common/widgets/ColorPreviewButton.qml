@@ -15,6 +15,7 @@ RippleButton {
 
     property string colorScheme: "scheme-auto"
     property string colorSchemeDisplayName: ""
+    readonly property string effectivePaletteType: root.colorScheme === "scheme-auto" ? "auto" : root.colorScheme
 
     property bool builtInTheme: false
     readonly property string builtInThemeFilePath: builtInThemeDirectory + "/" + colorScheme + ".json"
@@ -27,7 +28,7 @@ RippleButton {
     readonly property string wallpaperPath: Config.options.background.wallpaperPath
     readonly property string scriptPath: FileUtils.trimFileProtocol(`${Directories.scriptPath}/colors/generate_colors_material.py`)
 
-    property string fullCommand: `python3 ${root.scriptPath} --path ${root.wallpaperPath} --scheme ${root.colorScheme} --preview`
+    property string fullCommand: `python3 ${root.scriptPath} --path ${root.wallpaperPath} --scheme ${root.effectivePaletteType} --preview`
 
     // these are not actually primary, secondary and tertiary, they are just the three colors we get from the script
     property color primaryColor: "transparent"
@@ -37,7 +38,7 @@ RippleButton {
     property bool loaded: false
     property bool shouldLoad: false
 
-    readonly property bool toggled: Config.options.appearance.palette.type === root.colorScheme
+    readonly property bool toggled: Config.options.appearance.palette.type === root.effectivePaletteType
     readonly property bool sharpMode: Config.options.appearance.sharpMode
 
     colBackground: toggled ? Appearance.colors.colPrimaryContainer : Appearance.colors.colLayer2
@@ -57,8 +58,8 @@ RippleButton {
             Config.options.appearance.palette.type = root.colorScheme;
             Quickshell.execDetached(["bash", "-c", `cp ${root.builtInThemeFilePath} ${Directories.generatedMaterialThemePath}`]);
         } else {
-            Config.options.appearance.palette.type = root.colorScheme;
-            Quickshell.execDetached(["bash", "-c", `${Directories.wallpaperSwitchScriptPath} --noswitch`]);
+            Config.options.appearance.palette.type = root.effectivePaletteType;
+            Quickshell.execDetached([Directories.wallpaperSwitchScriptPath, "--noswitch", "--type", root.effectivePaletteType]);
         }
     }
 
