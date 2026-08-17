@@ -81,11 +81,11 @@ Singleton {
         command: [`${Directories.scriptPath}/musicRecognition/recognize-music.sh`, "-i", root.timeoutInterval, "-t", root.timeoutDuration, "-s", root.monitorSourceString]
         stdout: StdioCollector {
             onStreamFinished: {
-                if (!root.serviceEnabled) return
                 if (root.manuallyStopped) {
                     root.manuallyStopped = false
                     return
                 }
+                if (!root.serviceEnabled) return
                 root.handleRecognition(this.text)
             }
         }
