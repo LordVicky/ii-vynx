@@ -29,7 +29,6 @@ Scope {
 
     function releaseRuntimeState() {
         GlobalStates.overlayOpen = false;
-        OverlayContext.pinnedWidgetIdentifiers = [];
         OverlayContext.clickableWidgets = [];
     }
 
