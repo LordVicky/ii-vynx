@@ -19,6 +19,7 @@ import Quickshell.Io
 Singleton {
     id: root
 
+    readonly property bool serviceEnabled: Config.ready && (Config.options?.localsend?.enable ?? true)
     property bool available: false
     property bool serverRunning: receiveProc.running
     property bool autoStart: Config.options?.localsend?.autoStart ?? false
@@ -44,10 +45,12 @@ Singleton {
     signal sendFailed(string message)
 
     function isReady(): bool {
-        return Config.ready
+        return Config.ready && root.serviceEnabled
     }
 
     function addDroppedFile(fileUrl: string): void {
+        if (!root.serviceEnabled) return
+
         const cleanPath = fileUrl.toString().replace(/^file:\/\//, "")
         const name = cleanPath.split("/").pop() || "unknown"
         for (let i = 0; i < root.droppedFiles.length; i++) {
@@ -75,7 +78,7 @@ Singleton {
     }
 
     function sendToDevice(deviceIp: string): void {
-        if (!root.available || root.sending || root.droppedFiles.length === 0) return
+        if (!root.serviceEnabled || !root.available || root.sending || root.droppedFiles.length === 0) return
         root.sending = true
         const filePaths = root.droppedFiles.map(f => f.path)
         sendProc.command = ["bash", "-lc",`localsend-cli send ${deviceIp} ${filePaths.join(" ")} --json`]
@@ -87,19 +90,44 @@ Singleton {
         root.sending = false
     }
 
+    onServiceEnabledChanged: {
+        serverStartDelayTimer.stop()
+        restartDelayTimer.stop()
+
+        if (!root.serviceEnabled) {
+            checkAvailabilityProc.running = false
+            notificationProc.running = false
+            sendProc.running = false
+            receiveProc.running = false
+            root.sending = false
+            root.available = false
+            root.currentTransfer = null
+            root.pendingTransfers = []
+            root.discoveredDevices = []
+            return
+        }
+
+        checkAvailabilityProc.running = true
+    }
+
     // Check if localsend-cli is available
     Process {
         id: checkAvailabilityProc
-        running: true
+        running: false
         command: ["bash", "-lc", "which localsend-cli"]
         environment: ({
             "PATH": Directories.home + "/.local/bin:/usr/local/bin:/usr/bin:/bin"
         })
         onExited: (exitCode, exitStatus) => {
+            if (!root.serviceEnabled) {
+                root.available = false
+                return
+            }
+
             root.available = (exitCode === 0)
             if (root.available && root.autoStart) {
                 Qt.callLater(() => {
-                    root.startServer()
+                    if (root.serviceEnabled) root.startServer()
                 })
             }
         }
@@ -111,7 +139,7 @@ Singleton {
         running: false
         stdout: StdioCollector {
             onStreamFinished: {
-                if (this.text === "") return
+                if (!root.serviceEnabled || this.text === "") return
                 const action = this.text.trim()
                 console.log("[LocalSend] Notification action received:", action)
                 if (action === "accept") {
@@ -124,6 +152,8 @@ Singleton {
     }
 
     function showIncomingNotification(transfer: var): void {
+        if (!root.serviceEnabled) return
+
         const fileNames = transfer.files.map(f => f.name).join(", ")
         const fileSizes = transfer.files.map(f => {
             const size = f.size || 0
@@ -155,7 +185,7 @@ Singleton {
 
         stdout: SplitParser {
             onRead: line => {
-                if (!line || line.trim().length === 0) return
+                if (!root.serviceEnabled || !line || line.trim().length === 0) return
                 try {
                     const event = JSON.parse(line)
                     root.handleLocalSendEvent(event)
@@ -167,7 +197,7 @@ Singleton {
 
         stderr: SplitParser {
             onRead: line => {
-                console.log("[LocalSend] stderr:", line)
+                if (root.serviceEnabled) console.log("[LocalSend] stderr:", line)
             }
         }
 
@@ -188,7 +218,7 @@ Singleton {
 
         stdout: SplitParser {
             onRead: line => {
-                if (!line || line.trim().length === 0) return
+                if (!root.serviceEnabled || !line || line.trim().length === 0) return
                 console.log("[LocalSend] Send progress:", line)
                 try {
                     const event = JSON.parse(line)
@@ -206,20 +236,20 @@ Singleton {
 
         stderr: SplitParser {
             onRead: line => {
-                console.log("[LocalSend] Send stderr:", line)
+                if (root.serviceEnabled) console.log("[LocalSend] Send stderr:", line)
             }
         }
 
         onExited: (exitCode, exitStatus) => {
             root.sending = false
-            if (exitCode !== 0) {
+            if (root.serviceEnabled && exitCode !== 0) {
                 root.sendFailed("Send process exited with code: " + exitCode)
             }
         }
     }
 
     function handleLocalSendEvent(event: var): void {
-        if (!event || !event.event) return
+        if (!root.serviceEnabled || !event || !event.event) return
         console.log("[LocalSend] Event:", JSON.stringify(event))
 
         switch (event.event) {
@@ -316,6 +346,7 @@ Singleton {
         id: serverStartDelayTimer
         interval: 500
         onTriggered: {
+            if (!root.serviceEnabled || !root.available) return
             receiveProc.command = ["bash", "-lc", `localsend-cli receive --interactive-json --output ${root.downloadPath}`]
             console.log("[LocalSend] Starting receive server with output dir:", root.downloadPath)
             receiveProc.running = true
@@ -323,6 +354,10 @@ Singleton {
     }
 
     function startServer(): void {
+        if (!root.serviceEnabled) {
+            console.log("[LocalSend] Service disabled; refusing to start receiver")
+            return
+        }
         if (!root.available) {
             Quickshell.execDetached(["notify-send", Translation.tr("LocalSend Error"), Translation.tr("localsend-cli is not available. You can install it with <tt>pip install localsend-cli</tt>. Check the docs for further details."), "-a", "LocalSend"])
             console.warn("[LocalSend] localsend-cli is not available")
@@ -333,18 +368,22 @@ Singleton {
             return
         }
 
-        // kill any existing servers
-        // or else it gives an error saying "address already in use" and doesn't start
-        Quickshell.execDetached(["pkill", "-f", "localsend-cli"])
         serverStartDelayTimer.restart()
     }
 
     function stopServer(): void {
+        serverStartDelayTimer.stop()
+        restartDelayTimer.stop()
         console.log("[LocalSend] Stopping receive server...")
         receiveProc.running = false
     }
 
     function restartServer(): void {
+        if (!root.serviceEnabled) {
+            root.stopServer()
+            return
+        }
+
         if (receiveProc.running) {
             console.log("[LocalSend] Restarting server...")
             receiveProc.running = false
@@ -360,18 +399,21 @@ Singleton {
         interval: 2000 // 2 seconds delay
         repeat: false
         onTriggered: {
+            if (!root.serviceEnabled) return
             console.log("[LocalSend] Restarting server after delay...")
             root.startServer()
         }
     }
 
     function acceptTransfer(): void {
+        if (!root.serviceEnabled || !receiveProc.running) return
         console.log("[LocalSend] Accepting transfer...")
         receiveProc.write("y\n")
         root.currentTransfer = null
     }
 
     function denyTransfer(): void {
+        if (!root.serviceEnabled || !receiveProc.running) return
         console.log("[LocalSend] Denying transfer...")
         root.currentTransfer = null
         receiveProc.write("n\n")
@@ -387,7 +429,7 @@ Singleton {
 
     onDownloadPathChanged: {
         // Restart server if download path changed while running
-        if (receiveProc.running) {
+        if (root.serviceEnabled && receiveProc.running) {
             console.log("[LocalSend] Download path changed, restarting server...")
             root.restartServer()
         }
@@ -406,6 +448,7 @@ Singleton {
 
         function status(): string {
             return JSON.stringify({
+                enabled: root.serviceEnabled,
                 available: root.available,
                 running: root.serverRunning,
                 downloadPath: root.downloadPath

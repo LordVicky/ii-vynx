@@ -11,12 +11,19 @@ Singleton {
 
     enum MonitorSource { Monitor, Input }
 
+    readonly property bool serviceEnabled: Config.ready && (Config.options?.musicRecognition?.enable ?? true)
     property var monitorSource: SongRec.MonitorSource.Monitor
     property int timeoutInterval: Config.options.musicRecognition.interval
     property int timeoutDuration: Config.options.musicRecognition.timeout
     readonly property bool running: recognizeMusicProc.running
 
     function toggleRunning(running) {
+        if (!root.serviceEnabled) {
+            recognizeMusicProc.running = false
+            musicReconizedProc.running = false
+            return
+        }
+
         if (recognizeMusicProc.running && !running === true) root.manuallyStopped = true;
         if (running != undefined) {
             recognizeMusicProc.running = running
@@ -45,6 +52,8 @@ Singleton {
     property bool manuallyStopped: false
 
     function handleRecognition(jsonText) {
+        if (!root.serviceEnabled) return
+
         try {
             var obj = JSON.parse(jsonText)
             root.recognizedTrack = {
@@ -58,21 +67,30 @@ Singleton {
         }
     }
 
+    onServiceEnabledChanged: {
+        if (root.serviceEnabled) return
+
+        if (recognizeMusicProc.running) root.manuallyStopped = true
+        recognizeMusicProc.running = false
+        musicReconizedProc.running = false
+    }
+
     Process {
         id: recognizeMusicProc
         running: false
         command: [`${Directories.scriptPath}/musicRecognition/recognize-music.sh`, "-i", root.timeoutInterval, "-t", root.timeoutDuration, "-s", root.monitorSourceString]
         stdout: StdioCollector {
             onStreamFinished: {
+                if (!root.serviceEnabled) return
                 if (root.manuallyStopped) {
                     root.manuallyStopped = false
                     return
                 }
-                handleRecognition(this.text)
+                root.handleRecognition(this.text)
             }
         }
         onExited: (exitCode, exitStatus) => {
-            if (exitCode === 1) {
+            if (root.serviceEnabled && exitCode === 1) {
                 Quickshell.execDetached(["notify-send", Translation.tr("Couldn't recognize music"), Translation.tr("Make sure you have songrec installed"), "-a", "Shell"])
             }
         }
@@ -91,7 +109,7 @@ Singleton {
         ]
         stdout: StdioCollector {
             onStreamFinished: {
-                if (this.text === "") return
+                if (!root.serviceEnabled || this.text === "") return
                 if (this.text == 0) {
                     Qt.openUrlExternally(root.recognizedTrack.url);
                 } else {
