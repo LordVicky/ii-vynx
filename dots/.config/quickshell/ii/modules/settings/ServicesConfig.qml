@@ -107,7 +107,20 @@ ContentPage {
         icon: "memory"
         title: Translation.tr("Resources")
 
+        ConfigSwitch {
+            buttonIcon: "monitor_heart"
+            text: Translation.tr("Enable resource monitor")
+            checked: Config.options.resources.enable
+            onCheckedChanged: {
+                Config.options.resources.enable = checked;
+            }
+            StyledToolTip {
+                text: Translation.tr("Disabling this stops resource monitoring globally. Components that display resource data remain available but will stop updating.")
+            }
+        }
+
         ConfigSpinBox {
+            enabled: Config.options.resources.enable
             icon: "av_timer"
             text: Translation.tr("Polling interval (ms)")
             value: Config.options.resources.updateInterval

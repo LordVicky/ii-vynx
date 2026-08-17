@@ -851,6 +851,7 @@ Singleton {
             }
 
             property JsonObject resources: JsonObject {
+                property bool enable: true
                 property int updateInterval: 3000
                 property int historyLength: 60
             }

@@ -12,6 +12,7 @@ import Quickshell.Io
  * Recurring work is demand-driven. The desktop resource widget contributes
  * resourceWidgetInstances while it is loaded; the overlay resource widget
  * contributes overlayResourceWidgetInstances only while it is actually visible.
+ * Config.options.resources.enable is the global master switch for all polling.
  */
 Singleton {
     id: root
@@ -37,8 +38,9 @@ Singleton {
     // are registered only while the overlay resource widget is visible/pinned.
     property int resourceWidgetInstances: 0
     property int overlayResourceWidgetInstances: 0
-    readonly property bool pollingActive:
-        root.resourceWidgetInstances > 0 || root.overlayResourceWidgetInstances > 0
+    readonly property bool serviceEnabled: Config.options.resources.enable
+    readonly property bool pollingActive: root.serviceEnabled
+        && (root.resourceWidgetInstances > 0 || root.overlayResourceWidgetInstances > 0)
     property bool _pollingStarted: false
 
     property string maxAvailableMemoryString: kbToGbString(root.memoryTotal)
@@ -88,6 +90,9 @@ Singleton {
     }
 
     function sampleCoreResources(recordHistory = true) {
+        if (!root.serviceEnabled)
+            return;
+
         fileMeminfo.reload();
         fileStat.reload();
 
