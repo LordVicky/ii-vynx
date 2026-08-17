@@ -105,6 +105,16 @@ Item {
     // Extension widgets that don't pass an item fall back to the numeric path.
     property Item wallpaperSourceItem: null
 
+    // The live capture itself is intentionally not cached: #17 measured no
+    // meaningful CPU/render win from ShaderEffectSource.live=false and a small
+    // memory regression. The second slot exists only to make render-target
+    // reallocation deterministic after resize on the affected RHI path.
+    property bool _backdropReady: false
+    property int _activeCaptureSlot: 0
+    property int _primingCaptureSlot: -1
+    property size _captureSizeA: Qt.size(0, 0)
+    property size _captureSizeB: Qt.size(0, 0)
+
     property int _contrastClientId: -1
     property real _sampledLuminance: -1
     property double _lastContrastRequestMs: 0
@@ -136,6 +146,96 @@ Item {
             root._contrastClientId = -1;
         }
         root.clearContrastSample();
+    }
+
+    function activeBackdropCapture() {
+        return root._activeCaptureSlot === 0 ? backdropCaptureA : backdropCaptureB;
+    }
+
+    function desiredBackdropTextureSize() {
+        return Qt.size(
+            Math.max(1, Math.ceil(blurSource.width)),
+            Math.max(1, Math.ceil(blurSource.height))
+        );
+    }
+
+    function ensureActiveBackdropTextureSize() {
+        const desired = root.desiredBackdropTextureSize();
+        if (root._activeCaptureSlot === 0) {
+            if (root._captureSizeA.width !== desired.width || root._captureSizeA.height !== desired.height)
+                root._captureSizeA = desired;
+        } else if (root._captureSizeB.width !== desired.width || root._captureSizeB.height !== desired.height) {
+            root._captureSizeB = desired;
+        }
+    }
+
+    function scheduleBackdropCaptureRebuild() {
+        if (!root._backdropReady)
+            return;
+
+        const capture = root.activeBackdropCapture();
+        if (capture === null || capture.sourceItem === null)
+            return;
+
+        // A new resize while the replacement is priming invalidates that pending
+        // allocation. Nulling the inactive slot releases it immediately.
+        if (root._primingCaptureSlot >= 0) {
+            captureSwapTimer.stop();
+            root._primingCaptureSlot = -1;
+        }
+        resizeCaptureSettle.restart();
+    }
+
+    function beginBackdropCaptureRebuild() {
+        if (!root._backdropReady)
+            return;
+
+        const capture = root.activeBackdropCapture();
+        if (capture === null || capture.sourceItem === null)
+            return;
+
+        const nextSlot = root._activeCaptureSlot === 0 ? 1 : 0;
+        const desired = root.desiredBackdropTextureSize();
+        if (nextSlot === 0)
+            root._captureSizeA = desired;
+        else
+            root._captureSizeB = desired;
+
+        // Populate the final-size target while the old live target remains the
+        // visible MultiEffect source. Only this short hand-off has two residents.
+        root._primingCaptureSlot = nextSlot;
+        captureSwapTimer.restart();
+    }
+
+    function finishBackdropCaptureRebuild() {
+        if (root._primingCaptureSlot < 0)
+            return;
+
+        // Switch to the already-populated target. Clearing priming immediately
+        // nulls/release the previous slot because it is no longer active.
+        root._activeCaptureSlot = root._primingCaptureSlot;
+        root._primingCaptureSlot = -1;
+    }
+
+    function backdropCaptureSourceRect(item) {
+        if (item === null || !clipContent.visible)
+            return Qt.rect(0, 0, 0, 0);
+
+        const _deps = [item.x, item.y, item.width, item.height,
+            root.offsetX, root.offsetY, root.hostScale, root.width, root.height,
+            root.wallpaperRenderX, root.wallpaperRenderY,
+            root.wallpaperRenderWidth, root.wallpaperRenderHeight,
+            blurSource.width, blurSource.height];
+
+        const topLeft = blurSource.mapToItem(item, 0, 0);
+        const topRight = blurSource.mapToItem(item, blurSource.width, 0);
+        const bottomLeft = blurSource.mapToItem(item, 0, blurSource.height);
+        const bottomRight = blurSource.mapToItem(item, blurSource.width, blurSource.height);
+        const left = Math.min(topLeft.x, topRight.x, bottomLeft.x, bottomRight.x);
+        const top = Math.min(topLeft.y, topRight.y, bottomLeft.y, bottomRight.y);
+        const right = Math.max(topLeft.x, topRight.x, bottomLeft.x, bottomRight.x);
+        const bottom = Math.max(topLeft.y, topRight.y, bottomLeft.y, bottomRight.y);
+        return Qt.rect(left, top, Math.max(1, right - left), Math.max(1, bottom - top));
     }
 
     function normalizedWallpaperCrop() {
@@ -231,6 +331,8 @@ Item {
     }
 
     Component.onCompleted: {
+        root._captureSizeA = root.desiredBackdropTextureSize();
+        root._backdropReady = true;
         root.ensureContrastClient();
     }
     Component.onDestruction: {
@@ -251,6 +353,14 @@ Item {
             root.scheduleContrastSample();
         } else {
             root.releaseContrastClient();
+        }
+
+        if (root.glassEnabled) {
+            root.ensureActiveBackdropTextureSize();
+        } else {
+            resizeCaptureSettle.stop();
+            captureSwapTimer.stop();
+            root._primingCaptureSlot = -1;
         }
     }
 
@@ -274,11 +384,20 @@ Item {
         root._lastContrastCropSignature = "";
         root.scheduleContrastSample();
     }
-    onWidthChanged: root.scheduleContrastSample()
-    onHeightChanged: root.scheduleContrastSample()
+    onWidthChanged: {
+        root.scheduleContrastSample();
+        root.scheduleBackdropCaptureRebuild();
+    }
+    onHeightChanged: {
+        root.scheduleContrastSample();
+        root.scheduleBackdropCaptureRebuild();
+    }
     onOffsetXChanged: root.scheduleContrastSample()
     onOffsetYChanged: root.scheduleContrastSample()
-    onHostScaleChanged: root.scheduleContrastSample()
+    onHostScaleChanged: {
+        root.scheduleContrastSample();
+        root.scheduleBackdropCaptureRebuild();
+    }
     onSourceWidthChanged: root.scheduleContrastAfterBackdropSettles()
     onSourceHeightChanged: root.scheduleContrastAfterBackdropSettles()
     onWallpaperRenderXChanged: root.scheduleContrastAfterBackdropSettles()
@@ -332,6 +451,22 @@ Item {
         interval: 250
         repeat: false
         onTriggered: root.requestContrastSample()
+    }
+
+    Timer {
+        id: resizeCaptureSettle
+        interval: 80
+        repeat: false
+        onTriggered: root.beginBackdropCaptureRebuild()
+    }
+
+    Timer {
+        id: captureSwapTimer
+        // The replacement exists only for the resize hand-off. Give it several
+        // render opportunities before switching the blur to it.
+        interval: 50
+        repeat: false
+        onTriggered: root.finishBackdropCaptureRebuild()
     }
 
     // Blur radius ceiling, and how far the blurred layer extends past the widget
@@ -409,49 +544,44 @@ Item {
             }
 
             ShaderEffectSource {
-                id: backdropCapture
+                id: backdropCaptureA
                 anchors.fill: parent
                 visible: false
                 readonly property Item captureItem: root._useSharedBackdrop
                     ? root.wallpaperSourceItem : fallbackBackdrop
-                // Nulling sourceItem is the lifetime boundary: glass-off releases
-                // this card-sized capture texture instead of merely hiding it.
-                sourceItem: clipContent.visible ? captureItem : null
+                readonly property bool resident:
+                    root._activeCaptureSlot === 0 || root._primingCaptureSlot === 0
+                sourceItem: clipContent.visible && resident ? captureItem : null
                 hideSource: false
                 live: true
                 recursive: false
-                // Match the old layer's logical card+bleed extent rather than
-                // allowing sourceRect transforms to inflate the capture texture.
-                textureSize: sourceItem !== null
-                    ? Qt.size(Math.max(1, Math.ceil(blurSource.width)), Math.max(1, Math.ceil(blurSource.height)))
-                    : Qt.size(0, 0)
-                sourceRect: {
-                    const item = backdropCapture.captureItem;
-                    if (item === null || !clipContent.visible)
-                        return Qt.rect(0, 0, 0, 0);
-                    // mapToItem handles wallpaper parallax, the wallpaperItem /
-                    // WidgetCanvas transform stack, widget dragging and scaling.
-                    // Explicit dependency reads make the binding update when the
-                    // inputs to that transform change.
-                    const _deps = [item.x, item.y, item.width, item.height,
-                        root.offsetX, root.offsetY, root.hostScale, root.width, root.height,
-                        root.wallpaperRenderX, root.wallpaperRenderY,
-                        root.wallpaperRenderWidth, root.wallpaperRenderHeight];
-                    const topLeft = blurSource.mapToItem(item, 0, 0);
-                    const topRight = blurSource.mapToItem(item, blurSource.width, 0);
-                    const bottomLeft = blurSource.mapToItem(item, 0, blurSource.height);
-                    const bottomRight = blurSource.mapToItem(item, blurSource.width, blurSource.height);
-                    const left = Math.min(topLeft.x, topRight.x, bottomLeft.x, bottomRight.x);
-                    const top = Math.min(topLeft.y, topRight.y, bottomLeft.y, bottomRight.y);
-                    const right = Math.max(topLeft.x, topRight.x, bottomLeft.x, bottomRight.x);
-                    const bottom = Math.max(topLeft.y, topRight.y, bottomLeft.y, bottomRight.y);
-                    return Qt.rect(left, top, Math.max(1, right - left), Math.max(1, bottom - top));
-                }
+                textureSize: sourceItem !== null ? root._captureSizeA : Qt.size(0, 0)
+                sourceRect: sourceItem !== null
+                    ? root.backdropCaptureSourceRect(captureItem)
+                    : Qt.rect(0, 0, 0, 0)
+            }
+
+            ShaderEffectSource {
+                id: backdropCaptureB
+                anchors.fill: parent
+                visible: false
+                readonly property Item captureItem: root._useSharedBackdrop
+                    ? root.wallpaperSourceItem : fallbackBackdrop
+                readonly property bool resident:
+                    root._activeCaptureSlot === 1 || root._primingCaptureSlot === 1
+                sourceItem: clipContent.visible && resident ? captureItem : null
+                hideSource: false
+                live: true
+                recursive: false
+                textureSize: sourceItem !== null ? root._captureSizeB : Qt.size(0, 0)
+                sourceRect: sourceItem !== null
+                    ? root.backdropCaptureSourceRect(captureItem)
+                    : Qt.rect(0, 0, 0, 0)
             }
 
             MultiEffect {
                 anchors.fill: parent
-                source: backdropCapture
+                source: root._activeCaptureSlot === 0 ? backdropCaptureA : backdropCaptureB
                 // macOS "vibrancy": the backdrop is not just blurred, it is pushed
                 // saturated and slightly brighter, which is what stops frosted glass
                 // reading as flat grey haze. blurMax is the radius ceiling; `blur`
