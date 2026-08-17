@@ -15,6 +15,34 @@ StyledOverlayWidget {
     id: root
     minimumWidth: 300
     minimumHeight: 200
+
+    // OverlayContent can remain instantiated while another widget is pinned.
+    // Register resource demand only while this widget is actually visible:
+    // Super+G open, or this resources widget itself pinned.
+    property bool _resourceUsageDemandRegistered: false
+
+    function syncResourceUsageDemand() {
+        const wanted = root.visible;
+        if (wanted === root._resourceUsageDemandRegistered)
+            return;
+
+        root._resourceUsageDemandRegistered = wanted;
+        if (wanted)
+            ResourceUsage.registerOverlayResourceConsumer();
+        else
+            ResourceUsage.unregisterOverlayResourceConsumer();
+    }
+
+    onVisibleChanged: root.syncResourceUsageDemand()
+
+    Component.onCompleted: root.syncResourceUsageDemand()
+    Component.onDestruction: {
+        if (root._resourceUsageDemandRegistered) {
+            ResourceUsage.unregisterOverlayResourceConsumer();
+            root._resourceUsageDemandRegistered = false;
+        }
+    }
+
     property list<var> resources: [
         {
             "icon": "planner_review",
@@ -96,8 +124,6 @@ StyledOverlayWidget {
             StyledText {
                 text: Translation.tr("of %1").arg(resourceSummary.maxAvailableString)
                 font {
-                    // family: Appearance.font.family.numbers
-                    // variableAxes: Appearance.font.variableAxes.numbers
                     pixelSize: Appearance.font.pixelSize.smallie
                 }
                 color: Appearance.colors.colSubtext
