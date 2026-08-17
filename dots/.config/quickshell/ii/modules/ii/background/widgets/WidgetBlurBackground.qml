@@ -230,37 +230,8 @@ Item {
             backdropSettle.restart();
     }
 
-    function desiredBlurDownscale() {
-        return root._useSharedBackdrop && root.blur >= 0.35 ? 2 : 1;
-    }
-
-    function scheduleBlurDownscale() {
-        if (!root._blurEffectReady)
-            return;
-        blurDownscaleSettle.restart();
-    }
-
-    function applyBlurDownscale() {
-        if (!root._blurEffectReady)
-            return;
-        blurDownscaleSettle.stop();
-        if (root.desiredBlurDownscale() === root._blurDownscale)
-            return;
-
-        // MultiEffect.blurMax changes its shader and effect size. Unload the
-        // effect first; component-owned timers then resize the capture and create
-        // a fresh effect on later animation ticks. Timers die with the widget, so
-        // teardown cannot leave queued callbacks referencing destroyed objects.
-        root._blurEffectReady = false;
-        blurDownscaleApply.restart();
-    }
-
     Component.onCompleted: {
         root.ensureContrastClient();
-        // Do not instantiate MultiEffect until the initial 1x/2x choice is final;
-        // this avoids a startup shader resize when the default blur is >= 0.35.
-        root._blurDownscale = root.desiredBlurDownscale();
-        root._blurEffectReady = true;
     }
     Component.onDestruction: {
         if (root._contrastClientId >= 0)
@@ -297,18 +268,11 @@ Item {
             root.requestContrastSample();
         }
     }
-    // Only blur-slider motion is debounced. Source/fallback changes must return
-    // to their required 1x geometry immediately instead of spending 180 ms in a
-    // stale half-resolution layout.
-    onBlurChanged: root.scheduleBlurDownscale()
-    onParallaxBackdropChanged: root.applyBlurDownscale()
-    onWallpaperSourceItemChanged: root.applyBlurDownscale()
     onWallpaperPathChanged: {
         root._sampledLuminance = -1;
         root._lastContrastRequestMs = 0;
         root._lastContrastCropSignature = "";
         root.scheduleContrastSample();
-        root.applyBlurDownscale();
     }
     onWidthChanged: root.scheduleContrastSample()
     onHeightChanged: root.scheduleContrastSample()
@@ -370,36 +334,6 @@ Item {
         onTriggered: root.requestContrastSample()
     }
 
-    Timer {
-        id: blurDownscaleSettle
-        interval: 180
-        repeat: false
-        onTriggered: root.applyBlurDownscale()
-    }
-
-    Timer {
-        id: blurDownscaleApply
-        interval: 0
-        repeat: false
-        onTriggered: {
-            root._blurDownscale = root.desiredBlurDownscale();
-            if (backdropCapture.sourceItem !== null)
-                backdropCapture.scheduleUpdate();
-            blurEffectReload.restart();
-        }
-    }
-
-    Timer {
-        id: blurEffectReload
-        interval: 0
-        repeat: false
-        onTriggered: {
-            root._blurEffectReady = true;
-            if (root._blurDownscale !== root.desiredBlurDownscale())
-                root.scheduleBlurDownscale();
-        }
-    }
-
     // Blur radius ceiling, and how far the blurred layer extends past the widget
     // so the filter has real content to sample at the edges instead of fading
     // into transparency. Full bleed would be _blurMax; two thirds is enough in
@@ -422,12 +356,6 @@ Item {
     readonly property bool _useSharedBackdrop: root._useItem
         && root.wallpaperPath !== ""
         && root.wallpaperPath === Config.options.background.wallpaperPath
-    // Hyprglass-style downsampling: strong blur hides the lower input resolution,
-    // while halving both dimensions cuts the capture/effect pixel count to 25%.
-    // Keep this as settled state rather than a direct blur binding: changing
-    // MultiEffect.blurMax during a slider animation can corrupt the live effect.
-    property real _blurDownscale: 1
-    property bool _blurEffectReady: false
 
     readonly property rect _backdropRect: {
         if (!_useItem)
@@ -458,14 +386,8 @@ Item {
             id: blurSource
             x: -root._blurBleed
             y: -root._blurBleed
-            // Run the strong shared-wallpaper blur in a half-size local coordinate
-            // space and scale the finished result back to the exact original
-            // card+bleed extent. This makes both ShaderEffectSource and MultiEffect
-            // operate on one quarter of the pixels without changing crop geometry.
-            width: (root.width + root._blurBleed * 2) / root._blurDownscale
-            height: (root.height + root._blurBleed * 2) / root._blurDownscale
-            scale: root._blurDownscale
-            transformOrigin: Item.TopLeft
+            width: root.width + root._blurBleed * 2
+            height: root.height + root._blurBleed * 2
             clip: true
 
             Image {
@@ -498,8 +420,8 @@ Item {
                 hideSource: false
                 live: true
                 recursive: false
-                // Match the blur pipeline's local size. At 2x downscale this is a
-                // half-width/half-height texture; at 1x the old allocation remains.
+                // Match the old layer's logical card+bleed extent rather than
+                // allowing sourceRect transforms to inflate the capture texture.
                 textureSize: sourceItem !== null
                     ? Qt.size(Math.max(1, Math.ceil(blurSource.width)), Math.max(1, Math.ceil(blurSource.height)))
                     : Qt.size(0, 0)
@@ -509,8 +431,6 @@ Item {
                         return Qt.rect(0, 0, 0, 0);
                     // mapToItem handles wallpaper parallax, the wallpaperItem /
                     // WidgetCanvas transform stack, widget dragging and scaling.
-                    // blurSource's scale is part of that transform, so mapping the
-                    // half-size local bounds still covers the full physical card.
                     // Explicit dependency reads make the binding update when the
                     // inputs to that transform change.
                     const _deps = [item.x, item.y, item.width, item.height,
@@ -529,36 +449,21 @@ Item {
                 }
             }
 
-            Loader {
-                id: blurEffectLoader
+            MultiEffect {
                 anchors.fill: parent
-                active: root._blurEffectReady
-                sourceComponent: blurEffectComponent
-            }
-
-            Component {
-                id: blurEffectComponent
-
-                MultiEffect {
-                    anchors.fill: parent
-                    source: backdropCapture
-                    // macOS "vibrancy": the backdrop is not just blurred, it is pushed
-                    // saturated and slightly brighter, which is what stops frosted glass
-                    // reading as flat grey haze. blurMax is the radius ceiling; `blur`
-                    // scales within it, so raising the ceiling softens the whole range.
-                    saturation: 0.35
-                    // Deliberately constant. See the scrim below: routing the
-                    // brightness slider through here instead makes dragging it
-                    // re-run this blur chain, on every widget, every frame.
-                    brightness: 0.04
-                    blurEnabled: true
-                    // Keep the apparent physical radius stable after the parent is
-                    // scaled back up: 48 local px at 2x ~= the previous 96 physical px.
-                    // _blurDownscale is stable for this effect's lifetime; crossing
-                    // the 0.35 threshold unloads/recreates the effect instead.
-                    blurMax: root._blurMax / root._blurDownscale
-                    blur: root.blur
-                }
+                source: backdropCapture
+                // macOS "vibrancy": the backdrop is not just blurred, it is pushed
+                // saturated and slightly brighter, which is what stops frosted glass
+                // reading as flat grey haze. blurMax is the radius ceiling; `blur`
+                // scales within it, so raising the ceiling softens the whole range.
+                saturation: 0.35
+                // Deliberately constant. See the scrim below: routing the
+                // brightness slider through here instead makes dragging it
+                // re-run this blur chain, on every widget, every frame.
+                brightness: 0.04
+                blurEnabled: true
+                blurMax: root._blurMax
+                blur: root.blur
             }
         }
     }
