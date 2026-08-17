@@ -8,6 +8,9 @@ import qs.modules.common.widgets
 ContentPage {
     id: page
 
+    baseWidth: 680
+    bottomContentPadding: 40
+
     readonly property int index: 8
     property bool register: parent.register ?? false
     property string pendingReplaceInput: ""
