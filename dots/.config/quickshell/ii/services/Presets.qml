@@ -48,6 +48,8 @@ Singleton {
             root.errorMessage = "";
             if (refresh)
                 root.refreshModel();
+            if (operation === "apply")
+                Quickshell.execDetached([Directories.wallpaperSwitchScriptPath, "--noswitch"]);
             root.operationFinished(operation, presetName);
             return;
         }
