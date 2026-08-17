@@ -13,7 +13,7 @@ Singleton {
     readonly property string presetDirectory: `${Directories.shellConfig}/presets`
     readonly property string scriptPath: `${Directories.scriptPath}/presets.sh`
     property alias model: presetsFolderModel
-    readonly property bool busy: savePresetProc.running || applyPresetProc.running || removePresetProc.running
+    readonly property bool busy: root.currentOperation.length > 0 || savePresetProc.running || applyPresetProc.running || removePresetProc.running
     property string currentOperation: ""
     property string errorMessage: ""
 
@@ -27,7 +27,7 @@ Singleton {
     }
 
     function begin(process, operation, presetName, command) {
-        if (root.busy) {
+        if (root.currentOperation.length > 0 || root.busy) {
             root.errorMessage = "Another preset operation is already running.";
             root.operationFailed(operation, presetName, root.errorMessage);
             return false;
