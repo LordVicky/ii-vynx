@@ -45,6 +45,7 @@ validate_json_object() {
 save_preset() {
     local name="$1"
     local description="${2:-}"
+    local replace="${3:-false}"
     local destination tmp
 
     validate_name "$name"
@@ -54,6 +55,7 @@ save_preset() {
     destination="$(preset_path "$name")"
     if [[ -e "$destination" || -L "$destination" ]]; then
         [[ -f "$destination" && ! -L "$destination" ]] || die "preset destination is not a regular file: $name"
+        [[ "$replace" == "true" ]] || die "preset already exists: $name"
     fi
 
     tmp="$(mktemp "${presets_dir}/.preset-save.XXXXXX")"
@@ -122,6 +124,7 @@ usage() {
     cat >&2 <<'USAGE'
 Usage:
   presets.sh --save <preset-name> [description]
+  presets.sh --replace <preset-name> [description]
   presets.sh --apply <preset-name>
   presets.sh --remove <preset-name>
   presets.sh --list
@@ -135,7 +138,11 @@ main() {
     case "${1:-}" in
         --save|save)
             (($# == 2 || $# == 3)) || usage
-            save_preset "$2" "${3:-}"
+            save_preset "$2" "${3:-}" false
+            ;;
+        --replace|replace)
+            (($# == 2 || $# == 3)) || usage
+            save_preset "$2" "${3:-}" true
             ;;
         --apply|apply)
             (($# == 2)) || usage

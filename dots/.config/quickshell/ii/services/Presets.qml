@@ -58,18 +58,18 @@ Singleton {
         root.operationFailed(operation, presetName, root.errorMessage);
     }
 
-    function save(name, description) {
-        const trimmedName = (name || "").trim();
-        if (trimmedName.length === 0) {
+    function save(name, description, replace) {
+        const presetName = name || "";
+        if (presetName.length === 0) {
             root.errorMessage = "Preset name cannot be empty.";
-            root.operationFailed("save", trimmedName, root.errorMessage);
+            root.operationFailed("save", presetName, root.errorMessage);
             return false;
         }
 
-        const command = [root.scriptPath, "--save", trimmedName];
+        const command = [root.scriptPath, replace ? "--replace" : "--save", presetName];
         if (description && description.length > 0)
             command.push(description);
-        return root.begin(savePresetProc, "save", trimmedName, command);
+        return root.begin(savePresetProc, "save", presetName, command);
     }
 
     function apply(name) {

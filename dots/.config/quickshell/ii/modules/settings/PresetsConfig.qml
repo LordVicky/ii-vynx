@@ -14,16 +14,58 @@ ContentPage {
 
     property string statusMessage: ""
     property bool statusIsError: false
+    property string pendingReplaceName: ""
+    property string pendingReplaceDescription: ""
     property string pendingDeleteName: ""
 
     function presetNameFromFile(fileName) {
         return fileName.endsWith(".json") ? fileName.slice(0, -5) : fileName;
     }
 
-    function saveCurrentPreset() {
-        const name = presetNameField.text.trim();
-        const description = presetDescriptionField.text.trim();
-        if (Presets.save(name, description)) {
+    function presetExists(name) {
+        for (let i = 0; i < Presets.model.count; ++i) {
+            if (Presets.model.get(i, "fileName") === `${name}.json`)
+                return true;
+        }
+        return false;
+    }
+
+    function replacementPending() {
+        return page.pendingReplaceName.length > 0
+            && page.pendingReplaceName === presetNameField.text
+            && page.pendingReplaceDescription === presetDescriptionField.text;
+    }
+
+    function clearReplaceConfirmation() {
+        page.pendingReplaceName = "";
+        page.pendingReplaceDescription = "";
+    }
+
+    function saveCurrentPreset(replace) {
+        const name = presetNameField.text;
+        const description = presetDescriptionField.text;
+
+        if (name.length === 0) {
+            page.statusMessage = Translation.tr("Preset name cannot be empty.");
+            page.statusIsError = true;
+            return;
+        }
+        if (name !== name.trim()) {
+            page.statusMessage = Translation.tr("Preset names cannot start or end with whitespace.");
+            page.statusIsError = true;
+            return;
+        }
+
+        if (!replace && page.presetExists(name)) {
+            page.pendingReplaceName = name;
+            page.pendingReplaceDescription = description;
+            page.statusMessage = Translation.tr("Preset %1 already exists. Press Replace preset to overwrite it.").arg(name);
+            page.statusIsError = false;
+            return;
+        }
+
+        if (Presets.save(name, description, replace)) {
+            page.clearReplaceConfirmation();
             page.statusMessage = Translation.tr("Saving preset…");
             page.statusIsError = false;
         }
@@ -37,6 +79,7 @@ ContentPage {
 
             if (operation === "save") {
                 page.statusMessage = Translation.tr("Saved preset: %1").arg(presetName);
+                page.clearReplaceConfirmation();
                 presetNameField.text = "";
                 presetDescriptionField.text = "";
             } else if (operation === "apply") {
@@ -49,6 +92,16 @@ ContentPage {
         }
 
         function onOperationFailed(operation, presetName, message) {
+            if (operation === "save" && message.indexOf("preset already exists:") !== -1) {
+                page.pendingReplaceName = presetName;
+                page.pendingReplaceDescription = presetDescriptionField.text;
+                Presets.refreshModel();
+                page.statusMessage = Translation.tr("Preset %1 already exists. Press Replace preset to overwrite it.").arg(presetName);
+                page.statusIsError = false;
+                return;
+            }
+
+            page.clearReplaceConfirmation();
             page.statusMessage = message;
             page.statusIsError = true;
         }
@@ -71,7 +124,8 @@ ContentPage {
             enabled: !Presets.busy
             placeholderText: Translation.tr("Preset name")
             maximumLength: 80
-            onAccepted: page.saveCurrentPreset()
+            onTextChanged: page.clearReplaceConfirmation()
+            onAccepted: page.saveCurrentPreset(false)
         }
 
         MaterialTextField {
@@ -79,7 +133,8 @@ ContentPage {
             Layout.fillWidth: true
             enabled: !Presets.busy
             placeholderText: Translation.tr("Description (optional)")
-            onAccepted: page.saveCurrentPreset()
+            onTextChanged: page.clearReplaceConfirmation()
+            onAccepted: page.saveCurrentPreset(false)
         }
 
         RowLayout {
@@ -94,10 +149,20 @@ ContentPage {
             }
 
             RippleButtonWithIcon {
-                materialIcon: Presets.busy && Presets.currentOperation === "save" ? "hourglass_top" : "save"
-                mainText: Presets.busy && Presets.currentOperation === "save" ? Translation.tr("Saving…") : Translation.tr("Save preset")
-                enabled: !Presets.busy && presetNameField.text.trim().length > 0
-                onClicked: page.saveCurrentPreset()
+                readonly property bool replacing: page.replacementPending()
+
+                materialIcon: Presets.busy && Presets.currentOperation === "save"
+                    ? "hourglass_top"
+                    : replacing
+                        ? "warning"
+                        : "save"
+                mainText: Presets.busy && Presets.currentOperation === "save"
+                    ? Translation.tr("Saving…")
+                    : replacing
+                        ? Translation.tr("Replace preset")
+                        : Translation.tr("Save preset")
+                enabled: !Presets.busy && presetNameField.text.length > 0
+                onClicked: page.saveCurrentPreset(replacing)
             }
         }
     }
