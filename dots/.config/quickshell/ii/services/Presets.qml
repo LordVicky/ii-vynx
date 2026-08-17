@@ -49,7 +49,7 @@ Singleton {
             if (refresh)
                 root.refreshModel();
             if (operation === "apply")
-                Quickshell.execDetached([Directories.wallpaperSwitchScriptPath, "--noswitch"]);
+                ThemeGeneration.applyFromConfig();
             root.operationFinished(operation, presetName);
             return;
         }
