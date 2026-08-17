@@ -13,6 +13,7 @@ Singleton {
     readonly property string presetDirectory: `${Directories.shellConfig}/presets`
     readonly property string scriptPath: `${Directories.scriptPath}/presets.sh`
     property alias model: presetsFolderModel
+    property alias folderModel: presetsFolderModel
     readonly property bool busy: root.currentOperation.length > 0 || savePresetProc.running || applyPresetProc.running || removePresetProc.running
     property string currentOperation: ""
     property string errorMessage: ""
@@ -21,9 +22,9 @@ Singleton {
     signal operationFailed(string operation, string presetName, string message)
 
     function refreshModel() {
-        const path = root.presetDirectory;
+        const current = presetsFolderModel.folder;
         presetsFolderModel.folder = "";
-        presetsFolderModel.folder = path;
+        presetsFolderModel.folder = current;
     }
 
     function begin(process, operation, presetName, command) {
@@ -93,7 +94,7 @@ Singleton {
 
     FolderListModel {
         id: presetsFolderModel
-        folder: root.presetDirectory
+        folder: Qt.resolvedUrl(root.presetDirectory)
         nameFilters: ["*.json"]
         showDirs: false
         sortField: FolderListModel.Name
