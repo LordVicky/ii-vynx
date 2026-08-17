@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
 import Qt5Compat.GraphicalEffects
-import Quickshell
 import Quickshell.Io
 import qs.services
 import qs.modules.common
@@ -53,13 +52,13 @@ RippleButton {
     onClicked: {
         if (customTheme) {
             Config.options.appearance.palette.type = root.colorScheme;
-            Quickshell.execDetached(["bash", "-c", `cp ${root.customThemeFilePath} ${Directories.generatedMaterialThemePath}`]);
+            ThemeGeneration.applyThemeFile(root.customThemeFilePath, root.colorScheme);
         } else if (builtInTheme) {
             Config.options.appearance.palette.type = root.colorScheme;
-            Quickshell.execDetached(["bash", "-c", `cp ${root.builtInThemeFilePath} ${Directories.generatedMaterialThemePath}`]);
+            ThemeGeneration.applyThemeFile(root.builtInThemeFilePath, root.colorScheme);
         } else {
             Config.options.appearance.palette.type = root.effectivePaletteType;
-            Quickshell.execDetached([Directories.wallpaperSwitchScriptPath, "--noswitch", "--type", root.effectivePaletteType]);
+            ThemeGeneration.applyGenerated(root.effectivePaletteType);
         }
     }
 
