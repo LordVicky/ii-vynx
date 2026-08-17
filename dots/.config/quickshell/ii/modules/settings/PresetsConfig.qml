@@ -14,6 +14,7 @@ ContentPage {
     readonly property int index: 8
     property bool register: parent.register ?? false
     property string pendingReplaceInput: ""
+    property string pendingInputSaveName: ""
     property string pendingDeleteName: ""
     property string operationMessage: ""
 
@@ -44,7 +45,9 @@ ContentPage {
             return;
 
         const replace = page.pendingReplaceInput === rawInput;
-        Presets.save(parsed.name, parsed.description, replace);
+        page.pendingInputSaveName = parsed.name;
+        if (!Presets.save(parsed.name, parsed.description, replace))
+            page.pendingInputSaveName = "";
     }
 
     Connections {
@@ -55,7 +58,10 @@ ContentPage {
 
             if (operation === "save") {
                 page.pendingReplaceInput = "";
-                presetNameField.text = "";
+                if (page.pendingInputSaveName === presetName) {
+                    presetNameField.text = "";
+                    page.pendingInputSaveName = "";
+                }
             } else if (operation === "remove" && page.pendingDeleteName === presetName) {
                 page.pendingDeleteName = "";
             }
@@ -68,6 +74,8 @@ ContentPage {
                 return;
             }
 
+            if (operation === "save")
+                page.pendingInputSaveName = "";
             if (operation === "remove")
                 page.pendingDeleteName = "";
 
@@ -171,6 +179,7 @@ ContentPage {
                             ? "Press Remove again to confirm"
                             : (presetDelegate.presetDescription !== "" ? presetDelegate.presetDescription : Translation.tr("Saved preset"))
                         onSave: () => {
+                            page.pendingInputSaveName = "";
                             page.pendingDeleteName = "";
                             Presets.save(presetDelegate.presetName, presetDelegate.presetDescription, true);
                         }
