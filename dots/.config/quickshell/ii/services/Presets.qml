@@ -38,7 +38,7 @@ Singleton {
         process.presetName = presetName;
         process.command = command;
         process.running = true;
-        return true;
+        return root.currentOperation === operation;
     }
 
     function finish(operation, presetName, exitCode, stderrText, refresh) {
@@ -56,6 +56,15 @@ Singleton {
             ? detail
             : `Preset ${operation} failed with exit code ${exitCode}.`;
         root.operationFailed(operation, presetName, root.errorMessage);
+    }
+
+    function handleStoppedWithoutExit(process, operation) {
+        if (process.running || root.currentOperation !== operation)
+            return;
+
+        root.currentOperation = "";
+        root.errorMessage = `Failed to start preset backend for ${operation}: ${root.scriptPath}`;
+        root.operationFailed(operation, process.presetName, root.errorMessage);
     }
 
     function save(name, description, replace) {
@@ -95,6 +104,7 @@ Singleton {
         property string presetName: ""
         stderr: StdioCollector { id: savePresetStderr }
         onExited: (exitCode, exitStatus) => root.finish("save", presetName, exitCode, savePresetStderr.text, true)
+        onRunningChanged: root.handleStoppedWithoutExit(savePresetProc, "save")
     }
 
     Process {
@@ -102,6 +112,7 @@ Singleton {
         property string presetName: ""
         stderr: StdioCollector { id: applyPresetStderr }
         onExited: (exitCode, exitStatus) => root.finish("apply", presetName, exitCode, applyPresetStderr.text, false)
+        onRunningChanged: root.handleStoppedWithoutExit(applyPresetProc, "apply")
     }
 
     Process {
@@ -109,5 +120,6 @@ Singleton {
         property string presetName: ""
         stderr: StdioCollector { id: removePresetStderr }
         onExited: (exitCode, exitStatus) => root.finish("remove", presetName, exitCode, removePresetStderr.text, true)
+        onRunningChanged: root.handleStoppedWithoutExit(removePresetProc, "remove")
     }
 }
