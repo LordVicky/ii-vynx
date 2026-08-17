@@ -170,6 +170,10 @@ ContentPage {
                         description: page.pendingDeleteName === presetDelegate.presetName
                             ? "Press Remove again to confirm"
                             : (presetDelegate.presetDescription !== "" ? presetDelegate.presetDescription : Translation.tr("Saved preset"))
+                        onSave: () => {
+                            page.pendingDeleteName = "";
+                            Presets.save(presetDelegate.presetName, presetDelegate.presetDescription, true);
+                        }
                         onApply: () => {
                             page.pendingDeleteName = "";
                             Presets.apply(presetDelegate.presetName);

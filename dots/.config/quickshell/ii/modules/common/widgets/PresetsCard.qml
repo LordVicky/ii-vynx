@@ -12,6 +12,7 @@ Rectangle {
     property string imageSource: ""
     property string title: ""
     property string description: ""
+    property var onSave: () => {}
     property var onApply: () => {}
     property var onRemove: () => {}
 
@@ -107,6 +108,28 @@ Rectangle {
                     verticalAlignment: Text.AlignVCenter
                 }
                 onClicked: root.onRemove()
+            }
+
+            GroupButton {
+                bounce: false
+                toggled: false
+                leftRadius: height / 2
+                rightRadius: height / 2
+                Layout.fillWidth: false
+                Layout.fillHeight: false
+                implicitHeight: 36
+                horizontalPadding: 14
+                verticalPadding: 8
+                colBackground: Appearance.colors.colPrimaryContainer
+                colBackgroundHover: Appearance.colors.colPrimaryContainerHover
+                colBackgroundActive: Appearance.colors.colPrimaryContainerActive
+                contentItem: StyledText {
+                    text: "Save"
+                    color: Appearance.colors.colOnPrimaryContainer
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
+                onClicked: root.onSave()
             }
 
             GroupButton {
