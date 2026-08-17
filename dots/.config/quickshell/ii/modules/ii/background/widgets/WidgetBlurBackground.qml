@@ -241,24 +241,18 @@ Item {
     }
 
     function applyBlurDownscale() {
-        const next = root.desiredBlurDownscale();
-        if (next === root._blurDownscale)
+        if (!root._blurEffectReady)
+            return;
+        blurDownscaleSettle.stop();
+        if (root.desiredBlurDownscale() === root._blurDownscale)
             return;
 
         // MultiEffect.blurMax changes its shader and effect size. Unload the
-        // effect first, let the capture settle at the new resolution, then create
-        // a fresh effect rather than resizing/recompiling it while blur animates.
+        // effect first; component-owned timers then resize the capture and create
+        // a fresh effect on later animation ticks. Timers die with the widget, so
+        // teardown cannot leave queued callbacks referencing destroyed objects.
         root._blurEffectReady = false;
-        Qt.callLater(() => {
-            root._blurDownscale = root.desiredBlurDownscale();
-            if (backdropCapture.sourceItem !== null)
-                backdropCapture.scheduleUpdate();
-            Qt.callLater(() => {
-                root._blurEffectReady = true;
-                if (root._blurDownscale !== root.desiredBlurDownscale())
-                    root.scheduleBlurDownscale();
-            });
-        });
+        blurDownscaleApply.restart();
     }
 
     Component.onCompleted: {
@@ -303,15 +297,18 @@ Item {
             root.requestContrastSample();
         }
     }
+    // Only blur-slider motion is debounced. Source/fallback changes must return
+    // to their required 1x geometry immediately instead of spending 180 ms in a
+    // stale half-resolution layout.
     onBlurChanged: root.scheduleBlurDownscale()
-    onParallaxBackdropChanged: root.scheduleBlurDownscale()
-    onWallpaperSourceItemChanged: root.scheduleBlurDownscale()
+    onParallaxBackdropChanged: root.applyBlurDownscale()
+    onWallpaperSourceItemChanged: root.applyBlurDownscale()
     onWallpaperPathChanged: {
         root._sampledLuminance = -1;
         root._lastContrastRequestMs = 0;
         root._lastContrastCropSignature = "";
         root.scheduleContrastSample();
-        root.scheduleBlurDownscale();
+        root.applyBlurDownscale();
     }
     onWidthChanged: root.scheduleContrastSample()
     onHeightChanged: root.scheduleContrastSample()
@@ -378,6 +375,29 @@ Item {
         interval: 180
         repeat: false
         onTriggered: root.applyBlurDownscale()
+    }
+
+    Timer {
+        id: blurDownscaleApply
+        interval: 0
+        repeat: false
+        onTriggered: {
+            root._blurDownscale = root.desiredBlurDownscale();
+            if (backdropCapture.sourceItem !== null)
+                backdropCapture.scheduleUpdate();
+            blurEffectReload.restart();
+        }
+    }
+
+    Timer {
+        id: blurEffectReload
+        interval: 0
+        repeat: false
+        onTriggered: {
+            root._blurEffectReady = true;
+            if (root._blurDownscale !== root.desiredBlurDownscale())
+                root.scheduleBlurDownscale();
+        }
     }
 
     // Blur radius ceiling, and how far the blurred layer extends past the widget
