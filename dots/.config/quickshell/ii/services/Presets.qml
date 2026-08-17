@@ -1,0 +1,113 @@
+pragma Singleton
+pragma ComponentBehavior: Bound
+
+import QtQuick
+import Qt.labs.folderlistmodel
+import Quickshell
+import Quickshell.Io
+import qs.modules.common
+
+Singleton {
+    id: root
+
+    readonly property string presetDirectory: `${Directories.shellConfig}/presets`
+    readonly property string scriptPath: `${Directories.scriptPath}/presets.sh`
+    property alias model: presetsFolderModel
+    readonly property bool busy: savePresetProc.running || applyPresetProc.running || removePresetProc.running
+    property string currentOperation: ""
+    property string errorMessage: ""
+
+    signal operationFinished(string operation, string presetName)
+    signal operationFailed(string operation, string presetName, string message)
+
+    function refreshModel() {
+        const path = root.presetDirectory;
+        presetsFolderModel.folder = "";
+        presetsFolderModel.folder = path;
+    }
+
+    function begin(process, operation, presetName, command) {
+        if (root.busy) {
+            root.errorMessage = "Another preset operation is already running.";
+            root.operationFailed(operation, presetName, root.errorMessage);
+            return false;
+        }
+
+        root.errorMessage = "";
+        root.currentOperation = operation;
+        process.presetName = presetName;
+        process.command = command;
+        process.running = true;
+        return true;
+    }
+
+    function finish(operation, presetName, exitCode, stderrText, refresh) {
+        root.currentOperation = "";
+        if (exitCode === 0) {
+            root.errorMessage = "";
+            if (refresh)
+                root.refreshModel();
+            root.operationFinished(operation, presetName);
+            return;
+        }
+
+        const detail = (stderrText || "").trim();
+        root.errorMessage = detail.length > 0
+            ? detail
+            : `Preset ${operation} failed with exit code ${exitCode}.`;
+        root.operationFailed(operation, presetName, root.errorMessage);
+    }
+
+    function save(name, description) {
+        const trimmedName = (name || "").trim();
+        if (trimmedName.length === 0) {
+            root.errorMessage = "Preset name cannot be empty.";
+            root.operationFailed("save", trimmedName, root.errorMessage);
+            return false;
+        }
+
+        const command = [root.scriptPath, "--save", trimmedName];
+        if (description && description.length > 0)
+            command.push(description);
+        return root.begin(savePresetProc, "save", trimmedName, command);
+    }
+
+    function apply(name) {
+        return root.begin(applyPresetProc, "apply", name, [root.scriptPath, "--apply", name]);
+    }
+
+    function remove(name) {
+        return root.begin(removePresetProc, "remove", name, [root.scriptPath, "--remove", name]);
+    }
+
+    Component.onCompleted: Quickshell.execDetached(["mkdir", "-p", root.presetDirectory])
+
+    FolderListModel {
+        id: presetsFolderModel
+        folder: root.presetDirectory
+        nameFilters: ["*.json"]
+        showDirs: false
+        sortField: FolderListModel.Name
+    }
+
+    Process {
+        id: savePresetProc
+        property string presetName: ""
+        stderr: StdioCollector { id: savePresetStderr }
+        onExited: (exitCode, exitStatus) => root.finish("save", presetName, exitCode, savePresetStderr.text, true)
+    }
+
+    Process {
+        id: applyPresetProc
+        property string presetName: ""
+        stderr: StdioCollector { id: applyPresetStderr }
+        onExited: (exitCode, exitStatus) => root.finish("apply", presetName, exitCode, applyPresetStderr.text, false)
+    }
+
+    Process {
+        id: removePresetProc
+        property string presetName: ""
+        stderr: StdioCollector { id: removePresetStderr }
+        onExited: (exitCode, exitStatus) => root.finish("remove", presetName, exitCode, removePresetStderr.text, true)
+    }
+}
