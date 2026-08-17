@@ -105,6 +105,34 @@ Item {
     // Extension widgets that don't pass an item fall back to the numeric path.
     property Item wallpaperSourceItem: null
 
+    // Built-in widgets pass Background.qml's Loader as wallpaperSourceItem. Its
+    // loaded TransitionImage already exposes transitionActive and frontImg, so
+    // use those public properties as the only continuous-update gate. This keeps
+    // static wallpaper captures frozen without adding another revision/service
+    // object or coupling extension widgets to the built-in wallpaper pipeline.
+    readonly property var _sharedWallpaperContent: {
+        if (!root._useSharedBackdrop || root.wallpaperSourceItem === null)
+            return null;
+        return root.wallpaperSourceItem["item"] ?? null;
+    }
+    readonly property var _sharedWallpaperFrontItem:
+        root._sharedWallpaperContent !== null
+            ? (root._sharedWallpaperContent["frontImg"] ?? null)
+            : null
+    readonly property bool _sharedBackdropLive: {
+        const content = root._sharedWallpaperContent;
+        if (content === null)
+            return false;
+        if (content["transitionActive"] === true)
+            return true;
+        const front = root._sharedWallpaperFrontItem;
+        if (front === null)
+            return false;
+        const status = front["status"];
+        return status === Image.Null || status === Image.Loading;
+    }
+    property bool _backdropReady: false
+
     property int _contrastClientId: -1
     property real _sampledLuminance: -1
     property double _lastContrastRequestMs: 0
@@ -136,6 +164,15 @@ Item {
             root._contrastClientId = -1;
         }
         root.clearContrastSample();
+    }
+
+    // ShaderEffectSource.live=false turns the card crop into a real cache. All
+    // invalidation funnels through this helper so duplicate property changes in
+    // one frame collapse onto ShaderEffectSource's next-frame update request.
+    function scheduleBackdropUpdate() {
+        if (!root._backdropReady || backdropCapture.sourceItem === null || backdropCapture.live)
+            return;
+        backdropCapture.scheduleUpdate();
     }
 
     function normalizedWallpaperCrop() {
@@ -231,7 +268,9 @@ Item {
     }
 
     Component.onCompleted: {
+        root._backdropReady = true;
         root.ensureContrastClient();
+        root.scheduleBackdropUpdate();
     }
     Component.onDestruction: {
         if (root._contrastClientId >= 0)
@@ -252,6 +291,7 @@ Item {
         } else {
             root.releaseContrastClient();
         }
+        root.scheduleBackdropUpdate();
     }
 
     onContrastSamplingActiveChanged: {
@@ -273,18 +313,52 @@ Item {
         root._lastContrastRequestMs = 0;
         root._lastContrastCropSignature = "";
         root.scheduleContrastSample();
+        root.scheduleBackdropUpdate();
     }
-    onWidthChanged: root.scheduleContrastSample()
-    onHeightChanged: root.scheduleContrastSample()
-    onOffsetXChanged: root.scheduleContrastSample()
-    onOffsetYChanged: root.scheduleContrastSample()
-    onHostScaleChanged: root.scheduleContrastSample()
-    onSourceWidthChanged: root.scheduleContrastAfterBackdropSettles()
-    onSourceHeightChanged: root.scheduleContrastAfterBackdropSettles()
-    onWallpaperRenderXChanged: root.scheduleContrastAfterBackdropSettles()
-    onWallpaperRenderYChanged: root.scheduleContrastAfterBackdropSettles()
-    onWallpaperRenderWidthChanged: root.scheduleContrastAfterBackdropSettles()
-    onWallpaperRenderHeightChanged: root.scheduleContrastAfterBackdropSettles()
+    onWidthChanged: {
+        root.scheduleContrastSample();
+        root.scheduleBackdropUpdate();
+    }
+    onHeightChanged: {
+        root.scheduleContrastSample();
+        root.scheduleBackdropUpdate();
+    }
+    onOffsetXChanged: {
+        root.scheduleContrastSample();
+        root.scheduleBackdropUpdate();
+    }
+    onOffsetYChanged: {
+        root.scheduleContrastSample();
+        root.scheduleBackdropUpdate();
+    }
+    onHostScaleChanged: {
+        root.scheduleContrastSample();
+        root.scheduleBackdropUpdate();
+    }
+    onSourceWidthChanged: {
+        root.scheduleContrastAfterBackdropSettles();
+        root.scheduleBackdropUpdate();
+    }
+    onSourceHeightChanged: {
+        root.scheduleContrastAfterBackdropSettles();
+        root.scheduleBackdropUpdate();
+    }
+    onWallpaperRenderXChanged: {
+        root.scheduleContrastAfterBackdropSettles();
+        root.scheduleBackdropUpdate();
+    }
+    onWallpaperRenderYChanged: {
+        root.scheduleContrastAfterBackdropSettles();
+        root.scheduleBackdropUpdate();
+    }
+    onWallpaperRenderWidthChanged: {
+        root.scheduleContrastAfterBackdropSettles();
+        root.scheduleBackdropUpdate();
+    }
+    onWallpaperRenderHeightChanged: {
+        root.scheduleContrastAfterBackdropSettles();
+        root.scheduleBackdropUpdate();
+    }
 
     Connections {
         target: root.wallpaperSourceItem
@@ -293,6 +367,20 @@ Item {
         function onYChanged() { root.scheduleContrastAfterBackdropSettles(); }
         function onWidthChanged() { root.scheduleContrastAfterBackdropSettles(); }
         function onHeightChanged() { root.scheduleContrastAfterBackdropSettles(); }
+    }
+
+    // sourceRect depends on captureItem geometry as well as the explicit root
+    // properties above. Loader parallax/zoom and fallback Image readiness can
+    // therefore invalidate the frozen texture without keeping it live at rest.
+    Connections {
+        target: backdropCapture.captureItem
+        enabled: root._backdropReady && backdropCapture.captureItem !== null
+        ignoreUnknownSignals: true
+        function onXChanged() { root.scheduleBackdropUpdate(); }
+        function onYChanged() { root.scheduleBackdropUpdate(); }
+        function onWidthChanged() { root.scheduleBackdropUpdate(); }
+        function onHeightChanged() { root.scheduleBackdropUpdate(); }
+        function onStatusChanged() { root.scheduleBackdropUpdate(); }
     }
 
     Connections {
@@ -414,12 +502,18 @@ Item {
                 visible: false
                 readonly property Item captureItem: root._useSharedBackdrop
                     ? root.wallpaperSourceItem : fallbackBackdrop
-                // Nulling sourceItem is the lifetime boundary: glass-off releases
-                // this card-sized capture texture instead of merely hiding it.
+                // Nulling sourceItem remains the lifetime boundary. Keep live true
+                // while null so Qt releases the capture texture; when a static
+                // source exists, freeze it and update only through scheduleUpdate().
                 sourceItem: clipContent.visible ? captureItem : null
                 hideSource: false
-                live: true
+                live: sourceItem === null || root._sharedBackdropLive
                 recursive: false
+                onSourceItemChanged: root.scheduleBackdropUpdate()
+                onLiveChanged: {
+                    if (!live)
+                        root.scheduleBackdropUpdate();
+                }
                 // Match the old layer's logical card+bleed extent rather than
                 // allowing sourceRect transforms to inflate the capture texture.
                 textureSize: sourceItem !== null
