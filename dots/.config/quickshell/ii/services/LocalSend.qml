@@ -110,6 +110,11 @@ Singleton {
         checkAvailabilityProc.running = true
     }
 
+    Component.onCompleted: {
+        if (root.serviceEnabled && !checkAvailabilityProc.running)
+            checkAvailabilityProc.running = true
+    }
+
     // Check if localsend-cli is available
     Process {
         id: checkAvailabilityProc
