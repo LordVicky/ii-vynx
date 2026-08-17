@@ -230,8 +230,43 @@ Item {
             backdropSettle.restart();
     }
 
+    function desiredBlurDownscale() {
+        return root._useSharedBackdrop && root.blur >= 0.35 ? 2 : 1;
+    }
+
+    function scheduleBlurDownscale() {
+        if (!root._blurEffectReady)
+            return;
+        blurDownscaleSettle.restart();
+    }
+
+    function applyBlurDownscale() {
+        const next = root.desiredBlurDownscale();
+        if (next === root._blurDownscale)
+            return;
+
+        // MultiEffect.blurMax changes its shader and effect size. Unload the
+        // effect first, let the capture settle at the new resolution, then create
+        // a fresh effect rather than resizing/recompiling it while blur animates.
+        root._blurEffectReady = false;
+        Qt.callLater(() => {
+            root._blurDownscale = root.desiredBlurDownscale();
+            if (backdropCapture.sourceItem !== null)
+                backdropCapture.scheduleUpdate();
+            Qt.callLater(() => {
+                root._blurEffectReady = true;
+                if (root._blurDownscale !== root.desiredBlurDownscale())
+                    root.scheduleBlurDownscale();
+            });
+        });
+    }
+
     Component.onCompleted: {
         root.ensureContrastClient();
+        // Do not instantiate MultiEffect until the initial 1x/2x choice is final;
+        // this avoids a startup shader resize when the default blur is >= 0.35.
+        root._blurDownscale = root.desiredBlurDownscale();
+        root._blurEffectReady = true;
     }
     Component.onDestruction: {
         if (root._contrastClientId >= 0)
@@ -268,11 +303,15 @@ Item {
             root.requestContrastSample();
         }
     }
+    onBlurChanged: root.scheduleBlurDownscale()
+    onParallaxBackdropChanged: root.scheduleBlurDownscale()
+    onWallpaperSourceItemChanged: root.scheduleBlurDownscale()
     onWallpaperPathChanged: {
         root._sampledLuminance = -1;
         root._lastContrastRequestMs = 0;
         root._lastContrastCropSignature = "";
         root.scheduleContrastSample();
+        root.scheduleBlurDownscale();
     }
     onWidthChanged: root.scheduleContrastSample()
     onHeightChanged: root.scheduleContrastSample()
@@ -334,6 +373,13 @@ Item {
         onTriggered: root.requestContrastSample()
     }
 
+    Timer {
+        id: blurDownscaleSettle
+        interval: 180
+        repeat: false
+        onTriggered: root.applyBlurDownscale()
+    }
+
     // Blur radius ceiling, and how far the blurred layer extends past the widget
     // so the filter has real content to sample at the edges instead of fading
     // into transparency. Full bleed would be _blurMax; two thirds is enough in
@@ -358,9 +404,10 @@ Item {
         && root.wallpaperPath === Config.options.background.wallpaperPath
     // Hyprglass-style downsampling: strong blur hides the lower input resolution,
     // while halving both dimensions cuts the capture/effect pixel count to 25%.
-    // Weak blur stays full-resolution to avoid visible pixelation, and the
-    // extension/video fallback remains byte-for-byte on the old 1x geometry.
-    readonly property real _blurDownscale: root._useSharedBackdrop && root.blur >= 0.35 ? 2 : 1
+    // Keep this as settled state rather than a direct blur binding: changing
+    // MultiEffect.blurMax during a slider animation can corrupt the live effect.
+    property real _blurDownscale: 1
+    property bool _blurEffectReady: false
 
     readonly property rect _backdropRect: {
         if (!_useItem)
@@ -462,23 +509,36 @@ Item {
                 }
             }
 
-            MultiEffect {
+            Loader {
+                id: blurEffectLoader
                 anchors.fill: parent
-                source: backdropCapture
-                // macOS "vibrancy": the backdrop is not just blurred, it is pushed
-                // saturated and slightly brighter, which is what stops frosted glass
-                // reading as flat grey haze. blurMax is the radius ceiling; `blur`
-                // scales within it, so raising the ceiling softens the whole range.
-                saturation: 0.35
-                // Deliberately constant. See the scrim below: routing the
-                // brightness slider through here instead makes dragging it
-                // re-run this blur chain, on every widget, every frame.
-                brightness: 0.04
-                blurEnabled: true
-                // Keep the apparent physical radius stable after the parent is
-                // scaled back up: 48 local px at 2x ~= the previous 96 physical px.
-                blurMax: root._blurMax / root._blurDownscale
-                blur: root.blur
+                active: root._blurEffectReady
+                sourceComponent: blurEffectComponent
+            }
+
+            Component {
+                id: blurEffectComponent
+
+                MultiEffect {
+                    anchors.fill: parent
+                    source: backdropCapture
+                    // macOS "vibrancy": the backdrop is not just blurred, it is pushed
+                    // saturated and slightly brighter, which is what stops frosted glass
+                    // reading as flat grey haze. blurMax is the radius ceiling; `blur`
+                    // scales within it, so raising the ceiling softens the whole range.
+                    saturation: 0.35
+                    // Deliberately constant. See the scrim below: routing the
+                    // brightness slider through here instead makes dragging it
+                    // re-run this blur chain, on every widget, every frame.
+                    brightness: 0.04
+                    blurEnabled: true
+                    // Keep the apparent physical radius stable after the parent is
+                    // scaled back up: 48 local px at 2x ~= the previous 96 physical px.
+                    // _blurDownscale is stable for this effect's lifetime; crossing
+                    // the 0.35 threshold unloads/recreates the effect instead.
+                    blurMax: root._blurMax / root._blurDownscale
+                    blur: root.blur
+                }
             }
         }
     }
