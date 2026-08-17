@@ -1,9 +1,10 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import Qt5Compat.GraphicalEffects
+import qs
 import qs.modules.common
 import qs.modules.common.widgets
-import qs.modules.common.functions
 
 Rectangle {
     id: root
@@ -14,7 +15,7 @@ Rectangle {
     property var onApply: () => {}
     property var onRemove: () => {}
 
-    implicitWidth: 293
+    implicitWidth: 330
     implicitHeight: contentColumn.implicitHeight + 14
     radius: Appearance.rounding.normal
     color: Appearance.colors.colLayer1
@@ -23,68 +24,14 @@ Rectangle {
 
     ColumnLayout {
         id: contentColumn
-        anchors {
-            top: parent.top
-            left: parent.left
-            right: parent.right
-            margins: 0
-        }
-        spacing: 6
-
-        RowLayout {
-            Layout.leftMargin: 10
-            Layout.topMargin: 6
-            spacing: 10
-
-            MaterialShapeWrappedMaterialSymbol {
-                id: avatarShape
-                shape: MaterialShape.Shape.Circle
-                text: root.title.length > 0 ? root.title.charAt(0).toUpperCase() : "?"
-                iconSize: Appearance.font.pixelSize.normal
-                implicitSize: 36
-                font: Appearance.font.family.main
-                color: Appearance.colors.colPrimaryContainer
-                colSymbol: Appearance.colors.colOnPrimaryContainer
-                Layout.alignment: Qt.AlignVCenter
-            }
-
-            ColumnLayout {
-                spacing: -4
-
-                StyledText {
-                    Layout.fillWidth: true
-                    text: root.title
-                    font.pixelSize: Appearance.font.pixelSize.large
-                    font.weight: Font.DemiBold
-                    color: Appearance.colors.colOnLayer1
-                    elide: Text.ElideRight
-                    wrapMode: Text.NoWrap
-                }
-
-                StyledText {
-                    Layout.fillWidth: true
-                    visible: root.description.length > 0
-                    text: root.description
-                    font.pixelSize: Appearance.font.pixelSize.small
-                    color: Appearance.colors.colSubtext
-                    elide: Text.ElideRight
-                }
-            }
-
-            MaterialSymbol {
-                Layout.alignment: Qt.AlignRight
-                Layout.rightMargin: 12
-                font.pixelSize: Appearance.font.pixelSize.huge
-                text: "more_vert"
-            }
-        }
+        anchors { top: parent.top; left: parent.left; right: parent.right; margins: 0 }
+        spacing: 2
 
         Rectangle {
             id: imageRect
             Layout.fillWidth: true
-            Layout.bottomMargin: 4
             implicitHeight: 130
-            radius: 0
+            radius: Appearance.rounding.small
             color: Appearance.colors.colLayer2
             clip: true
 
@@ -96,6 +43,10 @@ Rectangle {
                 antialiasing: true
                 sourceSize: Qt.size(imageRect.width * 2, imageRect.height * 2)
                 visible: root.imageSource !== ""
+                layer.enabled: true
+                layer.effect: OpacityMask {
+                    maskSource: Rectangle { width: imageRect.width; height: imageRect.height; radius: imageRect.radius }
+                }
             }
 
             MaterialSymbol {
@@ -107,6 +58,27 @@ Rectangle {
             }
         }
 
+        StyledText {
+            Layout.leftMargin: 10
+            Layout.fillWidth: true
+            text: root.title
+            font.pixelSize: Appearance.font.pixelSize.larger
+            font.weight: Font.DemiBold
+            color: Appearance.colors.colOnLayer1
+            elide: Text.ElideRight
+            wrapMode: Text.NoWrap
+        }
+
+        StyledText {
+            Layout.leftMargin: 10
+            Layout.fillWidth: true
+            visible: root.description.length > 0
+            text: root.description
+            font.pixelSize: Appearance.font.pixelSize.small
+            color: Appearance.colors.colSubtext
+            elide: Text.ElideRight
+        }
+
         RowLayout {
             Layout.fillWidth: true
             Layout.rightMargin: 8
@@ -116,30 +88,6 @@ Rectangle {
             Item { Layout.fillWidth: true }
 
             GroupButton {
-                id: removeBtn
-                bounce: false
-                toggled: false
-                leftRadius: height / 2
-                rightRadius: height / 2
-                Layout.fillWidth: false
-                Layout.fillHeight: false
-                implicitHeight: 36
-                horizontalPadding: 14
-                verticalPadding: 8
-                colBackground: "transparent"
-                colBackgroundHover: ColorUtils.transparentize(Appearance.colors.colPrimaryContainerHover, 0.8)
-                colBackgroundActive: Appearance.colors.colPrimaryContainerActive
-                contentItem: StyledText {
-                    text: Translation.tr("Remove")
-                    color: Appearance.colors.colPrimary
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                }
-                onClicked: root.onRemove()
-            }
-
-            GroupButton {
-                id: applyBtn
                 bounce: false
                 toggled: false
                 leftRadius: height / 2
@@ -153,7 +101,29 @@ Rectangle {
                 colBackgroundHover: Appearance.colors.colPrimaryContainerHover
                 colBackgroundActive: Appearance.colors.colPrimaryContainerActive
                 contentItem: StyledText {
-                    text: Translation.tr("Apply")
+                    text: "Remove"
+                    color: Appearance.colors.colOnPrimaryContainer
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
+                onClicked: root.onRemove()
+            }
+
+            GroupButton {
+                bounce: false
+                toggled: false
+                leftRadius: height / 2
+                rightRadius: height / 2
+                Layout.fillWidth: false
+                Layout.fillHeight: false
+                implicitHeight: 36
+                horizontalPadding: 14
+                verticalPadding: 8
+                colBackground: Appearance.colors.colPrimaryContainer
+                colBackgroundHover: Appearance.colors.colPrimaryContainerHover
+                colBackgroundActive: Appearance.colors.colPrimaryContainerActive
+                contentItem: StyledText {
+                    text: "Apply"
                     color: Appearance.colors.colOnPrimaryContainer
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter

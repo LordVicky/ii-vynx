@@ -52,7 +52,7 @@ ContentPage {
 
             if (operation === "save") {
                 page.pendingReplaceInput = "";
-                presetNameField.value = "";
+                presetNameField.text = "";
             } else if (operation === "remove" && page.pendingDeleteName === presetName) {
                 page.pendingDeleteName = "";
             }
@@ -60,8 +60,8 @@ ContentPage {
 
         function onOperationFailed(operation, presetName, message) {
             if (operation === "save" && message.indexOf("preset already exists:") !== -1) {
-                page.pendingReplaceInput = presetNameField.value;
-                page.operationMessage = Translation.tr("Preset already exists. Press save again to replace it.");
+                page.pendingReplaceInput = presetNameField.text;
+                page.operationMessage = "Preset already exists. Press save again to replace it.";
                 return;
             }
 
@@ -84,32 +84,40 @@ ContentPage {
             title: Translation.tr("Presets")
             stringMap: [Translation.tr("preset"), Translation.tr("snapshot"), Translation.tr("configuration"), Translation.tr("apply"), Translation.tr("delete"), Translation.tr("restore")]
 
-            GroupedList {
-                ConfigTextArea {
+            ConfigRow {
+                MaterialTextArea {
                     id: presetNameField
                     Layout.fillWidth: true
-                    fieldWidth: 300
-                    buttonIcon: "newsmode"
-                    text: Translation.tr("Save as")
-                    description: page.operationMessage
-                    placeholderText: Translation.tr("Name, description (optional)")
+                    placeholderText: "Name, description (optional)"
+                    wrapMode: TextEdit.NoWrap
                     enabled: !Presets.busy
 
-                    confirmButtonVisible: presetNameField.value.trim() !== "" && !Presets.busy
-                    confirmButtonIcon: page.pendingReplaceInput === presetNameField.value ? "warning" : "save"
-                    onValueChanged: {
-                        if (page.pendingReplaceInput !== presetNameField.value)
+                    onTextChanged: {
+                        if (page.pendingReplaceInput !== text)
                             page.pendingReplaceInput = "";
                         page.operationMessage = "";
                     }
-                    onConfirmClicked: page.savePreset(presetNameField.value)
+                }
+
+                ToolbarPairedFab {
+                    visible: presetNameField.text.trim() !== "" && !Presets.busy
+                    iconText: page.pendingReplaceInput === presetNameField.text ? "warning" : "save"
+                    onClicked: page.savePreset(presetNameField.text)
                 }
             }
 
             StyledText {
                 Layout.fillWidth: true
+                visible: page.operationMessage.length > 0
+                text: page.operationMessage
+                color: Appearance.colors.colError
+                font.pixelSize: Appearance.font.pixelSize.small
+            }
+
+            StyledText {
+                Layout.fillWidth: true
                 Layout.topMargin: 40
-                visible: Presets.model.count === 0
+                visible: Presets.folderModel.count === 0
                 horizontalAlignment: Text.AlignHCenter
                 text: Translation.tr("No presets yet")
                 color: Appearance.colors.colSubtext
@@ -121,10 +129,10 @@ ContentPage {
                 Layout.fillWidth: true
                 width: parent.width
                 spacing: 12
-                visible: Presets.model.count > 0
+                visible: Presets.folderModel.count > 0
 
                 Repeater {
-                    model: Presets.model
+                    model: Presets.folderModel
 
                     delegate: PresetsCard {
                         id: presetDelegate
@@ -157,7 +165,7 @@ ContentPage {
                         imageSource: presetDelegate.presetWallpaper
                         title: presetDelegate.presetName
                         description: page.pendingDeleteName === presetDelegate.presetName
-                            ? Translation.tr("Press Remove again to confirm")
+                            ? "Press Remove again to confirm"
                             : (presetDelegate.presetDescription !== "" ? presetDelegate.presetDescription : Translation.tr("Saved preset"))
                         onApply: () => {
                             page.pendingDeleteName = "";
