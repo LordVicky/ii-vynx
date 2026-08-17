@@ -13,19 +13,39 @@ import Quickshell.Hyprland
 Scope {
     id: root
 
+    readonly property bool policyEnabled: Config.options.policies.overlay
+
     property Component regionComponent: Component {
         Region {}
     }
 
-    Component.onDestruction: {
+    function toggleOverlay() {
+        if (!root.policyEnabled) {
+            GlobalStates.overlayOpen = false;
+            return;
+        }
+        GlobalStates.overlayOpen = !GlobalStates.overlayOpen;
+    }
+
+    function releaseRuntimeState() {
         GlobalStates.overlayOpen = false;
         OverlayContext.pinnedWidgetIdentifiers = [];
         OverlayContext.clickableWidgets = [];
     }
+
+    Connections {
+        target: Config.options.policies
+        function onOverlayChanged() {
+            if (!root.policyEnabled)
+                root.releaseRuntimeState();
+        }
+    }
+
+    Component.onDestruction: root.releaseRuntimeState()
     
     Loader {
         id: overlayLoader
-        active: GlobalStates.overlayOpen || OverlayContext.hasPinnedWidgets
+        active: root.policyEnabled && (GlobalStates.overlayOpen || OverlayContext.hasPinnedWidgets)
         sourceComponent: PanelWindow {
             id: overlayWindow
             exclusionMode: ExclusionMode.Ignore
@@ -85,7 +105,7 @@ Scope {
         target: "overlay"
 
         function toggle(): void {
-            GlobalStates.overlayOpen = !GlobalStates.overlayOpen;
+            root.toggleOverlay();
         }
     }
 
@@ -93,8 +113,6 @@ Scope {
         name: "overlayToggle"
         description: "Toggles overlay on press"
 
-        onPressed: {
-            GlobalStates.overlayOpen = !GlobalStates.overlayOpen;
-        }
+        onPressed: root.toggleOverlay()
     }
 }
