@@ -44,6 +44,7 @@ validate_json_object() {
 
 save_preset() {
     local name="$1"
+    local description="${2:-}"
     local destination tmp
 
     validate_name "$name"
@@ -56,12 +57,20 @@ save_preset() {
     fi
 
     tmp="$(mktemp "${presets_dir}/.preset-save.XXXXXX")"
-    trap 'rm -f -- "$tmp"' RETURN
+    trap 'rm -f -- "$tmp"' EXIT
 
-    jq --arg name "$name" '. + {"_presetMeta": {"name": $name}}' "$config_file" > "$tmp"
-    jq -e 'type == "object" and (._presetMeta.name | type == "string")' "$tmp" >/dev/null
+    if [[ -n "$description" ]]; then
+        jq --arg description "$description" \
+            'del(._presetMeta) | . + {"_presetMeta": {"description": $description}}' \
+            "$config_file" > "$tmp"
+        jq -e 'type == "object" and (._presetMeta.description | type == "string")' "$tmp" >/dev/null
+    else
+        jq 'del(._presetMeta)' "$config_file" > "$tmp"
+        jq -e 'type == "object" and (has("_presetMeta") | not)' "$tmp" >/dev/null
+    fi
+
     mv -f -- "$tmp" "$destination"
-    trap - RETURN
+    trap - EXIT
 
     printf '%s\n' "$destination"
 }
@@ -77,13 +86,13 @@ apply_preset() {
     validate_json_object "$source" "preset"
 
     tmp="$(mktemp "${shell_config_dir}/.config-preset.XXXXXX")"
-    trap 'rm -f -- "$tmp"' RETURN
+    trap 'rm -f -- "$tmp"' EXIT
 
-    jq -s '.[0] * (.[1] | del(._presetMeta))' "$config_file" "$source" > "$tmp"
+    jq -s '(.[0] | del(._presetMeta)) * (.[1] | del(._presetMeta))' "$config_file" "$source" > "$tmp"
     jq -e 'type == "object" and (has("_presetMeta") | not)' "$tmp" >/dev/null
     chmod --reference="$config_file" "$tmp"
     mv -f -- "$tmp" "$config_file"
-    trap - RETURN
+    trap - EXIT
 
     printf '%s\n' "$config_file"
 }
@@ -99,25 +108,50 @@ remove_preset() {
     rm -f -- "$source"
 }
 
+list_presets() {
+    local file
+
+    [[ -d "$presets_dir" ]] || return 0
+    while IFS= read -r -d '' file; do
+        [[ -f "$file" && ! -L "$file" ]] || continue
+        basename -- "$file" .json
+    done < <(find "$presets_dir" -maxdepth 1 -type f -name '*.json' -print0 | sort -z)
+}
+
 usage() {
     cat >&2 <<'USAGE'
-Usage: presets.sh <save|apply|remove> <preset-name>
+Usage:
+  presets.sh --save <preset-name> [description]
+  presets.sh --apply <preset-name>
+  presets.sh --remove <preset-name>
+  presets.sh --list
 USAGE
     exit 2
 }
 
 main() {
-    (($# == 2)) || usage
     require_jq
 
-    local command="$1"
-    local name="$2"
-
-    case "$command" in
-        save) save_preset "$name" ;;
-        apply) apply_preset "$name" ;;
-        remove) remove_preset "$name" ;;
-        *) usage ;;
+    case "${1:-}" in
+        --save|save)
+            (($# == 2 || $# == 3)) || usage
+            save_preset "$2" "${3:-}"
+            ;;
+        --apply|apply)
+            (($# == 2)) || usage
+            apply_preset "$2"
+            ;;
+        --remove|remove)
+            (($# == 2)) || usage
+            remove_preset "$2"
+            ;;
+        --list|list)
+            (($# == 1)) || usage
+            list_presets
+            ;;
+        *)
+            usage
+            ;;
     esac
 }
 
