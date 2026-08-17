@@ -64,7 +64,20 @@ ContentPage {
         icon: "music_cast"
         title: Translation.tr("Music Recognition")
 
+        ConfigSwitch {
+            buttonIcon: "music_off"
+            text: Translation.tr("Enable music recognition")
+            checked: Config.options.musicRecognition.enable
+            onCheckedChanged: {
+                Config.options.musicRecognition.enable = checked;
+            }
+            StyledToolTip {
+                text: Translation.tr("Disabling this stops music recognition globally. Existing controls and widgets remain available but cannot start recognition.")
+            }
+        }
+
         ConfigSpinBox {
+            enabled: Config.options.musicRecognition.enable
             icon: "timer_off"
             text: Translation.tr("Total duration timeout (s)")
             value: Config.options.musicRecognition.timeout
@@ -76,6 +89,7 @@ ContentPage {
             }
         }
         ConfigSpinBox {
+            enabled: Config.options.musicRecognition.enable
             icon: "av_timer"
             text: Translation.tr("Polling interval (s)")
             value: Config.options.musicRecognition.interval
@@ -208,9 +222,21 @@ ContentPage {
 
         ConfigSwitch {
             buttonIcon: "power_settings_new"
+            text: Translation.tr("Enable LocalSend")
+            checked: Config.options.localsend.enable
+            onCheckedChanged: {
+                Config.options.localsend.enable = checked;
+            }
+            StyledToolTip {
+                text: Translation.tr("Disabling this stops LocalSend globally, including the receiver, sends, availability checks, and delayed restarts. Existing LocalSend UI remains available but inactive.")
+            }
+        }
+
+        ConfigSwitch {
+            buttonIcon: "power_settings_new"
             text: Translation.tr("Auto-start server")
             checked: Config.options.localsend.autoStart
-            enabled: LocalSend.available
+            enabled: Config.options.localsend.enable && LocalSend.available
             onCheckedChanged: {
                 Config.options.localsend.autoStart = checked;
             }
@@ -223,7 +249,7 @@ ContentPage {
             buttonIcon: "notifications"
             text: Translation.tr("Show notifications")
             checked: Config.options.localsend.showNotifications
-            enabled: LocalSend.available
+            enabled: Config.options.localsend.enable && LocalSend.available
             onCheckedChanged: {
                 Config.options.localsend.showNotifications = checked;
             }
@@ -237,7 +263,7 @@ ContentPage {
             placeholderText: Translation.tr("Download path")
             text: Config.options.localsend.downloadPath
             wrapMode: TextEdit.Wrap
-            enabled: LocalSend.available
+            enabled: Config.options.localsend.enable && LocalSend.available
             onTextChanged: {
                 Config.options.localsend.downloadPath = text;
             }

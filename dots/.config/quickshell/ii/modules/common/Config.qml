@@ -104,6 +104,7 @@ Singleton {
             }
 
             property JsonObject localsend: JsonObject {
+                property bool enable: true
                 property bool autoStart: true
                 property string downloadPath: Directories.localSendDownloadPath.replace("file://", "")
                 property bool showNotifications: true
@@ -876,6 +877,7 @@ Singleton {
             }
 
             property JsonObject musicRecognition: JsonObject {
+                property bool enable: true
                 property int timeout: 16
                 property int interval: 4
             }
