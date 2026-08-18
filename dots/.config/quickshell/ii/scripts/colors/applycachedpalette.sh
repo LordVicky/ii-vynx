@@ -98,7 +98,6 @@ main() {
     local source_image
     local mode
     local cached_palette
-    local tmp_theme
     local accent_color
     local enable_apps_shell
 
@@ -153,11 +152,14 @@ main() {
         || die "cached palette is invalid: $cached_palette"
 
     mkdir -p -- "$(dirname "$LIVE_THEME")"
-    tmp_theme=$(mktemp "${LIVE_THEME}.XXXXXX")
-    trap 'rm -f -- "$tmp_theme"' EXIT
-    cp -- "$cached_palette" "$tmp_theme"
-    mv -f -- "$tmp_theme" "$LIVE_THEME"
-    trap - EXIT
+    if [[ -f "$LIVE_THEME" ]]; then
+        # Preserve the live file inode so the shell process's FileView watcher
+        # remains attached across palette switches. Cache entries themselves are
+        # still published atomically by cachepalette.sh.
+        cat -- "$cached_palette" > "$LIVE_THEME"
+    else
+        cp -- "$cached_palette" "$LIVE_THEME"
+    fi
 
     printf '%s\t%s\n' "$type" "$cached_palette"
 
