@@ -48,29 +48,13 @@ Singleton {
         }
     }
 
-    Timer {
-        id: delayedFileRead
-        interval: Config.options?.hacks?.arbitraryRaceConditionDelay ?? 100
-        repeat: false
-        running: false
-        onTriggered: {
-            root.applyColors(themeFileView.text())
-        }
-    }
-
-	FileView { 
+    FileView {
         id: themeFileView
         path: Qt.resolvedUrl(root.filePath)
         watchChanges: true
-        onFileChanged: {
-            this.reload()
-            delayedFileRead.start()
-        }
-        onLoadedChanged: {
-            const fileContent = themeFileView.text()
-            root.applyColors(fileContent)
-        }
-        onLoadFailed: root.resetFilePathNextTime();
+        onFileChanged: this.reload()
+        onLoaded: root.applyColors(themeFileView.text())
+        onLoadFailed: root.resetFilePathNextTime()
     }
 
     function toggleLightDark() {
