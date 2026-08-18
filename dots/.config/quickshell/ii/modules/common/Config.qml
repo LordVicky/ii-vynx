@@ -149,6 +149,7 @@ Singleton {
                 property bool sharpMode: false
                 property int defaultBorderRadius: 18
                 property bool toggleWindowRounding: true // Changes Hyprland window rounding to 0 if sharpMode is true
+                property string surfaceStyle: "material" // "material" | "liquidGlass"
                 property JsonObject fonts: JsonObject {
                     property bool enableCustom: false
                     property string main: "Google Sans Flex"
