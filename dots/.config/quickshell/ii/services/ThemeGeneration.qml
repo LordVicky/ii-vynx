@@ -61,7 +61,7 @@ Singleton {
         root.queue([
             "setsid",
             "bash",
-            `${Directories.scriptPath}/colors/applypalette.sh`,
+            `${Directories.scriptPath}/colors/applycachedpalette.sh`,
             "--type",
             type
         ], type, true);
