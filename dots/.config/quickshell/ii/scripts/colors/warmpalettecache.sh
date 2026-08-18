@@ -82,14 +82,16 @@ main() {
     local wallpaper
     local source_image
     local source_hash
-    local mode
+    local active_mode
+    local opposite_mode
     local configured_type
     local auto_type
     local priority_type
     local cached_palette
-    local cache_dir=""
+    local cache_dir
     local auto_tmp
     local current_wallpaper
+    local mode
     local type
     local -a types=(
         scheme-content
@@ -102,6 +104,7 @@ main() {
         scheme-tonal-spot
     )
     local -a ordered_types=()
+    local -a modes=()
 
     [[ -r "$SHELL_CONFIG_FILE" ]] || return 0
     [[ -r "$CACHE_SCRIPT" ]] || return 0
@@ -111,7 +114,14 @@ main() {
     wallpaper=$(jq -r '.background.wallpaperPath // ""' "$SHELL_CONFIG_FILE")
     [[ -n "$wallpaper" && "$wallpaper" != "null" && -f "$wallpaper" ]] || return 0
     source_image=$(resolve_source_image "$wallpaper") || return 0
-    mode=$(resolve_mode)
+    active_mode=$(resolve_mode)
+    if [[ "$active_mode" == "dark" ]]; then
+        opposite_mode="light"
+    else
+        opposite_mode="dark"
+    fi
+    modes=("$active_mode" "$opposite_mode")
+
     auto_type=$(resolve_auto_type "$source_image")
     configured_type=$(jq -r '.appearance.palette.type // "auto"' "$SHELL_CONFIG_FILE")
 
@@ -130,27 +140,29 @@ main() {
 
     mkdir -p -- "$CACHE_ROOT"
     source_hash=$(sha256sum -- "$source_image" | cut -d' ' -f1)
-    exec 9>"$CACHE_ROOT/.warm-${source_hash}-${mode}.lock"
+    exec 9>"$CACHE_ROOT/.warm-${source_hash}.lock"
     if command -v flock >/dev/null 2>&1; then
         flock -n 9 || return 0
     fi
 
-    for type in "${ordered_types[@]}"; do
-        current_wallpaper=$(jq -r '.background.wallpaperPath // ""' "$SHELL_CONFIG_FILE" 2>/dev/null || true)
-        [[ "$current_wallpaper" == "$wallpaper" ]] || return 0
+    for mode in "${modes[@]}"; do
+        cache_dir=""
 
-        cached_palette=$(bash "$CACHE_SCRIPT" --source "$source_image" --type "$type" --mode "$mode") \
-            || continue
-        [[ -n "$cache_dir" ]] || cache_dir=$(dirname "$cached_palette")
+        for type in "${ordered_types[@]}"; do
+            current_wallpaper=$(jq -r '.background.wallpaperPath // ""' "$SHELL_CONFIG_FILE" 2>/dev/null || true)
+            [[ "$current_wallpaper" == "$wallpaper" ]] || return 0
+
+            cached_palette=$(bash "$CACHE_SCRIPT" --source "$source_image" --type "$type" --mode "$mode") \
+                || continue
+            [[ -n "$cache_dir" ]] || cache_dir=$(dirname "$cached_palette")
+        done
+
+        if [[ -n "$cache_dir" ]]; then
+            auto_tmp=$(mktemp "$cache_dir/.auto.XXXXXX")
+            printf '%s\n' "$auto_type" > "$auto_tmp"
+            mv -f -- "$auto_tmp" "$cache_dir/auto.txt"
+        fi
     done
-
-    if [[ -n "$cache_dir" ]]; then
-        auto_tmp=$(mktemp "$cache_dir/.auto.XXXXXX")
-        trap 'rm -f -- "$auto_tmp"' EXIT
-        printf '%s\n' "$auto_type" > "$auto_tmp"
-        mv -f -- "$auto_tmp" "$cache_dir/auto.txt"
-        trap - EXIT
-    fi
 }
 
 main "$@"
