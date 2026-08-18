@@ -17,7 +17,6 @@ Singleton {
 
     function reapplyTheme() {
         themeFileView.reload()
-        delayedFileRead.restart()
     }
 
     function applyColors(fileContent) {
@@ -59,26 +58,12 @@ Singleton {
         }
     }
 
-    Timer {
-        id: delayedFileRead
-        interval: Config.options?.hacks?.arbitraryRaceConditionDelay ?? 100
-        repeat: false
-        running: false
-        onTriggered: root.applyColors(themeFileView.text())
-    }
-
     FileView {
         id: themeFileView
         path: Qt.resolvedUrl(root.filePath)
         watchChanges: true
-        onFileChanged: {
-            this.reload()
-            delayedFileRead.restart()
-        }
-        onLoadedChanged: {
-            if (themeFileView.loaded)
-                root.applyColors(themeFileView.text())
-        }
+        onFileChanged: this.reload()
+        onLoaded: root.applyColors(themeFileView.text())
         onLoadFailed: root.resetFilePathNextTime()
     }
 
