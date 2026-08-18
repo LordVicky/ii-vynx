@@ -14,7 +14,7 @@ Singleton {
     property var activeCommand: []
     property string activeKey: ""
 
-    readonly property bool busy: applyProcess.running || coalesceTimer.running || root.pendingCommand.length > 0
+    readonly property bool busy: applyProcess.running || coalesceTimer.running || handoffTimer.running || root.pendingCommand.length > 0
 
     signal applyStarted(string key)
     signal applyFinished(string key)
@@ -24,9 +24,8 @@ Singleton {
         root.pendingCommand = command;
         root.pendingKey = key || "";
 
-        // Coalesce rapid selections before starting expensive wallpaper color generation.
-        // If a generation is already active, keep replacing the pending request so only
-        // the newest selection runs after it finishes.
+        // Coalesce only the initial burst. While generation is active, keep replacing
+        // the one pending request so the newest selection is handed off immediately.
         if (!applyProcess.running)
             coalesceTimer.restart();
     }
@@ -67,6 +66,9 @@ Singleton {
         root.activeKey = "";
 
         if (exitCode === 0) {
+            // Do not rely solely on filesystem watcher timing. Once the producer has
+            // exited successfully, explicitly consume the final palette it published.
+            MaterialThemeLoader.reapplyTheme();
             root.applyFinished(finishedKey);
         } else {
             const detail = (stderrText || "").trim();
@@ -78,14 +80,27 @@ Singleton {
         }
 
         if (root.pendingCommand.length > 0)
-            coalesceTimer.restart();
+            handoffTimer.restart();
     }
 
     Timer {
         id: coalesceTimer
-        interval: 80
+        interval: 30
         repeat: false
         onTriggered: root.startPending()
+    }
+
+    Timer {
+        id: handoffTimer
+        interval: 5
+        repeat: false
+        onTriggered: {
+            if (applyProcess.running) {
+                handoffTimer.restart();
+                return;
+            }
+            root.startPending();
+        }
     }
 
     Process {
