@@ -71,7 +71,10 @@ Singleton {
         {
             action: "dark",
             execute: () => {
-                Quickshell.execDetached([Directories.wallpaperSwitchScriptPath, "--mode", "dark", "--noswitch"]);
+                ThemeGeneration.applyGeneratedMode(
+                    Config.options.appearance.palette.type || "auto",
+                    "dark"
+                );
             }
         },
         {
@@ -83,7 +86,10 @@ Singleton {
         {
             action: "light",
             execute: () => {
-                Quickshell.execDetached([Directories.wallpaperSwitchScriptPath, "--mode", "light", "--noswitch"]);
+                ThemeGeneration.applyGeneratedMode(
+                    Config.options.appearance.palette.type || "auto",
+                    "light"
+                );
             }
         },
         {
@@ -338,7 +344,7 @@ Singleton {
             verb: Translation.tr("Run"),
             type: Translation.tr("Command"),
             fontType: LauncherSearchResult.FontType.Monospace,
-            iconName: 'terminal',
+            iconName: 'calculate',
             iconType: LauncherSearchResult.IconType.Material,
             execute: () => {
                 let cleanedCommand = root.query.replace("file://", "");
