@@ -14,11 +14,10 @@ QuickToggleModel {
     icon: "contrast"
     
     mainAction: () => {
-        if (Appearance.m3colors.darkmode) {
-            Quickshell.execDetached([Directories.wallpaperSwitchScriptPath, "--mode", "light", "--noswitch"]);
-        } else {
-            Quickshell.execDetached([Directories.wallpaperSwitchScriptPath, "--mode", "dark", "--noswitch"]);
-        }
+        ThemeGeneration.applyGeneratedMode(
+            Config.options.appearance.palette.type || "auto",
+            Appearance.m3colors.darkmode ? "light" : "dark"
+        );
     }
 
     tooltipText: Translation.tr("Dark Mode")
