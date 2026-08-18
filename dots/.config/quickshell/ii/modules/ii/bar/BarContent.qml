@@ -75,10 +75,18 @@ Item { // Bar content region
             fill: parent
             margins: Config.options.bar.cornerStyle === 1 ? (Appearance.sizes.hyprlandGapsOut) : 0 // idk why but +1 is needed
         }
-        color: root.showBarBackground ? Appearance.colors.colLayer0 : "transparent"
+        color: root.showBarBackground
+            ? (Config.options.appearance.surfaceStyle === "liquidGlass"
+                ? ColorUtils.transparentize(Appearance.colors.colLayer0Base, 0.18)
+                : Appearance.colors.colLayer0)
+            : "transparent"
         radius: Config.options.bar.cornerStyle === 1 ? Appearance.rounding.windowRounding : 0
         border.width: Config.options.bar.cornerStyle === 1 ? 1 : 0
-        border.color: root.showBarBackground ? Appearance.colors.colLayer0Border : "transparent"
+        border.color: root.showBarBackground
+            ? (Config.options.appearance.surfaceStyle === "liquidGlass"
+                ? ColorUtils.transparentize(Appearance.colors.colOnLayer0, 0.82)
+                : Appearance.colors.colLayer0Border)
+            : "transparent"
 
         Behavior on color {
             animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
