@@ -344,7 +344,7 @@ Singleton {
             verb: Translation.tr("Run"),
             type: Translation.tr("Command"),
             fontType: LauncherSearchResult.FontType.Monospace,
-            iconName: 'calculate',
+            iconName: 'terminal',
             iconType: LauncherSearchResult.IconType.Material,
             execute: () => {
                 let cleanedCommand = root.query.replace("file://", "");
