@@ -107,6 +107,17 @@ main() {
     fi
 
     mkdir -p -- "$cache_dir"
+    exec 9>"$cache_dir/.${type}.lock"
+    if command -v flock >/dev/null 2>&1; then
+        flock 9
+    fi
+
+    # Another caller may have completed this entry while we waited for the lock.
+    if jq -e 'type == "object"' "$destination" >/dev/null 2>&1; then
+        printf '%s\n' "$destination"
+        return 0
+    fi
+
     tmp_output=$(mktemp "$cache_dir/.${type}.XXXXXX.json")
     tmp_config=$(mktemp "$cache_dir/.matugen.XXXXXX.toml")
     trap 'rm -f -- "$tmp_output" "$tmp_config"' EXIT
