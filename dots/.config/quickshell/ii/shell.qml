@@ -60,6 +60,15 @@ ShellRoot {
         onItemChanged: RuntimeServices.ai = item ?? null
     }
 
+    // Keep the liquid-glass backend completely out of the Material lifetime.
+    // Using a source URI avoids instantiating the runtime (and its Process)
+    // until the user explicitly selects the liquid-glass surface style.
+    LazyLoader {
+        id: liquidGlassRuntimeLoader
+        active: Config.ready && Config.options.appearance.surfaceStyle === "liquidGlass"
+        source: "services/LiquidGlassRuntime.qml"
+    }
+
     Connections {
         target: AiPolicy
         function onModeChanged() { root.applyAiPolicy(); }
