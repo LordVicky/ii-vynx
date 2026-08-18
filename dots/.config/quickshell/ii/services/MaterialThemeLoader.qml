@@ -17,20 +17,31 @@ Singleton {
 
     function reapplyTheme() {
         themeFileView.reload()
+        delayedFileRead.restart()
     }
 
     function applyColors(fileContent) {
-        const json = JSON.parse(fileContent)
-        for (const key in json) {
-            if (json.hasOwnProperty(key)) {
-                // Convert snake_case to CamelCase
-                const camelCaseKey = key.replace(/_([a-z])/g, (g) => g[1].toUpperCase())
-                const m3Key = `m3${camelCaseKey}`
-                Appearance.m3colors[m3Key] = json[key]
+        const text = (fileContent || "").trim()
+        if (text.length === 0)
+            return false
+
+        try {
+            const json = JSON.parse(text)
+            for (const key in json) {
+                if (json.hasOwnProperty(key)) {
+                    // Convert snake_case to CamelCase
+                    const camelCaseKey = key.replace(/_([a-z])/g, (g) => g[1].toUpperCase())
+                    const m3Key = `m3${camelCaseKey}`
+                    Appearance.m3colors[m3Key] = json[key]
+                }
             }
+
+            Appearance.m3colors.darkmode = (Appearance.m3colors.m3background.hslLightness < 0.5)
+            return true
+        } catch (e) {
+            console.warn("[MaterialThemeLoader] Ignoring incomplete theme file:", e)
+            return false
         }
-        
-        Appearance.m3colors.darkmode = (Appearance.m3colors.m3background.hslLightness < 0.5)
     }
 
     function resetFilePathNextTime() {
@@ -53,24 +64,22 @@ Singleton {
         interval: Config.options?.hacks?.arbitraryRaceConditionDelay ?? 100
         repeat: false
         running: false
-        onTriggered: {
-            root.applyColors(themeFileView.text())
-        }
+        onTriggered: root.applyColors(themeFileView.text())
     }
 
-	FileView { 
+    FileView {
         id: themeFileView
         path: Qt.resolvedUrl(root.filePath)
         watchChanges: true
         onFileChanged: {
             this.reload()
-            delayedFileRead.start()
+            delayedFileRead.restart()
         }
         onLoadedChanged: {
-            const fileContent = themeFileView.text()
-            root.applyColors(fileContent)
+            if (themeFileView.loaded)
+                root.applyColors(themeFileView.text())
         }
-        onLoadFailed: root.resetFilePathNextTime();
+        onLoadFailed: root.resetFilePathNextTime()
     }
 
     function toggleLightDark() {
