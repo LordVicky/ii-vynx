@@ -8,6 +8,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SHELL_CONFIG_FILE="$XDG_CONFIG_HOME/illogical-impulse/config.json"
 LIVE_THEME="$XDG_STATE_HOME/quickshell/user/generated/colors.json"
 CACHE_SCRIPT="$SCRIPT_DIR/cachepalette.sh"
+FULL_APPLY_SCRIPT="$SCRIPT_DIR/applypalette.sh"
 
 usage() {
     cat >&2 <<'USAGE'
@@ -95,6 +96,7 @@ main() {
     local mode
     local cached_palette
     local tmp_theme
+    local accent_color
 
     while [[ $# -gt 0 ]]; do
         case "$1" in
@@ -112,7 +114,13 @@ main() {
     [[ -n "$type" ]] || usage
     [[ -r "$SHELL_CONFIG_FILE" ]] || die "config is not readable: $SHELL_CONFIG_FILE"
     [[ -r "$CACHE_SCRIPT" ]] || die "cache helper is not readable: $CACHE_SCRIPT"
+    [[ -r "$FULL_APPLY_SCRIPT" ]] || die "full palette helper is not readable: $FULL_APPLY_SCRIPT"
     command -v jq >/dev/null 2>&1 || die "jq is required"
+
+    accent_color=$(jq -r '.appearance.palette.accentColor // ""' "$SHELL_CONFIG_FILE")
+    if [[ "$accent_color" =~ ^#?[A-Fa-f0-9]{6}$ ]]; then
+        exec bash "$FULL_APPLY_SCRIPT" --type "$type"
+    fi
 
     wallpaper=$(jq -r '.background.wallpaperPath // ""' "$SHELL_CONFIG_FILE")
     [[ -n "$wallpaper" && "$wallpaper" != "null" && -f "$wallpaper" ]] \
@@ -139,6 +147,11 @@ main() {
     trap - EXIT
 
     printf '%s\t%s\n' "$type" "$cached_palette"
+
+    # Keep terminal/KDE/Code/etc. in sync after the shell palette is already live.
+    # This remains in the same process group so a newer palette request can cancel
+    # stale secondary theming work without blocking the cached shell update.
+    bash "$FULL_APPLY_SCRIPT" --type "$type"
 }
 
 main "$@"
