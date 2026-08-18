@@ -69,6 +69,21 @@ resolve_mode() {
     fi
 }
 
+apply_system_mode() {
+    local mode="$1"
+
+    case "$mode" in
+        dark)
+            gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark' || true
+            gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3-dark' || true
+            ;;
+        light)
+            gsettings set org.gnome.desktop.interface color-scheme 'prefer-light' || true
+            gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3' || true
+            ;;
+    esac
+}
+
 resolve_auto_type() {
     local source_image="$1"
     local detected_type
@@ -133,6 +148,10 @@ main() {
 
     if [[ -z "$type" ]]; then
         type=$(jq -r '.appearance.palette.type // "auto"' "$SHELL_CONFIG_FILE")
+    fi
+
+    if [[ -n "$mode" ]]; then
+        apply_system_mode "$mode"
     fi
 
     enable_apps_shell=$(jq -r '.appearance.wallpaperTheming.enableAppsAndShell // true' "$SHELL_CONFIG_FILE")
