@@ -27,6 +27,23 @@ Singleton {
         presetsFolderModel.folder = current;
     }
 
+    function refreshConfigAfterApply() {
+        const configPath = Config.filePath;
+        Config.filePath = "";
+        Config.filePath = configPath;
+
+        const shellQmlPath = Quickshell.shellPath("shell.qml").toString().replace("file://", "");
+        Quickshell.execDetached([
+            "qs",
+            "-p",
+            shellQmlPath,
+            "ipc",
+            "call",
+            "theme",
+            "refreshConfigFromDisk"
+        ]);
+    }
+
     function begin(process, operation, presetName, command) {
         if (root.currentOperation.length > 0 || root.busy) {
             root.errorMessage = "Another preset operation is already running.";
@@ -48,8 +65,10 @@ Singleton {
             root.errorMessage = "";
             if (refresh)
                 root.refreshModel();
-            if (operation === "apply")
+            if (operation === "apply") {
+                root.refreshConfigAfterApply();
                 ThemeGeneration.applyFromConfig();
+            }
             root.operationFinished(operation, presetName);
             return;
         }
