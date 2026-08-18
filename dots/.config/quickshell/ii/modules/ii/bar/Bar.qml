@@ -200,7 +200,11 @@ Scope {
                                 }
 
                                 implicitSize: Appearance.rounding.screenRounding
-                                color: showBarBackground ? Appearance.colors.colLayer0 : "transparent"
+                                color: showBarBackground
+                                    ? (Config.options.appearance.surfaceStyle === "liquidGlass"
+                                        ? ColorUtils.transparentize(Appearance.colors.colLayer0Base, 0.18)
+                                        : Appearance.colors.colLayer0)
+                                    : "transparent"
 
                                 corner: RoundCorner.CornerEnum.TopLeft
                                 states: State {
@@ -219,7 +223,11 @@ Scope {
                                     bottom: Config.options.bar.bottom ? parent.bottom : undefined
                                 }
                                 implicitSize: Appearance.rounding.screenRounding
-                                color: showBarBackground ? Appearance.colors.colLayer0 : "transparent"
+                                color: showBarBackground
+                                    ? (Config.options.appearance.surfaceStyle === "liquidGlass"
+                                        ? ColorUtils.transparentize(Appearance.colors.colLayer0Base, 0.18)
+                                        : Appearance.colors.colLayer0)
+                                    : "transparent"
 
                                 corner: RoundCorner.CornerEnum.TopRight
                                 states: State {
