@@ -77,7 +77,12 @@ Singleton {
     function applyThemeFile(path, type) {
         if (!path || path.length === 0)
             return;
-        root.queue(["cp", "--", path, Directories.generatedMaterialThemePath], type || path, false);
+        root.queue([
+            "bash",
+            `${Directories.scriptPath}/colors/publishpalette.sh`,
+            "--source",
+            path
+        ], type || path, false);
     }
 
     function startPending() {
