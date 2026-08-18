@@ -13,7 +13,9 @@ FULL_APPLY_SCRIPT="$SCRIPT_DIR/applypalette.sh"
 usage() {
     cat >&2 <<'USAGE'
 Usage:
-  applycachedpalette.sh --type <auto|scheme-*>
+  applycachedpalette.sh [--type <auto|scheme-*>]
+
+If --type is omitted, the palette type is read from the live config file.
 USAGE
     exit 2
 }
@@ -111,14 +113,21 @@ main() {
         esac
     done
 
-    [[ -n "$type" ]] || usage
     [[ -r "$SHELL_CONFIG_FILE" ]] || die "config is not readable: $SHELL_CONFIG_FILE"
     [[ -r "$CACHE_SCRIPT" ]] || die "cache helper is not readable: $CACHE_SCRIPT"
     [[ -r "$FULL_APPLY_SCRIPT" ]] || die "full palette helper is not readable: $FULL_APPLY_SCRIPT"
     command -v jq >/dev/null 2>&1 || die "jq is required"
 
+    if [[ -z "$type" ]]; then
+        type=$(jq -r '.appearance.palette.type // "auto"' "$SHELL_CONFIG_FILE")
+    fi
+
     accent_color=$(jq -r '.appearance.palette.accentColor // ""' "$SHELL_CONFIG_FILE")
     if [[ "$accent_color" =~ ^#?[A-Fa-f0-9]{6}$ ]]; then
+        exec bash "$FULL_APPLY_SCRIPT" --type "$type"
+    fi
+
+    if [[ "$type" != "auto" ]] && ! is_valid_type "$type"; then
         exec bash "$FULL_APPLY_SCRIPT" --type "$type"
     fi
 
