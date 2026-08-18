@@ -38,3 +38,11 @@ end
 
 -- Shell overrides --
 require("hyprland.shellOverrides.main")
+
+-- Optional runtime overrides are created only while Liquid Glass is active.
+-- Use dofile instead of require so a Hyprland reload always re-reads the
+-- generated fragment rather than retaining Lua's module cache.
+local liquidGlassOverride = HOME .. "/.config/hypr/hyprland/shellOverrides/liquid-glass.lua"
+if is_file_exists(liquidGlassOverride) then
+    dofile(liquidGlassOverride)
+end
