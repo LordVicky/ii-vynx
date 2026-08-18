@@ -12,9 +12,10 @@ SWITCHWALL_SCRIPT="$SCRIPT_DIR/switchwall.sh"
 usage() {
     cat >&2 <<'USAGE'
 Usage:
-  applycachedpalette.sh [--type <auto|scheme-*>]
+  applycachedpalette.sh [--type <auto|scheme-*>] [--mode <dark|light>]
 
 If --type is omitted, the palette type is read from the live config file.
+If --mode is omitted, the mode is resolved from the current system color scheme.
 USAGE
     exit 2
 }
@@ -94,7 +95,7 @@ main() {
     local type=""
     local wallpaper
     local source_image
-    local mode
+    local mode=""
     local cached_palette
     local accent_color
     local enable_apps_shell
@@ -109,6 +110,11 @@ main() {
                 type="$2"
                 shift 2
                 ;;
+            --mode)
+                [[ $# -ge 2 ]] || usage
+                mode="$2"
+                shift 2
+                ;;
             *)
                 usage
                 ;;
@@ -120,6 +126,10 @@ main() {
     [[ -r "$PUBLISH_SCRIPT" ]] || die "palette publisher is not readable: $PUBLISH_SCRIPT"
     [[ -r "$SWITCHWALL_SCRIPT" ]] || die "wallpaper switch helper is not readable: $SWITCHWALL_SCRIPT"
     command -v jq >/dev/null 2>&1 || die "jq is required"
+
+    if [[ -n "$mode" && "$mode" != "dark" && "$mode" != "light" ]]; then
+        die "invalid mode: $mode"
+    fi
 
     if [[ -z "$type" ]]; then
         type=$(jq -r '.appearance.palette.type // "auto"' "$SHELL_CONFIG_FILE")
@@ -154,7 +164,9 @@ main() {
         || die "current wallpaper is not a readable file"
 
     source_image=$(resolve_source_image "$wallpaper")
-    mode=$(resolve_mode)
+    if [[ -z "$mode" ]]; then
+        mode=$(resolve_mode)
+    fi
 
     if [[ "$type" == "auto" ]]; then
         type=$(resolve_auto_type "$source_image")
