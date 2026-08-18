@@ -113,7 +113,7 @@ Singleton {
     IpcHandler {
         target: "theme"
 
-        function reload(): void {
+        function refreshMaterialPalette(): void {
             root.reapplyTheme();
         }
 
