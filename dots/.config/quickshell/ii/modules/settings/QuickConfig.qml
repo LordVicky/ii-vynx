@@ -298,6 +298,32 @@ ContentPage {
                 Config.options.appearance.transparency.enable = checked;
             }
         }
+
+        ConfigRow {
+            ContentSubsection {
+                title: Translation.tr("Surface style")
+                Layout.fillWidth: true
+
+                ConfigSelectionArray {
+                    currentValue: Config.options.appearance.surfaceStyle
+                    onSelected: newValue => {
+                        Config.options.appearance.surfaceStyle = newValue;
+                    }
+                    options: [
+                        {
+                            displayName: Translation.tr("Material"),
+                            icon: "palette",
+                            value: "material"
+                        },
+                        {
+                            displayName: Translation.tr("Liquid Glass"),
+                            icon: "blur_on",
+                            value: "liquidGlass"
+                        }
+                    ]
+                }
+            }
+        }
     }
 
     ContentSection {
