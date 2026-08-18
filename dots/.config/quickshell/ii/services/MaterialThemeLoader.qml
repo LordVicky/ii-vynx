@@ -19,6 +19,12 @@ Singleton {
         themeFileView.reload()
     }
 
+    function refreshConfigFromDisk() {
+        const configPath = Config.filePath;
+        Config.filePath = "";
+        Config.filePath = configPath;
+    }
+
     function applyColors(fileContent) {
         const text = (fileContent || "").trim()
         if (text.length === 0)
@@ -117,6 +123,10 @@ Singleton {
 
         function refreshMaterialPalette(): void {
             root.reapplyTheme();
+        }
+
+        function refreshConfigFromDisk(): void {
+            root.refreshConfigFromDisk();
         }
 
         function toggleLightDark(): void {
