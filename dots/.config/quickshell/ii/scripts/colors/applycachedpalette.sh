@@ -8,7 +8,6 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SHELL_CONFIG_FILE="$XDG_CONFIG_HOME/illogical-impulse/config.json"
 LIVE_THEME="$XDG_STATE_HOME/quickshell/user/generated/colors.json"
 CACHE_SCRIPT="$SCRIPT_DIR/cachepalette.sh"
-GENERATED_APPLY_SCRIPT="$SCRIPT_DIR/applypalette.sh"
 SWITCHWALL_SCRIPT="$SCRIPT_DIR/switchwall.sh"
 
 usage() {
@@ -116,7 +115,6 @@ main() {
 
     [[ -r "$SHELL_CONFIG_FILE" ]] || die "config is not readable: $SHELL_CONFIG_FILE"
     [[ -r "$CACHE_SCRIPT" ]] || die "cache helper is not readable: $CACHE_SCRIPT"
-    [[ -r "$GENERATED_APPLY_SCRIPT" ]] || die "generated palette helper is not readable: $GENERATED_APPLY_SCRIPT"
     [[ -r "$SWITCHWALL_SCRIPT" ]] || die "wallpaper switch helper is not readable: $SWITCHWALL_SCRIPT"
     command -v jq >/dev/null 2>&1 || die "jq is required"
 
@@ -162,11 +160,6 @@ main() {
     fi
 
     printf '%s\t%s\n' "$type" "$cached_palette"
-
-    # Keep terminal/KDE/Code/etc. in sync after the shell palette is already live.
-    # This remains in the same process group so a newer palette request can cancel
-    # stale secondary theming work without blocking the cached shell update.
-    bash "$GENERATED_APPLY_SCRIPT" --type "$type"
 }
 
 main "$@"
