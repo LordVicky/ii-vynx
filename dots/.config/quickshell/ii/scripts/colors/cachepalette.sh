@@ -6,7 +6,7 @@ XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
 XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
 CACHE_ROOT="$XDG_CACHE_HOME/quickshell/palettes"
 MATUGEN_TEMPLATE="$XDG_CONFIG_HOME/matugen/templates/colors.json"
-CACHE_FORMAT_VERSION="1"
+CACHE_FORMAT_VERSION="2"
 
 usage() {
     cat >&2 <<'USAGE'
