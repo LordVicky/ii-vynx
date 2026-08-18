@@ -47,6 +47,12 @@ Singleton {
         resetFilePathNextWallpaperChange.enabled = true
     }
 
+    function schedulePaletteCacheWarm() {
+        paletteCacheWarmTimer.restart()
+    }
+
+    Component.onCompleted: root.schedulePaletteCacheWarm()
+
     Connections {
         id: resetFilePathNextWallpaperChange
         enabled: false
@@ -56,6 +62,29 @@ Singleton {
             root.filePath = Directories.generatedMaterialThemePath
             resetFilePathNextWallpaperChange.enabled = false
         }
+    }
+
+    Connections {
+        target: Config.options.background
+        function onWallpaperPathChanged() {
+            root.schedulePaletteCacheWarm()
+        }
+        function onThumbnailPathChanged() {
+            root.schedulePaletteCacheWarm()
+        }
+    }
+
+    Timer {
+        id: paletteCacheWarmTimer
+        interval: 750
+        repeat: false
+        onTriggered: Quickshell.execDetached([
+            "nice",
+            "-n",
+            "10",
+            "bash",
+            `${Directories.scriptPath}/colors/warmpalettecache.sh`
+        ])
     }
 
     FileView {
