@@ -12,9 +12,10 @@ SWITCHWALL_SCRIPT="$SCRIPT_DIR/switchwall.sh"
 usage() {
     cat >&2 <<'USAGE'
 Usage:
-  applycachedpalette.sh [--type <auto|scheme-*>]
+  applycachedpalette.sh [--type <auto|scheme-*>] [--mode <dark|light>]
 
 If --type is omitted, the palette type is read from the live config file.
+If --mode is omitted, the current system color mode is used.
 USAGE
     exit 2
 }
@@ -92,9 +93,9 @@ resolve_auto_type() {
 
 main() {
     local type=""
+    local mode=""
     local wallpaper
     local source_image
-    local mode
     local cached_palette
     local accent_color
     local enable_apps_shell
@@ -107,6 +108,11 @@ main() {
             --type)
                 [[ $# -ge 2 ]] || usage
                 type="$2"
+                shift 2
+                ;;
+            --mode)
+                [[ $# -ge 2 ]] || usage
+                mode="$2"
                 shift 2
                 ;;
             *)
@@ -125,10 +131,16 @@ main() {
         type=$(jq -r '.appearance.palette.type // "auto"' "$SHELL_CONFIG_FILE")
     fi
 
+    if [[ -z "$mode" ]]; then
+        mode=$(resolve_mode)
+    elif [[ "$mode" != "dark" && "$mode" != "light" ]]; then
+        die "mode must be dark or light"
+    fi
+
     enable_apps_shell=$(jq -r '.appearance.wallpaperTheming.enableAppsAndShell // true' "$SHELL_CONFIG_FILE")
     accent_color=$(jq -r '.appearance.palette.accentColor // ""' "$SHELL_CONFIG_FILE")
     if [[ "$enable_apps_shell" == "false" || "$accent_color" =~ ^#?[A-Fa-f0-9]{6}$ ]]; then
-        exec bash "$SWITCHWALL_SCRIPT" --noswitch --type "$type"
+        exec bash "$SWITCHWALL_SCRIPT" --mode "$mode" --noswitch --type "$type"
     fi
 
     if [[ "$type" != "auto" ]] && ! is_valid_type "$type"; then
@@ -146,7 +158,7 @@ main() {
             exec bash "$PUBLISH_SCRIPT" --source "$theme_file"
         fi
 
-        exec bash "$SWITCHWALL_SCRIPT" --noswitch --type "$type"
+        exec bash "$SWITCHWALL_SCRIPT" --mode "$mode" --noswitch --type "$type"
     fi
 
     wallpaper=$(jq -r '.background.wallpaperPath // ""' "$SHELL_CONFIG_FILE")
@@ -154,7 +166,6 @@ main() {
         || die "current wallpaper is not a readable file"
 
     source_image=$(resolve_source_image "$wallpaper")
-    mode=$(resolve_mode)
 
     if [[ "$type" == "auto" ]]; then
         type=$(resolve_auto_type "$source_image")
