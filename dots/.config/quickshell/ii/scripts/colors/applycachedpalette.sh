@@ -98,6 +98,9 @@ main() {
     local cached_palette
     local accent_color
     local enable_apps_shell
+    local builtin_theme
+    local custom_theme
+    local theme_file
 
     while [[ $# -gt 0 ]]; do
         case "$1" in
@@ -129,6 +132,20 @@ main() {
     fi
 
     if [[ "$type" != "auto" ]] && ! is_valid_type "$type"; then
+        builtin_theme="$SCRIPT_DIR/../../defaults/themes/${type}.json"
+        custom_theme="$(dirname "$SHELL_CONFIG_FILE")/themes/${type}.json"
+        theme_file=""
+
+        if [[ -f "$builtin_theme" && -r "$builtin_theme" ]]; then
+            theme_file="$builtin_theme"
+        elif [[ -f "$custom_theme" && -r "$custom_theme" ]]; then
+            theme_file="$custom_theme"
+        fi
+
+        if [[ -n "$theme_file" ]]; then
+            exec bash "$PUBLISH_SCRIPT" --source "$theme_file"
+        fi
+
         exec bash "$SWITCHWALL_SCRIPT" --noswitch --type "$type"
     fi
 
