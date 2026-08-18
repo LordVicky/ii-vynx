@@ -3,11 +3,10 @@
 set -euo pipefail
 
 XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
-XDG_STATE_HOME="${XDG_STATE_HOME:-$HOME/.local/state}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SHELL_CONFIG_FILE="$XDG_CONFIG_HOME/illogical-impulse/config.json"
-LIVE_THEME="$XDG_STATE_HOME/quickshell/user/generated/colors.json"
 CACHE_SCRIPT="$SCRIPT_DIR/cachepalette.sh"
+PUBLISH_SCRIPT="$SCRIPT_DIR/publishpalette.sh"
 SWITCHWALL_SCRIPT="$SCRIPT_DIR/switchwall.sh"
 
 usage() {
@@ -115,6 +114,7 @@ main() {
 
     [[ -r "$SHELL_CONFIG_FILE" ]] || die "config is not readable: $SHELL_CONFIG_FILE"
     [[ -r "$CACHE_SCRIPT" ]] || die "cache helper is not readable: $CACHE_SCRIPT"
+    [[ -r "$PUBLISH_SCRIPT" ]] || die "palette publisher is not readable: $PUBLISH_SCRIPT"
     [[ -r "$SWITCHWALL_SCRIPT" ]] || die "wallpaper switch helper is not readable: $SWITCHWALL_SCRIPT"
     command -v jq >/dev/null 2>&1 || die "jq is required"
 
@@ -149,16 +149,7 @@ main() {
     jq -e 'type == "object"' "$cached_palette" >/dev/null \
         || die "cached palette is invalid: $cached_palette"
 
-    mkdir -p -- "$(dirname "$LIVE_THEME")"
-    if [[ -f "$LIVE_THEME" ]]; then
-        # Preserve the live file inode so the shell process's FileView watcher
-        # remains attached across palette switches. Cache entries themselves are
-        # still published atomically by cachepalette.sh.
-        cat -- "$cached_palette" > "$LIVE_THEME"
-    else
-        cp -- "$cached_palette" "$LIVE_THEME"
-    fi
-
+    bash "$PUBLISH_SCRIPT" --source "$cached_palette"
     printf '%s\t%s\n' "$type" "$cached_palette"
 }
 
