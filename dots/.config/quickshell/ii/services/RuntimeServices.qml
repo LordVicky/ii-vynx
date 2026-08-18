@@ -4,8 +4,9 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
 
-// References to optional runtime-owned services. This singleton intentionally
-// contains no AI implementation; under policies.ai == No, `ai` is literally null.
+// References to optional runtime-owned services. Implementations stay behind
+// LazyLoaders so disabled features leave only null references here.
 Singleton {
     property var ai: null
+    property var liquidGlass: null
 }

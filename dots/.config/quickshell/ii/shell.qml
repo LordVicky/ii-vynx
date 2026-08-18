@@ -67,6 +67,7 @@ ShellRoot {
         id: liquidGlassRuntimeLoader
         active: Config.ready && Config.options.appearance.surfaceStyle === "liquidGlass"
         source: "services/LiquidGlassRuntime.qml"
+        onItemChanged: RuntimeServices.liquidGlass = item ?? null
     }
 
     Connections {
@@ -77,6 +78,7 @@ ShellRoot {
     Component.onDestruction: {
         const runtime = aiRuntimeLoader.item;
         RuntimeServices.ai = null;
+        RuntimeServices.liquidGlass = null;
         if (runtime)
             runtime.shutdown();
     }
