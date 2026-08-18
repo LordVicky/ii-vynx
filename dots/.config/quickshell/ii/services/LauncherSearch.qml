@@ -71,7 +71,10 @@ Singleton {
         {
             action: "dark",
             execute: () => {
-                Quickshell.execDetached([Directories.wallpaperSwitchScriptPath, "--mode", "dark", "--noswitch"]);
+                ThemeGeneration.applyGeneratedMode(
+                    Config.options.appearance.palette.type || "auto",
+                    "dark"
+                );
             }
         },
         {
@@ -83,7 +86,10 @@ Singleton {
         {
             action: "light",
             execute: () => {
-                Quickshell.execDetached([Directories.wallpaperSwitchScriptPath, "--mode", "light", "--noswitch"]);
+                ThemeGeneration.applyGeneratedMode(
+                    Config.options.appearance.palette.type || "auto",
+                    "light"
+                );
             }
         },
         {

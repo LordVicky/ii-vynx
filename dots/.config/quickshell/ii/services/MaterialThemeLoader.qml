@@ -19,23 +19,45 @@ Singleton {
         themeFileView.reload()
     }
 
+    function refreshConfigFromDisk() {
+        const configPath = Config.filePath;
+        Config.filePath = "";
+        Config.filePath = configPath;
+    }
+
     function applyColors(fileContent) {
-        const json = JSON.parse(fileContent)
-        for (const key in json) {
-            if (json.hasOwnProperty(key)) {
-                // Convert snake_case to CamelCase
-                const camelCaseKey = key.replace(/_([a-z])/g, (g) => g[1].toUpperCase())
-                const m3Key = `m3${camelCaseKey}`
-                Appearance.m3colors[m3Key] = json[key]
+        const text = (fileContent || "").trim()
+        if (text.length === 0)
+            return false
+
+        try {
+            const json = JSON.parse(text)
+            for (const key in json) {
+                if (json.hasOwnProperty(key)) {
+                    // Convert snake_case to CamelCase
+                    const camelCaseKey = key.replace(/_([a-z])/g, (g) => g[1].toUpperCase())
+                    const m3Key = `m3${camelCaseKey}`
+                    Appearance.m3colors[m3Key] = json[key]
+                }
             }
+
+            Appearance.m3colors.darkmode = (Appearance.m3colors.m3background.hslLightness < 0.5)
+            return true
+        } catch (e) {
+            console.warn("[MaterialThemeLoader] Ignoring incomplete theme file:", e)
+            return false
         }
-        
-        Appearance.m3colors.darkmode = (Appearance.m3colors.m3background.hslLightness < 0.5)
     }
 
     function resetFilePathNextTime() {
         resetFilePathNextWallpaperChange.enabled = true
     }
+
+    function schedulePaletteCacheWarm() {
+        paletteCacheWarmTimer.restart()
+    }
+
+    Component.onCompleted: root.schedulePaletteCacheWarm()
 
     Connections {
         id: resetFilePathNextWallpaperChange
@@ -46,6 +68,29 @@ Singleton {
             root.filePath = Directories.generatedMaterialThemePath
             resetFilePathNextWallpaperChange.enabled = false
         }
+    }
+
+    Connections {
+        target: Config.options.background
+        function onWallpaperPathChanged() {
+            root.schedulePaletteCacheWarm()
+        }
+        function onThumbnailPathChanged() {
+            root.schedulePaletteCacheWarm()
+        }
+    }
+
+    Timer {
+        id: paletteCacheWarmTimer
+        interval: 750
+        repeat: false
+        onTriggered: Quickshell.execDetached([
+            "nice",
+            "-n",
+            "10",
+            "bash",
+            `${Directories.scriptPath}/colors/warmpalettecache.sh`
+        ])
     }
 
     FileView {
@@ -59,7 +104,9 @@ Singleton {
 
     function toggleLightDark() {
         const currentlyDark = Appearance.m3colors.darkmode;
-        Quickshell.execDetached([Directories.wallpaperSwitchScriptPath, "--mode", currentlyDark ? "light" : "dark", "--noswitch"]);
+        const mode = currentlyDark ? "light" : "dark";
+        const type = Config.options.appearance.palette.type || "auto";
+        ThemeGeneration.applyGeneratedMode(type, mode);
     }
 
     GlobalShortcut {
@@ -73,6 +120,14 @@ Singleton {
 
     IpcHandler {
         target: "theme"
+
+        function refreshMaterialPalette(): void {
+            root.reapplyTheme();
+        }
+
+        function refreshConfigFromDisk(): void {
+            root.refreshConfigFromDisk();
+        }
 
         function toggleLightDark(): void {
             root.toggleLightDark();

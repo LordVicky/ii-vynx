@@ -24,7 +24,8 @@ Item {
             Directories.backgroundConfigPath,
             Directories.interfaceConfigPath,
             Directories.servicesConfigPath,
-            Directories.advancedConfigPath
+            Directories.advancedConfigPath,
+            Directories.presetsConfigPath
         ])
     }
 
@@ -79,7 +80,7 @@ Item {
 
             let title = extractProperty(sectionBlock, "title")
 
-            let searchStrings = []
+            let searchStrings = extractStringListProperty(sectionBlock, "stringMap")
             if (title)
                 searchStrings.push(title)
 
@@ -184,6 +185,24 @@ Item {
         if (m) return m[1]
 
         return ""
+    }
+
+    // Helper function for indexQmlFile(), extracts simple string arrays such as ContentSection.stringMap
+
+    function extractStringListProperty(block, prop) {
+        let m = block.match(new RegExp(prop + "\\s*:\\s*\\[([\\s\\S]*?)\\]"))
+        if (!m)
+            return []
+
+        let values = []
+        let arrayText = m[1]
+        let valueRegex = /(?:Translation\.tr\(\s*)?["']([^"']+)["']\s*\)?/g
+        let match
+
+        while ((match = valueRegex.exec(arrayText)) !== null)
+            values.push(match[1])
+
+        return values
     }
 
     // Helper function for indexQmlFile(), extracts the page index
