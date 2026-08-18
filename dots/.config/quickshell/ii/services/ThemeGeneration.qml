@@ -68,7 +68,10 @@ Singleton {
     }
 
     function applyFromConfig() {
-        root.queue([Directories.wallpaperSwitchScriptPath, "--noswitch"], "config", false);
+        root.queue([
+            "bash",
+            `${Directories.scriptPath}/colors/applycachedpalette.sh`
+        ], "config", false);
     }
 
     function applyThemeFile(path, type) {
