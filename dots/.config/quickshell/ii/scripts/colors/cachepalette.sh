@@ -127,7 +127,7 @@ main() {
     cat > "$tmp_config" <<EOF_CONFIG
 [config]
 version_check = false
-caching = true
+caching = false
 
 [templates.m3colors]
 input_path = "$escaped_template"
