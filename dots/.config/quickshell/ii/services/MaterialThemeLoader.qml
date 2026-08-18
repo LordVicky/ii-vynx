@@ -113,6 +113,10 @@ Singleton {
     IpcHandler {
         target: "theme"
 
+        function reload(): void {
+            root.reapplyTheme();
+        }
+
         function toggleLightDark(): void {
             root.toggleLightDark();
         }
