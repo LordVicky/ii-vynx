@@ -8,7 +8,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SHELL_CONFIG_FILE="$XDG_CONFIG_HOME/illogical-impulse/config.json"
 LIVE_THEME="$XDG_STATE_HOME/quickshell/user/generated/colors.json"
 CACHE_SCRIPT="$SCRIPT_DIR/cachepalette.sh"
-FULL_APPLY_SCRIPT="$SCRIPT_DIR/applypalette.sh"
+GENERATED_APPLY_SCRIPT="$SCRIPT_DIR/applypalette.sh"
+SWITCHWALL_SCRIPT="$SCRIPT_DIR/switchwall.sh"
 
 usage() {
     cat >&2 <<'USAGE'
@@ -99,6 +100,7 @@ main() {
     local cached_palette
     local tmp_theme
     local accent_color
+    local enable_apps_shell
 
     while [[ $# -gt 0 ]]; do
         case "$1" in
@@ -115,20 +117,22 @@ main() {
 
     [[ -r "$SHELL_CONFIG_FILE" ]] || die "config is not readable: $SHELL_CONFIG_FILE"
     [[ -r "$CACHE_SCRIPT" ]] || die "cache helper is not readable: $CACHE_SCRIPT"
-    [[ -r "$FULL_APPLY_SCRIPT" ]] || die "full palette helper is not readable: $FULL_APPLY_SCRIPT"
+    [[ -r "$GENERATED_APPLY_SCRIPT" ]] || die "generated palette helper is not readable: $GENERATED_APPLY_SCRIPT"
+    [[ -r "$SWITCHWALL_SCRIPT" ]] || die "wallpaper switch helper is not readable: $SWITCHWALL_SCRIPT"
     command -v jq >/dev/null 2>&1 || die "jq is required"
 
     if [[ -z "$type" ]]; then
         type=$(jq -r '.appearance.palette.type // "auto"' "$SHELL_CONFIG_FILE")
     fi
 
+    enable_apps_shell=$(jq -r '.appearance.wallpaperTheming.enableAppsAndShell // true' "$SHELL_CONFIG_FILE")
     accent_color=$(jq -r '.appearance.palette.accentColor // ""' "$SHELL_CONFIG_FILE")
-    if [[ "$accent_color" =~ ^#?[A-Fa-f0-9]{6}$ ]]; then
-        exec bash "$FULL_APPLY_SCRIPT" --type "$type"
+    if [[ "$enable_apps_shell" == "false" || "$accent_color" =~ ^#?[A-Fa-f0-9]{6}$ ]]; then
+        exec bash "$SWITCHWALL_SCRIPT" --noswitch --type "$type"
     fi
 
     if [[ "$type" != "auto" ]] && ! is_valid_type "$type"; then
-        exec bash "$FULL_APPLY_SCRIPT" --type "$type"
+        exec bash "$SWITCHWALL_SCRIPT" --noswitch --type "$type"
     fi
 
     wallpaper=$(jq -r '.background.wallpaperPath // ""' "$SHELL_CONFIG_FILE")
@@ -160,7 +164,7 @@ main() {
     # Keep terminal/KDE/Code/etc. in sync after the shell palette is already live.
     # This remains in the same process group so a newer palette request can cancel
     # stale secondary theming work without blocking the cached shell update.
-    bash "$FULL_APPLY_SCRIPT" --type "$type"
+    bash "$GENERATED_APPLY_SCRIPT" --type "$type"
 }
 
 main "$@"
