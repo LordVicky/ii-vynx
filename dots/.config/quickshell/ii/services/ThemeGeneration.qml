@@ -33,7 +33,7 @@ Singleton {
     function applyGenerated(type) {
         if (!type || type.length === 0)
             return;
-        root.queue([Directories.wallpaperSwitchScriptPath, "--noswitch", "--type", type], type);
+        root.queue(["bash", `${Directories.scriptPath}/colors/applypalette.sh`, "--type", type], type);
     }
 
     function applyFromConfig() {
