@@ -67,6 +67,22 @@ Singleton {
         ], type, true);
     }
 
+    function applyGeneratedMode(type, mode) {
+        if (!type || type.length === 0)
+            return;
+        if (mode !== "dark" && mode !== "light")
+            return;
+        root.queue([
+            "setsid",
+            "bash",
+            `${Directories.scriptPath}/colors/applycachedpalette.sh`,
+            "--type",
+            type,
+            "--mode",
+            mode
+        ], `${type}:${mode}`, true);
+    }
+
     function applyFromConfig() {
         root.queue([
             "bash",
