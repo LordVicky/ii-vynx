@@ -77,7 +77,10 @@ ContentPage {
         toggled: Appearance.m3colors.darkmode === dark
         colBackground: Appearance.colors.colLayer2
         onClicked: {
-            Quickshell.execDetached(["bash", "-c", `${Directories.wallpaperSwitchScriptPath} --mode ${dark ? "dark" : "light"} --noswitch`]);
+            ThemeGeneration.applyGeneratedMode(
+                Config.options.appearance.palette.type || "auto",
+                dark ? "dark" : "light"
+            );
         }
         StyledToolTip {
             extraVisibleCondition: !smallLightDarkPreferenceButton.enabled
