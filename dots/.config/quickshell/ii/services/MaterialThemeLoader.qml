@@ -98,7 +98,9 @@ Singleton {
 
     function toggleLightDark() {
         const currentlyDark = Appearance.m3colors.darkmode;
-        Quickshell.execDetached([Directories.wallpaperSwitchScriptPath, "--mode", currentlyDark ? "light" : "dark", "--noswitch"]);
+        const mode = currentlyDark ? "light" : "dark";
+        const type = Config.options.appearance.palette.type || "auto";
+        ThemeGeneration.applyGeneratedMode(type, mode);
     }
 
     GlobalShortcut {
