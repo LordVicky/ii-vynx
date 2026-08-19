@@ -1,3 +1,4 @@
 # Platform	Hyprland ABI suffix	HyprGlass release	Prebuilt asset URL
 # Platform is <os-id>-<os-version>-<architecture>; ABI must match HyprGlass's runtime suffix.
 # Example: fedora-44-x86_64	_aq_0.14_hu_0.14_hg_0.5_hc_0.1_hlg_0.6	vX.Y.Z	https://...
+fedora-44-x86_64	_aq_0.14_hu_0.14_hg_0.5_hc_0.1_hlg_0.6	v0.7.0	https://github.com/LordVicky/ii-vynx/releases/download/liquid-glass-backends/hyprglass-fedora-44-x86_64_aq_0.14_hu_0.14_hg_0.5_hc_0.1_hlg_0.6.so
