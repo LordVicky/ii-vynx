@@ -208,7 +208,6 @@ hyprctl reload
             }
 
             if (root.checkingAfterLoad) {
-                root.shellManagedPlugin = false;
                 root.finish("error", "HyprGlass did not load after hyprctl plugin load.");
                 return;
             }
