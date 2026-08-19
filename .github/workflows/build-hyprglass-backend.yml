@@ -11,6 +11,12 @@ on:
 permissions:
   contents: write
 
+env:
+  HYPRLAND_VERSION: 0.56.1
+  HYPRLAND_COMMIT: 5c9377c15f85c50648f35ca5a213754f95b93ca0
+  HYPRGLASS_VERSION: v0.7.0
+  PLATFORM_ID: fedora-44-x86_64
+
 jobs:
   fedora44-x86_64:
     runs-on: ubuntu-latest
@@ -34,19 +40,105 @@ jobs:
       - name: Enable Hyprland COPR
         run: dnf -y copr enable nett00n/hyprland
 
-      - name: Install target Hyprland ABI
+      - name: Install Fedora Hyprland development stack
         run: |
+          # The current devel package supplies generated protocol headers and
+          # the Fedora dependency closure. Private Hyprland C++ headers are
+          # replaced with the exact 0.56.1 source in the next step.
           dnf -y --refresh install \
-            'hyprland-devel-0.56.1*' \
+            hyprland-devel \
             'aquamarine-devel-0.14.0*' \
             'hyprutils-devel-0.14.0*' \
             'hyprgraphics-devel-0.5.1*' \
             'hyprcursor-devel-0.1.13*' \
             'hyprlang-devel-0.6.8*'
 
+      - name: Prepare exact Hyprland 0.56.1 plugin headers
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git clone --quiet --depth 1 --branch "v${HYPRLAND_VERSION}" \
+            https://github.com/hyprwm/Hyprland.git hyprland-headers-src
+
+          actual_commit="$(git -C hyprland-headers-src rev-parse HEAD)"
+          if [ "$actual_commit" != "$HYPRLAND_COMMIT" ]; then
+            echo "Hyprland tag resolved to unexpected commit: $actual_commit" >&2
+            exit 1
+          fi
+
+          HEADER_ROOT="$RUNNER_TEMP/vynx-hyprland-headers"
+          PC_ROOT="$RUNNER_TEMP/vynx-hyprland-pkgconfig"
+          mkdir -p "$HEADER_ROOT/hyprland" "$PC_ROOT"
+
+          cp -a hyprland-headers-src/src "$HEADER_ROOT/hyprland/src"
+
+          # v0.56.1 -> v0.56.2 changed no protocol definitions. The Fedora
+          # devel package therefore provides the generated protocol headers we
+          # need without configuring/building all of Hyprland (and Lua 5.5).
+          cp -a /usr/include/hyprland/protocols "$HEADER_ROOT/hyprland/protocols"
+
+          aq="$(pkg-config --modversion aquamarine)"
+          hu="$(pkg-config --modversion hyprutils)"
+          hg="$(pkg-config --modversion hyprgraphics)"
+          hc="$(pkg-config --modversion hyprcursor)"
+          hlg="$(pkg-config --modversion hyprlang)"
+
+          IFS=. read -r aq_major aq_minor aq_patch _ <<< "$aq"
+          cat > "$HEADER_ROOT/hyprland/src/version.h" <<EOF
+          #pragma once
+          #define GIT_COMMIT_HASH    "$HYPRLAND_COMMIT"
+          #define GIT_BRANCH         "v$HYPRLAND_VERSION"
+          #define GIT_COMMIT_MESSAGE "version: bump to $HYPRLAND_VERSION"
+          #define GIT_COMMIT_DATE    ""
+          #define GIT_DIRTY          ""
+          #define GIT_TAG            "v$HYPRLAND_VERSION"
+          #define GIT_COMMITS        ""
+
+          #define AQUAMARINE_VERSION "$aq"
+          #define AQUAMARINE_VERSION_MAJOR $aq_major
+          #define AQUAMARINE_VERSION_MINOR $aq_minor
+          #define AQUAMARINE_VERSION_PATCH ${aq_patch:-0}
+          #define HYPRLANG_VERSION     "$hlg"
+          #define HYPRUTILS_VERSION    "$hu"
+          #define HYPRCURSOR_VERSION   "$hc"
+          #define HYPRGRAPHICS_VERSION "$hg"
+          EOF
+
+          system_pc="$(pkg-config --variable=pcfiledir hyprland)/hyprland.pc"
+          if [ ! -r "$system_pc" ]; then
+            echo "Could not locate Fedora hyprland.pc" >&2
+            exit 1
+          fi
+
+          sed \
+            -e "s|^prefix=.*|prefix=$HEADER_ROOT|" \
+            -e "s|^Version:.*|Version: $HYPRLAND_VERSION|" \
+            "$system_pc" > "$PC_ROOT/hyprland.pc"
+
+          echo "PKG_CONFIG_PATH=$PC_ROOT${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}" >> "$GITHUB_ENV"
+          echo "HYPRLAND_HEADER_ROOT=$HEADER_ROOT" >> "$GITHUB_ENV"
+
+      - name: Verify target header and dependency ABI
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          major_minor() {
+            printf '%s\n' "$1" | awk -F. '{ print $1 "." $2 }'
+          }
+
+          test "$(pkg-config --modversion hyprland)" = "$HYPRLAND_VERSION"
+          test "$(major_minor "$(pkg-config --modversion aquamarine)")" = "0.14"
+          test "$(major_minor "$(pkg-config --modversion hyprutils)")" = "0.14"
+          test "$(major_minor "$(pkg-config --modversion hyprgraphics)")" = "0.5"
+          test "$(major_minor "$(pkg-config --modversion hyprcursor)")" = "0.1"
+          test "$(major_minor "$(pkg-config --modversion hyprlang)")" = "0.6"
+          grep -q "GIT_COMMIT_HASH.*$HYPRLAND_COMMIT" "$HYPRLAND_HEADER_ROOT/hyprland/src/version.h"
+
       - name: Build HyprGlass v0.7.0
         run: |
-          git clone --depth 1 --branch v0.7.0 https://github.com/hyprnux/hyprglass.git
+          git clone --depth 1 --branch "$HYPRGLASS_VERSION" https://github.com/hyprnux/hyprglass.git
           make -C hyprglass -j"$(nproc)"
 
       - name: Verify runtime dependencies
@@ -70,19 +162,20 @@ jobs:
             printf '%s\n' "$1" | awk -F. '{ print $1 "." $2 }'
           }
 
-          HYPRLAND_VERSION="$(pkg-config --modversion hyprland)"
           AQ="$(major_minor "$(pkg-config --modversion aquamarine)")"
           HU="$(major_minor "$(pkg-config --modversion hyprutils)")"
           HG="$(major_minor "$(pkg-config --modversion hyprgraphics)")"
           HC="$(major_minor "$(pkg-config --modversion hyprcursor)")"
           HLG="$(major_minor "$(pkg-config --modversion hyprlang)")"
           ABI_SUFFIX="_aq_${AQ}_hu_${HU}_hg_${HG}_hc_${HC}_hlg_${HLG}"
-          ARTIFACT_NAME="hyprglass-fedora44-x86_64${ABI_SUFFIX}"
+          ARTIFACT_NAME="hyprglass-${PLATFORM_ID}${ABI_SUFFIX}"
           ASSET_NAME="${ARTIFACT_NAME}.so"
 
           {
-            echo "hyprglass_release=v0.7.0"
+            echo "platform=$PLATFORM_ID"
+            echo "hyprglass_release=$HYPRGLASS_VERSION"
             echo "hyprland_version=$HYPRLAND_VERSION"
+            echo "hyprland_commit=$HYPRLAND_COMMIT"
             echo "abi_suffix=$ABI_SUFFIX"
             echo "aquamarine=$(pkg-config --modversion aquamarine)"
             echo "hyprutils=$(pkg-config --modversion hyprutils)"
@@ -91,6 +184,7 @@ jobs:
             echo "hyprlang=$(pkg-config --modversion hyprlang)"
           } | tee hyprglass-metadata.txt
 
+          echo "abi_suffix=$ABI_SUFFIX" >> "$GITHUB_OUTPUT"
           echo "artifact_name=$ARTIFACT_NAME" >> "$GITHUB_OUTPUT"
           echo "asset_name=$ASSET_NAME" >> "$GITHUB_OUTPUT"
 
@@ -114,10 +208,10 @@ jobs:
           tag_name: liquid-glass-backends
           name: ii-vynx Liquid Glass backends
           body: |
-            ABI-keyed HyprGlass binaries built for ii-vynx.
+            Platform- and ABI-keyed HyprGlass binaries built for ii-vynx.
 
-            These assets are selected by the dependency ABI suffix reported by
-            `hyprctl -j version`, not by the Hyprland git commit alone.
+            Assets are selected by OS release, architecture, and the dependency
+            ABI suffix reported by `hyprctl -j version`.
           prerelease: true
           make_latest: false
           target_commitish: agent/liquid-glass-stage1
