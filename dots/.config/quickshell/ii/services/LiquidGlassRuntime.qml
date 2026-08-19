@@ -14,6 +14,7 @@ QtObject {
     property string status: "probing"
     property string errorMessage: ""
 
+    property string hyprlandVersion: ""
     property string hyprlandCommit: ""
     property string managedPluginPath: ""
     property bool checkingAfterLoad: false
@@ -47,8 +48,8 @@ QtObject {
         if (bundleProbe.running)
             return;
 
-        if (!/^[0-9a-f]{7,64}$/i.test(root.hyprlandCommit)) {
-            root.finish("error", "Hyprland returned an invalid commit identifier.");
+        if (!/^\d+\.\d+\.\d+$/.test(root.hyprlandVersion)) {
+            root.finish("error", "Hyprland returned an invalid version identifier.");
             return;
         }
 
@@ -56,7 +57,7 @@ QtObject {
         bundleProbe.command = [
             "sh",
             "-c",
-            `plugin="$HOME/.local/lib/ii-vynx/hyprglass/${root.hyprlandCommit}/hyprglass.so"; test -f "$plugin" || exit 66; printf '%s\\n' "$plugin"`
+            `plugin="$HOME/.local/lib/ii-vynx/hyprglass/${root.hyprlandVersion}/hyprglass.so"; test -f "$plugin" || exit 66; printf '%s\\n' "$plugin"`
         ];
         bundleProbe.running = true;
     }
@@ -236,6 +237,7 @@ hyprctl reload
 
             try {
                 const version = JSON.parse(versionOutput.text);
+                root.hyprlandVersion = String(version.version ?? "").trim();
                 root.hyprlandCommit = String(version.commit ?? "").trim();
             } catch (error) {
                 root.finish("error", "Could not parse the Hyprland version.");
@@ -260,7 +262,8 @@ hyprctl reload
 
         onExited: (exitCode, exitStatus) => {
             if (exitCode === 66) {
-                root.finish("unavailable", `No bundled HyprGlass build for Hyprland commit ${root.hyprlandCommit}.`);
+                const detail = root.hyprlandCommit.length > 0 ? ` (${root.hyprlandCommit})` : "";
+                root.finish("unavailable", `No bundled HyprGlass build for Hyprland ${root.hyprlandVersion}${detail}.`);
                 return;
             }
 

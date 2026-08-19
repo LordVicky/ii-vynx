@@ -22,7 +22,7 @@ cleanup() {
 
 trap cleanup EXIT
 
-read_hyprland_commit() {
+read_hyprland_version() {
     local version_json=""
 
     if command -v hyprctl >/dev/null 2>&1; then
@@ -35,7 +35,7 @@ read_hyprland_commit() {
 
     printf '%s' "$version_json" \
         | tr -d '\n' \
-        | sed -n 's/.*"commit"[[:space:]]*:[[:space:]]*"\([0-9A-Fa-f]\{7,64\}\)".*/\1/p'
+        | sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)".*/\1/p'
 }
 
 download_asset() {
@@ -56,7 +56,7 @@ download_asset() {
 }
 
 main() {
-    local commit entry hyprland_version hyprglass_release asset_url
+    local hyprland_version entry hyprglass_release asset_url
     local target_dir target magic download_status
 
     if [ ! -r "$MANIFEST" ]; then
@@ -64,25 +64,25 @@ main() {
         return 5
     fi
 
-    commit="$(read_hyprland_commit)"
-    if [[ ! "$commit" =~ ^[0-9A-Fa-f]{7,64}$ ]]; then
-        log "Could not determine the running Hyprland commit; skipping bundled HyprGlass."
+    hyprland_version="$(read_hyprland_version)"
+    if [[ ! "$hyprland_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+        log "Could not determine the running Hyprland version; skipping bundled HyprGlass."
         return 5
     fi
 
-    entry="$(awk -F '\t' -v commit="$commit" '$1 == commit { print; exit }' "$MANIFEST")"
+    entry="$(awk -F '\t' -v version="$hyprland_version" '$1 == version { print; exit }' "$MANIFEST")"
     if [ -z "$entry" ]; then
-        log "No bundled HyprGlass build is registered for Hyprland commit $commit."
+        log "No bundled HyprGlass build is registered for Hyprland $hyprland_version."
         return 2
     fi
 
-    IFS=$'\t' read -r _ hyprland_version hyprglass_release asset_url <<< "$entry"
+    IFS=$'\t' read -r _ hyprglass_release asset_url <<< "$entry"
     if [ -z "$asset_url" ]; then
-        log "Invalid HyprGlass compatibility entry for Hyprland commit $commit."
+        log "Invalid HyprGlass compatibility entry for Hyprland $hyprland_version."
         return 5
     fi
 
-    target_dir="$INSTALL_ROOT/$commit"
+    target_dir="$INSTALL_ROOT/$hyprland_version"
     target="$target_dir/hyprglass.so"
 
     if [ -s "$target" ]; then
