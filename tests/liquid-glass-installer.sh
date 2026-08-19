@@ -7,6 +7,7 @@ SOURCE_INSTALLER="$ROOT/sdata/liquid-glass/install-hyprglass.sh"
 SOURCE_LICENSE="$ROOT/licenses/HyprGlass-BSD-3-Clause.txt"
 HYPRLAND_VERSION="0.56.1"
 FEDORA_COMMIT="5c9377c15f85c50648f35ca5a213754f95b93ca0"
+PLATFORM="fedora-44-x86_64"
 ABI_SUFFIX="_aq_0.14_hu_0.14_hg_0.5_hc_0.1_hlg_0.6"
 ABI_HASH="${FEDORA_COMMIT}${ABI_SUFFIX}"
 
@@ -21,7 +22,7 @@ mkdir -p \
 
 cp "$SOURCE_INSTALLER" "$TMP_ROOT/repo/sdata/liquid-glass/install-hyprglass.sh"
 cp "$SOURCE_LICENSE" "$TMP_ROOT/repo/licenses/HyprGlass-BSD-3-Clause.txt"
-printf '%s\tv0.7.0\thttps://example.invalid/hyprglass.so\n' "$ABI_SUFFIX" \
+printf '%s\t%s\tv0.7.0\thttps://example.invalid/hyprglass.so\n' "$PLATFORM" "$ABI_SUFFIX" \
     > "$TMP_ROOT/repo/sdata/liquid-glass/hyprglass-compat.tsv"
 
 cat > "$TMP_ROOT/bin/hyprctl" <<EOF
@@ -59,13 +60,13 @@ INSTALLER="$TMP_ROOT/repo/sdata/liquid-glass/install-hyprglass.sh"
 TARGET="$TEST_HOME/.local/lib/ii-vynx/hyprglass/$ABI_SUFFIX/hyprglass.so"
 LICENSE_TARGET="$TEST_HOME/.local/share/licenses/ii-vynx/HyprGlass-BSD-3-Clause.txt"
 
-HOME="$TEST_HOME" PATH="$TEST_PATH" bash "$INSTALLER"
+HOME="$TEST_HOME" PATH="$TEST_PATH" VYNX_GLASS_PLATFORM="$PLATFORM" bash "$INSTALLER"
 test -f "$TARGET"
 test -f "$LICENSE_TARGET"
 
 first_mtime="$(stat -c %Y "$TARGET")"
 sleep 1
-HOME="$TEST_HOME" PATH="$TEST_PATH" bash "$INSTALLER"
+HOME="$TEST_HOME" PATH="$TEST_PATH" VYNX_GLASS_PLATFORM="$PLATFORM" bash "$INSTALLER"
 second_mtime="$(stat -c %Y "$TARGET")"
 
 if [ "$first_mtime" != "$second_mtime" ]; then
@@ -81,7 +82,7 @@ exit 0
 EOF
 
 set +e
-HOME="$TEST_HOME" PATH="$TEST_PATH" bash "$INSTALLER" >/dev/null 2>&1
+HOME="$TEST_HOME" PATH="$TEST_PATH" VYNX_GLASS_PLATFORM="$PLATFORM" bash "$INSTALLER" >/dev/null 2>&1
 status=$?
 set -e
 
@@ -105,12 +106,27 @@ exit 0
 EOF
 
 set +e
-HOME="$TEST_HOME" PATH="$TEST_PATH" bash "$INSTALLER" >/dev/null 2>&1
+HOME="$TEST_HOME" PATH="$TEST_PATH" VYNX_GLASS_PLATFORM="$PLATFORM" bash "$INSTALLER" >/dev/null 2>&1
 status=$?
 set -e
 
 if [ "$status" -ne 2 ]; then
     echo "Installer did not reject an unregistered dependency ABI." >&2
+    exit 1
+fi
+
+cat > "$TMP_ROOT/bin/hyprctl" <<EOF
+#!/usr/bin/env sh
+printf '%s\\n' '{"version":"$HYPRLAND_VERSION","commit":"$FEDORA_COMMIT","abiHash":"$ABI_HASH"}'
+EOF
+
+set +e
+HOME="$TEST_HOME" PATH="$TEST_PATH" VYNX_GLASS_PLATFORM="arch-rolling-x86_64" bash "$INSTALLER" >/dev/null 2>&1
+status=$?
+set -e
+
+if [ "$status" -ne 2 ]; then
+    echo "Installer did not reject an unregistered runtime platform." >&2
     exit 1
 fi
 
