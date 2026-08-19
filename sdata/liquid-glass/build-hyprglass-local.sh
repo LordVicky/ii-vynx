@@ -4,6 +4,9 @@ set -euo pipefail
 
 HYPRGLASS_REF="${HYPRGLASS_REF:-v0.7.0}"
 HYPRGLASS_REPO="${HYPRGLASS_REPO:-https://github.com/hyprnux/hyprglass.git}"
+HYPRLAND_REPO="${HYPRLAND_REPO:-https://github.com/hyprwm/Hyprland.git}"
+HYPRLAND_PROTOCOLS_REPO="${HYPRLAND_PROTOCOLS_REPO:-https://github.com/hyprwm/hyprland-protocols.git}"
+HYPRLAND_PROTOCOLS_REF="${HYPRLAND_PROTOCOLS_REF:-v0.7.0}"
 INSTALL_ROOT="$HOME/.local/lib/ii-vynx/hyprglass"
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd -- "$SCRIPT_DIR/../.." && pwd)"
@@ -43,12 +46,8 @@ abi_suffix_from_hash() {
     local abi_hash="$1"
 
     case "$abi_hash" in
-        *_aq_*)
-            printf '_aq_%s' "${abi_hash#*_aq_}"
-            ;;
-        *)
-            return 1
-            ;;
+        *_aq_*) printf '_aq_%s' "${abi_hash#*_aq_}" ;;
+        *) return 1 ;;
     esac
 }
 
@@ -60,16 +59,130 @@ pkg_version() {
     pkg-config --modversion "$1" 2>/dev/null
 }
 
-main() {
-    local command version_json runtime_version abi_hash runtime_abi
-    local hyprland_version aq hu hg hc hlg build_abi
-    local source_dir target_dir target magic deps
+prepare_hyprland_headers() {
+    local runtime_version="$1"
+    local runtime_commit="$2"
+    local aq_full="$3"
+    local hu_full="$4"
+    local hg_full="$5"
+    local hc_full="$6"
+    local hlg_full="$7"
+    local source_dir="$TMP_ROOT/hyprland"
+    local protocols_repo="$TMP_ROOT/hyprland-protocols"
+    local pc_dir="$TMP_ROOT/pkgconfig"
+    local protocol_list="$TMP_ROOT/protocols.tsv"
+    local wayland_protocols_dir wayland_scanner_dir actual_commit
+    local proto_path proto_name external xml
+    local aq_major aq_minor aq_patch
 
-    for command in hyprctl pkg-config git make g++ ldd od install awk sed grep tr mktemp; do
+    git clone --quiet --depth 1 --branch "v${runtime_version}" "$HYPRLAND_REPO" "$source_dir"
+    actual_commit="$(git -C "$source_dir" rev-parse HEAD)"
+    if [ "$actual_commit" != "$runtime_commit" ]; then
+        log "Hyprland v${runtime_version} resolved to $actual_commit, but the running compositor reports $runtime_commit."
+        return 2
+    fi
+
+    (
+        cd "$source_dir"
+        ./scripts/generateShaderIncludes.sh >/dev/null
+    )
+
+    wayland_protocols_dir="$(pkg-config --variable=pkgdatadir wayland-protocols 2>/dev/null || true)"
+    wayland_scanner_dir="$(pkg-config --variable=pkgdatadir wayland-scanner 2>/dev/null || true)"
+    if [ -z "$wayland_protocols_dir" ] || [ ! -d "$wayland_protocols_dir" ]; then
+        log "Could not locate wayland-protocols data through pkg-config."
+        return 5
+    fi
+    if [ -z "$wayland_scanner_dir" ] || [ ! -r "$wayland_scanner_dir/wayland.xml" ]; then
+        log "Could not locate wayland.xml through pkg-config wayland-scanner."
+        return 5
+    fi
+
+    git clone --quiet --depth 1 --branch "$HYPRLAND_PROTOCOLS_REF" "$HYPRLAND_PROTOCOLS_REPO" "$protocols_repo"
+
+    python3 - "$source_dir/CMakeLists.txt" > "$protocol_list" <<'PY'
+import re
+import sys
+
+text = open(sys.argv[1], encoding="utf-8").read()
+pattern = re.compile(
+    r'protocolnew\(\s*"([^"]+)"\s+"([^"]+)"\s+(true|false)\s*\)',
+    re.MULTILINE,
+)
+for path, name, external in pattern.findall(text):
+    print(path, name, external, sep="\t")
+PY
+
+    if [ ! -s "$protocol_list" ]; then
+        log "Could not extract Hyprland protocol generation list."
+        return 5
+    fi
+
+    while IFS=$'\t' read -r proto_path proto_name external; do
+        case "$proto_path" in
+            *'${HYPRLAND_PROTOCOLS}'*)
+                xml="$protocols_repo/protocols/$proto_name.xml"
+                ;;
+            *)
+                if [ "$external" = "true" ]; then
+                    xml="$source_dir/$proto_path/$proto_name.xml"
+                else
+                    xml="$wayland_protocols_dir/$proto_path/$proto_name.xml"
+                fi
+                ;;
+        esac
+
+        if [ ! -r "$xml" ]; then
+            log "Missing protocol source while preparing exact Hyprland headers: $xml"
+            return 5
+        fi
+        hyprwayland-scanner "$xml" "$source_dir/protocols/" >/dev/null
+    done < "$protocol_list"
+
+    hyprwayland-scanner --wayland-enums "$wayland_scanner_dir/wayland.xml" "$source_dir/protocols/" >/dev/null
+
+    IFS=. read -r aq_major aq_minor aq_patch _ <<< "$aq_full"
+    cat > "$source_dir/src/version.h" <<EOF_VERSION
+#pragma once
+#define GIT_COMMIT_HASH    "$runtime_commit"
+#define GIT_BRANCH         "v$runtime_version"
+#define GIT_COMMIT_MESSAGE ""
+#define GIT_COMMIT_DATE    ""
+#define GIT_DIRTY          ""
+#define GIT_TAG            "v$runtime_version"
+#define GIT_COMMITS        ""
+#define AQUAMARINE_VERSION "$aq_full"
+#define AQUAMARINE_VERSION_MAJOR $aq_major
+#define AQUAMARINE_VERSION_MINOR $aq_minor
+#define AQUAMARINE_VERSION_PATCH ${aq_patch:-0}
+#define HYPRLANG_VERSION     "$hlg_full"
+#define HYPRUTILS_VERSION    "$hu_full"
+#define HYPRCURSOR_VERSION   "$hc_full"
+#define HYPRGRAPHICS_VERSION "$hg_full"
+EOF_VERSION
+
+    mkdir -p "$pc_dir"
+    cat > "$pc_dir/hyprland.pc" <<EOF_PC
+prefix=$TMP_ROOT
+Name: Hyprland
+URL: https://github.com/hyprwm/Hyprland
+Description: Temporary exact Hyprland headers for ii-vynx HyprGlass build
+Version: $runtime_version
+Requires: aquamarine, hyprcursor, hyprgraphics, hyprlang, hyprutils, libdrm, egl, cairo, xkbcommon, libinput, wayland-server, xcb, xcb-render, xcb-xfixes, xcb-icccm, xcb-composite, xcb-res, xcb-errors
+Cflags: -I$TMP_ROOT -I$source_dir/protocols -I$source_dir -I$source_dir/src
+EOF_PC
+}
+
+main() {
+    local command version_json runtime_version runtime_commit abi_hash runtime_abi
+    local aq_full hu_full hg_full hc_full hlg_full aq hu hg hc hlg build_abi
+    local source_dir pc_dir target_dir target magic deps
+
+    for command in hyprctl pkg-config git make g++ python3 hyprwayland-scanner ldd od install awk sed grep tr mktemp; do
         require_command "$command" || return 5
     done
 
-    for module in hyprland pixman-1 libdrm aquamarine hyprutils hyprgraphics hyprcursor hyprlang; do
+    for module in pixman-1 libdrm aquamarine hyprutils hyprgraphics hyprcursor hyprlang wayland-protocols wayland-scanner; do
         if ! pkg-config --exists "$module"; then
             log "Missing required development module: $module"
             return 5
@@ -78,11 +191,13 @@ main() {
 
     version_json="$(hyprctl -j version 2>/dev/null || true)"
     runtime_version="$(extract_json_string "$version_json" version)"
+    runtime_commit="$(extract_json_string "$version_json" commit)"
     abi_hash="$(extract_json_string "$version_json" abiHash)"
     runtime_abi="$(abi_suffix_from_hash "$abi_hash" 2>/dev/null || true)"
 
-    if [[ ! "$runtime_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-        log "Could not determine the running Hyprland version."
+    if [[ ! "$runtime_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] \
+        || [[ ! "$runtime_commit" =~ ^[0-9a-f]{40}$ ]]; then
+        log "Could not determine the running Hyprland version and commit."
         return 5
     fi
 
@@ -91,17 +206,16 @@ main() {
         return 5
     fi
 
-    hyprland_version="$(pkg_version hyprland)"
-    if [ "$hyprland_version" != "$runtime_version" ]; then
-        log "Installed Hyprland development headers ($hyprland_version) do not match the running Hyprland ($runtime_version)."
-        return 2
-    fi
-
-    aq="$(major_minor "$(pkg_version aquamarine)")"
-    hu="$(major_minor "$(pkg_version hyprutils)")"
-    hg="$(major_minor "$(pkg_version hyprgraphics)")"
-    hc="$(major_minor "$(pkg_version hyprcursor)")"
-    hlg="$(major_minor "$(pkg_version hyprlang)")"
+    aq_full="$(pkg_version aquamarine)"
+    hu_full="$(pkg_version hyprutils)"
+    hg_full="$(pkg_version hyprgraphics)"
+    hc_full="$(pkg_version hyprcursor)"
+    hlg_full="$(pkg_version hyprlang)"
+    aq="$(major_minor "$aq_full")"
+    hu="$(major_minor "$hu_full")"
+    hg="$(major_minor "$hg_full")"
+    hc="$(major_minor "$hc_full")"
+    hlg="$(major_minor "$hlg_full")"
     build_abi="_aq_${aq}_hu_${hu}_hg_${hg}_hc_${hc}_hlg_${hlg}"
 
     if [ "$build_abi" != "$runtime_abi" ]; then
@@ -113,10 +227,14 @@ main() {
 
     TMP_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/ii-vynx-hyprglass-build.XXXXXX")"
     source_dir="$TMP_ROOT/hyprglass"
+    pc_dir="$TMP_ROOT/pkgconfig"
+
+    log "Preparing exact Hyprland $runtime_version plugin headers without hyprland-devel..."
+    prepare_hyprland_headers "$runtime_version" "$runtime_commit" "$aq_full" "$hu_full" "$hg_full" "$hc_full" "$hlg_full"
 
     log "Building HyprGlass $HYPRGLASS_REF for Hyprland $runtime_version ABI $runtime_abi..."
     git clone --quiet --depth 1 --branch "$HYPRGLASS_REF" "$HYPRGLASS_REPO" "$source_dir"
-    make -C "$source_dir" -j"$(nproc)"
+    PKG_CONFIG_PATH="$pc_dir${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}" make -C "$source_dir" -j"$(nproc)"
 
     magic="$(od -An -tx1 -N4 "$source_dir/hyprglass.so" 2>/dev/null | tr -d '[:space:]')"
     if [ "$magic" != "7f454c46" ]; then
