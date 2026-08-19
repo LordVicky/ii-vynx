@@ -47,9 +47,10 @@ Singleton {
             property real shellTint: 0
             property real brightness: 0
 
-            // HyprGlass v0.7.0 default material values. The custom Vynx preset
-            // overrides only these user-adjustable properties; every other
-            // material parameter falls through to HyprGlass's own defaults.
+            // HyprGlass v0.7.0 default material values. refractionStrength also
+            // backs the main Glass intensity slider: 0.6 = 100%. The runtime
+            // uses that ratio as a master optical-strength multiplier while the
+            // advanced controls remain independently adjustable base values.
             property real refractionStrength: 0.6
             property real chromaticAberration: 0.5
             property real fresnelStrength: 0.6

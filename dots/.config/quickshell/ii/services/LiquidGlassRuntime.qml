@@ -22,12 +22,21 @@ Scope {
     property bool reapplyPending: false
     readonly property bool darkMode: Appearance.m3colors.darkmode
 
-    readonly property real refractionStrength: root.clampGlassValue(LiquidGlassSettings.options.refractionStrength, 0.0, 1.2, 0.6)
-    readonly property real chromaticAberration: root.clampGlassValue(LiquidGlassSettings.options.chromaticAberration, 0.0, 1.0, 0.5)
-    readonly property real fresnelStrength: root.clampGlassValue(LiquidGlassSettings.options.fresnelStrength, 0.0, 1.5, 0.6)
-    readonly property real specularStrength: root.clampGlassValue(LiquidGlassSettings.options.specularStrength, 0.0, 1.5, 0.8)
+    // The main Glass intensity control is a genuine compositor-side master for
+    // the optical material. 100% resolves to HyprGlass v0.7.0's native values.
+    // Edge thickness stays independent because it changes the slab geometry,
+    // while refraction, dispersion, highlights and dome magnification scale.
+    readonly property real glassIntensity: root.clampGlassValue(LiquidGlassSettings.options.refractionStrength / 0.6, 0.0, 2.0, 1.0)
+    readonly property real refractionStrength: root.clampGlassValue(0.6 * root.glassIntensity, 0.0, 1.2, 0.6)
+    readonly property real chromaticAberrationBase: root.clampGlassValue(LiquidGlassSettings.options.chromaticAberration, 0.0, 1.0, 0.5)
+    readonly property real fresnelStrengthBase: root.clampGlassValue(LiquidGlassSettings.options.fresnelStrength, 0.0, 1.5, 0.6)
+    readonly property real specularStrengthBase: root.clampGlassValue(LiquidGlassSettings.options.specularStrength, 0.0, 1.5, 0.8)
     readonly property real edgeThickness: root.clampGlassValue(LiquidGlassSettings.options.edgeThickness, 0.0, 0.2, 0.06)
-    readonly property real lensDistortion: root.clampGlassValue(LiquidGlassSettings.options.lensDistortion, 0.0, 1.0, 0.5)
+    readonly property real lensDistortionBase: root.clampGlassValue(LiquidGlassSettings.options.lensDistortion, 0.0, 1.0, 0.5)
+    readonly property real chromaticAberration: root.clampGlassValue(root.chromaticAberrationBase * root.glassIntensity, 0.0, 1.0, 0.5)
+    readonly property real fresnelStrength: root.clampGlassValue(root.fresnelStrengthBase * root.glassIntensity, 0.0, 1.5, 0.6)
+    readonly property real specularStrength: root.clampGlassValue(root.specularStrengthBase * root.glassIntensity, 0.0, 1.5, 0.8)
+    readonly property real lensDistortion: root.clampGlassValue(root.lensDistortionBase * root.glassIntensity, 0.0, 1.0, 0.5)
     readonly property real shellTint: root.clampGlassValue(LiquidGlassSettings.options.shellTint, 0.0, 1.0, 0.0)
     readonly property real surfaceBrightness: root.clampGlassValue(LiquidGlassSettings.options.brightness, -1.0, 1.0, 0.0)
     readonly property color barSurfaceColor: {
