@@ -131,9 +131,15 @@ if hl.plugin.hyprglass then
     })
 
     -- HyprGlass owns the bar's background blur while this fragment is active.
-    -- Leaving Hyprland's native layer blur enabled makes the glass pass sample
-    -- an already-blurred bar and visibly double-process the surface.
-    hl.layer_rule({ match = { namespace = "quickshell:bar" }, blur = false, blur_popups = false })
+    -- Keep a handle so teardown can disable the override before removing it;
+    -- that forces Hyprland to re-evaluate the still-mapped bar against the
+    -- normal Quickshell blur rule instead of leaving native blur disabled.
+    _G.iiVynxLiquidGlassBarBlurOverride = hl.layer_rule({
+        name = "ii-vynx-liquid-glass-bar-native-blur-off",
+        match = { namespace = "quickshell:bar" },
+        blur = false,
+        blur_popups = false,
+    })
 
     hg.layer("quickshell:bar", { preset = "vynx", mask_threshold = 0.05 })
     hg.layer("quickshell:verticalBar", { preset = "vynx", mask_threshold = 0.05 })
@@ -164,7 +170,7 @@ hyprctl reload
             Quickshell.execDetached([
                 "sh",
                 "-c",
-                "rm -f \"$HOME/.config/hypr/hyprland/shellOverrides/liquid-glass.lua\"; hyprctl plugin unload \"$1\" >/dev/null 2>&1 || true; hyprctl reload >/dev/null 2>&1",
+                "hyprctl eval 'if _G.iiVynxLiquidGlassBarBlurOverride then _G.iiVynxLiquidGlassBarBlurOverride:set_enabled(false) end' >/dev/null 2>&1 || true; rm -f \"$HOME/.config/hypr/hyprland/shellOverrides/liquid-glass.lua\"; hyprctl plugin unload \"$1\" >/dev/null 2>&1 || true; hyprctl reload >/dev/null 2>&1",
                 "vynx-liquid-glass",
                 pluginPath
             ]);
@@ -174,7 +180,7 @@ hyprctl reload
         Quickshell.execDetached([
             "sh",
             "-c",
-            "rm -f \"$HOME/.config/hypr/hyprland/shellOverrides/liquid-glass.lua\"; hyprctl reload >/dev/null 2>&1"
+            "hyprctl eval 'if _G.iiVynxLiquidGlassBarBlurOverride then _G.iiVynxLiquidGlassBarBlurOverride:set_enabled(false) end' >/dev/null 2>&1 || true; rm -f \"$HOME/.config/hypr/hyprland/shellOverrides/liquid-glass.lua\"; hyprctl reload >/dev/null 2>&1"
         ]);
     }
 
