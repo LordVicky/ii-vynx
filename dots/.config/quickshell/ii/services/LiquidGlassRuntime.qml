@@ -19,7 +19,56 @@ Scope {
     property string hyprlandAbiSuffix: ""
     property string managedPluginPath: ""
     property bool checkingAfterLoad: false
+    property bool reapplyPending: false
     readonly property bool darkMode: Appearance.m3colors.darkmode
+
+    readonly property real refractionStrength: root.clampGlassValue(LiquidGlassSettings.options.refractionStrength, 0.0, 1.2, 0.6)
+    readonly property real chromaticAberration: root.clampGlassValue(LiquidGlassSettings.options.chromaticAberration, 0.0, 1.0, 0.5)
+    readonly property real fresnelStrength: root.clampGlassValue(LiquidGlassSettings.options.fresnelStrength, 0.0, 1.5, 0.6)
+    readonly property real specularStrength: root.clampGlassValue(LiquidGlassSettings.options.specularStrength, 0.0, 1.5, 0.8)
+    readonly property real edgeThickness: root.clampGlassValue(LiquidGlassSettings.options.edgeThickness, 0.0, 0.2, 0.06)
+    readonly property real lensDistortion: root.clampGlassValue(LiquidGlassSettings.options.lensDistortion, 0.0, 1.0, 0.5)
+    readonly property real shellTint: root.clampGlassValue(LiquidGlassSettings.options.shellTint, 0.0, 1.0, 0.0)
+    readonly property real surfaceBrightness: root.clampGlassValue(LiquidGlassSettings.options.brightness, -1.0, 1.0, 0.0)
+    readonly property color barSurfaceColor: {
+        const tint = root.shellTint;
+        const theme = Appearance.colors.colLayer0Base;
+        // HyprGlass uses layer alpha as its mask. Keep only the minimum neutral
+        // mask needed by the current 0.05 threshold, then opt into shell tint.
+        let alpha = 0.055 + (0.18 - 0.055) * tint;
+        let red = 0.5 + (theme.r - 0.5) * tint;
+        let green = 0.5 + (theme.g - 0.5) * tint;
+        let blue = 0.5 + (theme.b - 0.5) * tint;
+
+        // Match desktop-widget brightness: a cheap black/white scrim over the
+        // finished glass instead of reconfiguring the expensive blur effect.
+        const scrimAlpha = Math.abs(root.surfaceBrightness) * 0.6;
+        if (scrimAlpha > 0) {
+            const scrim = root.surfaceBrightness < 0 ? 0 : 1;
+            const outAlpha = scrimAlpha + alpha * (1 - scrimAlpha);
+            red = (scrim * scrimAlpha + red * alpha * (1 - scrimAlpha)) / outAlpha;
+            green = (scrim * scrimAlpha + green * alpha * (1 - scrimAlpha)) / outAlpha;
+            blue = (scrim * scrimAlpha + blue * alpha * (1 - scrimAlpha)) / outAlpha;
+            alpha = outAlpha;
+        }
+
+        return Qt.rgba(red, green, blue, alpha);
+    }
+    readonly property string rendererConfigSignature: [
+        root.refractionStrength,
+        root.chromaticAberration,
+        root.fresnelStrength,
+        root.specularStrength,
+        root.edgeThickness,
+        root.lensDistortion,
+    ].join("|")
+
+    function clampGlassValue(value, minimum, maximum, fallback) {
+        const numericValue = Number(value);
+        if (!isFinite(numericValue))
+            return fallback;
+        return Math.max(minimum, Math.min(maximum, numericValue));
+    }
 
     function finish(statusValue, errorValue) {
         root.status = statusValue;
@@ -102,32 +151,17 @@ if hl.plugin.hyprglass then
         layers = { enabled = true },
     })
 
+    -- Override only the user-adjustable material properties. Everything else
+    -- falls through to HyprGlass's own default resolution chain, so the base
+    -- material stays faithful to the plugin instead of carrying a Vynx-tuned
+    -- interpretation of Liquid Glass.
     hg.preset("vynx", {
-        inherits = "subtle",
-        blur_strength = 1.0,
-        blur_iterations = 2,
-        refraction_strength = 0.45,
-        chromatic_aberration = 0.10,
-        fresnel_strength = 0.35,
-        specular_strength = 0.45,
-        glass_opacity = 1.0,
-        edge_thickness = 0.05,
-        lens_distortion = 0.18,
-        tint_color = 0xffffff0a,
-        dark = {
-            brightness = 0.86,
-            contrast = 0.94,
-            saturation = 0.88,
-            vibrancy = 0.12,
-            adaptive_dim = 0.25,
-        },
-        light = {
-            brightness = 1.06,
-            contrast = 0.94,
-            saturation = 0.90,
-            vibrancy = 0.10,
-            adaptive_boost = 0.25,
-        },
+        refraction_strength = ${root.refractionStrength},
+        chromatic_aberration = ${root.chromaticAberration},
+        fresnel_strength = ${root.fresnelStrength},
+        specular_strength = ${root.specularStrength},
+        edge_thickness = ${root.edgeThickness},
+        lens_distortion = ${root.lensDistortion},
     })
 
     -- HyprGlass owns the bar's background blur while this fragment is active.
@@ -150,10 +184,19 @@ hyprctl reload
 `;
     }
 
-    function applyConfig() {
-        if (configApply.running)
+    function scheduleConfigApply() {
+        if (!root.configApplied || !root.hyprGlassLoaded)
             return;
+        configApplyDebounce.restart();
+    }
 
+    function applyConfig() {
+        if (configApply.running) {
+            root.reapplyPending = true;
+            return;
+        }
+
+        root.reapplyPending = false;
         root.ready = false;
         root.status = "configuring";
         configApply.command = ["sh", "-c", root.buildGlassConfigCommand()];
@@ -187,9 +230,14 @@ hyprctl reload
     Component.onCompleted: root.probeLoaded(false)
     Component.onDestruction: root.shutdown()
 
-    onDarkModeChanged: {
-        if (root.configApplied && root.hyprGlassLoaded)
-            root.applyConfig();
+    onDarkModeChanged: root.scheduleConfigApply()
+    onRendererConfigSignatureChanged: root.scheduleConfigApply()
+
+    Timer {
+        id: configApplyDebounce
+        interval: 300
+        repeat: false
+        onTriggered: root.applyConfig()
     }
 
     Process {
@@ -352,6 +400,11 @@ hyprctl reload
 
             root.configApplied = true;
             root.finish(root.shellManagedPlugin ? "managed" : "user", "");
+
+            if (root.reapplyPending) {
+                root.reapplyPending = false;
+                configApplyDebounce.restart();
+            }
         }
     }
 }

@@ -16,6 +16,7 @@ ContentPage {
     interactive: false
 
     property bool allowHeavyLoad: false
+    property bool liquidGlassAdvancedVisible: false
     property ListModel favouritesCarouselModel: ListModel {}
     property int currentIndex: -1
 
@@ -321,6 +322,130 @@ ContentPage {
                             value: "liquidGlass"
                         }
                     ]
+                }
+
+                ConfigSlider {
+                    visible: Config.options.appearance.surfaceStyle === "liquidGlass"
+                    buttonIcon: "water_drop"
+                    text: Translation.tr("Glass intensity (%)")
+                    textWidth: 170
+                    value: LiquidGlassSettings.options.refractionStrength / 0.6 * 100
+                    usePercentTooltip: false
+                    from: 0
+                    to: 200
+                    stopIndicatorValues: [100]
+                    onValueChanged: {
+                        LiquidGlassSettings.options.refractionStrength = value / 100 * 0.6;
+                    }
+                }
+
+                ConfigSlider {
+                    visible: Config.options.appearance.surfaceStyle === "liquidGlass"
+                    buttonIcon: "opacity"
+                    text: Translation.tr("Shell tint (%)")
+                    textWidth: 170
+                    value: LiquidGlassSettings.options.shellTint * 100
+                    usePercentTooltip: false
+                    from: 0
+                    to: 100
+                    stopIndicatorValues: [0]
+                    onValueChanged: {
+                        LiquidGlassSettings.options.shellTint = value / 100;
+                    }
+                }
+
+                ConfigSlider {
+                    visible: Config.options.appearance.surfaceStyle === "liquidGlass"
+                    buttonIcon: "brightness_6"
+                    text: Translation.tr("Glass brightness (%)")
+                    textWidth: 170
+                    value: LiquidGlassSettings.options.brightness * 100
+                    usePercentTooltip: false
+                    from: -100
+                    to: 100
+                    stopIndicatorValues: [0]
+                    onValueChanged: {
+                        LiquidGlassSettings.options.brightness = value / 100;
+                    }
+                }
+
+                RippleButtonWithIcon {
+                    visible: Config.options.appearance.surfaceStyle === "liquidGlass"
+                    Layout.fillWidth: true
+                    materialIcon: page.liquidGlassAdvancedVisible ? "expand_less" : "tune"
+                    mainText: Translation.tr("Advanced Liquid Glass")
+                    onClicked: page.liquidGlassAdvancedVisible = !page.liquidGlassAdvancedVisible
+                }
+
+                ColumnLayout {
+                    visible: Config.options.appearance.surfaceStyle === "liquidGlass" && page.liquidGlassAdvancedVisible
+                    Layout.fillWidth: true
+                    spacing: 8
+
+                    ConfigSlider {
+                        Layout.fillWidth: true
+                        buttonIcon: "chromatic_aberration"
+                        text: Translation.tr("Chromatic aberration (%)")
+                        textWidth: 190
+                        value: LiquidGlassSettings.options.chromaticAberration * 100
+                        usePercentTooltip: false
+                        from: 0
+                        to: 100
+                        stopIndicatorValues: [50]
+                        onValueChanged: LiquidGlassSettings.options.chromaticAberration = value / 100
+                    }
+
+                    ConfigSlider {
+                        Layout.fillWidth: true
+                        buttonIcon: "flare"
+                        text: Translation.tr("Fresnel strength (%)")
+                        textWidth: 190
+                        value: LiquidGlassSettings.options.fresnelStrength * 100
+                        usePercentTooltip: false
+                        from: 0
+                        to: 150
+                        stopIndicatorValues: [60]
+                        onValueChanged: LiquidGlassSettings.options.fresnelStrength = value / 100
+                    }
+
+                    ConfigSlider {
+                        Layout.fillWidth: true
+                        buttonIcon: "highlight"
+                        text: Translation.tr("Specular strength (%)")
+                        textWidth: 190
+                        value: LiquidGlassSettings.options.specularStrength * 100
+                        usePercentTooltip: false
+                        from: 0
+                        to: 150
+                        stopIndicatorValues: [80]
+                        onValueChanged: LiquidGlassSettings.options.specularStrength = value / 100
+                    }
+
+                    ConfigSlider {
+                        Layout.fillWidth: true
+                        buttonIcon: "border_style"
+                        text: Translation.tr("Edge thickness (%)")
+                        textWidth: 190
+                        value: LiquidGlassSettings.options.edgeThickness * 100
+                        usePercentTooltip: false
+                        from: 0
+                        to: 20
+                        stopIndicatorValues: [6]
+                        onValueChanged: LiquidGlassSettings.options.edgeThickness = value / 100
+                    }
+
+                    ConfigSlider {
+                        Layout.fillWidth: true
+                        buttonIcon: "lens_blur"
+                        text: Translation.tr("Lens distortion (%)")
+                        textWidth: 190
+                        value: LiquidGlassSettings.options.lensDistortion * 100
+                        usePercentTooltip: false
+                        from: 0
+                        to: 100
+                        stopIndicatorValues: [50]
+                        onValueChanged: LiquidGlassSettings.options.lensDistortion = value / 100
+                    }
                 }
             }
         }
