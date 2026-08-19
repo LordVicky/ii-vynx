@@ -1,0 +1,107 @@
+name: Build HyprGlass backend
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - agent/liquid-glass-stage1
+    paths:
+      - .github/workflows/build-hyprglass-backend.yml
+
+permissions:
+  contents: read
+
+jobs:
+  fedora44-x86_64:
+    runs-on: ubuntu-latest
+    container:
+      image: fedora:44
+
+    steps:
+      - name: Install build tooling
+        run: |
+          dnf -y install \
+            dnf5-plugins \
+            git \
+            gcc-c++ \
+            make \
+            pkgconf-pkg-config \
+            pixman-devel \
+            libdrm-devel \
+            binutils \
+            file
+
+      - name: Enable Hyprland COPR
+        run: dnf -y copr enable nett00n/hyprland
+
+      - name: Install target Hyprland ABI
+        run: |
+          dnf -y --refresh install \
+            'hyprland-devel-0.56.1*' \
+            'aquamarine-devel-0.14.0*' \
+            'hyprutils-devel-0.14.0*' \
+            'hyprgraphics-devel-0.5.1*' \
+            'hyprcursor-devel-0.1.13*' \
+            'hyprlang-devel-0.6.8*'
+
+      - name: Build HyprGlass v0.7.0
+        run: |
+          git clone --depth 1 --branch v0.7.0 https://github.com/hyprnux/hyprglass.git
+          make -C hyprglass -j"$(nproc)"
+
+      - name: Verify runtime dependencies
+        run: |
+          set -eu
+          ldd hyprglass/hyprglass.so | tee hyprglass-ldd.txt
+          if grep -q 'not found' hyprglass-ldd.txt; then
+            echo 'HyprGlass artifact contains unresolved dependencies.' >&2
+            exit 1
+          fi
+          file hyprglass/hyprglass.so
+          readelf -d hyprglass/hyprglass.so | grep NEEDED | tee hyprglass-needed.txt
+
+      - name: Record ABI metadata
+        id: abi
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          major_minor() {
+            printf '%s\n' "$1" | awk -F. '{ print $1 "." $2 }'
+          }
+
+          HYPRLAND_VERSION="$(pkg-config --modversion hyprland)"
+          AQ="$(major_minor "$(pkg-config --modversion aquamarine)")"
+          HU="$(major_minor "$(pkg-config --modversion hyprutils)")"
+          HG="$(major_minor "$(pkg-config --modversion hyprgraphics)")"
+          HC="$(major_minor "$(pkg-config --modversion hyprcursor)")"
+          HLG="$(major_minor "$(pkg-config --modversion hyprlang)")"
+          ABI_SUFFIX="_aq_${AQ}_hu_${HU}_hg_${HG}_hc_${HC}_hlg_${HLG}"
+          ARTIFACT_NAME="hyprglass-fedora44-x86_64${ABI_SUFFIX}"
+
+          {
+            echo "hyprglass_release=v0.7.0"
+            echo "hyprland_version=$HYPRLAND_VERSION"
+            echo "abi_suffix=$ABI_SUFFIX"
+            echo "aquamarine=$(pkg-config --modversion aquamarine)"
+            echo "hyprutils=$(pkg-config --modversion hyprutils)"
+            echo "hyprgraphics=$(pkg-config --modversion hyprgraphics)"
+            echo "hyprcursor=$(pkg-config --modversion hyprcursor)"
+            echo "hyprlang=$(pkg-config --modversion hyprlang)"
+          } | tee hyprglass-metadata.txt
+
+          echo "artifact_name=$ARTIFACT_NAME" >> "$GITHUB_OUTPUT"
+
+      - name: Stage artifact
+        run: |
+          mkdir -p release
+          cp hyprglass/hyprglass.so release/
+          cp hyprglass-metadata.txt hyprglass-ldd.txt hyprglass-needed.txt release/
+
+      - name: Upload backend artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.abi.outputs.artifact_name }}
+          path: release/
+          if-no-files-found: error
+          retention-days: 14
