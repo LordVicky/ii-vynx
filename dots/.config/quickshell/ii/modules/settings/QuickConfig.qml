@@ -328,6 +328,7 @@ ContentPage {
                     visible: Config.options.appearance.surfaceStyle === "liquidGlass"
                     buttonIcon: "water_drop"
                     text: Translation.tr("Glass intensity (%)")
+                    description: Translation.tr("Scales the glass optics together. 100% matches HyprGlass defaults; higher values push toward plugin limits.")
                     textWidth: 170
                     value: LiquidGlassSettings.options.refractionStrength / 0.6 * 100
                     usePercentTooltip: false
@@ -343,6 +344,7 @@ ContentPage {
                     visible: Config.options.appearance.surfaceStyle === "liquidGlass"
                     buttonIcon: "opacity"
                     text: Translation.tr("Shell tint (%)")
+                    description: Translation.tr("Adds the shell palette over the glass. 0% keeps the bar free of shell-theme tint.")
                     textWidth: 170
                     value: LiquidGlassSettings.options.shellTint * 100
                     usePercentTooltip: false
@@ -358,6 +360,7 @@ ContentPage {
                     visible: Config.options.appearance.surfaceStyle === "liquidGlass"
                     buttonIcon: "brightness_6"
                     text: Translation.tr("Glass brightness (%)")
+                    description: Translation.tr("Brightens or darkens the bar with a lightweight overlay without changing the HyprGlass shader.")
                     textWidth: 170
                     value: LiquidGlassSettings.options.brightness * 100
                     usePercentTooltip: false
@@ -384,8 +387,9 @@ ContentPage {
 
                     ConfigSlider {
                         Layout.fillWidth: true
-                        buttonIcon: "chromatic_aberration"
+                        buttonIcon: "palette"
                         text: Translation.tr("Chromatic aberration (%)")
+                        description: Translation.tr("Controls RGB separation at refracted edges. Higher values create stronger color fringing.")
                         textWidth: 190
                         value: LiquidGlassSettings.options.chromaticAberration * 100
                         usePercentTooltip: false
@@ -399,11 +403,12 @@ ContentPage {
                         Layout.fillWidth: true
                         buttonIcon: "flare"
                         text: Translation.tr("Fresnel strength (%)")
+                        description: Translation.tr("Controls the edge glow that makes the glass boundary catch light.")
                         textWidth: 190
                         value: LiquidGlassSettings.options.fresnelStrength * 100
                         usePercentTooltip: false
                         from: 0
-                        to: 150
+                        to: 100
                         stopIndicatorValues: [60]
                         onValueChanged: LiquidGlassSettings.options.fresnelStrength = value / 100
                     }
@@ -412,11 +417,12 @@ ContentPage {
                         Layout.fillWidth: true
                         buttonIcon: "highlight"
                         text: Translation.tr("Specular strength (%)")
+                        description: Translation.tr("Controls the top-biased highlight that gives the glass surface depth.")
                         textWidth: 190
                         value: LiquidGlassSettings.options.specularStrength * 100
                         usePercentTooltip: false
                         from: 0
-                        to: 150
+                        to: 100
                         stopIndicatorValues: [80]
                         onValueChanged: LiquidGlassSettings.options.specularStrength = value / 100
                     }
@@ -425,11 +431,12 @@ ContentPage {
                         Layout.fillWidth: true
                         buttonIcon: "border_style"
                         text: Translation.tr("Edge thickness (%)")
+                        description: Translation.tr("Controls the width of the curved glass bezel and its edge refraction zone.")
                         textWidth: 190
                         value: LiquidGlassSettings.options.edgeThickness * 100
                         usePercentTooltip: false
                         from: 0
-                        to: 20
+                        to: 15
                         stopIndicatorValues: [6]
                         onValueChanged: LiquidGlassSettings.options.edgeThickness = value / 100
                     }
@@ -438,6 +445,7 @@ ContentPage {
                         Layout.fillWidth: true
                         buttonIcon: "lens_blur"
                         text: Translation.tr("Lens distortion (%)")
+                        description: Translation.tr("Controls center-dome magnification inside the flat part of the glass.")
                         textWidth: 190
                         value: LiquidGlassSettings.options.lensDistortion * 100
                         usePercentTooltip: false

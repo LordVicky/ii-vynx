@@ -27,24 +27,25 @@ Scope {
     // Edge thickness stays independent because it changes the slab geometry,
     // while refraction, dispersion, highlights and dome magnification scale.
     readonly property real glassIntensity: root.clampGlassValue(LiquidGlassSettings.options.refractionStrength / 0.6, 0.0, 2.0, 1.0)
-    readonly property real refractionStrength: root.clampGlassValue(0.6 * root.glassIntensity, 0.0, 1.2, 0.6)
+    readonly property real refractionStrength: root.clampGlassValue(0.6 * root.glassIntensity, 0.0, 1.0, 0.6)
     readonly property real chromaticAberrationBase: root.clampGlassValue(LiquidGlassSettings.options.chromaticAberration, 0.0, 1.0, 0.5)
-    readonly property real fresnelStrengthBase: root.clampGlassValue(LiquidGlassSettings.options.fresnelStrength, 0.0, 1.5, 0.6)
-    readonly property real specularStrengthBase: root.clampGlassValue(LiquidGlassSettings.options.specularStrength, 0.0, 1.5, 0.8)
-    readonly property real edgeThickness: root.clampGlassValue(LiquidGlassSettings.options.edgeThickness, 0.0, 0.2, 0.06)
+    readonly property real fresnelStrengthBase: root.clampGlassValue(LiquidGlassSettings.options.fresnelStrength, 0.0, 1.0, 0.6)
+    readonly property real specularStrengthBase: root.clampGlassValue(LiquidGlassSettings.options.specularStrength, 0.0, 1.0, 0.8)
+    readonly property real edgeThickness: root.clampGlassValue(LiquidGlassSettings.options.edgeThickness, 0.0, 0.15, 0.06)
     readonly property real lensDistortionBase: root.clampGlassValue(LiquidGlassSettings.options.lensDistortion, 0.0, 1.0, 0.5)
     readonly property real chromaticAberration: root.clampGlassValue(root.chromaticAberrationBase * root.glassIntensity, 0.0, 1.0, 0.5)
-    readonly property real fresnelStrength: root.clampGlassValue(root.fresnelStrengthBase * root.glassIntensity, 0.0, 1.5, 0.6)
-    readonly property real specularStrength: root.clampGlassValue(root.specularStrengthBase * root.glassIntensity, 0.0, 1.5, 0.8)
+    readonly property real fresnelStrength: root.clampGlassValue(root.fresnelStrengthBase * root.glassIntensity, 0.0, 1.0, 0.6)
+    readonly property real specularStrength: root.clampGlassValue(root.specularStrengthBase * root.glassIntensity, 0.0, 1.0, 0.8)
     readonly property real lensDistortion: root.clampGlassValue(root.lensDistortionBase * root.glassIntensity, 0.0, 1.0, 0.5)
     readonly property real shellTint: root.clampGlassValue(LiquidGlassSettings.options.shellTint, 0.0, 1.0, 0.0)
     readonly property real surfaceBrightness: root.clampGlassValue(LiquidGlassSettings.options.brightness, -1.0, 1.0, 0.0)
     readonly property color barSurfaceColor: {
         const tint = root.shellTint;
         const theme = Appearance.colors.colLayer0Base;
-        // HyprGlass uses layer alpha as its mask. Keep only the minimum neutral
-        // mask needed by the current 0.05 threshold, then opt into shell tint.
-        let alpha = 0.055 + (0.18 - 0.055) * tint;
+        // HyprGlass uses layer alpha as its mask. The bar has a dedicated
+        // 0.001 threshold, so keep the neutral mask barely visible at 0.5%
+        // instead of painting the old 5.5% grey veil over the finished glass.
+        let alpha = 0.005 + (0.18 - 0.005) * tint;
         let red = 0.5 + (theme.r - 0.5) * tint;
         let green = 0.5 + (theme.g - 0.5) * tint;
         let blue = 0.5 + (theme.b - 0.5) * tint;
@@ -160,10 +161,8 @@ if hl.plugin.hyprglass then
         layers = { enabled = true },
     })
 
-    -- Override only the user-adjustable material properties. Everything else
-    -- falls through to HyprGlass's own default resolution chain, so the base
-    -- material stays faithful to the plugin instead of carrying a Vynx-tuned
-    -- interpretation of Liquid Glass.
+    -- Keep the optical material on HyprGlass's native defaults, but leave its
+    -- color tint transparent so Shell tint is the single source of bar color.
     hg.preset("vynx", {
         refraction_strength = ${root.refractionStrength},
         chromatic_aberration = ${root.chromaticAberration},
@@ -171,6 +170,7 @@ if hl.plugin.hyprglass then
         specular_strength = ${root.specularStrength},
         edge_thickness = ${root.edgeThickness},
         lens_distortion = ${root.lensDistortion},
+        tint_color = 0xffffff00,
     })
 
     -- HyprGlass owns the bar's background blur while this fragment is active.
@@ -184,7 +184,9 @@ if hl.plugin.hyprglass then
         blur_popups = false,
     })
 
-    hg.layer("quickshell:bar", { preset = "vynx", mask_threshold = 0.05 })
+    -- The bar deliberately uses an almost-transparent QML surface as its exact
+    -- glass mask. Keep this threshold low enough for the 0.5% neutral mask.
+    hg.layer("quickshell:bar", { preset = "vynx", mask_threshold = 0.001 })
     hg.layer("quickshell:verticalBar", { preset = "vynx", mask_threshold = 0.05 })
     hg.layer("quickshell:popup", { preset = "vynx", mask_threshold = 0.05 })
 end

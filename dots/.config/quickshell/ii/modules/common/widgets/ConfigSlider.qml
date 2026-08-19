@@ -11,6 +11,7 @@ RowLayout {
     Layout.rightMargin: 8
 
     property string text: ""
+    property string description: ""
     property string buttonIcon: ""
     property alias value: slider.value
     property alias stopIndicatorValues: slider.stopIndicatorValues
@@ -26,7 +27,16 @@ RowLayout {
         }
     }
 
-    
+    HoverHandler {
+        id: descriptionHover
+    }
+
+    StyledToolTip {
+        extraVisibleCondition: false
+        alternativeVisibleCondition: root.description.length > 0 && descriptionHover.hovered && !slider.pressed
+        text: root.description
+    }
+
     RowLayout {
         id: row
         spacing: 10
@@ -56,7 +66,7 @@ RowLayout {
             visible: false
         }
     }
-    
+
     StyledSlider {
         id: slider
         configuration: StyledSlider.Configuration.XS
