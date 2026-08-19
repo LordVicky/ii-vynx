@@ -342,6 +342,22 @@ ContentPage {
 
                 ConfigSlider {
                     visible: Config.options.appearance.surfaceStyle === "liquidGlass"
+                    buttonIcon: "blur_on"
+                    text: Translation.tr("Glass blur (%)")
+                    description: Translation.tr("Controls HyprGlass's own Gaussian background blur. 100% matches the HyprGlass default; 0% keeps the glass optics but removes background blur.")
+                    textWidth: 170
+                    value: LiquidGlassSettings.options.blurStrength / 2.0 * 100
+                    usePercentTooltip: false
+                    from: 0
+                    to: 200
+                    stopIndicatorValues: [100]
+                    onValueChanged: {
+                        LiquidGlassSettings.options.blurStrength = value / 100 * 2.0;
+                    }
+                }
+
+                ConfigSlider {
+                    visible: Config.options.appearance.surfaceStyle === "liquidGlass"
                     buttonIcon: "opacity"
                     text: Translation.tr("Shell tint (%)")
                     description: Translation.tr("Adds the shell palette over the glass. 0% keeps the bar free of shell-theme tint.")

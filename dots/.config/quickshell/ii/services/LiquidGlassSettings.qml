@@ -47,10 +47,11 @@ Singleton {
             property real shellTint: 0
             property real brightness: 0
 
-            // HyprGlass v0.7.0 default material values. refractionStrength also
-            // backs the main Glass intensity slider: 0.6 = 100%. The runtime
-            // uses that ratio as a master optical-strength multiplier while the
-            // advanced controls remain independently adjustable base values.
+            // HyprGlass v0.7.0 default material values. blurStrength is exposed
+            // directly as the compositor-side Glass blur control (2.0 = 100%).
+            // refractionStrength backs the main Glass intensity slider: 0.6 =
+            // 100%, and its ratio scales the independently adjustable optics.
+            property real blurStrength: 2.0
             property real refractionStrength: 0.6
             property real chromaticAberration: 0.5
             property real fresnelStrength: 0.6

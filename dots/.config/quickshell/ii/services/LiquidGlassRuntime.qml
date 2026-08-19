@@ -26,6 +26,7 @@ Scope {
     // the optical material. 100% resolves to HyprGlass v0.7.0's native values.
     // Edge thickness stays independent because it changes the slab geometry,
     // while refraction, dispersion, highlights and dome magnification scale.
+    readonly property real blurStrength: root.clampGlassValue(LiquidGlassSettings.options.blurStrength, 0.0, 4.0, 2.0)
     readonly property real glassIntensity: root.clampGlassValue(LiquidGlassSettings.options.refractionStrength / 0.6, 0.0, 2.0, 1.0)
     readonly property real refractionStrength: root.clampGlassValue(0.6 * root.glassIntensity, 0.0, 1.0, 0.6)
     readonly property real chromaticAberrationBase: root.clampGlassValue(LiquidGlassSettings.options.chromaticAberration, 0.0, 1.0, 0.5)
@@ -65,6 +66,7 @@ Scope {
         return Qt.rgba(red, green, blue, alpha);
     }
     readonly property string rendererConfigSignature: [
+        root.blurStrength,
         root.refractionStrength,
         root.chromaticAberration,
         root.fresnelStrength,
@@ -161,9 +163,12 @@ if hl.plugin.hyprglass then
         layers = { enabled = true },
     })
 
-    -- Keep the optical material on HyprGlass's native defaults, but leave its
-    -- color tint transparent so Shell tint is the single source of bar color.
+    -- Pin HyprGlass's native blur defaults and expose blur strength to the
+    -- shell control. Keep the plugin tint transparent so Shell tint remains
+    -- the single explicit color source for the bar.
     hg.preset("vynx", {
+        blur_strength = ${root.blurStrength},
+        blur_iterations = 3,
         refraction_strength = ${root.refractionStrength},
         chromatic_aberration = ${root.chromaticAberration},
         fresnel_strength = ${root.fresnelStrength},
