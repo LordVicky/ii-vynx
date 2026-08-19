@@ -22,7 +22,7 @@ cleanup() {
 
 trap cleanup EXIT
 
-read_hyprland_version() {
+read_hyprland_version_json() {
     local version_json=""
 
     if command -v hyprctl >/dev/null 2>&1; then
@@ -33,9 +33,29 @@ read_hyprland_version() {
         version_json="$(Hyprland --version-json 2>/dev/null || true)"
     fi
 
-    printf '%s' "$version_json" \
+    printf '%s' "$version_json"
+}
+
+extract_json_string() {
+    local json="$1"
+    local field="$2"
+
+    printf '%s' "$json" \
         | tr -d '\n' \
-        | sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)".*/\1/p'
+        | sed -n "s/.*\"${field}\"[[:space:]]*:[[:space:]]*\"\([^\"]*\)\".*/\1/p"
+}
+
+abi_suffix_from_hash() {
+    local abi_hash="$1"
+
+    case "$abi_hash" in
+        *_aq_*)
+            printf '_aq_%s' "${abi_hash#*_aq_}"
+            ;;
+        *)
+            return 1
+            ;;
+    esac
 }
 
 download_asset() {
@@ -82,7 +102,7 @@ check_runtime_dependencies() {
 }
 
 main() {
-    local hyprland_version entry hyprglass_release asset_url
+    local version_json hyprland_version abi_hash abi_suffix entry hyprglass_release asset_url
     local target_dir target magic download_status dependency_status
 
     if [ ! -r "$MANIFEST" ]; then
@@ -90,25 +110,34 @@ main() {
         return 5
     fi
 
-    hyprland_version="$(read_hyprland_version)"
+    version_json="$(read_hyprland_version_json)"
+    hyprland_version="$(extract_json_string "$version_json" version)"
+    abi_hash="$(extract_json_string "$version_json" abiHash)"
+    abi_suffix="$(abi_suffix_from_hash "$abi_hash" 2>/dev/null || true)"
+
     if [[ ! "$hyprland_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
         log "Could not determine the running Hyprland version; skipping bundled HyprGlass."
         return 5
     fi
 
-    entry="$(awk -F '\t' -v version="$hyprland_version" '$1 == version { print; exit }' "$MANIFEST")"
+    if [[ ! "$abi_suffix" =~ ^_aq_[0-9]+(\.[0-9]+)+(_[a-z]+_[0-9]+(\.[0-9]+)+)+$ ]]; then
+        log "Could not determine the running Hyprland dependency ABI; skipping bundled HyprGlass."
+        return 5
+    fi
+
+    entry="$(awk -F '\t' -v abi="$abi_suffix" '$1 == abi { print; exit }' "$MANIFEST")"
     if [ -z "$entry" ]; then
-        log "No bundled HyprGlass build is registered for Hyprland $hyprland_version."
+        log "No bundled HyprGlass build is registered for Hyprland $hyprland_version ABI $abi_suffix."
         return 2
     fi
 
     IFS=$'\t' read -r _ hyprglass_release asset_url <<< "$entry"
     if [ -z "$asset_url" ]; then
-        log "Invalid HyprGlass compatibility entry for Hyprland $hyprland_version."
+        log "Invalid HyprGlass compatibility entry for ABI $abi_suffix."
         return 5
     fi
 
-    target_dir="$INSTALL_ROOT/$hyprland_version"
+    target_dir="$INSTALL_ROOT/$abi_suffix"
     target="$target_dir/hyprglass.so"
 
     if [ -s "$target" ]; then
@@ -117,7 +146,7 @@ main() {
             check_runtime_dependencies "$target"
             dependency_status=$?
             if [ "$dependency_status" -eq 0 ]; then
-                log "HyprGlass $hyprglass_release is already installed for Hyprland $hyprland_version."
+                log "HyprGlass $hyprglass_release is already installed for Hyprland $hyprland_version ABI $abi_suffix."
                 return 0
             fi
             return "$dependency_status"
@@ -129,7 +158,7 @@ main() {
 
     TMP_FILE="$(mktemp "${TMPDIR:-/tmp}/ii-vynx-hyprglass.XXXXXX")" || return 5
 
-    log "Installing HyprGlass $hyprglass_release for Hyprland $hyprland_version..."
+    log "Installing HyprGlass $hyprglass_release for Hyprland $hyprland_version ABI $abi_suffix..."
     download_asset "$asset_url" "$TMP_FILE"
     download_status=$?
     if [ "$download_status" -ne 0 ]; then
