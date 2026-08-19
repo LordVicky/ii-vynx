@@ -22,6 +22,10 @@ Item { // Bar content region
 
     property bool hasActiveWindows: false
     property bool showBarBackground: root.hasActiveWindows && Config.options.bar.barBackgroundStyle === 2 || Config.options.bar.barBackgroundStyle === 1
+    readonly property bool liquidGlassSurfaceActive: Config.options.appearance.surfaceStyle === "liquidGlass"
+        && RuntimeServices.liquidGlass?.ready === true
+        && RuntimeServices.liquidGlass?.hyprGlassLoaded === true
+        && RuntimeServices.liquidGlass?.configApplied === true
 
     Connections {
         enabled: Config.options.bar.barBackgroundStyle === 2
@@ -77,7 +81,7 @@ Item { // Bar content region
         }
         color: root.showBarBackground
             ? (Config.options.appearance.surfaceStyle === "liquidGlass"
-                ? ColorUtils.transparentize(Appearance.colors.colLayer0Base, 0.18)
+                ? ColorUtils.transparentize(Appearance.colors.colLayer0Base, root.liquidGlassSurfaceActive ? 0.82 : 0.18)
                 : Appearance.colors.colLayer0)
             : "transparent"
         radius: Config.options.bar.cornerStyle === 1 ? Appearance.rounding.windowRounding : 0
