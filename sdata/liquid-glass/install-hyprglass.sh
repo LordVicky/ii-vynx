@@ -8,10 +8,19 @@ MANIFEST="$SCRIPT_DIR/hyprglass-compat.tsv"
 LICENSE_SOURCE="$REPO_ROOT/licenses/HyprGlass-BSD-3-Clause.txt"
 INSTALL_ROOT="$HOME/.local/lib/ii-vynx/hyprglass"
 LICENSE_TARGET="$HOME/.local/share/licenses/ii-vynx/HyprGlass-BSD-3-Clause.txt"
+TMP_FILE=""
 
 log() {
     printf '%s\n' "$*"
 }
+
+cleanup() {
+    if [ -n "${TMP_FILE:-}" ]; then
+        rm -f -- "$TMP_FILE"
+    fi
+}
+
+trap cleanup EXIT
 
 read_hyprland_commit() {
     local version_json=""
@@ -48,7 +57,7 @@ download_asset() {
 
 main() {
     local commit entry hyprland_version hyprglass_release asset_url
-    local target_dir target tmp magic
+    local target_dir target magic download_status
 
     if [ ! -r "$MANIFEST" ]; then
         log "HyprGlass compatibility manifest is missing: $MANIFEST"
@@ -77,30 +86,37 @@ main() {
     target="$target_dir/hyprglass.so"
 
     if [ -s "$target" ]; then
-        log "HyprGlass $hyprglass_release is already installed for Hyprland $hyprland_version."
-        return 0
+        magic="$(od -An -tx1 -N4 "$target" 2>/dev/null | tr -d '[:space:]')"
+        if [ "$magic" = "7f454c46" ]; then
+            log "HyprGlass $hyprglass_release is already installed for Hyprland $hyprland_version."
+            return 0
+        fi
+
+        log "Existing HyprGlass binary is invalid; replacing it."
+        rm -f -- "$target"
     fi
 
-    tmp="$(mktemp "${TMPDIR:-/tmp}/ii-vynx-hyprglass.XXXXXX")" || return 5
-    trap 'rm -f "$tmp"' EXIT INT TERM
+    TMP_FILE="$(mktemp "${TMPDIR:-/tmp}/ii-vynx-hyprglass.XXXXXX")" || return 5
 
     log "Installing HyprGlass $hyprglass_release for Hyprland $hyprland_version..."
-    if ! download_asset "$asset_url" "$tmp"; then
-        case $? in
+    download_asset "$asset_url" "$TMP_FILE"
+    download_status=$?
+    if [ "$download_status" -ne 0 ]; then
+        case "$download_status" in
             127) log "Neither curl nor wget is available; cannot download HyprGlass." ;;
             *) log "Failed to download the HyprGlass prebuilt binary." ;;
         esac
         return 3
     fi
 
-    magic="$(od -An -tx1 -N4 "$tmp" 2>/dev/null | tr -d '[:space:]')"
+    magic="$(od -An -tx1 -N4 "$TMP_FILE" 2>/dev/null | tr -d '[:space:]')"
     if [ "$magic" != "7f454c46" ]; then
         log "Downloaded HyprGlass asset is not an ELF binary; refusing to install it."
         return 4
     fi
 
     mkdir -p "$target_dir"
-    install -m 0644 "$tmp" "$target"
+    install -m 0644 "$TMP_FILE" "$target"
 
     if [ -r "$LICENSE_SOURCE" ]; then
         mkdir -p "$(dirname "$LICENSE_TARGET")"
