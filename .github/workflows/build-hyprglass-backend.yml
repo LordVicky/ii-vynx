@@ -16,6 +16,8 @@ env:
   HYPRLAND_COMMIT: 5c9377c15f85c50648f35ca5a213754f95b93ca0
   HYPRGLASS_VERSION: v0.7.0
   PLATFORM_ID: fedora-44-x86_64
+  LUA_VERSION: 5.5.1
+  LUA_SHA256: 1c4b4068d67061f2a2231ad2b5422e77acea1487ea9890f6320af614f4373dce
 
 jobs:
   fedora44-x86_64:
@@ -35,7 +37,9 @@ jobs:
             pixman-devel \
             libdrm-devel \
             binutils \
-            file
+            file \
+            curl \
+            tar
 
       - name: Enable Hyprland COPR
         run: dnf -y copr enable nett00n/hyprland
@@ -77,14 +81,27 @@ jobs:
 
           HEADER_ROOT="$RUNNER_TEMP/vynx-hyprland-headers"
           PC_ROOT="$RUNNER_TEMP/vynx-hyprland-pkgconfig"
+          LUA_ARCHIVE="$RUNNER_TEMP/lua-${LUA_VERSION}.tar.gz"
+          LUA_ROOT="$RUNNER_TEMP/lua-${LUA_VERSION}"
           mkdir -p "$HEADER_ROOT/hyprland" "$PC_ROOT"
 
           cp -a hyprland-headers-src/src "$HEADER_ROOT/hyprland/src"
 
           # v0.56.1 -> v0.56.2 changed no protocol definitions. The Fedora
           # devel package therefore provides the generated protocol headers we
-          # need without configuring/building all of Hyprland (and Lua 5.5).
+          # need without configuring/building all of Hyprland.
           cp -a /usr/include/hyprland/protocols "$HEADER_ROOT/hyprland/protocols"
+
+          # HyprGlass uses Hyprland's Lua plugin API directly, but Fedora 44's
+          # system Lua is 5.4. Supply only the exact Lua 5.5 headers expected by
+          # Hyprland 0.56.x; no Lua runtime is installed or linked here.
+          curl --fail --location --silent --show-error \
+            "https://www.lua.org/ftp/lua-${LUA_VERSION}.tar.gz" \
+            --output "$LUA_ARCHIVE"
+          printf '%s  %s\n' "$LUA_SHA256" "$LUA_ARCHIVE" | sha256sum --check --status
+          tar -xzf "$LUA_ARCHIVE" -C "$RUNNER_TEMP"
+          test -r "$LUA_ROOT/src/lua.h"
+          test -r "$LUA_ROOT/src/lauxlib.h"
 
           aq="$(pkg-config --modversion aquamarine)"
           hu="$(pkg-config --modversion hyprutils)"
@@ -122,10 +139,12 @@ jobs:
           sed \
             -e "s|^prefix=.*|prefix=$HEADER_ROOT|" \
             -e "s|^Version:.*|Version: $HYPRLAND_VERSION|" \
+            -e "/^Cflags:/ s|$| -I$LUA_ROOT/src|" \
             "$system_pc" > "$PC_ROOT/hyprland.pc"
 
           echo "PKG_CONFIG_PATH=$PC_ROOT${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}" >> "$GITHUB_ENV"
           echo "HYPRLAND_HEADER_ROOT=$HEADER_ROOT" >> "$GITHUB_ENV"
+          echo "LUA_HEADER_ROOT=$LUA_ROOT/src" >> "$GITHUB_ENV"
 
       - name: Verify target header and dependency ABI
         shell: bash
@@ -144,6 +163,9 @@ jobs:
           test "$(major_minor "$(pkg-config --modversion hyprlang)")" = "0.6"
           grep -q "GIT_COMMIT_HASH.*$HYPRLAND_COMMIT" "$HYPRLAND_HEADER_ROOT/hyprland/src/version.h"
           test -s "$HYPRLAND_HEADER_ROOT/hyprland/src/render/shaders/Shaders.hpp"
+          test -r "$LUA_HEADER_ROOT/lua.h"
+          test -r "$LUA_HEADER_ROOT/lauxlib.h"
+          pkg-config --cflags hyprland | grep -F -- "-I$LUA_HEADER_ROOT" >/dev/null
 
       - name: Build HyprGlass v0.7.0
         run: |
