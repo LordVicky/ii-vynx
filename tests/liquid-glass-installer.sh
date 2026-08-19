@@ -5,7 +5,7 @@ set -euo pipefail
 ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 SOURCE_INSTALLER="$ROOT/sdata/liquid-glass/install-hyprglass.sh"
 SOURCE_LICENSE="$ROOT/licenses/HyprGlass-BSD-3-Clause.txt"
-HYPRLAND_VERSION="0.56.0"
+HYPRLAND_VERSION="0.56.1"
 FEDORA_COMMIT="5c9377c15f85c50648f35ca5a213754f95b93ca0"
 
 TMP_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/ii-vynx-glass-test.XXXXXX")"

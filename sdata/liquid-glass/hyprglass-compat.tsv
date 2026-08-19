@@ -1,3 +1,4 @@
 # Hyprland version	HyprGlass release	Prebuilt asset URL
 # Select by release version; HyprGlass performs its own dependency-ABI compatibility check when loaded.
 0.56.0	v0.7.0	https://github.com/hyprnux/hyprglass/releases/download/v0.7.0/hyprglass.so
+0.56.1	v0.7.0	https://github.com/hyprnux/hyprglass/releases/download/v0.7.0/hyprglass.so
