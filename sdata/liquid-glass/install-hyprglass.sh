@@ -55,9 +55,35 @@ download_asset() {
     return 127
 }
 
+check_runtime_dependencies() {
+    local binary="$1"
+    local output status
+
+    if ! command -v ldd >/dev/null 2>&1; then
+        log "ldd is unavailable; cannot validate HyprGlass runtime dependencies."
+        return 5
+    fi
+
+    output="$(ldd "$binary" 2>&1)"
+    status=$?
+    if [ "$status" -ne 0 ]; then
+        log "Could not inspect HyprGlass runtime dependencies."
+        printf '%s\n' "$output"
+        return 4
+    fi
+
+    if printf '%s\n' "$output" | grep -q 'not found'; then
+        log "HyprGlass prebuilt has unresolved runtime dependencies:"
+        printf '%s\n' "$output" | grep 'not found'
+        return 4
+    fi
+
+    return 0
+}
+
 main() {
     local hyprland_version entry hyprglass_release asset_url
-    local target_dir target magic download_status
+    local target_dir target magic download_status dependency_status
 
     if [ ! -r "$MANIFEST" ]; then
         log "HyprGlass compatibility manifest is missing: $MANIFEST"
@@ -88,8 +114,13 @@ main() {
     if [ -s "$target" ]; then
         magic="$(od -An -tx1 -N4 "$target" 2>/dev/null | tr -d '[:space:]')"
         if [ "$magic" = "7f454c46" ]; then
-            log "HyprGlass $hyprglass_release is already installed for Hyprland $hyprland_version."
-            return 0
+            check_runtime_dependencies "$target"
+            dependency_status=$?
+            if [ "$dependency_status" -eq 0 ]; then
+                log "HyprGlass $hyprglass_release is already installed for Hyprland $hyprland_version."
+                return 0
+            fi
+            return "$dependency_status"
         fi
 
         log "Existing HyprGlass binary is invalid; replacing it."
@@ -113,6 +144,12 @@ main() {
     if [ "$magic" != "7f454c46" ]; then
         log "Downloaded HyprGlass asset is not an ELF binary; refusing to install it."
         return 4
+    fi
+
+    check_runtime_dependencies "$TMP_FILE"
+    dependency_status=$?
+    if [ "$dependency_status" -ne 0 ]; then
+        return "$dependency_status"
     fi
 
     mkdir -p "$target_dir"

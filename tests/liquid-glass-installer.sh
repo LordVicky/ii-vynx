@@ -5,8 +5,8 @@ set -euo pipefail
 ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 SOURCE_INSTALLER="$ROOT/sdata/liquid-glass/install-hyprglass.sh"
 SOURCE_LICENSE="$ROOT/licenses/HyprGlass-BSD-3-Clause.txt"
-HYPRLAND_VERSION="0.56.1"
-FEDORA_COMMIT="5c9377c15f85c50648f35ca5a213754f95b93ca0"
+HYPRLAND_VERSION="0.56.0"
+FEDORA_COMMIT="36b2e0cfe0c6094dbc47bd42a437431315bb3087"
 
 TMP_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/ii-vynx-glass-test.XXXXXX")"
 trap 'rm -rf -- "$TMP_ROOT"' EXIT
@@ -44,7 +44,12 @@ done
 printf '\177ELFii-vynx-test' > "$output"
 EOF
 
-chmod +x "$TMP_ROOT/bin/hyprctl" "$TMP_ROOT/bin/curl"
+cat > "$TMP_ROOT/bin/ldd" <<'EOF'
+#!/usr/bin/env sh
+exit 0
+EOF
+
+chmod +x "$TMP_ROOT/bin/hyprctl" "$TMP_ROOT/bin/curl" "$TMP_ROOT/bin/ldd"
 
 TEST_HOME="$TMP_ROOT/home"
 TEST_PATH="$TMP_ROOT/bin:/usr/bin:/bin"
@@ -63,6 +68,28 @@ second_mtime="$(stat -c %Y "$TARGET")"
 
 if [ "$first_mtime" != "$second_mtime" ]; then
     echo "Installer replaced an already valid managed binary." >&2
+    exit 1
+fi
+
+rm -f "$TARGET"
+cat > "$TMP_ROOT/bin/ldd" <<'EOF'
+#!/usr/bin/env sh
+printf '%s\n' 'libaquamarine.so.12 => not found'
+exit 0
+EOF
+
+set +e
+HOME="$TEST_HOME" PATH="$TEST_PATH" bash "$INSTALLER" >/dev/null 2>&1
+status=$?
+set -e
+
+if [ "$status" -ne 4 ]; then
+    echo "Installer did not reject an unresolved runtime dependency." >&2
+    exit 1
+fi
+
+if [ -e "$TARGET" ]; then
+    echo "Installer kept a binary with unresolved runtime dependencies." >&2
     exit 1
 fi
 
