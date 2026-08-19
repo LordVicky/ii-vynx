@@ -7,6 +7,9 @@ HYPRGLASS_REPO="${HYPRGLASS_REPO:-https://github.com/hyprnux/hyprglass.git}"
 HYPRLAND_REPO="${HYPRLAND_REPO:-https://github.com/hyprwm/Hyprland.git}"
 HYPRLAND_PROTOCOLS_REPO="${HYPRLAND_PROTOCOLS_REPO:-https://github.com/hyprwm/hyprland-protocols.git}"
 HYPRLAND_PROTOCOLS_REF="${HYPRLAND_PROTOCOLS_REF:-v0.7.0}"
+LUA_RELEASE="${LUA_RELEASE:-5.5.1}"
+LUA_URL="${LUA_URL:-https://www.lua.org/ftp/lua-${LUA_RELEASE}.tar.gz}"
+LUA_SHA256="${LUA_SHA256:-1c4b4068d67061f2a2231ad2b5422e77acea1487ea9890f6320af614f4373dce}"
 INSTALL_ROOT="$HOME/.local/lib/ii-vynx/hyprglass"
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd -- "$SCRIPT_DIR/../.." && pwd)"
@@ -59,6 +62,24 @@ pkg_version() {
     pkg-config --modversion "$1" 2>/dev/null
 }
 
+prepare_lua_headers() {
+    local archive="$TMP_ROOT/lua-${LUA_RELEASE}.tar.gz"
+    local source_dir="$TMP_ROOT/lua-${LUA_RELEASE}"
+    local header
+
+    log "Preparing Lua $LUA_RELEASE headers for Hyprland's Lua plugin API..."
+    curl --fail --location --silent --show-error "$LUA_URL" --output "$archive"
+    printf '%s  %s\n' "$LUA_SHA256" "$archive" | sha256sum --check --status
+    tar -xzf "$archive" -C "$TMP_ROOT"
+
+    for header in lua.h luaconf.h lauxlib.h lualib.h; do
+        if [ ! -r "$source_dir/src/$header" ]; then
+            log "Lua source archive is missing required header: $header"
+            return 4
+        fi
+    done
+}
+
 prepare_hyprland_headers() {
     local runtime_version="$1"
     local runtime_commit="$2"
@@ -67,6 +88,7 @@ prepare_hyprland_headers() {
     local hg_full="$5"
     local hc_full="$6"
     local hlg_full="$7"
+    local lua_include="$8"
     local source_dir="$TMP_ROOT/hyprland"
     local protocols_repo="$TMP_ROOT/hyprland-protocols"
     local pc_dir="$TMP_ROOT/pkgconfig"
@@ -169,16 +191,16 @@ URL: https://github.com/hyprwm/Hyprland
 Description: Temporary exact Hyprland headers for ii-vynx HyprGlass build
 Version: $runtime_version
 Requires: aquamarine, hyprcursor, hyprgraphics, hyprlang, hyprutils, libdrm, egl, cairo, xkbcommon, libinput, wayland-server, xcb, xcb-render, xcb-xfixes, xcb-icccm, xcb-composite, xcb-res, xcb-errors
-Cflags: -I$TMP_ROOT -I$source_dir/protocols -I$source_dir -I$source_dir/src
+Cflags: -I$TMP_ROOT -I$source_dir/protocols -I$source_dir -I$source_dir/src -I$lua_include
 EOF_PC
 }
 
 main() {
     local command version_json runtime_version runtime_commit abi_hash runtime_abi
     local aq_full hu_full hg_full hc_full hlg_full aq hu hg hc hlg build_abi
-    local source_dir pc_dir target_dir target magic deps
+    local source_dir pc_dir lua_include target_dir target magic deps
 
-    for command in hyprctl pkg-config git make g++ python3 hyprwayland-scanner ldd od install awk sed grep tr mktemp; do
+    for command in hyprctl pkg-config git make g++ python3 hyprwayland-scanner curl tar sha256sum ldd od install awk sed grep tr mktemp; do
         require_command "$command" || return 5
     done
 
@@ -228,9 +250,12 @@ main() {
     TMP_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/ii-vynx-hyprglass-build.XXXXXX")"
     source_dir="$TMP_ROOT/hyprglass"
     pc_dir="$TMP_ROOT/pkgconfig"
+    lua_include="$TMP_ROOT/lua-${LUA_RELEASE}/src"
+
+    prepare_lua_headers
 
     log "Preparing exact Hyprland $runtime_version plugin headers without hyprland-devel..."
-    prepare_hyprland_headers "$runtime_version" "$runtime_commit" "$aq_full" "$hu_full" "$hg_full" "$hc_full" "$hlg_full"
+    prepare_hyprland_headers "$runtime_version" "$runtime_commit" "$aq_full" "$hu_full" "$hg_full" "$hc_full" "$hlg_full" "$lua_include"
 
     log "Building HyprGlass $HYPRGLASS_REF for Hyprland $runtime_version ABI $runtime_abi..."
     git clone --quiet --depth 1 --branch "$HYPRGLASS_REF" "$HYPRGLASS_REPO" "$source_dir"
