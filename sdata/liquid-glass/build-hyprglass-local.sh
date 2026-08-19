@@ -7,6 +7,7 @@ HYPRGLASS_REPO="${HYPRGLASS_REPO:-https://github.com/hyprnux/hyprglass.git}"
 HYPRLAND_REPO="${HYPRLAND_REPO:-https://github.com/hyprwm/Hyprland.git}"
 HYPRLAND_PROTOCOLS_REPO="${HYPRLAND_PROTOCOLS_REPO:-https://github.com/hyprwm/hyprland-protocols.git}"
 HYPRLAND_PROTOCOLS_REF="${HYPRLAND_PROTOCOLS_REF:-v0.7.0}"
+HYPRGLASS_LIVE_BAR_REFRESH="${HYPRGLASS_LIVE_BAR_REFRESH:-1}"
 LUA_RELEASE="${LUA_RELEASE:-5.5.1}"
 LUA_URL="${LUA_URL:-https://www.lua.org/ftp/lua-${LUA_RELEASE}.tar.gz}"
 LUA_SHA256="${LUA_SHA256:-1c4b4068d67061f2a2231ad2b5422e77acea1487ea9890f6320af614f4373dce}"
@@ -60,6 +61,50 @@ major_minor() {
 
 pkg_version() {
     pkg-config --modversion "$1" 2>/dev/null
+}
+
+apply_live_bar_refresh_ab() {
+    local source_dir="$1"
+    local target="$source_dir/src/GlassLayerSurface.cpp"
+
+    case "$HYPRGLASS_LIVE_BAR_REFRESH" in
+        0)
+            log "Building upstream HyprGlass layer cache behavior (live bar refresh A/B disabled)."
+            return 0
+            ;;
+        1) ;;
+        *)
+            log "HYPRGLASS_LIVE_BAR_REFRESH must be 0 or 1."
+            return 5
+            ;;
+    esac
+
+    python3 - "$target" <<'PY'
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+text = path.read_text(encoding="utf-8")
+old = """    const bool backgroundChanged = !m_hasCachedSample ||
+                                   currentGeneration != m_lastSceneGeneration ||
+                                   isAnimating;
+"""
+new = """    // ii-vynx A/B: the upstream scene-generation cache does not track
+    // per-frame window geometry or lower layer-surface content changes. Force
+    // the horizontal shell bar to resample whenever Hyprland renders it so a
+    // moving window or wallpaper parallax is reflected by the glass live.
+    const bool forceLiveBarRefresh = layerSurface->m_namespace == \"quickshell:bar\";
+    const bool backgroundChanged = forceLiveBarRefresh ||
+                                   !m_hasCachedSample ||
+                                   currentGeneration != m_lastSceneGeneration ||
+                                   isAnimating;
+"""
+if old not in text:
+    raise SystemExit("HyprGlass live-bar A/B patch no longer matches GlassLayerSurface.cpp")
+path.write_text(text.replace(old, new, 1), encoding="utf-8")
+PY
+
+    log "Enabled ii-vynx live bar background refresh A/B."
 }
 
 prepare_lua_headers() {
@@ -259,6 +304,7 @@ main() {
 
     log "Building HyprGlass $HYPRGLASS_REF for Hyprland $runtime_version ABI $runtime_abi..."
     git clone --quiet --depth 1 --branch "$HYPRGLASS_REF" "$HYPRGLASS_REPO" "$source_dir"
+    apply_live_bar_refresh_ab "$source_dir"
     PKG_CONFIG_PATH="$pc_dir${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}" make -C "$source_dir" -j"$(nproc)"
 
     magic="$(od -An -tx1 -N4 "$source_dir/hyprglass.so" 2>/dev/null | tr -d '[:space:]')"
