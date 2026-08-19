@@ -8,19 +8,16 @@ QtObject {
 
     property bool hyprGlassLoaded: false
     property bool hyprGlassInstalled: false
-    property bool hyprGlassWasEnabled: false
     property bool shellManagedPlugin: false
     property bool configApplied: false
     property bool ready: false
     property string status: "probing"
     property string errorMessage: ""
 
+    property string hyprlandCommit: ""
+    property string managedPluginPath: ""
     property bool checkingAfterLoad: false
     readonly property bool darkMode: Appearance.m3colors.darkmode
-
-    function stripAnsi(text) {
-        return text.replace(/\x1B\[[0-?]*[ -\/]*[@-~]/g, "");
-    }
 
     function finish(statusValue, errorValue) {
         root.status = statusValue;
@@ -38,31 +35,42 @@ QtObject {
         loadedProbe.running = true;
     }
 
-    function probeHyprpm() {
-        if (hyprpmProbe.running)
+    function probeHyprlandVersion() {
+        if (versionProbe.running)
             return;
 
         root.status = "probing";
-        hyprpmProbe.running = true;
+        versionProbe.running = true;
+    }
+
+    function probeBundledPlugin() {
+        if (bundleProbe.running)
+            return;
+
+        if (!/^[0-9a-f]{7,64}$/i.test(root.hyprlandCommit)) {
+            root.finish("error", "Hyprland returned an invalid commit identifier.");
+            return;
+        }
+
+        root.status = "probing";
+        bundleProbe.command = [
+            "sh",
+            "-c",
+            `plugin="$HOME/.local/lib/ii-vynx/hyprglass/${root.hyprlandCommit}/hyprglass.so"; test -f "$plugin" || exit 66; printf '%s\\n' "$plugin"`
+        ];
+        bundleProbe.running = true;
     }
 
     function loadManagedPlugin() {
-        if (hyprpmEnable.running || hyprpmReload.running)
+        if (pluginLoad.running || root.managedPluginPath.length === 0)
             return;
 
-        // Claim ownership before starting hyprpm so teardown can always roll
-        // back a partially completed enable sequence.
+        // Claim ownership before loading so teardown can roll back if the
+        // runtime is destroyed between hyprctl load and the completion probe.
         root.shellManagedPlugin = true;
         root.status = "loading";
-        hyprpmEnable.running = true;
-    }
-
-    function reloadUserEnabledPlugin() {
-        if (hyprpmReload.running)
-            return;
-
-        root.status = "loading";
-        hyprpmReload.running = true;
+        pluginLoad.command = ["hyprctl", "plugin", "load", root.managedPluginPath];
+        pluginLoad.running = true;
     }
 
     function buildGlassConfigCommand() {
@@ -133,15 +141,25 @@ hyprctl reload
 
     function shutdown() {
         const managed = root.shellManagedPlugin;
+        const pluginPath = root.managedPluginPath;
         root.shellManagedPlugin = false;
         root.configApplied = false;
+
+        if (managed && pluginPath.length > 0) {
+            Quickshell.execDetached([
+                "sh",
+                "-c",
+                "rm -f \"$HOME/.config/hypr/hyprland/shellOverrides/liquid-glass.lua\"; hyprctl plugin unload \"$1\" >/dev/null 2>&1 || true; hyprctl reload >/dev/null 2>&1",
+                "vynx-liquid-glass",
+                pluginPath
+            ]);
+            return;
+        }
 
         Quickshell.execDetached([
             "sh",
             "-c",
-            managed
-                ? "rm -f \"$HOME/.config/hypr/hyprland/shellOverrides/liquid-glass.lua\"; hyprpm disable hyprglass >/dev/null 2>&1; hyprpm reload >/dev/null 2>&1"
-                : "rm -f \"$HOME/.config/hypr/hyprland/shellOverrides/liquid-glass.lua\"; hyprctl reload >/dev/null 2>&1"
+            "rm -f \"$HOME/.config/hypr/hyprland/shellOverrides/liquid-glass.lua\"; hyprctl reload >/dev/null 2>&1"
         ]);
     }
 
@@ -184,96 +202,98 @@ hyprctl reload
             root.hyprGlassLoaded = loaded;
 
             if (loaded) {
+                root.hyprGlassInstalled = true;
                 root.applyConfig();
                 return;
             }
 
             if (root.checkingAfterLoad) {
-                root.finish("error", "HyprGlass did not load after hyprpm reload.");
+                root.shellManagedPlugin = false;
+                root.finish("error", "HyprGlass did not load after hyprctl plugin load.");
                 return;
             }
 
-            root.probeHyprpm();
+            root.probeHyprlandVersion();
         }
     }
 
     Process {
-        id: hyprpmProbe
+        id: versionProbe
         running: false
-        command: ["sh", "-c", "command -v hyprpm >/dev/null 2>&1 && hyprpm list"]
+        command: ["hyprctl", "-j", "version"]
 
         stdout: StdioCollector {
-            id: hyprpmOutput
+            id: versionOutput
         }
         stderr: StdioCollector {
-            id: hyprpmError
+            id: versionError
         }
 
         onExited: (exitCode, exitStatus) => {
             if (exitCode !== 0) {
-                root.finish("unavailable", hyprpmError.text.trim() || "hyprpm is not available.");
+                root.finish("error", versionError.text.trim() || "Could not query the Hyprland version.");
                 return;
             }
 
-            const clean = root.stripAnsi(hyprpmOutput.text);
-            const lower = clean.toLowerCase();
-            const marker = lower.indexOf("plugin hyprglass");
-
-            if (marker === -1) {
-                root.finish("unavailable", "HyprGlass is not installed through hyprpm.");
+            try {
+                const version = JSON.parse(versionOutput.text);
+                root.hyprlandCommit = String(version.commit ?? "").trim();
+            } catch (error) {
+                root.finish("error", "Could not parse the Hyprland version.");
                 return;
             }
 
-            root.hyprGlassInstalled = true;
-
-            const pluginBlock = clean.slice(marker, marker + 320);
-            const enabledMatch = pluginBlock.match(/enabled:\s*(true|false)/i);
-            if (!enabledMatch) {
-                root.finish("error", "Could not determine HyprGlass hyprpm state.");
-                return;
-            }
-
-            root.hyprGlassWasEnabled = enabledMatch[1].toLowerCase() === "true";
-
-            if (root.hyprGlassWasEnabled)
-                root.reloadUserEnabledPlugin();
-            else
-                root.loadManagedPlugin();
+            root.probeBundledPlugin();
         }
     }
 
     Process {
-        id: hyprpmEnable
+        id: bundleProbe
         running: false
-        command: ["hyprpm", "enable", "hyprglass"]
+        command: ["true"]
+
+        stdout: StdioCollector {
+            id: bundleOutput
+        }
+        stderr: StdioCollector {
+            id: bundleError
+        }
+
+        onExited: (exitCode, exitStatus) => {
+            if (exitCode === 66) {
+                root.finish("unavailable", `No bundled HyprGlass build for Hyprland commit ${root.hyprlandCommit}.`);
+                return;
+            }
+
+            if (exitCode !== 0) {
+                root.finish("error", bundleError.text.trim() || "Could not resolve the bundled HyprGlass plugin.");
+                return;
+            }
+
+            root.managedPluginPath = bundleOutput.text.trim();
+            if (root.managedPluginPath.length === 0) {
+                root.finish("error", "Bundled HyprGlass path was empty.");
+                return;
+            }
+
+            root.hyprGlassInstalled = true;
+            root.loadManagedPlugin();
+        }
+    }
+
+    Process {
+        id: pluginLoad
+        running: false
+        command: ["true"]
 
         stderr: StdioCollector {
-            id: hyprpmEnableError
+            id: pluginLoadError
         }
 
         onExited: (exitCode, exitStatus) => {
             if (exitCode !== 0) {
                 root.shellManagedPlugin = false;
-                root.finish("error", hyprpmEnableError.text.trim() || "Could not enable HyprGlass.");
-                return;
-            }
-
-            root.reloadUserEnabledPlugin();
-        }
-    }
-
-    Process {
-        id: hyprpmReload
-        running: false
-        command: ["hyprpm", "reload"]
-
-        stderr: StdioCollector {
-            id: hyprpmReloadError
-        }
-
-        onExited: (exitCode, exitStatus) => {
-            if (exitCode !== 0) {
-                root.finish("error", hyprpmReloadError.text.trim() || "Could not reload Hyprland plugins.");
+                root.finish("error", pluginLoadError.text.trim() || "Could not load the bundled HyprGlass plugin.");
                 return;
             }
 
