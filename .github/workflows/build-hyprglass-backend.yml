@@ -67,6 +67,14 @@ jobs:
             exit 1
           fi
 
+          # Hyprland generates Shaders.hpp and *.inc files before compiling;
+          # these are part of the installed private header set but are not in
+          # the source tag itself. Generate them from the exact 0.56.1 GLSL.
+          (
+            cd hyprland-headers-src
+            ./scripts/generateShaderIncludes.sh
+          )
+
           HEADER_ROOT="$RUNNER_TEMP/vynx-hyprland-headers"
           PC_ROOT="$RUNNER_TEMP/vynx-hyprland-pkgconfig"
           mkdir -p "$HEADER_ROOT/hyprland" "$PC_ROOT"
@@ -135,6 +143,7 @@ jobs:
           test "$(major_minor "$(pkg-config --modversion hyprcursor)")" = "0.1"
           test "$(major_minor "$(pkg-config --modversion hyprlang)")" = "0.6"
           grep -q "GIT_COMMIT_HASH.*$HYPRLAND_COMMIT" "$HYPRLAND_HEADER_ROOT/hyprland/src/version.h"
+          test -s "$HYPRLAND_HEADER_ROOT/hyprland/src/render/shaders/Shaders.hpp"
 
       - name: Build HyprGlass v0.7.0
         run: |
