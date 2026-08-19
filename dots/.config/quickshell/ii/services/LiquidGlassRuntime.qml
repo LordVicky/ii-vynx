@@ -3,7 +3,7 @@ import Quickshell
 import Quickshell.Io
 import qs.modules.common
 
-QtObject {
+Scope {
     id: root
 
     property bool hyprGlassLoaded: false
