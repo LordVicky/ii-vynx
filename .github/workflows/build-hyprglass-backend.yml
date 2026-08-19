@@ -9,7 +9,7 @@ on:
       - .github/workflows/build-hyprglass-backend.yml
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   fedora44-x86_64:
@@ -78,6 +78,7 @@ jobs:
           HLG="$(major_minor "$(pkg-config --modversion hyprlang)")"
           ABI_SUFFIX="_aq_${AQ}_hu_${HU}_hg_${HG}_hc_${HC}_hlg_${HLG}"
           ARTIFACT_NAME="hyprglass-fedora44-x86_64${ABI_SUFFIX}"
+          ASSET_NAME="${ARTIFACT_NAME}.so"
 
           {
             echo "hyprglass_release=v0.7.0"
@@ -91,11 +92,12 @@ jobs:
           } | tee hyprglass-metadata.txt
 
           echo "artifact_name=$ARTIFACT_NAME" >> "$GITHUB_OUTPUT"
+          echo "asset_name=$ASSET_NAME" >> "$GITHUB_OUTPUT"
 
       - name: Stage artifact
         run: |
           mkdir -p release
-          cp hyprglass/hyprglass.so release/
+          cp hyprglass/hyprglass.so "release/${{ steps.abi.outputs.asset_name }}"
           cp hyprglass-metadata.txt hyprglass-ldd.txt hyprglass-needed.txt release/
 
       - name: Upload backend artifact
@@ -105,3 +107,19 @@ jobs:
           path: release/
           if-no-files-found: error
           retention-days: 14
+
+      - name: Publish backend release asset
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: liquid-glass-backends
+          name: ii-vynx Liquid Glass backends
+          body: |
+            ABI-keyed HyprGlass binaries built for ii-vynx.
+
+            These assets are selected by the dependency ABI suffix reported by
+            `hyprctl -j version`, not by the Hyprland git commit alone.
+          prerelease: true
+          make_latest: false
+          target_commitish: agent/liquid-glass-stage1
+          overwrite_files: true
+          files: release/${{ steps.abi.outputs.asset_name }}
