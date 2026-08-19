@@ -63,9 +63,14 @@ Item { // Bar content region
         rightList = fullModel.slice(idx + 1)
     }
 
-    // Background shadow
+    // Background shadow. In Liquid Glass the shadow becomes part of the layer
+    // alpha mask, producing a second glass band around the floating bar. Let
+    // HyprGlass provide the edge depth instead and keep this Material-only.
     Loader {
-        active: root.showBarBackground && Config.options.bar.cornerStyle === 1 && Config.options.bar.floatStyleShadow
+        active: root.showBarBackground
+            && Config.options.bar.cornerStyle === 1
+            && Config.options.bar.floatStyleShadow
+            && !root.liquidGlassSurfaceActive
         anchors.fill: barBackground
         sourceComponent: StyledRectangularShadow {
             anchors.fill: undefined // The loader's anchors act on this, and this should not have any anchor
@@ -88,7 +93,9 @@ Item { // Bar content region
                 : Appearance.colors.colLayer0)
             : "transparent"
         radius: Config.options.bar.cornerStyle === 1 ? Appearance.rounding.windowRounding : 0
-        border.width: Config.options.bar.cornerStyle === 1 ? 1 : 0
+        // The Material floating outline is redundant with HyprGlass's own
+        // Fresnel/specular edge and would otherwise tint the glass perimeter.
+        border.width: Config.options.bar.cornerStyle === 1 && !root.liquidGlassSurfaceActive ? 1 : 0
         border.color: root.showBarBackground
             ? (Config.options.appearance.surfaceStyle === "liquidGlass"
                 ? ColorUtils.transparentize(Appearance.colors.colOnLayer0, 0.82)
