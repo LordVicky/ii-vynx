@@ -16,6 +16,7 @@ QtObject {
 
     property string hyprlandVersion: ""
     property string hyprlandCommit: ""
+    property string hyprlandAbiSuffix: ""
     property string managedPluginPath: ""
     property bool checkingAfterLoad: false
     readonly property bool darkMode: Appearance.m3colors.darkmode
@@ -48,8 +49,8 @@ QtObject {
         if (bundleProbe.running)
             return;
 
-        if (!/^\d+\.\d+\.\d+$/.test(root.hyprlandVersion)) {
-            root.finish("error", "Hyprland returned an invalid version identifier.");
+        if (!/^_aq_[0-9]+(\.[0-9]+)+(_[a-z]+_[0-9]+(\.[0-9]+)+)+$/.test(root.hyprlandAbiSuffix)) {
+            root.finish("error", "Hyprland returned an invalid dependency ABI identifier.");
             return;
         }
 
@@ -57,7 +58,15 @@ QtObject {
         bundleProbe.command = [
             "sh",
             "-c",
-            `plugin="$HOME/.local/lib/ii-vynx/hyprglass/${root.hyprlandVersion}/hyprglass.so"; test -f "$plugin" || exit 66; printf '%s\\n' "$plugin"`
+            `plugin="$HOME/.local/lib/ii-vynx/hyprglass/${root.hyprlandAbiSuffix}/hyprglass.so"
+            test -f "$plugin" || exit 66
+            command -v ldd >/dev/null 2>&1 || exit 68
+            deps="$(ldd "$plugin" 2>&1)" || { printf '%s\\n' "$deps" >&2; exit 67; }
+            if printf '%s\\n' "$deps" | grep -q 'not found'; then
+                printf '%s\\n' "$deps" | grep 'not found' >&2
+                exit 67
+            fi
+            printf '%s\\n' "$plugin"`
         ];
         bundleProbe.running = true;
     }
@@ -239,6 +248,9 @@ hyprctl reload
                 const version = JSON.parse(versionOutput.text);
                 root.hyprlandVersion = String(version.version ?? "").trim();
                 root.hyprlandCommit = String(version.commit ?? "").trim();
+                const abiHash = String(version.abiHash ?? "").trim();
+                const abiMarker = abiHash.indexOf("_aq_");
+                root.hyprlandAbiSuffix = abiMarker >= 0 ? abiHash.slice(abiMarker) : "";
             } catch (error) {
                 root.finish("error", "Could not parse the Hyprland version.");
                 return;
@@ -262,8 +274,17 @@ hyprctl reload
 
         onExited: (exitCode, exitStatus) => {
             if (exitCode === 66) {
-                const detail = root.hyprlandCommit.length > 0 ? ` (${root.hyprlandCommit})` : "";
-                root.finish("unavailable", `No bundled HyprGlass build for Hyprland ${root.hyprlandVersion}${detail}.`);
+                root.finish("unavailable", `No bundled HyprGlass build for Hyprland ${root.hyprlandVersion} ABI ${root.hyprlandAbiSuffix}.`);
+                return;
+            }
+
+            if (exitCode === 67) {
+                root.finish("unavailable", bundleError.text.trim() || "Bundled HyprGlass has unresolved runtime dependencies.");
+                return;
+            }
+
+            if (exitCode === 68) {
+                root.finish("unavailable", "Could not validate bundled HyprGlass runtime dependencies because ldd is unavailable.");
                 return;
             }
 
