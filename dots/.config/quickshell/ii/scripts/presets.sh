@@ -7,6 +7,7 @@ umask 077
 config_home="${XDG_CONFIG_HOME:-${HOME:?HOME is not set}/.config}"
 shell_config_dir="${config_home}/illogical-impulse"
 config_file="${shell_config_dir}/config.json"
+liquid_glass_file="${shell_config_dir}/liquid-glass.json"
 presets_dir="${shell_config_dir}/presets"
 
 die() {
@@ -47,9 +48,17 @@ save_preset() {
     local description="${2:-}"
     local replace="${3:-false}"
     local destination tmp
+    local has_liquid_glass=false
 
     validate_name "$name"
     validate_json_object "$config_file" "config"
+
+    if [[ -e "$liquid_glass_file" || -L "$liquid_glass_file" ]]; then
+        [[ -f "$liquid_glass_file" && ! -L "$liquid_glass_file" ]] || die "liquid glass settings are not a regular file"
+        validate_json_object "$liquid_glass_file" "liquid glass settings"
+        has_liquid_glass=true
+    fi
+
     mkdir -p -- "$presets_dir"
 
     destination="$(preset_path "$name")"
@@ -61,7 +70,18 @@ save_preset() {
     tmp="$(mktemp "${presets_dir}/.preset-save.XXXXXX")"
     trap 'rm -f -- "$tmp"' EXIT
 
-    if [[ -n "$description" ]]; then
+    if [[ "$has_liquid_glass" == "true" ]]; then
+        if [[ -n "$description" ]]; then
+            jq --arg description "$description" --slurpfile liquidGlass "$liquid_glass_file" \
+                'del(._presetMeta) | . + {"_presetMeta": {"description": $description, "liquidGlass": $liquidGlass[0]}}' \
+                "$config_file" > "$tmp"
+        else
+            jq --slurpfile liquidGlass "$liquid_glass_file" \
+                'del(._presetMeta) | . + {"_presetMeta": {"liquidGlass": $liquidGlass[0]}}' \
+                "$config_file" > "$tmp"
+        fi
+        jq -e 'type == "object" and (._presetMeta.liquidGlass | type == "object")' "$tmp" >/dev/null
+    elif [[ -n "$description" ]]; then
         jq --arg description "$description" \
             'del(._presetMeta) | . + {"_presetMeta": {"description": $description}}' \
             "$config_file" > "$tmp"
@@ -79,7 +99,8 @@ save_preset() {
 
 apply_preset() {
     local name="$1"
-    local source tmp
+    local source tmp liquid_tmp=""
+    local restore_liquid_glass=false
 
     validate_name "$name"
     source="$(preset_path "$name")"
@@ -87,13 +108,47 @@ apply_preset() {
     validate_json_object "$config_file" "config"
     validate_json_object "$source" "preset"
 
+    if jq -e '._presetMeta? | type == "object" and has("liquidGlass")' "$source" >/dev/null 2>&1; then
+        jq -e '._presetMeta.liquidGlass | type == "object"' "$source" >/dev/null 2>&1 \
+            || die "preset liquid glass settings must be a JSON object: $name"
+        restore_liquid_glass=true
+    fi
+
     tmp="$(mktemp "${shell_config_dir}/.config-preset.XXXXXX")"
-    trap 'rm -f -- "$tmp"' EXIT
+    cleanup_apply() {
+        rm -f -- "$tmp"
+        if [[ -n "$liquid_tmp" ]]; then
+            rm -f -- "$liquid_tmp"
+        fi
+    }
+    trap cleanup_apply EXIT
 
     jq -s '(.[0] | del(._presetMeta)) * (.[1] | del(._presetMeta))' "$config_file" "$source" > "$tmp"
     jq -e 'type == "object" and (has("_presetMeta") | not)' "$tmp" >/dev/null
+
+    if [[ "$restore_liquid_glass" == "true" ]]; then
+        liquid_tmp="$(mktemp "${shell_config_dir}/.liquid-glass-preset.XXXXXX")"
+
+        if [[ -e "$liquid_glass_file" || -L "$liquid_glass_file" ]]; then
+            [[ -f "$liquid_glass_file" && ! -L "$liquid_glass_file" ]] || die "liquid glass settings are not a regular file"
+            validate_json_object "$liquid_glass_file" "liquid glass settings"
+            jq -s '.[0] * .[1]._presetMeta.liquidGlass' "$liquid_glass_file" "$source" > "$liquid_tmp"
+            chmod --reference="$liquid_glass_file" "$liquid_tmp"
+        else
+            jq '._presetMeta.liquidGlass' "$source" > "$liquid_tmp"
+        fi
+
+        jq -e 'type == "object"' "$liquid_tmp" >/dev/null 2>&1 \
+            || die "resolved liquid glass preset settings must be a JSON object: $name"
+    fi
+
     chmod --reference="$config_file" "$tmp"
     mv -f -- "$tmp" "$config_file"
+
+    if [[ "$restore_liquid_glass" == "true" ]]; then
+        mv -f -- "$liquid_tmp" "$liquid_glass_file"
+    fi
+
     trap - EXIT
 
     printf '%s\n' "$config_file"
