@@ -20,6 +20,7 @@ Item {
     property bool highlighted: false
     property bool barBackgroundVisible: Config.options.bar.barBackgroundStyle === 1
     property real barSurfaceX: 0
+    property bool standaloneLiquidGlassIslandActive: false
     readonly property bool standaloneLiquidGlassPillActive: !rootItem.vertical
         && rootItem.barGroupStyle === 0
         && !rootItem.barBackgroundVisible
@@ -92,7 +93,7 @@ Item {
 
     readonly property int barGroupStyle: Config.options.bar.barGroupStyle
     readonly property int barBackgroundStyle: Config.options.bar.barBackgroundStyle
-    property color colBackground: rootItem.standaloneLiquidGlassPillActive ? "transparent" :
+    property color colBackground: (rootItem.standaloneLiquidGlassPillActive || rootItem.standaloneLiquidGlassIslandActive) ? "transparent" :
                                    barGroupStyle == 0 ? Appearance.colors.colLayer1 :
                                    (barGroupStyle == 1 && barBackgroundStyle == 1) ? Appearance.colors.colLayer1 :
                                    (barGroupStyle == 1) ? Appearance.m3colors.m3surfaceContainerLow :
