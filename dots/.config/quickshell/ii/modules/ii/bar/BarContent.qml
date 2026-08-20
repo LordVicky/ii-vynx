@@ -169,6 +169,7 @@ Item { // Bar content region
             delegate: BarComponent {
                 list: Config.options.bar.layouts.left
                 barSection: 0
+                barBackgroundVisible: root.showBarBackground
             }
         }
     }
@@ -194,6 +195,7 @@ Item { // Bar content region
                 delegate: BarComponent {
                     list: Config.options.bar.layouts.center
                     barSection: 1
+                    barBackgroundVisible: root.showBarBackground
                     originalIndex: Config.options.bar.layouts.center.findIndex(e => e.id === modelData.id) // we have to recalculate the index because repeater.model has changed
                 }
             }
@@ -211,6 +213,7 @@ Item { // Bar content region
                 delegate: BarComponent {
                     list: Config.options.bar.layouts.center
                     barSection: 1
+                    barBackgroundVisible: root.showBarBackground
                     originalIndex: Config.options.bar.layouts.center.findIndex(e => e.id === modelData.id)
                 }
             }
@@ -229,6 +232,7 @@ Item { // Bar content region
                 delegate: BarComponent {
                     list: Config.options.bar.layouts.center
                     barSection: 1
+                    barBackgroundVisible: root.showBarBackground
                     originalIndex: Config.options.bar.layouts.center.findIndex(e => e.id === modelData.id)
                 }
             }
@@ -252,6 +256,7 @@ Item { // Bar content region
             delegate: BarComponent {
                 list: rightRepeater.model
                 barSection: 2
+                barBackgroundVisible: root.showBarBackground
             }
         }
     }
