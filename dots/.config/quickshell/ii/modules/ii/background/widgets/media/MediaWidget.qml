@@ -267,7 +267,7 @@ AbstractBackgroundWidget {
         command: [
             "bash",
             "-c",
-            `[ -f "$1" ] || curl -sSL -- "$2" -o "$1"`,
+            `[ -f "$1" ] || curl -sSL -o "$1" -- "$2"`,
             "download-cover",
             artFilePath,
             targetFile
