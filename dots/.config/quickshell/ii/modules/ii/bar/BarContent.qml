@@ -276,6 +276,37 @@ Item { // Bar content region
         }
     }
 
+    readonly property bool middleIslandHasContent: middleLeftSection.width > 0
+        || centerCenter.width > 0
+        || middleRightSection.width > 0
+    readonly property real middleIslandLocalLeft: {
+        let left = 0;
+        let hasValue = false;
+        if (middleLeftSection.width > 0) {
+            left = middleLeftSection.x;
+            hasValue = true;
+        }
+        if (centerCenter.width > 0) {
+            left = hasValue ? Math.min(left, centerCenter.x) : centerCenter.x;
+            hasValue = true;
+        }
+        if (middleRightSection.width > 0)
+            left = hasValue ? Math.min(left, middleRightSection.x) : middleRightSection.x;
+        return left;
+    }
+    readonly property real middleIslandLocalRight: {
+        let right = 0;
+        if (middleLeftSection.width > 0)
+            right = middleLeftSection.x + middleLeftSection.width;
+        if (centerCenter.width > 0)
+            right = Math.max(right, centerCenter.x + centerCenter.width);
+        if (middleRightSection.width > 0)
+            right = Math.max(right, middleRightSection.x + middleRightSection.width);
+        return right;
+    }
+    readonly property real middleIslandX: middleSection.x + root.middleIslandLocalLeft
+    readonly property real middleIslandWidth: Math.max(0, root.middleIslandLocalRight - root.middleIslandLocalLeft)
+
     LazyLoader {
         active: root.standaloneLiquidGlassIslandActive && leftSection.width > 0
         component: BarPillGlass {
@@ -289,12 +320,12 @@ Item { // Bar content region
     }
 
     LazyLoader {
-        active: root.standaloneLiquidGlassIslandActive && middleSection.width > 0
+        active: root.standaloneLiquidGlassIslandActive && root.middleIslandHasContent
         component: BarPillGlass {
             targetScreen: root.screen
             surfaceActive: root.standaloneLiquidGlassIslandActive
-            surfaceX: middleSection.x
-            surfaceWidth: middleSection.width
+            surfaceX: root.middleIslandX
+            surfaceWidth: root.middleIslandWidth
             startRadius: Appearance.rounding.full
             endRadius: Appearance.rounding.full
         }
