@@ -43,6 +43,11 @@ Singleton {
         JsonAdapter {
             id: settingsAdapter
 
+            // HyprGlass material theme. Follow the shell by default, but keep a
+            // persisted manual choice ready for users who want stable glass.
+            property bool followSystemTheme: true
+            property string theme: "light" // "light" | "dark"
+
             // QML surface treatment. These do not reconfigure HyprGlass.
             property real shellTint: 0
             property real brightness: 0
