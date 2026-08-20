@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
+import qs
 import qs.services
 import qs.modules.common
 
@@ -9,6 +10,7 @@ PanelWindow {
 
     required property bool surfaceActive
     required property bool showBarBackground
+    readonly property real autoHideOffset: Number(GlobalStates.barAutoHideOffsets[root.screen?.name ?? ""] ?? 0)
 
     visible: root.surfaceActive && root.showBarBackground
     exclusionMode: ExclusionMode.Ignore
@@ -24,6 +26,11 @@ PanelWindow {
         right: true
         top: !Config.options.bar.bottom
         bottom: Config.options.bar.bottom
+    }
+
+    margins {
+        top: Config.options.bar.bottom ? 0 : root.autoHideOffset
+        bottom: Config.options.bar.bottom ? root.autoHideOffset : 0
     }
 
     // This surface is visual only. The existing bar keeps all pointer, scroll,
