@@ -13,6 +13,8 @@ Item {
     property var endRadius // right - bottom
 
     property color colBackground: Appearance.m3colors.m3surfaceContainerLow
+    property bool inlay: false
+    property color colInlayBorder: "transparent"
 
     Rectangle {
         id: background
@@ -28,6 +30,8 @@ Item {
         bottomLeftRadius: root.vertical ? endRadius: startRadius
         topRightRadius: root.vertical ? startRadius: endRadius
         bottomRightRadius: endRadius
+        border.width: root.inlay ? 1 : 0
+        border.color: root.inlay ? root.colInlayBorder : "transparent"
 
         Behavior on color {
             animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
