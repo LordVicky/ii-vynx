@@ -32,6 +32,9 @@ Scope {
     readonly property bool dedicatedBarGlass: Config.options.appearance.surfaceStyle === "liquidGlass"
         && Config.options.bar.cornerStyle === 1
         && !(Config.options.bar.autoHide?.enable ?? false)
+    readonly property bool dedicatedHugGlass: Config.options.appearance.surfaceStyle === "liquidGlass"
+        && Config.options.bar.cornerStyle === 0
+        && !(Config.options.bar.autoHide?.enable ?? false)
 
     Component.onCompleted: Qt.callLater(() => updateBarExtraCondition())
     onUsingWrappedFrameChanged: updateBarExtraCondition()
@@ -45,6 +48,7 @@ Scope {
         Qt.callLater(() => barExtraCondition = true)
     }
 
+    PanelLoader { extraCondition: !Config.options.bar.vertical && barExtraCondition && dedicatedHugGlass; component: BarHugGlassLayer {} }
     PanelLoader { extraCondition: !Config.options.bar.vertical && barExtraCondition && dedicatedBarGlass; component: BarGlassLayer {} }
     PanelLoader { extraCondition: !Config.options.bar.vertical && barExtraCondition; component: Bar {} }
     PanelLoader { extraCondition: Config.options.background.enable; component: Background {} }
