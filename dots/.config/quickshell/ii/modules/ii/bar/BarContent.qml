@@ -92,7 +92,9 @@ Item { // Bar content region
                     : ColorUtils.transparentize(Appearance.colors.colLayer0Base, 0.18))
                 : Appearance.colors.colLayer0)
             : "transparent"
-        radius: Config.options.bar.cornerStyle === 1 ? Appearance.rounding.windowRounding : 0
+        radius: Config.options.bar.cornerStyle === 1
+            ? (root.liquidGlassSurfaceActive ? height / 2 : Appearance.rounding.windowRounding)
+            : 0
         // The Material floating outline is redundant with HyprGlass's own
         // Fresnel/specular edge and would otherwise tint the glass perimeter.
         border.width: Config.options.bar.cornerStyle === 1 && !root.liquidGlassSurfaceActive ? 1 : 0
