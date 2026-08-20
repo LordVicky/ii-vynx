@@ -19,6 +19,7 @@ Item {
     property bool vertical: false
     property bool highlighted: false
     property bool barBackgroundVisible: Config.options.bar.barBackgroundStyle === 1
+    property real barSurfaceX: 0
 
     implicitWidth: wrapper.implicitWidth
     implicitHeight: wrapper.implicitHeight
