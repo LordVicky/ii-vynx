@@ -20,7 +20,7 @@ Scope {
     property string managedPluginPath: ""
     property bool checkingAfterLoad: false
     property bool reapplyPending: false
-    readonly property bool dedicatedBarSurfaceActive: Config.options.bar.cornerStyle === 1
+    readonly property bool dedicatedBarSurfaceActive: (Config.options.bar.cornerStyle === 0 || Config.options.bar.cornerStyle === 1)
         && !(Config.options.bar.autoHide?.enable ?? false)
     readonly property string horizontalBarNamespace: root.dedicatedBarSurfaceActive
         ? "quickshell:bar-glass"
@@ -190,8 +190,8 @@ if hl.plugin.hyprglass then
     })
 
     -- HyprGlass owns native blur only on the active horizontal glass surface.
-    -- Float mode can move that responsibility to a dedicated visual layer;
-    -- Hug, Plain and auto-hide keep the existing bar surface for now.
+    -- Hug and Float move that responsibility to a dedicated visual layer;
+    -- Plain and auto-hide keep the existing bar surface for now.
     _G.iiVynxLiquidGlassBarBlurOverride = hl.layer_rule({
         name = "ii-vynx-liquid-glass-bar-native-blur-off",
         match = { namespace = "${root.horizontalBarNamespace}" },
@@ -200,9 +200,8 @@ if hl.plugin.hyprglass then
         order = ${root.dedicatedBarSurfaceActive ? 1 : 0},
     })
 
-    -- Both horizontal paths use the same low-alpha QML mask contract. The
-    -- dedicated Float surface simply removes unrelated widget/content alpha
-    -- from the layer HyprGlass captures.
+    -- Dedicated horizontal surfaces remove unrelated widget/content alpha from
+    -- the layer HyprGlass captures while keeping the same low-alpha mask contract.
     hg.layer("${root.horizontalBarNamespace}", { preset = "vynx", mask_threshold = 0.0025 })
     hg.layer("quickshell:verticalBar", { preset = "vynx", mask_threshold = 0.05 })
     hg.layer("quickshell:popup", { preset = "vynx", mask_threshold = 0.05 })
