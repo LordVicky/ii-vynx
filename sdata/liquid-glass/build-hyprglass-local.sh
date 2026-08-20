@@ -2,335 +2,197 @@
 
 set -euo pipefail
 
-HYPRGLASS_REF="${HYPRGLASS_REF:-v0.7.0}"
-HYPRGLASS_REPO="${HYPRGLASS_REPO:-https://github.com/hyprnux/hyprglass.git}"
-HYPRLAND_REPO="${HYPRLAND_REPO:-https://github.com/hyprwm/Hyprland.git}"
-HYPRLAND_PROTOCOLS_REPO="${HYPRLAND_PROTOCOLS_REPO:-https://github.com/hyprwm/hyprland-protocols.git}"
-HYPRLAND_PROTOCOLS_REF="${HYPRLAND_PROTOCOLS_REF:-v0.7.0}"
-HYPRGLASS_LIVE_BAR_REFRESH="${HYPRGLASS_LIVE_BAR_REFRESH:-1}"
-LUA_RELEASE="${LUA_RELEASE:-5.5.1}"
-LUA_URL="${LUA_URL:-https://www.lua.org/ftp/lua-${LUA_RELEASE}.tar.gz}"
-LUA_SHA256="${LUA_SHA256:-1c4b4068d67061f2a2231ad2b5422e77acea1487ea9890f6320af614f4373dce}"
-INSTALL_ROOT="$HOME/.local/lib/ii-vynx/hyprglass"
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd -- "$SCRIPT_DIR/../.." && pwd)"
-LICENSE_SOURCE="$REPO_ROOT/licenses/HyprGlass-BSD-3-Clause.txt"
-LICENSE_TARGET="$HOME/.local/share/licenses/ii-vynx/HyprGlass-BSD-3-Clause.txt"
-TMP_ROOT=""
-
-log() {
-    printf '%s\n' "$*"
-}
+BASE_BUILDER="$SCRIPT_DIR/build-hyprglass-local-base.sh"
+TMP_BUILDER=""
 
 cleanup() {
-    if [ -n "${TMP_ROOT:-}" ]; then
-        rm -rf -- "$TMP_ROOT"
+    if [ -n "${TMP_BUILDER:-}" ]; then
+        rm -f -- "$TMP_BUILDER"
     fi
 }
-
 trap cleanup EXIT
 
-require_command() {
-    if ! command -v "$1" >/dev/null 2>&1; then
-        log "Missing required build command: $1"
-        return 1
-    fi
-}
+TMP_BUILDER="$(mktemp "$SCRIPT_DIR/.build-hyprglass-mask-edges.XXXXXX")"
 
-extract_json_string() {
-    local json="$1"
-    local field="$2"
+python3 - "$BASE_BUILDER" "$TMP_BUILDER" <<'PY_WRAPPER'
+from pathlib import Path
+import sys
 
-    printf '%s' "$json" \
-        | tr -d '\n' \
-        | sed -n "s/.*\"${field}\"[[:space:]]*:[[:space:]]*\"\([^\"]*\)\".*/\1/p"
-}
+source = Path(sys.argv[1]).read_text(encoding="utf-8")
+target = Path(sys.argv[2])
 
-abi_suffix_from_hash() {
-    local abi_hash="$1"
+function_marker = "\nprepare_lua_headers() {\n"
+if function_marker not in source:
+    raise SystemExit("Could not locate prepare_lua_headers() in the HyprGlass builder")
 
-    case "$abi_hash" in
-        *_aq_*) printf '_aq_%s' "${abi_hash#*_aq_}" ;;
-        *) return 1 ;;
-    esac
-}
-
-major_minor() {
-    printf '%s\n' "$1" | awk -F. '{ print $1 "." $2 }'
-}
-
-pkg_version() {
-    pkg-config --modversion "$1" 2>/dev/null
-}
-
-apply_live_bar_refresh_ab() {
+function_text = r'''
+apply_mask_edge_refraction() {
     local source_dir="$1"
-    local target="$source_dir/src/GlassLayerSurface.cpp"
+    local target="$source_dir/src/Shaders.hpp"
 
-    case "$HYPRGLASS_LIVE_BAR_REFRESH" in
-        0)
-            log "Building upstream HyprGlass layer cache behavior (live bar refresh A/B disabled)."
-            return 0
-            ;;
-        1) ;;
-        *)
-            log "HYPRGLASS_LIVE_BAR_REFRESH must be 0 or 1."
-            return 5
-            ;;
-    esac
-
-    python3 - "$target" <<'PY'
+    python3 - "$target" <<'PY_MASK'
 from pathlib import Path
 import sys
 
 path = Path(sys.argv[1])
 text = path.read_text(encoding="utf-8")
-old = """    const bool backgroundChanged = !m_hasCachedSample ||
-                                   currentGeneration != m_lastSceneGeneration ||
-                                   isAnimating;
-"""
-new = """    // ii-vynx A/B: the upstream scene-generation cache does not track
-    // per-frame window geometry or lower layer-surface content changes. Force
-    // the horizontal shell bar to resample whenever Hyprland renders it so a
-    // moving window or wallpaper parallax is reflected by the glass live.
-    const bool forceLiveBarRefresh = layerSurface->m_namespace == \"quickshell:bar\";
-    const bool backgroundChanged = forceLiveBarRefresh ||
-                                   !m_hasCachedSample ||
-                                   currentGeneration != m_lastSceneGeneration ||
-                                   isAnimating;
-"""
-if old not in text:
-    raise SystemExit("HyprGlass live-bar A/B patch no longer matches GlassLayerSurface.cpp")
-path.write_text(text.replace(old, new, 1), encoding="utf-8")
-PY
 
-    log "Enabled ii-vynx live bar background refresh A/B."
+sample_anchor = """vec4 sampleBlurred(vec2 wuv) {
+    vec2 tuv = toTexUV(wuv);
+    return texture(tex, clamp(tuv, 0.001, 0.999));
 }
 
-prepare_lua_headers() {
-    local archive="$TMP_ROOT/lua-${LUA_RELEASE}.tar.gz"
-    local source_dir="$TMP_ROOT/lua-${LUA_RELEASE}"
-    local header
+"""
+mask_helpers = r"""// ii-vynx: layer surfaces can contain transparent padding around the
+// actual visible glass shape. Derive the layer edge field from the captured
+// alpha mask instead of assuming the whole layer-shell rectangle is glass.
+float maskInsideAt(vec2 layerUV) {
+    if (layerUV.x < 0.0 || layerUV.x > 1.0 || layerUV.y < 0.0 || layerUV.y > 1.0)
+        return 0.0;
 
-    log "Preparing Lua $LUA_RELEASE headers for Hyprland's Lua plugin API..."
-    curl --fail --location --silent --show-error "$LUA_URL" --output "$archive"
-    printf '%s  %s\n' "$LUA_SHA256" "$archive" | sha256sum --check --status
-    tar -xzf "$archive" -C "$TMP_ROOT"
-
-    for header in lua.h luaconf.h lauxlib.h lualib.h; do
-        if [ ! -r "$source_dir/src/$header" ]; then
-            log "Lua source archive is missing required header: $header"
-            return 4
-        fi
-    done
+    vec2 maskUV = layerUV * maskUVScale + maskUVOffset;
+    float maskAlpha = texture(maskTex, clamp(maskUV, 0.001, 0.999)).a;
+    return maskAlpha >= max(maskAlphaThreshold, 0.000001) ? 1.0 : 0.0;
 }
 
-prepare_hyprland_headers() {
-    local runtime_version="$1"
-    local runtime_commit="$2"
-    local aq_full="$3"
-    local hu_full="$4"
-    local hg_full="$5"
-    local hc_full="$6"
-    local hlg_full="$7"
-    local lua_include="$8"
-    local source_dir="$TMP_ROOT/hyprland"
-    local protocols_repo="$TMP_ROOT/hyprland-protocols"
-    local pc_dir="$TMP_ROOT/pkgconfig"
-    local protocol_list="$TMP_ROOT/protocols.tsv"
-    local wayland_protocols_dir wayland_scanner_dir actual_commit
-    local proto_path proto_name external xml
-    local aq_major aq_minor aq_patch
+float maskOutsideAt(vec2 uv, vec2 direction, float distancePx) {
+    vec2 pxToUV = vec2(
+        distancePx / max(fullSize.x, 1.0),
+        distancePx / max(fullSize.y, 1.0)
+    );
+    return 1.0 - maskInsideAt(uv + direction * pxToUV);
+}
 
-    git clone --quiet --depth 1 --branch "v${runtime_version}" "$HYPRLAND_REPO" "$source_dir"
-    actual_commit="$(git -C "$source_dir" rev-parse HEAD)"
-    if [ "$actual_commit" != "$runtime_commit" ]; then
-        log "Hyprland v${runtime_version} resolved to $actual_commit, but the running compositor reports $runtime_commit."
-        return 2
-    fi
+void getMaskEdgeField(vec2 uv, float bezelWidthPx, out float edgeProximity, out vec2 inwardDir) {
+    edgeProximity = 0.0;
+    inwardDir = vec2(0.0);
+    if (bezelWidthPx <= 0.001)
+        return;
 
-    (
-        cd "$source_dir"
-        ./scripts/generateShaderIncludes.sh >/dev/null
-    )
+    const float D = 0.70710678;
 
-    wayland_protocols_dir="$(pkg-config --variable=pkgdatadir wayland-protocols 2>/dev/null || true)"
-    wayland_scanner_dir="$(pkg-config --variable=pkgdatadir wayland-scanner 2>/dev/null || true)"
-    if [ -z "$wayland_protocols_dir" ] || [ ! -d "$wayland_protocols_dir" ]; then
-        log "Could not locate wayland-protocols data through pkg-config."
-        return 5
-    fi
-    if [ -z "$wayland_scanner_dir" ] || [ ! -r "$wayland_scanner_dir/wayland.xml" ]; then
-        log "Could not locate wayland.xml through pkg-config wayland-scanner."
-        return 5
-    fi
+    // First do one radius check in eight directions. Interior pixels stop here,
+    // so the extra mask work is concentrated around the actual visible edge.
+    float outL  = maskOutsideAt(uv, vec2(-1.0,  0.0), bezelWidthPx);
+    float outR  = maskOutsideAt(uv, vec2( 1.0,  0.0), bezelWidthPx);
+    float outT  = maskOutsideAt(uv, vec2( 0.0, -1.0), bezelWidthPx);
+    float outB  = maskOutsideAt(uv, vec2( 0.0,  1.0), bezelWidthPx);
+    float outTL = maskOutsideAt(uv, vec2(-D, -D), bezelWidthPx);
+    float outTR = maskOutsideAt(uv, vec2( D, -D), bezelWidthPx);
+    float outBL = maskOutsideAt(uv, vec2(-D,  D), bezelWidthPx);
+    float outBR = maskOutsideAt(uv, vec2( D,  D), bezelWidthPx);
 
-    git clone --quiet --depth 1 --branch "$HYPRLAND_PROTOCOLS_REF" "$HYPRLAND_PROTOCOLS_REPO" "$protocols_repo"
+    float hitScore = outL + outR + outT + outB + outTL + outTR + outBL + outBR;
+    if (hitScore < 0.5)
+        return;
 
-    python3 - "$source_dir/CMakeLists.txt" > "$protocol_list" <<'PY'
-import re
-import sys
+    // Oppose the directions that crossed transparency. This produces the
+    // inward surface normal for straight edges and a diagonal at corners.
+    vec2 inward = vec2(0.0);
+    inward += vec2( 1.0,  0.0) * outL;
+    inward += vec2(-1.0,  0.0) * outR;
+    inward += vec2( 0.0,  1.0) * outT;
+    inward += vec2( 0.0, -1.0) * outB;
+    inward += vec2( D,  D) * outTL;
+    inward += vec2(-D,  D) * outTR;
+    inward += vec2( D, -D) * outBL;
+    inward += vec2(-D, -D) * outBR;
 
-text = open(sys.argv[1], encoding="utf-8").read()
-pattern = re.compile(
-    r'protocolnew\(\s*"([^"]+)"\s+"([^"]+)"\s+(true|false)\s*\)',
-    re.MULTILINE,
+    float inwardLength = length(inward);
+    if (inwardLength < 0.001)
+        return;
+
+    inwardDir = inward / inwardLength;
+    vec2 outwardDir = -inwardDir;
+
+    // Refine the distance to the alpha-mask boundary along the inferred normal.
+    // Four binary steps give 1/16 of the configured bezel width without adding
+    // another render pass or a CPU/GPU readback.
+    float low = 0.0;
+    float high = bezelWidthPx;
+    if (maskOutsideAt(uv, outwardDir, high) < 0.5) {
+        // Rare corner/concavity fallback: keep a conservative edge response
+        // instead of inventing a direction from the layer rectangle.
+        edgeProximity = 0.25;
+        return;
+    }
+
+    float mid = (low + high) * 0.5;
+    if (maskOutsideAt(uv, outwardDir, mid) > 0.5) high = mid; else low = mid;
+    mid = (low + high) * 0.5;
+    if (maskOutsideAt(uv, outwardDir, mid) > 0.5) high = mid; else low = mid;
+    mid = (low + high) * 0.5;
+    if (maskOutsideAt(uv, outwardDir, mid) > 0.5) high = mid; else low = mid;
+    mid = (low + high) * 0.5;
+    if (maskOutsideAt(uv, outwardDir, mid) > 0.5) high = mid; else low = mid;
+
+    float normalizedDistance = clamp(high / bezelWidthPx, 0.0, 1.0);
+    edgeProximity = 1.0 - smoothstep(0.0, 1.0, normalizedDistance);
+}
+
+"""
+
+if sample_anchor not in text:
+    raise SystemExit("HyprGlass mask-edge patch could not locate sampleBlurred()")
+text = text.replace(sample_anchor, sample_anchor + mask_helpers, 1)
+
+old_edge = """    float minDim = min(fullSize.x, fullSize.y);
+    float bezelWidthPx = edgeThickness * minDim;
+
+    // ========================================
+    // EDGE PROXIMITY + DIRECTION
+    // edgeProximity: 1.0 at boundary, exponential decay inward
+    // inwardDir: pixel-space direction toward center (smooth everywhere)
+    // ========================================
+    float edgeProximity = exp(cornerSdf / bezelWidthPx);
+    vec2 inwardDir = refractionDir(uv);
+"""
+new_edge = """    float minDim = min(fullSize.x, fullSize.y);
+    float bezelWidthPx = max(edgeThickness * minDim, 0.001);
+
+    // ========================================
+    // EDGE PROXIMITY + DIRECTION
+    // Windows use the native rounded-box field. Layer surfaces instead use
+    // their captured alpha mask so transparent layer-shell padding does not
+    // move the optical edge away from the visible bar/popup silhouette.
+    // ========================================
+    float edgeProximity = 0.0;
+    vec2 inwardDir = vec2(0.0);
+    if (edgeThickness > 0.0001) {
+        if (hasMask) {
+            getMaskEdgeField(uv, bezelWidthPx, edgeProximity, inwardDir);
+        } else {
+            edgeProximity = exp(cornerSdf / bezelWidthPx);
+            inwardDir = refractionDir(uv);
+        }
+    }
+"""
+
+if old_edge not in text:
+    raise SystemExit("HyprGlass mask-edge patch could not locate native edge field")
+text = text.replace(old_edge, new_edge, 1)
+
+path.write_text(text, encoding="utf-8")
+PY_MASK
+
+    log "Enabled ii-vynx alpha-mask edge refraction."
+}
+'''
+
+source = source.replace(function_marker, "\n" + function_text + function_marker, 1)
+
+call_marker = '    apply_live_bar_refresh_ab "$source_dir"\n'
+if call_marker not in source:
+    raise SystemExit("Could not locate the live-refresh patch call in the HyprGlass builder")
+source = source.replace(
+    call_marker,
+    call_marker + '    apply_mask_edge_refraction "$source_dir"\n',
+    1,
 )
-for path, name, external in pattern.findall(text):
-    print(path, name, external, sep="\t")
-PY
 
-    if [ ! -s "$protocol_list" ]; then
-        log "Could not extract Hyprland protocol generation list."
-        return 5
-    fi
+target.write_text(source, encoding="utf-8")
+PY_WRAPPER
 
-    while IFS=$'\t' read -r proto_path proto_name external; do
-        case "$proto_path" in
-            *'${HYPRLAND_PROTOCOLS}'*)
-                xml="$protocols_repo/protocols/$proto_name.xml"
-                ;;
-            *)
-                if [ "$external" = "true" ]; then
-                    xml="$source_dir/$proto_path/$proto_name.xml"
-                else
-                    xml="$wayland_protocols_dir/$proto_path/$proto_name.xml"
-                fi
-                ;;
-        esac
-
-        if [ ! -r "$xml" ]; then
-            log "Missing protocol source while preparing exact Hyprland headers: $xml"
-            return 5
-        fi
-        hyprwayland-scanner "$xml" "$source_dir/protocols/" >/dev/null
-    done < "$protocol_list"
-
-    hyprwayland-scanner --wayland-enums "$wayland_scanner_dir/wayland.xml" "$source_dir/protocols/" >/dev/null
-
-    IFS=. read -r aq_major aq_minor aq_patch _ <<< "$aq_full"
-    cat > "$source_dir/src/version.h" <<EOF_VERSION
-#pragma once
-#define GIT_COMMIT_HASH    "$runtime_commit"
-#define GIT_BRANCH         "v$runtime_version"
-#define GIT_COMMIT_MESSAGE ""
-#define GIT_COMMIT_DATE    ""
-#define GIT_DIRTY          ""
-#define GIT_TAG            "v$runtime_version"
-#define GIT_COMMITS        ""
-#define AQUAMARINE_VERSION "$aq_full"
-#define AQUAMARINE_VERSION_MAJOR $aq_major
-#define AQUAMARINE_VERSION_MINOR $aq_minor
-#define AQUAMARINE_VERSION_PATCH ${aq_patch:-0}
-#define HYPRLANG_VERSION     "$hlg_full"
-#define HYPRUTILS_VERSION    "$hu_full"
-#define HYPRCURSOR_VERSION   "$hc_full"
-#define HYPRGRAPHICS_VERSION "$hg_full"
-EOF_VERSION
-
-    mkdir -p "$pc_dir"
-    cat > "$pc_dir/hyprland.pc" <<EOF_PC
-prefix=$TMP_ROOT
-Name: Hyprland
-URL: https://github.com/hyprwm/Hyprland
-Description: Temporary exact Hyprland headers for ii-vynx HyprGlass build
-Version: $runtime_version
-Requires: aquamarine, hyprcursor, hyprgraphics, hyprlang, hyprutils, libdrm, egl, cairo, xkbcommon, libinput, wayland-server, xcb, xcb-render, xcb-xfixes, xcb-icccm, xcb-composite, xcb-res, xcb-errors
-Cflags: -I$TMP_ROOT -I$source_dir/protocols -I$source_dir -I$source_dir/src -I$lua_include
-EOF_PC
-}
-
-main() {
-    local command version_json runtime_version runtime_commit abi_hash runtime_abi
-    local aq_full hu_full hg_full hc_full hlg_full aq hu hg hc hlg build_abi
-    local source_dir pc_dir lua_include target_dir target magic deps
-
-    for command in hyprctl pkg-config git make g++ python3 hyprwayland-scanner curl tar sha256sum ldd od install awk sed grep tr mktemp; do
-        require_command "$command" || return 5
-    done
-
-    for module in pixman-1 libdrm aquamarine hyprutils hyprgraphics hyprcursor hyprlang wayland-protocols wayland-scanner; do
-        if ! pkg-config --exists "$module"; then
-            log "Missing required development module: $module"
-            return 5
-        fi
-    done
-
-    version_json="$(hyprctl -j version 2>/dev/null || true)"
-    runtime_version="$(extract_json_string "$version_json" version)"
-    runtime_commit="$(extract_json_string "$version_json" commit)"
-    abi_hash="$(extract_json_string "$version_json" abiHash)"
-    runtime_abi="$(abi_suffix_from_hash "$abi_hash" 2>/dev/null || true)"
-
-    if [[ ! "$runtime_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] \
-        || [[ ! "$runtime_commit" =~ ^[0-9a-f]{40}$ ]]; then
-        log "Could not determine the running Hyprland version and commit."
-        return 5
-    fi
-
-    if [[ ! "$runtime_abi" =~ ^_aq_[0-9]+(\.[0-9]+)+(_[a-z]+_[0-9]+(\.[0-9]+)+)+$ ]]; then
-        log "Could not determine the running Hyprland dependency ABI."
-        return 5
-    fi
-
-    aq_full="$(pkg_version aquamarine)"
-    hu_full="$(pkg_version hyprutils)"
-    hg_full="$(pkg_version hyprgraphics)"
-    hc_full="$(pkg_version hyprcursor)"
-    hlg_full="$(pkg_version hyprlang)"
-    aq="$(major_minor "$aq_full")"
-    hu="$(major_minor "$hu_full")"
-    hg="$(major_minor "$hg_full")"
-    hc="$(major_minor "$hc_full")"
-    hlg="$(major_minor "$hlg_full")"
-    build_abi="_aq_${aq}_hu_${hu}_hg_${hg}_hc_${hc}_hlg_${hlg}"
-
-    if [ "$build_abi" != "$runtime_abi" ]; then
-        log "Installed development libraries do not match the running Hyprland dependency ABI."
-        log "Running: $runtime_abi"
-        log "Build:   $build_abi"
-        return 2
-    fi
-
-    TMP_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/ii-vynx-hyprglass-build.XXXXXX")"
-    source_dir="$TMP_ROOT/hyprglass"
-    pc_dir="$TMP_ROOT/pkgconfig"
-    lua_include="$TMP_ROOT/lua-${LUA_RELEASE}/src"
-
-    prepare_lua_headers
-
-    log "Preparing exact Hyprland $runtime_version plugin headers without hyprland-devel..."
-    prepare_hyprland_headers "$runtime_version" "$runtime_commit" "$aq_full" "$hu_full" "$hg_full" "$hc_full" "$hlg_full" "$lua_include"
-
-    log "Building HyprGlass $HYPRGLASS_REF for Hyprland $runtime_version ABI $runtime_abi..."
-    git clone --quiet --depth 1 --branch "$HYPRGLASS_REF" "$HYPRGLASS_REPO" "$source_dir"
-    apply_live_bar_refresh_ab "$source_dir"
-    PKG_CONFIG_PATH="$pc_dir${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}" make -C "$source_dir" -j"$(nproc)"
-
-    magic="$(od -An -tx1 -N4 "$source_dir/hyprglass.so" 2>/dev/null | tr -d '[:space:]')"
-    if [ "$magic" != "7f454c46" ]; then
-        log "Built HyprGlass output is not an ELF binary."
-        return 4
-    fi
-
-    deps="$(ldd "$source_dir/hyprglass.so" 2>&1)"
-    if printf '%s\n' "$deps" | grep -q 'not found'; then
-        log "Built HyprGlass has unresolved runtime dependencies:"
-        printf '%s\n' "$deps" | grep 'not found'
-        return 4
-    fi
-
-    target_dir="$INSTALL_ROOT/$runtime_abi"
-    target="$target_dir/hyprglass.so"
-    mkdir -p "$target_dir"
-    install -m 0644 "$source_dir/hyprglass.so" "$target"
-
-    if [ -r "$LICENSE_SOURCE" ]; then
-        mkdir -p "$(dirname "$LICENSE_TARGET")"
-        install -m 0644 "$LICENSE_SOURCE" "$LICENSE_TARGET"
-    fi
-
-    log "Installed locally built HyprGlass backend: $target"
-}
-
-main "$@"
+chmod +x "$TMP_BUILDER"
+"$TMP_BUILDER" "$@"
