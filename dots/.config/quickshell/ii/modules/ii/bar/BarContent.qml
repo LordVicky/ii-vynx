@@ -28,6 +28,9 @@ Item { // Bar content region
         && RuntimeServices.liquidGlass?.configApplied === true
     readonly property bool dedicatedLiquidGlassSurfaceActive: root.liquidGlassSurfaceActive
         && RuntimeServices.liquidGlass?.dedicatedBarSurfaceActive === true
+    readonly property bool standaloneLiquidGlassIslandActive: root.dedicatedLiquidGlassSurfaceActive
+        && !root.showBarBackground
+        && Config.options.bar.barGroupStyle === 1
     readonly property color liquidGlassBarSurfaceColor: RuntimeServices.liquidGlass?.barSurfaceColor ?? ColorUtils.transparentize(Appearance.colors.colLayer0Base, 0.82)
 
     Connections {
@@ -171,6 +174,7 @@ Item { // Bar content region
                 barSection: 0
                 barBackgroundVisible: root.showBarBackground
                 barSurfaceX: leftSection.x + x
+                standaloneLiquidGlassIslandActive: root.standaloneLiquidGlassIslandActive
             }
         }
     }
@@ -199,6 +203,7 @@ Item { // Bar content region
                     barSection: 1
                     barBackgroundVisible: root.showBarBackground
                     barSurfaceX: middleSection.x + middleLeftSection.x + x
+                    standaloneLiquidGlassIslandActive: root.standaloneLiquidGlassIslandActive
                     originalIndex: Config.options.bar.layouts.center.findIndex(e => e.id === modelData.id) // we have to recalculate the index because repeater.model has changed
                 }
             }
@@ -218,6 +223,7 @@ Item { // Bar content region
                     barSection: 1
                     barBackgroundVisible: root.showBarBackground
                     barSurfaceX: middleSection.x + centerCenter.x + x
+                    standaloneLiquidGlassIslandActive: root.standaloneLiquidGlassIslandActive
                     originalIndex: Config.options.bar.layouts.center.findIndex(e => e.id === modelData.id)
                 }
             }
@@ -239,6 +245,7 @@ Item { // Bar content region
                     barSection: 1
                     barBackgroundVisible: root.showBarBackground
                     barSurfaceX: middleSection.x + middleRightSection.x + x
+                    standaloneLiquidGlassIslandActive: root.standaloneLiquidGlassIslandActive
                     originalIndex: Config.options.bar.layouts.center.findIndex(e => e.id === modelData.id)
                 }
             }
@@ -264,7 +271,44 @@ Item { // Bar content region
                 barSection: 2
                 barBackgroundVisible: root.showBarBackground
                 barSurfaceX: rightSection.x + x
+                standaloneLiquidGlassIslandActive: root.standaloneLiquidGlassIslandActive
             }
+        }
+    }
+
+    LazyLoader {
+        active: root.standaloneLiquidGlassIslandActive && leftSection.width > 0
+        component: BarPillGlass {
+            targetScreen: root.screen
+            surfaceActive: root.standaloneLiquidGlassIslandActive
+            surfaceX: leftSection.x
+            surfaceWidth: leftSection.width
+            startRadius: Appearance.rounding.full
+            endRadius: Appearance.rounding.full
+        }
+    }
+
+    LazyLoader {
+        active: root.standaloneLiquidGlassIslandActive && middleSection.width > 0
+        component: BarPillGlass {
+            targetScreen: root.screen
+            surfaceActive: root.standaloneLiquidGlassIslandActive
+            surfaceX: middleSection.x
+            surfaceWidth: middleSection.width
+            startRadius: Appearance.rounding.full
+            endRadius: Appearance.rounding.full
+        }
+    }
+
+    LazyLoader {
+        active: root.standaloneLiquidGlassIslandActive && rightSection.width > 0
+        component: BarPillGlass {
+            targetScreen: root.screen
+            surfaceActive: root.standaloneLiquidGlassIslandActive
+            surfaceX: rightSection.x
+            surfaceWidth: rightSection.width
+            startRadius: Appearance.rounding.full
+            endRadius: Appearance.rounding.full
         }
     }
 
