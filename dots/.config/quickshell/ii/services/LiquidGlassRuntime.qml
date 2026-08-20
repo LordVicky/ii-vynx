@@ -21,6 +21,13 @@ Scope {
     property bool checkingAfterLoad: false
     property bool reapplyPending: false
     readonly property bool darkMode: Appearance.m3colors.darkmode
+    readonly property string glassTheme: {
+        if (LiquidGlassSettings.options.followSystemTheme)
+            return root.darkMode ? "dark" : "light";
+
+        const manualTheme = String(LiquidGlassSettings.options.theme ?? "light").toLowerCase();
+        return manualTheme === "dark" ? "dark" : "light";
+    }
 
     // The main Glass intensity control is a genuine compositor-side master for
     // the optical material. 100% resolves to HyprGlass v0.7.0's native values.
@@ -145,7 +152,6 @@ Scope {
     }
 
     function buildGlassConfigCommand() {
-        const theme = root.darkMode ? "dark" : "light";
         return `
 set -eu
 fragment="$HOME/.config/hypr/hyprland/shellOverrides/liquid-glass.lua"
@@ -158,7 +164,7 @@ if hl.plugin.hyprglass then
     hg.config({
         enabled = false,
         manage_window_blur = false,
-        default_theme = "${theme}",
+        default_theme = "${root.glassTheme}",
         default_preset = "vynx",
         layers = { enabled = true },
     })
@@ -246,7 +252,7 @@ hyprctl reload
     Component.onCompleted: root.probeLoaded(false)
     Component.onDestruction: root.shutdown()
 
-    onDarkModeChanged: root.scheduleConfigApply()
+    onGlassThemeChanged: root.scheduleConfigApply()
     onRendererConfigSignatureChanged: root.scheduleConfigApply()
 
     Timer {
