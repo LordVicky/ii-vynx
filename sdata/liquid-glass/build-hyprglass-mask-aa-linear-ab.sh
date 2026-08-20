@@ -137,11 +137,24 @@ if side_function_marker not in source:
     raise SystemExit("Could not locate the mask-AA function end for side reflection")
 source = source.replace(side_function_marker, side_function_replacement, 1)
 
-side_call_marker = r'''    apply_mask_antialias_ab \"$source_dir\"\\n'''
-side_call_replacement = side_call_marker + r'''    apply_side_wall_reflection_ab \"$source_dir\"\\n'''
-if side_call_marker not in source:
-    raise SystemExit("Could not locate the mask-AA patch call for side reflection")
-source = source.replace(side_call_marker, side_call_replacement, 1)
+# The AA builder stores its patch-call sequence inside a one-line Python string
+# assignment. Parse that line instead of depending on a particular combination
+# of escaped quotes/backslashes in the wrapper source.
+lines = source.splitlines(keepends=True)
+call_index = next((
+    index for index, line in enumerate(lines)
+    if line.startswith("replacement =") and 'apply_mask_antialias_ab "$source_dir"' in line
+), -1)
+if call_index < 0:
+    raise SystemExit("Could not locate the mask-AA replacement line for side reflection")
+
+escaped_newline = chr(92) * 2 + "n"
+call_marker = f'    apply_mask_antialias_ab "$source_dir"{escaped_newline}'
+side_call = f'    apply_side_wall_reflection_ab "$source_dir"{escaped_newline}'
+if call_marker not in lines[call_index]:
+    raise SystemExit("Could not locate the mask-AA call within its replacement line")
+lines[call_index] = lines[call_index].replace(call_marker, call_marker + side_call, 1)
+source = "".join(lines)
 
 target.write_text(source, encoding="utf-8")
 PY_WRAPPER
