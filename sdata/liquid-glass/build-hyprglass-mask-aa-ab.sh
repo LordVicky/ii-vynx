@@ -29,7 +29,82 @@ function_end = '''    log "Enabled ii-vynx alpha-mask edge refraction."
 if function_end not in source:
     raise SystemExit("Could not locate the production mask-edge patch function")
 
-antialias_function = r'''    log "Enabled ii-vynx alpha-mask edge refraction."
+extra_functions = r'''    log "Enabled ii-vynx alpha-mask edge refraction."
+}
+
+apply_mask_edge_normal_smoothing_ab() {
+    local source_dir="$1"
+    local target="$source_dir/src/Shaders.hpp"
+
+    python3 - "$target" <<'PY_MASK_NORMAL'
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+text = path.read_text(encoding="utf-8")
+
+old_direction_field = r"""    const float D = 0.70710678;
+
+    // First do one radius check in eight directions. Interior pixels stop here,
+    // so the extra mask work is concentrated around the actual visible edge.
+    float outL  = maskOutsideAt(uv, vec2(-1.0,  0.0), bezelWidthPx);
+    float outR  = maskOutsideAt(uv, vec2( 1.0,  0.0), bezelWidthPx);
+    float outT  = maskOutsideAt(uv, vec2( 0.0, -1.0), bezelWidthPx);
+    float outB  = maskOutsideAt(uv, vec2( 0.0,  1.0), bezelWidthPx);
+    float outTL = maskOutsideAt(uv, vec2(-D, -D), bezelWidthPx);
+    float outTR = maskOutsideAt(uv, vec2( D, -D), bezelWidthPx);
+    float outBL = maskOutsideAt(uv, vec2(-D,  D), bezelWidthPx);
+    float outBR = maskOutsideAt(uv, vec2( D,  D), bezelWidthPx);
+
+    float hitScore = outL + outR + outT + outB + outTL + outTR + outBL + outBR;
+    if (hitScore < 0.5)
+        return;
+
+    // Oppose the directions that crossed transparency. This produces the
+    // inward surface normal for straight edges and a diagonal at corners.
+    vec2 inward = vec2(0.0);
+    inward += vec2( 1.0,  0.0) * outL;
+    inward += vec2(-1.0,  0.0) * outR;
+    inward += vec2( 0.0,  1.0) * outT;
+    inward += vec2( 0.0, -1.0) * outB;
+    inward += vec2( D,  D) * outTL;
+    inward += vec2(-D,  D) * outTR;
+    inward += vec2( D, -D) * outBL;
+    inward += vec2(-D, -D) * outBR;
+
+    float inwardLength = length(inward);
+"""
+new_direction_field = r"""    // ii-vynx A/B: use a denser angular field for layer-mask normals.
+    // Eight cardinal/diagonal probes visibly quantize semicircular floating
+    // caps and create a kink where the straight edge transitions into the arc.
+    // Sixteen evenly spaced probes halve that angular step while preserving the
+    // same mask-derived geometry and single-ray distance refinement below.
+    const int EDGE_DIRECTION_SAMPLES = 16;
+    const float EDGE_TAU = 6.28318530718;
+    float hitScore = 0.0;
+    vec2 inward = vec2(0.0);
+
+    for (int sampleIndex = 0; sampleIndex < EDGE_DIRECTION_SAMPLES; ++sampleIndex) {
+        float angle = EDGE_TAU * (float(sampleIndex) / float(EDGE_DIRECTION_SAMPLES));
+        vec2 outwardSample = vec2(cos(angle), sin(angle));
+        float outside = maskOutsideAt(uv, outwardSample, bezelWidthPx);
+        hitScore += outside;
+        inward -= outwardSample * outside;
+    }
+
+    if (hitScore < 0.5)
+        return;
+
+    float inwardLength = length(inward);
+"""
+
+if old_direction_field not in text:
+    raise SystemExit("HyprGlass smooth-normal A/B could not locate the 8-direction mask field")
+text = text.replace(old_direction_field, new_direction_field, 1)
+path.write_text(text, encoding="utf-8")
+PY_MASK_NORMAL
+
+    log "Enabled ii-vynx 16-direction mask-edge normal A/B."
 }
 
 apply_mask_antialias_ab() {
@@ -96,11 +171,11 @@ PY_MASK_AA
 }
 '''
 
-source = source.replace(function_end, antialias_function + "'''\n", 1)
+source = source.replace(function_end, extra_functions + "'''\n", 1)
 
 call = '''    call_marker + '    apply_mask_edge_refraction "$source_dir"\\n',
 '''
-replacement = '''    call_marker + '    apply_mask_edge_refraction "$source_dir"\\n    apply_mask_antialias_ab "$source_dir"\\n',
+replacement = '''    call_marker + '    apply_mask_edge_refraction "$source_dir"\\n    apply_mask_edge_normal_smoothing_ab "$source_dir"\\n    apply_mask_antialias_ab "$source_dir"\\n',
 '''
 if call not in source:
     raise SystemExit("Could not locate production mask-edge patch call")
