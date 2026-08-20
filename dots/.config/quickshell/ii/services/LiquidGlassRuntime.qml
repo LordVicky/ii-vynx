@@ -21,7 +21,6 @@ Scope {
     property bool checkingAfterLoad: false
     property bool reapplyPending: false
     readonly property bool dedicatedBarSurfaceActive: (Config.options.bar.cornerStyle === 0 || Config.options.bar.cornerStyle === 1 || Config.options.bar.cornerStyle === 2)
-        && !(Config.options.bar.autoHide?.enable ?? false)
     readonly property string horizontalBarNamespace: root.dedicatedBarSurfaceActive
         ? "quickshell:bar-glass"
         : "quickshell:bar"
@@ -190,8 +189,8 @@ if hl.plugin.hyprglass then
     })
 
     -- HyprGlass owns native blur only on the active horizontal glass surface.
-    -- Hug, Float and Plain move that responsibility to a dedicated visual layer;
-    -- auto-hide keeps the existing bar surface for now.
+    -- Hug, Float and Plain keep that responsibility on dedicated visual layers,
+    -- including while the bar is auto-hidden or revealed.
     _G.iiVynxLiquidGlassBarBlurOverride = hl.layer_rule({
         name = "ii-vynx-liquid-glass-bar-native-blur-off",
         match = { namespace = "${root.horizontalBarNamespace}" },
