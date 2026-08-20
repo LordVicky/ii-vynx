@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 
 import qs.modules.common
+import qs.services
 import qs.modules.ii.background
 import qs.modules.ii.bar
 import qs.modules.ii.cheatsheet
@@ -29,15 +30,17 @@ Scope {
     readonly property bool usingWrappedFrame: Config.options.appearance.fakeScreenRounding === 3
     readonly property bool barBot: Config.options.bar.bottom
     readonly property bool barVert: Config.options.bar.vertical
+    readonly property bool dedicatedAutoHideSurfaceReady: !(Config.options.bar.autoHide?.enable ?? false)
+        || RuntimeServices.liquidGlass?.dedicatedBarSurfaceActive === true
     readonly property bool dedicatedBarGlass: Config.options.appearance.surfaceStyle === "liquidGlass"
         && Config.options.bar.cornerStyle === 1
-        && !(Config.options.bar.autoHide?.enable ?? false)
+        && dedicatedAutoHideSurfaceReady
     readonly property bool dedicatedHugGlass: Config.options.appearance.surfaceStyle === "liquidGlass"
         && Config.options.bar.cornerStyle === 0
-        && !(Config.options.bar.autoHide?.enable ?? false)
+        && dedicatedAutoHideSurfaceReady
     readonly property bool dedicatedPlainGlass: Config.options.appearance.surfaceStyle === "liquidGlass"
         && Config.options.bar.cornerStyle === 2
-        && !(Config.options.bar.autoHide?.enable ?? false)
+        && dedicatedAutoHideSurfaceReady
 
     Component.onCompleted: Qt.callLater(() => updateBarExtraCondition())
     onUsingWrappedFrameChanged: updateBarExtraCondition()
