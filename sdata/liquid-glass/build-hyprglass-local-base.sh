@@ -306,6 +306,7 @@ main() {
     log "Building HyprGlass $HYPRGLASS_REF for Hyprland $runtime_version ABI $runtime_abi..."
     git clone --quiet --depth 1 --branch "$HYPRGLASS_REF" "$HYPRGLASS_REPO" "$source_dir"
     apply_live_bar_refresh_ab "$source_dir"
+    python3 "$SCRIPT_DIR/patch-hyprglass-layer-damage.py" "$source_dir"
     PKG_CONFIG_PATH="$pc_dir${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}" make -C "$source_dir" -j"$(nproc)"
 
     magic="$(od -An -tx1 -N4 "$source_dir/hyprglass.so" 2>/dev/null | tr -d '[:space:]')"
