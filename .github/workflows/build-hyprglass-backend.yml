@@ -7,6 +7,7 @@ on:
       - agent/liquid-glass-stage1
     paths:
       - .github/workflows/build-hyprglass-backend.yml
+      - sdata/liquid-glass/patch-hyprglass-backend.py
 
 permissions:
   contents: write
@@ -26,6 +27,9 @@ jobs:
       image: fedora:44
 
     steps:
+      - name: Check out ii-vynx
+        uses: actions/checkout@v4
+
       - name: Install build tooling
         run: |
           dnf -y install \
@@ -33,6 +37,7 @@ jobs:
             git \
             gcc-c++ \
             make \
+            python3 \
             pkgconf-pkg-config \
             pixman-devel \
             libdrm-devel \
@@ -167,9 +172,13 @@ jobs:
           test -r "$LUA_HEADER_ROOT/lauxlib.h"
           pkg-config --cflags hyprland | grep -F -- "-I$LUA_HEADER_ROOT" >/dev/null
 
-      - name: Build HyprGlass v0.7.0
+      - name: Build patched HyprGlass v0.7.0
         run: |
+          set -euo pipefail
           git clone --depth 1 --branch "$HYPRGLASS_VERSION" https://github.com/hyprnux/hyprglass.git
+          python3 sdata/liquid-glass/patch-hyprglass-backend.py hyprglass
+          grep -Fq 'forceLiveBarRefresh' hyprglass/src/GlassLayerSurface.cpp
+          grep -Fq 'getMaskEdgeField' hyprglass/src/Shaders.hpp
           make -C hyprglass -j"$(nproc)"
 
       - name: Verify runtime dependencies
