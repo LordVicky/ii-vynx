@@ -197,6 +197,7 @@ if hl.plugin.hyprglass then
         match = { namespace = "${root.horizontalBarNamespace}" },
         blur = false,
         blur_popups = false,
+        order = ${root.dedicatedBarSurfaceActive ? -1 : 0},
     })
 
     -- Both horizontal paths use the same low-alpha QML mask contract. The
