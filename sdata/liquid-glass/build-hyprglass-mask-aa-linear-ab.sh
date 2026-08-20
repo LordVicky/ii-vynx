@@ -28,19 +28,6 @@ old_sample = '''        surfacePixel = texture(maskTex, clamp(maskUV, 0.001, 0.9
 '''
 new_sample = '''        surfacePixel = texture(maskTex, clamp(maskUV, 0.001, 0.999));
 
-        // ii-vynx A/B: supersample only the mask alpha used for coverage. The
-        // center surfacePixel remains untouched for compositing, so this smooths
-        // the silhouette without softening icons/text or changing the glass body.
-        vec2 maskTexSize = max(vec2(textureSize(maskTex, 0)), vec2(1.0));
-        vec2 maskTexel = 1.0 / maskTexSize;
-        vec2 aaOffset = maskTexel * 0.35;
-        float maskAlphaAA = 0.25 * (
-            texture(maskTex, clamp(maskUV + vec2(-aaOffset.x, -aaOffset.y), 0.001, 0.999)).a +
-            texture(maskTex, clamp(maskUV + vec2( aaOffset.x, -aaOffset.y), 0.001, 0.999)).a +
-            texture(maskTex, clamp(maskUV + vec2(-aaOffset.x,  aaOffset.y), 0.001, 0.999)).a +
-            texture(maskTex, clamp(maskUV + vec2( aaOffset.x,  aaOffset.y), 0.001, 0.999)).a
-        );
-
         // ii-vynx A/B: preserve Qt's fractional coverage only for the shell's
 '''
 if old_sample not in source:
@@ -63,11 +50,26 @@ old_aa = '''        // ii-vynx A/B: preserve Qt's fractional coverage only for t
             discard;
         }
 '''
-new_aa = '''        // ii-vynx A/B: reconstruct low-alpha bar coverage from a four-tap
-        // alpha average. Fully transparent samples stay empty, while partially
-        // covered rounded-edge texels blend smoothly into the 0.25% contour.
+new_aa = '''        // ii-vynx A/B: reconstruct the ultra-low-alpha bar contour with an
+        // isotropic eight-sample ring. The previous four diagonal taps formed a
+        // square kernel that could still bias semicircular endcaps. Fixed
+        // cardinal/diagonal directions avoid runtime trigonometry.
         float safeMaskThreshold = max(maskAlphaThreshold, 0.000001);
         if (maskAlphaThreshold < 0.01) {
+            vec2 maskTexSize = max(vec2(textureSize(maskTex, 0)), vec2(1.0));
+            vec2 maskTexel = 1.0 / maskTexSize;
+            vec2 aaRadius = maskTexel * 0.42;
+            const float AA_DIAGONAL = 0.70710678;
+            float maskAlphaAA = 0.125 * (
+                texture(maskTex, clamp(maskUV + vec2( aaRadius.x, 0.0), 0.001, 0.999)).a +
+                texture(maskTex, clamp(maskUV + vec2(-aaRadius.x, 0.0), 0.001, 0.999)).a +
+                texture(maskTex, clamp(maskUV + vec2(0.0,  aaRadius.y), 0.001, 0.999)).a +
+                texture(maskTex, clamp(maskUV + vec2(0.0, -aaRadius.y), 0.001, 0.999)).a +
+                texture(maskTex, clamp(maskUV + vec2( aaRadius.x * AA_DIAGONAL,  aaRadius.y * AA_DIAGONAL), 0.001, 0.999)).a +
+                texture(maskTex, clamp(maskUV + vec2(-aaRadius.x * AA_DIAGONAL,  aaRadius.y * AA_DIAGONAL), 0.001, 0.999)).a +
+                texture(maskTex, clamp(maskUV + vec2( aaRadius.x * AA_DIAGONAL, -aaRadius.y * AA_DIAGONAL), 0.001, 0.999)).a +
+                texture(maskTex, clamp(maskUV + vec2(-aaRadius.x * AA_DIAGONAL, -aaRadius.y * AA_DIAGONAL), 0.001, 0.999)).a
+            );
             maskCoverage = clamp(maskAlphaAA / safeMaskThreshold, 0.0, 1.0);
             if (maskCoverage <= 0.0001) discard;
         } else if (surfacePixel.a < safeMaskThreshold) {
