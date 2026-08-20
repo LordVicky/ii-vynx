@@ -229,7 +229,7 @@ Item { // Bar content region
                 delegate: BarComponent {
                     list: Config.options.bar.layouts.center
                     barSection: 1
-                    originalIndex: Config.options.bar.layouts.center.findIndex(e => e.id === modelData.id) // we have to recalculate the index because repeater.model has changed
+                    originalIndex: Config.options.bar.layouts.center.findIndex(e => e.id === modelData.id)
                 }
             }
         }
