@@ -20,6 +20,14 @@ Item {
     property bool highlighted: false
     property bool barBackgroundVisible: Config.options.bar.barBackgroundStyle === 1
     property real barSurfaceX: 0
+    readonly property bool standaloneLiquidGlassPillActive: !rootItem.vertical
+        && rootItem.barGroupStyle === 0
+        && !rootItem.barBackgroundVisible
+        && Config.options.appearance.surfaceStyle === "liquidGlass"
+        && RuntimeServices.liquidGlass?.ready === true
+        && RuntimeServices.liquidGlass?.hyprGlassLoaded === true
+        && RuntimeServices.liquidGlass?.configApplied === true
+        && RuntimeServices.liquidGlass?.dedicatedBarSurfaceActive === true
 
     implicitWidth: wrapper.implicitWidth
     implicitHeight: wrapper.implicitHeight
@@ -84,7 +92,8 @@ Item {
 
     readonly property int barGroupStyle: Config.options.bar.barGroupStyle
     readonly property int barBackgroundStyle: Config.options.bar.barBackgroundStyle
-    property color colBackground: barGroupStyle == 0 ? Appearance.colors.colLayer1 :
+    property color colBackground: rootItem.standaloneLiquidGlassPillActive ? "transparent" :
+                                   barGroupStyle == 0 ? Appearance.colors.colLayer1 :
                                    (barGroupStyle == 1 && barBackgroundStyle == 1) ? Appearance.colors.colLayer1 :
                                    (barGroupStyle == 1) ? Appearance.m3colors.m3surfaceContainerLow :
                                    "transparent";
@@ -129,6 +138,18 @@ Item {
                     }
                 }
             }
+        }
+    }
+
+    LazyLoader {
+        active: rootItem.standaloneLiquidGlassPillActive && !rootItem.highlighted
+        component: BarPillGlass {
+            targetScreen: rootItem.QsWindow.window?.screen
+            surfaceActive: rootItem.standaloneLiquidGlassPillActive && !rootItem.highlighted
+            surfaceX: rootItem.barSurfaceX
+            surfaceWidth: rootItem.width
+            startRadius: rootItem.startRadius
+            endRadius: rootItem.endRadius
         }
     }
 
