@@ -14,6 +14,7 @@ Singleton {
     property alias sidebarRightOpen: root.dashboardPanelOpen // Until all sidebars naming is fixed
 
     property bool barOpen: true
+    property var barAutoHideOffsets: ({})
     property bool crosshairOpen: false
     property bool desktopWidgetKeyboardFocus: false // Suppresses global shortcuts while typing in a desktop widget (notes, world clock settings, ...)
     property bool mediaControlsOpen: false
@@ -59,6 +60,29 @@ Singleton {
     // helper properties
     readonly property bool policiesOnLeft: Config.options.sidebar.position === "default" || Config.options.sidebar.position === "left"
     readonly property bool dashboardOnLeft: Config.options.sidebar.position === "inverted" || Config.options.sidebar.position === "left"
+
+    function setBarAutoHideOffset(screenName, offset) {
+        if (!screenName)
+            return;
+
+        const numericOffset = Number(offset);
+        const nextOffset = isFinite(numericOffset) ? numericOffset : 0;
+        if (root.barAutoHideOffsets[screenName] === nextOffset)
+            return;
+
+        const nextOffsets = Object.assign({}, root.barAutoHideOffsets);
+        nextOffsets[screenName] = nextOffset;
+        root.barAutoHideOffsets = nextOffsets;
+    }
+
+    function clearBarAutoHideOffset(screenName) {
+        if (!screenName || root.barAutoHideOffsets[screenName] === undefined)
+            return;
+
+        const nextOffsets = Object.assign({}, root.barAutoHideOffsets);
+        delete nextOffsets[screenName];
+        root.barAutoHideOffsets = nextOffsets;
+    }
 
     onPoliciesPanelOpenChanged: {
         if (policiesPanelOpen) {
