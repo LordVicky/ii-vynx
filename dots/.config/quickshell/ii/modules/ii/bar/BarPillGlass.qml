@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
+import qs
 import qs.services
 import qs.modules.common
 
@@ -13,6 +14,7 @@ PanelWindow {
     required property real surfaceWidth
     required property real startRadius
     required property real endRadius
+    readonly property real autoHideOffset: Number(GlobalStates.barAutoHideOffsets[root.targetScreen?.name ?? ""] ?? 0)
 
     screen: root.targetScreen
     visible: root.surfaceActive && root.surfaceWidth > 0
@@ -35,9 +37,9 @@ PanelWindow {
         left: Math.round(root.surfaceX)
         top: Config.options.bar.bottom
             ? 0
-            : (Config.options.bar.cornerStyle === 1 ? Appearance.sizes.hyprlandGapsOut : 0) + 4
+            : (Config.options.bar.cornerStyle === 1 ? Appearance.sizes.hyprlandGapsOut : 0) + 4 + root.autoHideOffset
         bottom: Config.options.bar.bottom
-            ? (Config.options.bar.cornerStyle === 1 ? Appearance.sizes.hyprlandGapsOut : 0) + 4
+            ? (Config.options.bar.cornerStyle === 1 ? Appearance.sizes.hyprlandGapsOut : 0) + 4 + root.autoHideOffset
             : 0
     }
 
