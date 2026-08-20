@@ -137,8 +137,8 @@ if side_function_marker not in source:
     raise SystemExit("Could not locate the mask-AA function end for side reflection")
 source = source.replace(side_function_marker, side_function_replacement, 1)
 
-side_call_marker = r'''    apply_mask_antialias_ab "$source_dir"\n'''
-side_call_replacement = side_call_marker + r'''    apply_side_wall_reflection_ab "$source_dir"\n'''
+side_call_marker = r'''    apply_mask_antialias_ab \"$source_dir\"\\n'''
+side_call_replacement = side_call_marker + r'''    apply_side_wall_reflection_ab \"$source_dir\"\\n'''
 if side_call_marker not in source:
     raise SystemExit("Could not locate the mask-AA patch call for side reflection")
 source = source.replace(side_call_marker, side_call_replacement, 1)
