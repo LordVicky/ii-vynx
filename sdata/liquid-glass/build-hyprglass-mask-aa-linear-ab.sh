@@ -80,52 +80,6 @@ if old_aa not in source:
     raise SystemExit("Could not locate the derivative-based low-alpha mask AA block")
 source = source.replace(old_aa, new_aa, 1)
 
-# Keep the side-wall experiment in the existing PY_MASK_AA patch pass instead
-# of injecting a second shell function into the parent's raw triple-quoted
-# string. Triple-double GLSL strings are safe inside that parent raw string.
-write_marker = '''text = text.replace(old_glass_alpha, new_glass_alpha, 1)
-
-path.write_text(text, encoding="utf-8")
-PY_MASK_AA
-'''
-side_patch = r'''text = text.replace(old_glass_alpha, new_glass_alpha, 1)
-
-old_background = """    if (chromaticAberration > 0.001 && edgeProximity > 0.01) {
-        color.r = sampleBlurred(uvR).r;
-        color.g = sampleBlurred(uvG).g;
-        color.b = sampleBlurred(uvB).b;
-    } else {
-        color = sampleBlurred(uvG).rgb;
-    }
-"""
-new_background = old_background + """
-    // ii-vynx A/B: rounded side walls need the same optical presence as the
-    // horizontal rims. Follow the inferred normal continuously so the pickup
-    // blends through the cap shoulder instead of turning on in a threshold band.
-    if (hasMask && refractionStrength > 0.001 && edgeProximity > 0.01) {
-        float sideAxis = clamp(abs(inwardDir.x), 0.0, 1.0);
-        float sideFacing = sideAxis * sideAxis * sideAxis;
-        float sideBand = sideFacing * edgeProximity * edgeProximity;
-        if (sideBand > 0.001) {
-            float sidePickupPx = refractionPx * 0.60;
-            vec2 sidePickupUV = uv - inwardDir * sidePickupPx / fullSize;
-            vec3 sidePickup = sampleBlurred(sidePickupUV).rgb;
-            float sideMix = clamp(sideBand * refractionStrength * 0.42, 0.0, 0.34);
-            color = mix(color, sidePickup, sideMix);
-        }
-    }
-"""
-if old_background not in text:
-    raise SystemExit("HyprGlass side-reflection A/B could not locate background sampling")
-text = text.replace(old_background, new_background, 1)
-
-path.write_text(text, encoding="utf-8")
-PY_MASK_AA
-'''
-if write_marker not in source:
-    raise SystemExit("Could not locate the mask-AA write stage for side reflection")
-source = source.replace(write_marker, side_patch, 1)
-
 target.write_text(source, encoding="utf-8")
 PY_WRAPPER
 
