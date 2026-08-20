@@ -7,7 +7,9 @@ import qs.modules.common
 Scope {
     id: root
 
-    readonly property bool surfaceReady: Config.options.appearance.surfaceStyle === "liquidGlass"
+    readonly property bool surfaceReady: GlobalStates.barOpen
+        && !GlobalStates.screenLocked
+        && Config.options.appearance.surfaceStyle === "liquidGlass"
         && RuntimeServices.liquidGlass?.ready === true
         && RuntimeServices.liquidGlass?.hyprGlassLoaded === true
         && RuntimeServices.liquidGlass?.configApplied === true
