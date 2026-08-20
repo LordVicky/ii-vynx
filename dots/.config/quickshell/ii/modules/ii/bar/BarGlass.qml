@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
+import qs
 import qs.services
 import qs.modules.common
 
@@ -11,6 +12,7 @@ PanelWindow {
     required property bool showBarBackground
     property real contentTopOffset: 0
     property real contentBottomOffset: 0
+    readonly property real autoHideOffset: Number(GlobalStates.barAutoHideOffsets[root.screen?.name ?? ""] ?? 0)
 
     visible: root.surfaceActive && root.showBarBackground
     exclusionMode: ExclusionMode.Ignore
@@ -33,9 +35,9 @@ PanelWindow {
         right: Appearance.sizes.hyprlandGapsOut
         top: Config.options.bar.bottom
             ? 0
-            : Appearance.sizes.hyprlandGapsOut + root.contentTopOffset
+            : Appearance.sizes.hyprlandGapsOut + root.contentTopOffset + root.autoHideOffset
         bottom: Config.options.bar.bottom
-            ? Appearance.sizes.hyprlandGapsOut + root.contentBottomOffset
+            ? Appearance.sizes.hyprlandGapsOut + root.contentBottomOffset + root.autoHideOffset
             : 0
     }
 
