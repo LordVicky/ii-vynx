@@ -20,6 +20,11 @@ Scope {
     property string managedPluginPath: ""
     property bool checkingAfterLoad: false
     property bool reapplyPending: false
+    readonly property bool dedicatedBarSurfaceActive: Config.options.bar.cornerStyle === 1
+        && !(Config.options.bar.autoHide?.enable ?? false)
+    readonly property string horizontalBarNamespace: root.dedicatedBarSurfaceActive
+        ? "quickshell:bar-glass"
+        : "quickshell:bar"
     readonly property bool darkMode: Appearance.m3colors.darkmode
     readonly property string glassTheme: {
         if (LiquidGlassSettings.options.followSystemTheme)
@@ -184,21 +189,20 @@ if hl.plugin.hyprglass then
         tint_color = 0xffffff00,
     })
 
-    -- HyprGlass owns the bar's background blur while this fragment is active.
-    -- Keep a handle so teardown can disable the override before removing it;
-    -- that forces Hyprland to re-evaluate the still-mapped bar against the
-    -- normal Quickshell blur rule instead of leaving native blur disabled.
+    -- HyprGlass owns native blur only on the active horizontal glass surface.
+    -- Float mode can move that responsibility to a dedicated visual layer;
+    -- Hug, Plain and auto-hide keep the existing bar surface for now.
     _G.iiVynxLiquidGlassBarBlurOverride = hl.layer_rule({
         name = "ii-vynx-liquid-glass-bar-native-blur-off",
-        match = { namespace = "quickshell:bar" },
+        match = { namespace = "${root.horizontalBarNamespace}" },
         blur = false,
         blur_popups = false,
     })
 
-    -- The bar deliberately uses an almost-transparent QML surface as its exact
-    -- glass mask. Cut at half of the 0.5% neutral mask so Qt's subpixel rounded
-    -- fringe cannot expand the finished Liquid Glass pill beyond its contour.
-    hg.layer("quickshell:bar", { preset = "vynx", mask_threshold = 0.0025 })
+    -- Both horizontal paths use the same low-alpha QML mask contract. The
+    -- dedicated Float surface simply removes unrelated widget/content alpha
+    -- from the layer HyprGlass captures.
+    hg.layer("${root.horizontalBarNamespace}", { preset = "vynx", mask_threshold = 0.0025 })
     hg.layer("quickshell:verticalBar", { preset = "vynx", mask_threshold = 0.05 })
     hg.layer("quickshell:popup", { preset = "vynx", mask_threshold = 0.05 })
 end
@@ -254,6 +258,7 @@ hyprctl reload
     Component.onDestruction: root.shutdown()
 
     onGlassThemeChanged: root.scheduleConfigApply()
+    onHorizontalBarNamespaceChanged: root.scheduleConfigApply()
     onRendererConfigSignatureChanged: root.scheduleConfigApply()
 
     Timer {
