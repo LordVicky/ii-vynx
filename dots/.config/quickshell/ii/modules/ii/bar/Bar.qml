@@ -172,7 +172,9 @@ Scope {
                             bottom: undefined
                         }
                         height: Appearance.rounding.screenRounding
-                        active: showBarBackground && Config.options.bar.cornerStyle === 0 // Hug
+                        active: showBarBackground
+                            && Config.options.bar.cornerStyle === 0
+                            && !barContent.dedicatedLiquidGlassSurfaceActive
 
                         states: State {
                             name: "bottom"
