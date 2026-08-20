@@ -77,8 +77,73 @@ new = '''        // ii-vynx A/B: reconstruct low-alpha bar coverage from a four-
 
 if old not in source:
     raise SystemExit("Could not locate the derivative-based low-alpha mask AA block")
+source = source.replace(old, new, 1)
 
-target.write_text(source.replace(old, new, 1), encoding="utf-8")
+side_function_marker = """    log \"Enabled ii-vynx low-alpha bar mask antialias A/B.\"
+}
+'''
+"""
+side_function_replacement = """    log \"Enabled ii-vynx low-alpha bar mask antialias A/B.\"
+}
+
+apply_side_wall_reflection_ab() {
+    local source_dir=\"$1\"
+    local target=\"$source_dir/src/Shaders.hpp\"
+
+    python3 - \"$target\" <<'PY_SIDE_REFLECTION'
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+text = path.read_text(encoding=\"utf-8\")
+
+old_background = '''    if (chromaticAberration > 0.001 && edgeProximity > 0.01) {
+        color.r = sampleBlurred(uvR).r;
+        color.g = sampleBlurred(uvG).g;
+        color.b = sampleBlurred(uvB).b;
+    } else {
+        color = sampleBlurred(uvG).rgb;
+    }
+'''
+new_background = old_background + '''
+    // ii-vynx A/B: rounded side walls need the same optical presence as the
+    // horizontal rims. Pull a narrow sample from just outside the mask and mix
+    // it only where the inferred mask normal faces mostly left/right. This
+    // creates the reflected/refracted side pickup visible on thick curved glass
+    // without changing the already-good top and bottom edge treatment.
+    if (hasMask && refractionStrength > 0.001 && edgeProximity > 0.01) {
+        float sideFacing = smoothstep(0.45, 0.90, abs(inwardDir.x));
+        float sideBand = sideFacing * edgeProximity * edgeProximity;
+        if (sideBand > 0.001) {
+            float sidePickupPx = refractionPx * 0.60;
+            vec2 sidePickupUV = uv - inwardDir * sidePickupPx / fullSize;
+            vec3 sidePickup = sampleBlurred(sidePickupUV).rgb;
+            float sideMix = clamp(sideBand * refractionStrength * 0.42, 0.0, 0.34);
+            color = mix(color, sidePickup, sideMix);
+        }
+    }
+'''
+
+if old_background not in text:
+    raise SystemExit(\"HyprGlass side-reflection A/B could not locate background sampling\")
+path.write_text(text.replace(old_background, new_background, 1), encoding=\"utf-8\")
+PY_SIDE_REFLECTION
+
+    log \"Enabled ii-vynx rounded side-wall reflection A/B.\"
+}
+'''
+"""
+if side_function_marker not in source:
+    raise SystemExit("Could not locate the mask-AA function end for side reflection")
+source = source.replace(side_function_marker, side_function_replacement, 1)
+
+side_call_marker = r'''    apply_mask_antialias_ab "$source_dir"\n'''
+side_call_replacement = side_call_marker + r'''    apply_side_wall_reflection_ab "$source_dir"\n'''
+if side_call_marker not in source:
+    raise SystemExit("Could not locate the mask-AA patch call for side reflection")
+source = source.replace(side_call_marker, side_call_replacement, 1)
+
+target.write_text(source, encoding="utf-8")
 PY_WRAPPER
 
 chmod +x "$TMP_BUILDER"
