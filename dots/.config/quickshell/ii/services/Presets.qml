@@ -31,6 +31,7 @@ Singleton {
         const configPath = Config.filePath;
         Config.filePath = "";
         Config.filePath = configPath;
+        LiquidGlassSettings.reload();
 
         const shellQmlPath = Quickshell.shellPath("shell.qml").toString().replace("file://", "");
         Quickshell.execDetached([
@@ -97,6 +98,9 @@ Singleton {
             return false;
         }
 
+        if (LiquidGlassSettings.ready)
+            LiquidGlassSettings.flush();
+
         const command = [root.scriptPath, replace ? "--replace" : "--save", presetName];
         if (description && description.length > 0)
             command.push(description);
@@ -104,6 +108,8 @@ Singleton {
     }
 
     function apply(name) {
+        if (LiquidGlassSettings.ready)
+            LiquidGlassSettings.flush();
         return root.begin(applyPresetProc, "apply", name, [root.scriptPath, "--apply", name]);
     }
 
