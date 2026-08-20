@@ -170,6 +170,7 @@ Item { // Bar content region
                 list: Config.options.bar.layouts.left
                 barSection: 0
                 barBackgroundVisible: root.showBarBackground
+                barSurfaceX: leftSection.x + x
             }
         }
     }
@@ -183,6 +184,7 @@ Item { // Bar content region
         }
 
         RowLayout {
+            id: middleLeftSection
             anchors {
                 top: parent.top
                 bottom: parent.bottom
@@ -196,6 +198,7 @@ Item { // Bar content region
                     list: Config.options.bar.layouts.center
                     barSection: 1
                     barBackgroundVisible: root.showBarBackground
+                    barSurfaceX: middleSection.x + middleLeftSection.x + x
                     originalIndex: Config.options.bar.layouts.center.findIndex(e => e.id === modelData.id) // we have to recalculate the index because repeater.model has changed
                 }
             }
@@ -214,12 +217,14 @@ Item { // Bar content region
                     list: Config.options.bar.layouts.center
                     barSection: 1
                     barBackgroundVisible: root.showBarBackground
+                    barSurfaceX: middleSection.x + centerCenter.x + x
                     originalIndex: Config.options.bar.layouts.center.findIndex(e => e.id === modelData.id)
                 }
             }
         }
 
         RowLayout {
+            id: middleRightSection
             anchors {
                 top: parent.top
                 bottom: parent.bottom
@@ -233,6 +238,7 @@ Item { // Bar content region
                     list: Config.options.bar.layouts.center
                     barSection: 1
                     barBackgroundVisible: root.showBarBackground
+                    barSurfaceX: middleSection.x + middleRightSection.x + x
                     originalIndex: Config.options.bar.layouts.center.findIndex(e => e.id === modelData.id)
                 }
             }
@@ -257,6 +263,7 @@ Item { // Bar content region
                 list: rightRepeater.model
                 barSection: 2
                 barBackgroundVisible: root.showBarBackground
+                barSurfaceX: rightSection.x + x
             }
         }
     }
