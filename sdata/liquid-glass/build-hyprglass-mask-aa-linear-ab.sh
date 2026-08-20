@@ -100,10 +100,11 @@ old_background = """    if (chromaticAberration > 0.001 && edgeProximity > 0.01)
 """
 new_background = old_background + """
     // ii-vynx A/B: rounded side walls need the same optical presence as the
-    // horizontal rims. Pull a narrow sample from just outside the mask and mix
-    // it only where the inferred mask normal faces mostly left/right.
+    // horizontal rims. Follow the inferred normal continuously so the pickup
+    // blends through the cap shoulder instead of turning on in a threshold band.
     if (hasMask && refractionStrength > 0.001 && edgeProximity > 0.01) {
-        float sideFacing = smoothstep(0.45, 0.90, abs(inwardDir.x));
+        float sideAxis = clamp(abs(inwardDir.x), 0.0, 1.0);
+        float sideFacing = sideAxis * sideAxis * sideAxis;
         float sideBand = sideFacing * edgeProximity * edgeProximity;
         if (sideBand > 0.001) {
             float sidePickupPx = refractionPx * 0.60;
