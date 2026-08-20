@@ -34,17 +34,18 @@ Item {
         && rootItem.barGroupStyle === 0
         && rootItem.barBackgroundVisible
         && rootItem.liquidGlassRuntimeReady
+    readonly property color liquidGlassInlayTone: Appearance.m3colors.darkmode ? "white" : "black"
     readonly property color liquidGlassInlayFill: Qt.rgba(
-        Appearance.colors.colOnLayer0.r,
-        Appearance.colors.colOnLayer0.g,
-        Appearance.colors.colOnLayer0.b,
-        0.06
+        rootItem.liquidGlassInlayTone.r,
+        rootItem.liquidGlassInlayTone.g,
+        rootItem.liquidGlassInlayTone.b,
+        0.10
     )
     readonly property color liquidGlassInlayBorder: Qt.rgba(
-        Appearance.colors.colOnLayer0.r,
-        Appearance.colors.colOnLayer0.g,
-        Appearance.colors.colOnLayer0.b,
-        0.12
+        rootItem.liquidGlassInlayTone.r,
+        rootItem.liquidGlassInlayTone.g,
+        rootItem.liquidGlassInlayTone.b,
+        0.24
     )
 
     implicitWidth: wrapper.implicitWidth
