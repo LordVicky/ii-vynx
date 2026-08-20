@@ -26,6 +26,8 @@ Item { // Bar content region
         && RuntimeServices.liquidGlass?.ready === true
         && RuntimeServices.liquidGlass?.hyprGlassLoaded === true
         && RuntimeServices.liquidGlass?.configApplied === true
+    readonly property bool dedicatedLiquidGlassSurfaceActive: root.liquidGlassSurfaceActive
+        && RuntimeServices.liquidGlass?.dedicatedBarSurfaceActive === true
     readonly property color liquidGlassBarSurfaceColor: RuntimeServices.liquidGlass?.barSurfaceColor ?? ColorUtils.transparentize(Appearance.colors.colLayer0Base, 0.82)
 
     Connections {
@@ -87,9 +89,11 @@ Item { // Bar content region
         }
         color: root.showBarBackground
             ? (Config.options.appearance.surfaceStyle === "liquidGlass"
-                ? (root.liquidGlassSurfaceActive
-                    ? root.liquidGlassBarSurfaceColor
-                    : ColorUtils.transparentize(Appearance.colors.colLayer0Base, 0.18))
+                ? (root.dedicatedLiquidGlassSurfaceActive
+                    ? "transparent"
+                    : (root.liquidGlassSurfaceActive
+                        ? root.liquidGlassBarSurfaceColor
+                        : ColorUtils.transparentize(Appearance.colors.colLayer0Base, 0.18)))
                 : Appearance.colors.colLayer0)
             : "transparent"
         radius: Config.options.bar.cornerStyle === 1
@@ -225,7 +229,7 @@ Item { // Bar content region
                 delegate: BarComponent {
                     list: Config.options.bar.layouts.center
                     barSection: 1
-                    originalIndex: Config.options.bar.layouts.center.findIndex(e => e.id === modelData.id)
+                    originalIndex: Config.options.bar.layouts.center.findIndex(e => e.id === modelData.id) // we have to recalculate the index because repeater.model has changed
                 }
             }
         }
