@@ -50,17 +50,17 @@ old_aa = '''        // ii-vynx A/B: preserve Qt's fractional coverage only for t
             discard;
         }
 '''
-new_aa = '''        // ii-vynx A/B: reconstruct the ultra-low-alpha bar contour with an
-        // isotropic eight-sample ring. The previous four diagonal taps formed a
-        // square kernel that could still bias semicircular endcaps. Fixed
-        // cardinal/diagonal directions avoid runtime trigonometry.
+new_aa = '''        // ii-vynx A/B: reconstruct the ultra-low-alpha bar contour with a
+        // center-weighted isotropic ring. The neutral QML mask body is exactly
+        // twice the configured 50% contour threshold, so normalize against that
+        // full-mask alpha instead of saturating half-covered edge pixels.
         float safeMaskThreshold = max(maskAlphaThreshold, 0.000001);
         if (maskAlphaThreshold < 0.01) {
             vec2 maskTexSize = max(vec2(textureSize(maskTex, 0)), vec2(1.0));
             vec2 maskTexel = 1.0 / maskTexSize;
-            vec2 aaRadius = maskTexel * 0.42;
+            vec2 aaRadius = maskTexel * 0.32;
             const float AA_DIAGONAL = 0.70710678;
-            float maskAlphaAA = 0.125 * (
+            float maskRingAlpha = 0.125 * (
                 texture(maskTex, clamp(maskUV + vec2( aaRadius.x, 0.0), 0.001, 0.999)).a +
                 texture(maskTex, clamp(maskUV + vec2(-aaRadius.x, 0.0), 0.001, 0.999)).a +
                 texture(maskTex, clamp(maskUV + vec2(0.0,  aaRadius.y), 0.001, 0.999)).a +
@@ -70,7 +70,9 @@ new_aa = '''        // ii-vynx A/B: reconstruct the ultra-low-alpha bar contour 
                 texture(maskTex, clamp(maskUV + vec2( aaRadius.x * AA_DIAGONAL, -aaRadius.y * AA_DIAGONAL), 0.001, 0.999)).a +
                 texture(maskTex, clamp(maskUV + vec2(-aaRadius.x * AA_DIAGONAL, -aaRadius.y * AA_DIAGONAL), 0.001, 0.999)).a
             );
-            maskCoverage = clamp(maskAlphaAA / safeMaskThreshold, 0.0, 1.0);
+            float maskAlphaAA = surfacePixel.a * 0.5 + maskRingAlpha * 0.5;
+            float fullMaskAlpha = safeMaskThreshold * 2.0;
+            maskCoverage = clamp(maskAlphaAA / fullMaskAlpha, 0.0, 1.0);
             if (maskCoverage <= 0.0001) discard;
         } else if (surfacePixel.a < safeMaskThreshold) {
             discard;
