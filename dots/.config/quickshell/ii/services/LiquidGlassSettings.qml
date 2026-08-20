@@ -14,6 +14,17 @@ Singleton {
     property bool ready: false
     property int readWriteDelay: 75
 
+    function flush() {
+        writeTimer.stop();
+        settingsFile.writeAdapter();
+    }
+
+    function reload() {
+        writeTimer.stop();
+        reloadTimer.stop();
+        settingsFile.reload();
+    }
+
     Timer {
         id: reloadTimer
         interval: root.readWriteDelay
