@@ -21,37 +21,14 @@ Item {
     property bool barBackgroundVisible: Config.options.bar.barBackgroundStyle === 1
     property real barSurfaceX: 0
     property bool standaloneLiquidGlassIslandActive: false
-    readonly property bool liquidGlassRuntimeReady: Config.options.appearance.surfaceStyle === "liquidGlass"
+    readonly property bool standaloneLiquidGlassPillActive: !rootItem.vertical
+        && rootItem.barGroupStyle === 0
+        && !rootItem.barBackgroundVisible
+        && Config.options.appearance.surfaceStyle === "liquidGlass"
         && RuntimeServices.liquidGlass?.ready === true
         && RuntimeServices.liquidGlass?.hyprGlassLoaded === true
         && RuntimeServices.liquidGlass?.configApplied === true
         && RuntimeServices.liquidGlass?.dedicatedBarSurfaceActive === true
-    readonly property bool standaloneLiquidGlassPillActive: !rootItem.vertical
-        && rootItem.barGroupStyle === 0
-        && !rootItem.barBackgroundVisible
-        && rootItem.liquidGlassRuntimeReady
-    readonly property bool liquidGlassPillInlayActive: !rootItem.vertical
-        && rootItem.barGroupStyle === 0
-        && rootItem.barBackgroundVisible
-        && rootItem.liquidGlassRuntimeReady
-    readonly property color liquidGlassInlayFill: Qt.rgba(
-        0,
-        0,
-        0,
-        Appearance.m3colors.darkmode ? 0.16 : 0.10
-    )
-    readonly property color liquidGlassInlayShadow: Qt.rgba(
-        0,
-        0,
-        0,
-        Appearance.m3colors.darkmode ? 0.30 : 0.22
-    )
-    readonly property color liquidGlassInlayHighlight: Qt.rgba(
-        1,
-        1,
-        1,
-        Appearance.m3colors.darkmode ? 0.10 : 0.15
-    )
 
     implicitWidth: wrapper.implicitWidth
     implicitHeight: wrapper.implicitHeight
@@ -117,7 +94,6 @@ Item {
     readonly property int barGroupStyle: Config.options.bar.barGroupStyle
     readonly property int barBackgroundStyle: Config.options.bar.barBackgroundStyle
     property color colBackground: (rootItem.standaloneLiquidGlassPillActive || rootItem.standaloneLiquidGlassIslandActive) ? "transparent" :
-                                   rootItem.liquidGlassPillInlayActive ? rootItem.liquidGlassInlayFill :
                                    barGroupStyle == 0 ? Appearance.colors.colLayer1 :
                                    (barGroupStyle == 1 && barBackgroundStyle == 1) ? Appearance.colors.colLayer1 :
                                    (barGroupStyle == 1) ? Appearance.m3colors.m3surfaceContainerLow :
@@ -136,10 +112,6 @@ Item {
         startRadius: rootItem.startRadius
         endRadius: rootItem.endRadius
         colBackground: rootItem.highlighted ? rootItem.colBackgroundHighlight : rootItem.colBackground
-        inlay: rootItem.liquidGlassPillInlayActive && !rootItem.highlighted
-        recessedInlay: rootItem.liquidGlassPillInlayActive && !rootItem.highlighted
-        colInlayShadow: rootItem.liquidGlassInlayShadow
-        colInlayHighlight: rootItem.liquidGlassInlayHighlight
 
         readonly property var _currentComp: {
             BarComponentRegistry._extensionCompVersion
