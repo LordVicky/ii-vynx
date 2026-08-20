@@ -50,9 +50,9 @@ Scope {
     readonly property color barSurfaceColor: {
         const tint = root.shellTint;
         const theme = Appearance.colors.colLayer0Base;
-        // HyprGlass uses layer alpha as its mask. The neutral bar mask is 0.5%
-        // opaque; the layer cutoff below sits at its 50% coverage point so the
-        // rounded anti-alias fringe does not turn into full glass fragments.
+        // HyprGlass uses layer alpha as its mask. The bar has a dedicated
+        // 0.001 threshold, so keep the neutral mask barely visible at 0.5%
+        // instead of painting the old 5.5% grey veil over the finished glass.
         let alpha = 0.005 + (0.18 - 0.005) * tint;
         let red = 0.5 + (theme.r - 0.5) * tint;
         let green = 0.5 + (theme.g - 0.5) * tint;
@@ -196,9 +196,8 @@ if hl.plugin.hyprglass then
     })
 
     -- The bar deliberately uses an almost-transparent QML surface as its exact
-    -- glass mask. Cut at half of the 0.5% neutral mask so Qt's subpixel rounded
-    -- fringe cannot expand the finished Liquid Glass pill beyond its contour.
-    hg.layer("quickshell:bar", { preset = "vynx", mask_threshold = 0.0025 })
+    -- glass mask. Keep this threshold low enough for the 0.5% neutral mask.
+    hg.layer("quickshell:bar", { preset = "vynx", mask_threshold = 0.001 })
     hg.layer("quickshell:verticalBar", { preset = "vynx", mask_threshold = 0.05 })
     hg.layer("quickshell:popup", { preset = "vynx", mask_threshold = 0.05 })
 end
