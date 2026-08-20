@@ -29,6 +29,9 @@ Scope {
     readonly property bool usingWrappedFrame: Config.options.appearance.fakeScreenRounding === 3
     readonly property bool barBot: Config.options.bar.bottom
     readonly property bool barVert: Config.options.bar.vertical
+    readonly property bool dedicatedBarGlass: Config.options.appearance.surfaceStyle === "liquidGlass"
+        && Config.options.bar.cornerStyle === 1
+        && !(Config.options.bar.autoHide?.enable ?? false)
 
     Component.onCompleted: Qt.callLater(() => updateBarExtraCondition())
     onUsingWrappedFrameChanged: updateBarExtraCondition()
@@ -42,6 +45,7 @@ Scope {
         Qt.callLater(() => barExtraCondition = true)
     }
 
+    PanelLoader { extraCondition: !Config.options.bar.vertical && barExtraCondition && dedicatedBarGlass; component: BarGlassLayer {} }
     PanelLoader { extraCondition: !Config.options.bar.vertical && barExtraCondition; component: Bar {} }
     PanelLoader { extraCondition: Config.options.background.enable; component: Background {} }
     PanelLoader { component: Cheatsheet {} }
