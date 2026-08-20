@@ -324,6 +324,37 @@ ContentPage {
                     ]
                 }
 
+                ConfigSwitch {
+                    visible: Config.options.appearance.surfaceStyle === "liquidGlass"
+                    buttonIcon: "contrast"
+                    text: Translation.tr("Follow system theme")
+                    checked: LiquidGlassSettings.options.followSystemTheme
+                    onCheckedChanged: {
+                        LiquidGlassSettings.options.followSystemTheme = checked;
+                    }
+                }
+
+                ConfigSelectionArray {
+                    visible: Config.options.appearance.surfaceStyle === "liquidGlass"
+                        && !LiquidGlassSettings.options.followSystemTheme
+                    currentValue: LiquidGlassSettings.options.theme
+                    onSelected: newValue => {
+                        LiquidGlassSettings.options.theme = newValue;
+                    }
+                    options: [
+                        {
+                            displayName: Translation.tr("Light"),
+                            icon: "light_mode",
+                            value: "light"
+                        },
+                        {
+                            displayName: Translation.tr("Dark"),
+                            icon: "dark_mode",
+                            value: "dark"
+                        }
+                    ]
+                }
+
                 ConfigSlider {
                     visible: Config.options.appearance.surfaceStyle === "liquidGlass"
                     buttonIcon: "water_drop"
