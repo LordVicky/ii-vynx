@@ -34,18 +34,23 @@ Item {
         && rootItem.barGroupStyle === 0
         && rootItem.barBackgroundVisible
         && rootItem.liquidGlassRuntimeReady
-    readonly property color liquidGlassInlayTone: Appearance.m3colors.darkmode ? "white" : "black"
     readonly property color liquidGlassInlayFill: Qt.rgba(
-        rootItem.liquidGlassInlayTone.r,
-        rootItem.liquidGlassInlayTone.g,
-        rootItem.liquidGlassInlayTone.b,
-        0.10
+        0,
+        0,
+        0,
+        Appearance.m3colors.darkmode ? 0.16 : 0.10
     )
-    readonly property color liquidGlassInlayBorder: Qt.rgba(
-        rootItem.liquidGlassInlayTone.r,
-        rootItem.liquidGlassInlayTone.g,
-        rootItem.liquidGlassInlayTone.b,
-        0.24
+    readonly property color liquidGlassInlayShadow: Qt.rgba(
+        0,
+        0,
+        0,
+        Appearance.m3colors.darkmode ? 0.30 : 0.22
+    )
+    readonly property color liquidGlassInlayHighlight: Qt.rgba(
+        1,
+        1,
+        1,
+        Appearance.m3colors.darkmode ? 0.10 : 0.15
     )
 
     implicitWidth: wrapper.implicitWidth
@@ -132,7 +137,9 @@ Item {
         endRadius: rootItem.endRadius
         colBackground: rootItem.highlighted ? rootItem.colBackgroundHighlight : rootItem.colBackground
         inlay: rootItem.liquidGlassPillInlayActive && !rootItem.highlighted
-        colInlayBorder: rootItem.liquidGlassInlayBorder
+        recessedInlay: rootItem.liquidGlassPillInlayActive && !rootItem.highlighted
+        colInlayShadow: rootItem.liquidGlassInlayShadow
+        colInlayHighlight: rootItem.liquidGlassInlayHighlight
 
         readonly property var _currentComp: {
             BarComponentRegistry._extensionCompVersion
