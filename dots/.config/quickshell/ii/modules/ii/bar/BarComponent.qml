@@ -18,6 +18,7 @@ Item {
     property var originalIndex: index
     property bool vertical: false
     property bool highlighted: false
+    property bool barBackgroundVisible: Config.options.bar.barBackgroundStyle === 1
 
     implicitWidth: wrapper.implicitWidth
     implicitHeight: wrapper.implicitHeight
