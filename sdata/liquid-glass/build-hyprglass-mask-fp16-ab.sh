@@ -51,4 +51,4 @@ git -C "$SOURCE_DIR" commit --quiet -m "test: force FP16 bar mask framebuffer"
 printf '%s\n' "Enabled ii-vynx FP16 horizontal bar mask A/B."
 HYPRGLASS_REPO="file://$SOURCE_DIR" \
 HYPRGLASS_REF="$TEST_REF" \
-"$BASE_BUILDER" "$@"
+bash "$BASE_BUILDER" "$@"
