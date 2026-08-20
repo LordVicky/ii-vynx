@@ -73,6 +73,10 @@ Scope {
                 }
                 property bool superShow: false
                 property bool mustShow: hoverRegion.containsMouse || superShow
+                readonly property real contentEdgeOffset: Config.options.bar.bottom
+                    ? barContent.anchors.bottomMargin
+                    : barContent.anchors.topMargin
+                onContentEdgeOffsetChanged: GlobalStates.setBarAutoHideOffset(barRoot.screen?.name ?? "", barRoot.contentEdgeOffset)
                 exclusionMode: ExclusionMode.Ignore
                 exclusiveZone: (Config?.options.bar.autoHide.enable && (!mustShow || !Config?.options.bar.autoHide.pushWindows)) ? 0 :
                     Appearance.sizes.baseBarHeight + (Config.options.bar.cornerStyle === 1 ? Appearance.sizes.hyprlandGapsOut : 0)
@@ -99,9 +103,11 @@ Scope {
                 // Include in focus grab
                 Component.onCompleted: {
                     GlobalFocusGrab.addPersistent(barRoot);
+                    GlobalStates.setBarAutoHideOffset(barRoot.screen?.name ?? "", barRoot.contentEdgeOffset);
                 }
                 Component.onDestruction: {
                     GlobalFocusGrab.removePersistent(barRoot);
+                    GlobalStates.clearBarAutoHideOffset(barRoot.screen?.name ?? "");
                 }
 
                 MouseArea  {
