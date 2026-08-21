@@ -28,7 +28,7 @@ Item { // Full hitbox
 
             ShapePath {
                 strokeWidth: 1.2
-                strokeColor: Appearance.colors.colSubtext
+                strokeColor: Bar.BarPalette.secondary(Appearance.colors.colSubtext)
                 fillColor: "transparent"
                 startX: content.width - diagonalLine.padding
                 startY: diagonalLine.padding
@@ -46,7 +46,7 @@ Item { // Full hitbox
                 left: parent.left
             }
             font.pixelSize: 13
-            color: Appearance.colors.colOnLayer1
+            color: Bar.BarPalette.foreground(Appearance.colors.colOnLayer1)
             text: dayOfMonth
         }
 
@@ -57,7 +57,7 @@ Item { // Full hitbox
                 right: parent.right
             }
             font.pixelSize: 13
-            color: Appearance.colors.colOnLayer1
+            color: Bar.BarPalette.foreground(Appearance.colors.colOnLayer1)
             text: monthOfYear
         }
     }
