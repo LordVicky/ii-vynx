@@ -131,7 +131,7 @@ Item {
 
             lineWidth: Appearance.rounding.unsharpen
             value: activePlayer?.position / activePlayer?.length
-            colPrimary: Appearance.colors.colOnSecondaryContainer
+            colPrimary: BarPalette.foreground(Appearance.colors.colOnSecondaryContainer)
             enableAnimation: false
 
             Item {
@@ -166,7 +166,7 @@ Item {
         horizontalAlignment: Text.AlignHCenter
         width: artworkEnabled ? parent.implicitWidth - (artworkItem.width + mediaCircProgSlot.width + artworkContentPadding + 16) : parent.implicitWidth - mediaCircProgSlot.width - 16
         elide: Text.ElideRight
-        color: Appearance.colors.colOnLayer1
+        color: BarPalette.foreground(Appearance.colors.colOnLayer1)
         text: `${cleanedTitle}${activePlayer?.trackArtist ? ' • ' + activePlayer.trackArtist : ''}`
     }
 
