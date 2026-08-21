@@ -70,9 +70,9 @@ PanelWindow {
         delegate: Rectangle {
             required property var modelData
 
-            x: Math.round(modelData.position)
+            x: Math.round(modelData.resolvedPosition)
             y: 4
-            width: Math.max(1, modelData.extent)
+            width: Math.max(1, modelData.resolvedExtent)
             height: Math.max(1, root.height - 8)
             color: RuntimeServices.liquidGlass?.barSurfaceColor ?? "transparent"
             topLeftRadius: modelData.startRadius
