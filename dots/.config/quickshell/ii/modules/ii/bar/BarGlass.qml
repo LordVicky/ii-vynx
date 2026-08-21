@@ -51,7 +51,7 @@ PanelWindow {
 
     onSegmentsChanged: {
         const keys = root.segments.map(segment => segment?.segmentKey ?? "<null>");
-        console.log("[bar-glass-trace] model", keys.join(","));
+        console.warn("[bar-glass-trace] model", keys.join(","));
     }
 
     // This window is visual only. All pointer, scroll and hover behavior stays
@@ -81,7 +81,7 @@ PanelWindow {
                 if (!traceEnabled)
                     return;
 
-                console.log(
+                console.warn(
                     "[bar-glass-trace]",
                     modelData.segmentKey,
                     reason,
