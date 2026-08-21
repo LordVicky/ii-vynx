@@ -14,6 +14,14 @@ Scope {
         && RuntimeServices.liquidGlass?.hyprGlassLoaded === true
         && RuntimeServices.liquidGlass?.configApplied === true
 
+    function syncSurfaceState() {
+        GlobalStates.verticalBarGlassSurfaceActive = root.surfaceReady;
+    }
+
+    Component.onCompleted: root.syncSurfaceState()
+    Component.onDestruction: GlobalStates.verticalBarGlassSurfaceActive = false
+    onSurfaceReadyChanged: root.syncSurfaceState()
+
     Variants {
         id: glassVariants
 
