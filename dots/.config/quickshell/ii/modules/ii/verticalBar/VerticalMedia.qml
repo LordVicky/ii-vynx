@@ -50,7 +50,7 @@ MouseArea {
 
         lineWidth: Appearance.rounding.unsharpen
         value: activePlayer?.position / activePlayer?.length
-        colPrimary: Appearance.colors.colOnSecondaryContainer
+        colPrimary: Bar.BarPalette.foreground(Appearance.colors.colOnSecondaryContainer)
         enableAnimation: false
 
         Item {
