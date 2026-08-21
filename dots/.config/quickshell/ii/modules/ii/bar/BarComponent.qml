@@ -34,7 +34,11 @@ Item {
     readonly property bool standaloneVerticalLiquidGlassPillActive: rootItem.vertical
         && rootItem.barGroupStyle === 0
         && !rootItem.barBackgroundVisible
-        && GlobalStates.verticalBarGlassSurfaceActive
+        && Config.options.appearance.surfaceStyle === "liquidGlass"
+        && RuntimeServices.liquidGlass?.ready === true
+        && RuntimeServices.liquidGlass?.hyprGlassLoaded === true
+        && RuntimeServices.liquidGlass?.configApplied === true
+        && RuntimeServices.liquidGlass?.dedicatedVerticalBarSurfaceActive === true
 
     implicitWidth: wrapper.implicitWidth
     implicitHeight: wrapper.implicitHeight
