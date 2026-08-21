@@ -88,7 +88,7 @@ Item {
 
     function updateWorkspaceOccupied() {
         workspaceOccupied = Array.from({ length: root.workspacesShown }, (_, i) => {
-            const wsId = workspaceGroup * workspacesShown + i + 1 + root.workspaceOffset;
+            const wsId = workspaceGroup * root.workspacesShown + i + 1 + root.workspaceOffset;
             return Hyprland.workspaces.values.some(ws => ws.id === wsId);
         })
     }
