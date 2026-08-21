@@ -19,6 +19,7 @@ Singleton {
     property bool unifiedBarGlassSegmentsEnabled: true
     property var barGlassSegments: ({})
     property var verticalBarGlassSegments: ({})
+    property int barGlassSegmentOwnerCounter: 0
     property bool crosshairOpen: false
     property bool desktopWidgetKeyboardFocus: false // Suppresses global shortcuts while typing in a desktop widget (notes, world clock settings, ...)
     property bool mediaControlsOpen: false
@@ -88,21 +89,27 @@ Singleton {
         root.barAutoHideOffsets = nextOffsets;
     }
 
-    function setBarGlassSegment(vertical, screenName, key, segment) {
-        if (!screenName || !key || !segment)
+    function allocateBarGlassSegmentOwnerId() {
+        root.barGlassSegmentOwnerCounter += 1;
+        return root.barGlassSegmentOwnerCounter;
+    }
+
+    function setBarGlassSegment(vertical, screenName, key, segment, ownerId) {
+        if (!screenName || !key || !segment || !ownerId)
             return;
 
         const store = vertical ? root.verticalBarGlassSegments : root.barGlassSegments;
         const screenSegments = Object.assign({}, store[screenName] ?? {});
         const previous = screenSegments[key];
         if (previous
+                && previous.ownerId === ownerId
                 && previous.position === segment.position
                 && previous.extent === segment.extent
                 && previous.startRadius === segment.startRadius
                 && previous.endRadius === segment.endRadius)
             return;
 
-        screenSegments[key] = segment;
+        screenSegments[key] = Object.assign({}, segment, { ownerId: ownerId });
         const nextStore = Object.assign({}, store);
         nextStore[screenName] = screenSegments;
         if (vertical)
@@ -111,12 +118,13 @@ Singleton {
             root.barGlassSegments = nextStore;
     }
 
-    function clearBarGlassSegment(vertical, screenName, key) {
-        if (!screenName || !key)
+    function clearBarGlassSegment(vertical, screenName, key, ownerId) {
+        if (!screenName || !key || !ownerId)
             return;
 
         const store = vertical ? root.verticalBarGlassSegments : root.barGlassSegments;
-        if (store[screenName]?.[key] === undefined)
+        const current = store[screenName]?.[key];
+        if (current === undefined || current.ownerId !== ownerId)
             return;
 
         const screenSegments = Object.assign({}, store[screenName]);
@@ -160,7 +168,7 @@ Singleton {
             root.superDown = true
         }
         onReleased: {
-            root.superDown = false
+            root.superDown = false;
         }
     }
 }

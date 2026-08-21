@@ -17,6 +17,7 @@ Item {
     required property real startRadius
     required property real endRadius
 
+    readonly property int ownerId: GlobalStates.allocateBarGlassSegmentOwnerId()
     property bool registeredVertical: false
     property string registeredScreenName: ""
     property string registeredSegmentKey: ""
@@ -28,7 +29,8 @@ Item {
         GlobalStates.clearBarGlassSegment(
             root.registeredVertical,
             root.registeredScreenName,
-            root.registeredSegmentKey
+            root.registeredSegmentKey,
+            root.ownerId
         );
         root.registeredScreenName = "";
         root.registeredSegmentKey = "";
@@ -56,7 +58,7 @@ Item {
             extent: Number(root.extent),
             startRadius: Number(root.startRadius),
             endRadius: Number(root.endRadius)
-        });
+        }, root.ownerId);
         root.registeredVertical = root.vertical;
         root.registeredScreenName = screenName;
         root.registeredSegmentKey = root.segmentKey;
