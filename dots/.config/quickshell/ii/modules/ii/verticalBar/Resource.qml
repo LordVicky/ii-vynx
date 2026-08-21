@@ -1,6 +1,7 @@
 import qs.modules.common
 import qs.modules.common.functions
 import qs.modules.common.widgets
+import qs.modules.ii.bar as Bar
 import QtQuick
 
 Item {
@@ -18,7 +19,7 @@ Item {
         anchors.centerIn: parent
         value: percentage
         enableAnimation: false
-        colPrimary: root.warning ? Appearance.colors.colError : Appearance.colors.colOnSecondaryContainer
+        colPrimary: root.warning ? Appearance.colors.colError : Bar.BarPalette.foreground(Appearance.colors.colOnSecondaryContainer)
         accountForLightBleeding: !root.warning
 
         MaterialSymbol {
