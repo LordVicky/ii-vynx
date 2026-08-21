@@ -56,7 +56,7 @@ Item {
             visible: !root.vertical
             Layout.fillWidth: true
             font.pixelSize: Appearance.font.pixelSize.smaller
-            color: Appearance.colors.colSubtext
+            color: BarPalette.secondary(Appearance.colors.colSubtext)
             elide: Text.ElideRight
             text: root.appClassText
         }
@@ -66,7 +66,7 @@ Item {
             Layout.leftMargin: root.vertical ? 0 : 6
             Layout.fillWidth: true
             font.pixelSize: Appearance.font.pixelSize.small
-            color: Appearance.colors.colOnLayer0
+            color: BarPalette.foreground(Appearance.colors.colOnLayer0)
             elide: Text.ElideRight
             rotation: root.vertical ? 90 : 0
             text: root.vertical ? root.appClassText : root.appTitleText
