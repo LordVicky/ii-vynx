@@ -17,6 +17,9 @@ Item { // Bar content region
     property var brightnessMonitor: Brightness.getMonitorForScreen(screen)
     property bool hasActiveWindows: false
     property bool showBarBackground: root.hasActiveWindows && Config.options.bar.barBackgroundStyle === 2 || Config.options.bar.barBackgroundStyle === 1
+    readonly property bool standaloneLiquidGlassIslandActive: GlobalStates.verticalBarGlassSurfaceActive
+        && !root.showBarBackground
+        && Config.options.bar.barGroupStyle === 1
     
     Connections {
         enabled: Config.options.bar.barBackgroundStyle === 2
@@ -128,6 +131,7 @@ Item { // Bar content region
                 barSection: 0
                 barBackgroundVisible: root.showBarBackground
                 barSurfaceY: topSection.y + y
+                standaloneLiquidGlassIslandActive: root.standaloneLiquidGlassIslandActive
             }
         }
     }
@@ -155,6 +159,7 @@ Item { // Bar content region
                     barSection: 1
                     barBackgroundVisible: root.showBarBackground
                     barSurfaceY: middleSection.y + middleLeftSection.y + y
+                    standaloneLiquidGlassIslandActive: root.standaloneLiquidGlassIslandActive
                     originalIndex: Config.options.bar.layouts.center.findIndex(e => e.id === modelData.id) // we have to recalculate the index because repeater.model has changed
                 }
             }
@@ -174,6 +179,7 @@ Item { // Bar content region
                     barSection: 1
                     barBackgroundVisible: root.showBarBackground
                     barSurfaceY: middleSection.y + centerCenter.y + y
+                    standaloneLiquidGlassIslandActive: root.standaloneLiquidGlassIslandActive
                     originalIndex: Config.options.bar.layouts.center.findIndex(e => e.id === modelData.id)
                 }
             }
@@ -195,12 +201,44 @@ Item { // Bar content region
                     barSection: 1
                     barBackgroundVisible: root.showBarBackground
                     barSurfaceY: middleSection.y + middleRightSection.y + y
+                    standaloneLiquidGlassIslandActive: root.standaloneLiquidGlassIslandActive
                     originalIndex: Config.options.bar.layouts.center.findIndex(e => e.id === modelData.id)
                 }
             }
         }
 
     }
+
+    readonly property bool middleIslandHasContent: middleLeftSection.height > 0
+        || centerCenter.height > 0
+        || middleRightSection.height > 0
+    readonly property real middleIslandLocalTop: {
+        let top = 0;
+        let hasValue = false;
+        if (middleLeftSection.height > 0) {
+            top = middleLeftSection.y;
+            hasValue = true;
+        }
+        if (centerCenter.height > 0) {
+            top = hasValue ? Math.min(top, centerCenter.y) : centerCenter.y;
+            hasValue = true;
+        }
+        if (middleRightSection.height > 0)
+            top = hasValue ? Math.min(top, middleRightSection.y) : middleRightSection.y;
+        return top;
+    }
+    readonly property real middleIslandLocalBottom: {
+        let bottom = 0;
+        if (middleLeftSection.height > 0)
+            bottom = middleLeftSection.y + middleLeftSection.height;
+        if (centerCenter.height > 0)
+            bottom = Math.max(bottom, centerCenter.y + centerCenter.height);
+        if (middleRightSection.height > 0)
+            bottom = Math.max(bottom, middleRightSection.y + middleRightSection.height);
+        return bottom;
+    }
+    readonly property real middleIslandY: middleSection.y + root.middleIslandLocalTop
+    readonly property real middleIslandHeight: Math.max(0, root.middleIslandLocalBottom - root.middleIslandLocalTop)
 
     ColumnLayout { // Bottom section
         id: bottomSection
@@ -219,7 +257,44 @@ Item { // Bar content region
                 barSection: 2
                 barBackgroundVisible: root.showBarBackground
                 barSurfaceY: bottomSection.y + y
+                standaloneLiquidGlassIslandActive: root.standaloneLiquidGlassIslandActive
             }
+        }
+    }
+
+    LazyLoader {
+        active: root.standaloneLiquidGlassIslandActive && topSection.height > 0
+        component: VerticalBarPillGlass {
+            targetScreen: root.screen
+            surfaceActive: root.standaloneLiquidGlassIslandActive
+            surfaceY: topSection.y
+            surfaceHeight: topSection.height
+            startRadius: Appearance.rounding.full
+            endRadius: Appearance.rounding.full
+        }
+    }
+
+    LazyLoader {
+        active: root.standaloneLiquidGlassIslandActive && root.middleIslandHasContent
+        component: VerticalBarPillGlass {
+            targetScreen: root.screen
+            surfaceActive: root.standaloneLiquidGlassIslandActive
+            surfaceY: root.middleIslandY
+            surfaceHeight: root.middleIslandHeight
+            startRadius: Appearance.rounding.full
+            endRadius: Appearance.rounding.full
+        }
+    }
+
+    LazyLoader {
+        active: root.standaloneLiquidGlassIslandActive && bottomSection.height > 0
+        component: VerticalBarPillGlass {
+            targetScreen: root.screen
+            surfaceActive: root.standaloneLiquidGlassIslandActive
+            surfaceY: bottomSection.y
+            surfaceHeight: bottomSection.height
+            startRadius: Appearance.rounding.full
+            endRadius: Appearance.rounding.full
         }
     }
 
