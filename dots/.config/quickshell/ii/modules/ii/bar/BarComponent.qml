@@ -21,6 +21,7 @@ Item {
     property bool barBackgroundVisible: Config.options.bar.barBackgroundStyle === 1
     property real barSurfaceX: 0
     property real barSurfaceY: 0
+    property var barSurfaceScreen: null
     property bool standaloneLiquidGlassIslandActive: false
     readonly property bool standaloneLiquidGlassPillActive: !rootItem.vertical
         && rootItem.barGroupStyle === 0
@@ -162,10 +163,10 @@ Item {
     LazyLoader {
         active: rootItem.standaloneVerticalLiquidGlassPillActive && !rootItem.highlighted
         component: Vertical.VerticalBarPillGlass {
-            targetScreen: rootItem.QsWindow.window?.screen
+            targetScreen: rootItem.barSurfaceScreen ?? rootItem.QsWindow.window?.screen
             surfaceActive: rootItem.standaloneVerticalLiquidGlassPillActive && !rootItem.highlighted
             surfaceY: rootItem.barSurfaceY
-            surfaceHeight: rootItem.height
+            surfaceHeight: rootItem.implicitHeight
             startRadius: rootItem.startRadius
             endRadius: rootItem.endRadius
         }
