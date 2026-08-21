@@ -39,16 +39,24 @@ Scope {
                 property bool hasActiveWindows: false
                 property bool showBarBackground: barRoot.hasActiveWindows && Config.options.bar.barBackgroundStyle === 2 || Config.options.bar.barBackgroundStyle === 1
 
+                function updateHasActiveWindows() {
+                    if (Config.options.bar.barBackgroundStyle !== 2) {
+                        barRoot.hasActiveWindows = false;
+                        return;
+                    }
+
+                    const monitor = HyprlandData.monitors.find(m => m.name === barRoot.screen?.name);
+                    const wsId = monitor?.activeWorkspace?.id;
+                    barRoot.hasActiveWindows = wsId
+                        ? HyprlandData.windowList.some(w => w.workspace.id === wsId && !w.floating)
+                        : false;
+                }
+
                 Connections {
                     enabled: Config.options.bar.barBackgroundStyle === 2
                     target: HyprlandData
                     function onWindowListChanged() {
-                        const monitor = HyprlandData.monitors.find(m => m.id === monitorIndex);
-                        const wsId = monitor?.activeWorkspace?.id;
-
-                        const hasWindow = wsId ? HyprlandData.windowList.some(w => w.workspace.id === wsId && !w.floating) : false;
-
-                        barRoot.hasActiveWindows = hasWindow
+                        barRoot.updateHasActiveWindows();
                     }
                 }
                 
@@ -98,6 +106,7 @@ Scope {
 
                 // Include in focus grab
                 Component.onCompleted: {
+                    barRoot.updateHasActiveWindows();
                     GlobalFocusGrab.addPersistent(barRoot);
                     GlobalStates.setBarAutoHideOffset(barRoot.screen?.name ?? "", barRoot.contentEdgeOffset);
                 }
@@ -122,6 +131,7 @@ Scope {
 
                     VerticalBarContent {
                         id: barContent
+                        showBarBackground: barRoot.showBarBackground
                         implicitWidth: Appearance.sizes.verticalBarWidth
                         anchors {
                             top: parent.top
