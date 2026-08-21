@@ -17,7 +17,6 @@ Item {
     required property real startRadius
     required property real endRadius
 
-    readonly property int ownerId: GlobalStates.allocateBarGlassSegmentOwnerId()
     property bool registeredVertical: false
     property string registeredScreenName: ""
     property string registeredSegmentKey: ""
@@ -26,11 +25,11 @@ Item {
         if (!root.registeredScreenName || !root.registeredSegmentKey)
             return;
 
-        GlobalStates.clearBarGlassSegment(
+        GlobalStates.clearLiveBarGlassSegment(
             root.registeredVertical,
             root.registeredScreenName,
             root.registeredSegmentKey,
-            root.ownerId
+            root
         );
         root.registeredScreenName = "";
         root.registeredSegmentKey = "";
@@ -53,12 +52,12 @@ Item {
         if (!shouldRegister)
             return;
 
-        GlobalStates.setBarGlassSegment(root.vertical, screenName, root.segmentKey, {
-            position: Number(root.position),
-            extent: Number(root.extent),
-            startRadius: Number(root.startRadius),
-            endRadius: Number(root.endRadius)
-        }, root.ownerId);
+        GlobalStates.setLiveBarGlassSegment(
+            root.vertical,
+            screenName,
+            root.segmentKey,
+            root
+        );
         root.registeredVertical = root.vertical;
         root.registeredScreenName = screenName;
         root.registeredSegmentKey = root.segmentKey;
@@ -71,10 +70,7 @@ Item {
     onTargetScreenChanged: root.sync()
     onSegmentKeyChanged: root.sync()
     onActiveChanged: root.sync()
-    onPositionChanged: root.sync()
     onExtentChanged: root.sync()
-    onStartRadiusChanged: root.sync()
-    onEndRadiusChanged: root.sync()
 
     Connections {
         target: GlobalStates
