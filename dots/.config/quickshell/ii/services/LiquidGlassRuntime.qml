@@ -20,7 +20,9 @@ Scope {
     property string managedPluginPath: ""
     property bool checkingAfterLoad: false
     property bool reapplyPending: false
+    property bool verticalBarDedicatedSurfaceReady: false
     readonly property bool dedicatedBarSurfaceActive: (Config.options.bar.cornerStyle === 0 || Config.options.bar.cornerStyle === 1 || Config.options.bar.cornerStyle === 2)
+    readonly property bool dedicatedVerticalBarSurfaceActive: Config.options.bar.vertical && root.verticalBarDedicatedSurfaceReady
     readonly property string horizontalBarNamespace: root.dedicatedBarSurfaceActive
         ? "quickshell:bar-glass"
         : "quickshell:bar"
@@ -202,7 +204,7 @@ if hl.plugin.hyprglass then
     -- Dedicated horizontal surfaces remove unrelated widget/content alpha from
     -- the layer HyprGlass captures while keeping the same low-alpha mask contract.
     hg.layer("${root.horizontalBarNamespace}", { preset = "vynx", mask_threshold = 0.0025 })
-    hg.layer("quickshell:verticalBar", { preset = "vynx", mask_threshold = 0.05 })
+${root.dedicatedVerticalBarSurfaceActive ? "" : '    hg.layer("quickshell:verticalBar", { preset = "vynx", mask_threshold = 0.05 })'}
     hg.layer("quickshell:popup", { preset = "vynx", mask_threshold = 0.05 })
 end
 VYNX_LIQUID_GLASS
@@ -258,6 +260,7 @@ hyprctl reload
 
     onGlassThemeChanged: root.scheduleConfigApply()
     onHorizontalBarNamespaceChanged: root.scheduleConfigApply()
+    onDedicatedVerticalBarSurfaceActiveChanged: root.scheduleConfigApply()
     onRendererConfigSignatureChanged: root.scheduleConfigApply()
 
     Timer {
