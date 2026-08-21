@@ -16,7 +16,7 @@ Singleton {
     property bool barOpen: true
     property var barAutoHideOffsets: ({})
     property bool verticalBarGlassSurfaceActive: false
-    property bool unifiedBarGlassSegmentsEnabled: true
+    property bool unifiedBarGlassSegmentsEnabled: false
     property var barGlassSegments: ({})
     property var verticalBarGlassSegments: ({})
     property bool crosshairOpen: false
