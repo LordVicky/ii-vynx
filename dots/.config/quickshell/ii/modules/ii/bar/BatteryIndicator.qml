@@ -21,7 +21,7 @@ MouseArea {
         id: batteryProgress
         anchors.centerIn: parent
         value: percentage
-        highlightColor: (isLow && !isCharging) ? Appearance.m3colors.m3error : Appearance.colors.colOnSecondaryContainer
+        highlightColor: (isLow && !isCharging) ? Appearance.m3colors.m3error : BarPalette.foreground(Appearance.colors.colOnSecondaryContainer)
 
         Item {
             anchors.centerIn: parent
