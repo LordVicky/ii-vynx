@@ -26,4 +26,10 @@ QtObject {
             ? ColorUtils.transparentize(Appearance.m3colors.m3inverseOnSurface, 0.35)
             : fallbackColor;
     }
+
+    function surface(fallbackColor) {
+        return root.useInverseForeground
+            ? Appearance.m3colors.m3inverseSurface
+            : fallbackColor;
+    }
 }
