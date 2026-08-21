@@ -194,6 +194,7 @@ Item {
                     anchors.fill: parent
                     anchors.centerIn: parent
                     horizontalAlignment: Text.AlignHCenter
+                    color: BarPalette.foreground(Appearance.colors.colOnLayer0)
                 }
             }
 
@@ -212,6 +213,8 @@ Item {
                     downScale: 0.98
                     rowHeight: 10
                     gradientDensity: 0.25
+                    highlightedTextColor: BarPalette.foreground(Appearance.colors.colOnLayer0)
+                    secondaryTextColor: BarPalette.secondary(Appearance.colors.colSubtext)
                 }
             }
         }   
