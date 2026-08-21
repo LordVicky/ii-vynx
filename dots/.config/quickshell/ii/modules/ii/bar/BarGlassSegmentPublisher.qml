@@ -19,8 +19,10 @@ Item {
 
     property var sourceItem: null
     property var coordinateRoot: null
+    property int geometryRevision: 0
     readonly property bool usesDirectGeometry: root.sourceItem !== null && root.coordinateRoot !== null
     readonly property real resolvedPosition: {
+        root.geometryRevision;
         if (!root.usesDirectGeometry)
             return root.position;
 
@@ -32,9 +34,12 @@ Item {
         }
         return current === root.coordinateRoot ? offset : root.position;
     }
-    readonly property real resolvedExtent: root.usesDirectGeometry
-        ? (root.vertical ? Number(root.sourceItem.height) : Number(root.sourceItem.width))
-        : root.extent
+    readonly property real resolvedExtent: {
+        root.geometryRevision;
+        return root.usesDirectGeometry
+            ? (root.vertical ? Number(root.sourceItem.height) : Number(root.sourceItem.width))
+            : root.extent;
+    }
 
     property bool registeredVertical: false
     property string registeredScreenName: ""
@@ -89,6 +94,8 @@ Item {
     onTargetScreenChanged: root.sync()
     onSegmentKeyChanged: root.sync()
     onActiveChanged: root.sync()
+    onPositionChanged: root.geometryRevision += 1
+    onExtentChanged: root.geometryRevision += 1
     onResolvedExtentChanged: root.sync()
 
     Connections {
