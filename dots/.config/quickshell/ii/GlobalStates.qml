@@ -54,7 +54,7 @@ Singleton {
     readonly property bool effectiveRightOpen: {
         switch (Config.options.sidebar.position) {
             case "default":  return dashboardPanelOpen; 
-            case "inverted": return policiesPanelOpen;  
+            case "inverted": return policiesPanelOpen; 
             case "left":     return false;
             case "right":    return dashboardPanelOpen || policiesPanelOpen;
             default:         return dashboardPanelOpen;
