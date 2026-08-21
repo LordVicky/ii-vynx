@@ -124,6 +124,7 @@ Item { // Bar content region
                 barSection: 0
                 barBackgroundVisible: root.showBarBackground
                 barSurfaceY: topSection.y + y
+                barSurfaceScreen: root.screen
                 standaloneLiquidGlassIslandActive: root.standaloneLiquidGlassIslandActive
             }
         }
@@ -152,6 +153,7 @@ Item { // Bar content region
                     barSection: 1
                     barBackgroundVisible: root.showBarBackground
                     barSurfaceY: middleSection.y + middleLeftSection.y + y
+                    barSurfaceScreen: root.screen
                     standaloneLiquidGlassIslandActive: root.standaloneLiquidGlassIslandActive
                     originalIndex: Config.options.bar.layouts.center.findIndex(e => e.id === modelData.id) // we have to recalculate the index because repeater.model has changed
                 }
@@ -172,6 +174,7 @@ Item { // Bar content region
                     barSection: 1
                     barBackgroundVisible: root.showBarBackground
                     barSurfaceY: middleSection.y + centerCenter.y + y
+                    barSurfaceScreen: root.screen
                     standaloneLiquidGlassIslandActive: root.standaloneLiquidGlassIslandActive
                     originalIndex: Config.options.bar.layouts.center.findIndex(e => e.id === modelData.id)
                 }
@@ -194,6 +197,7 @@ Item { // Bar content region
                     barSection: 1
                     barBackgroundVisible: root.showBarBackground
                     barSurfaceY: middleSection.y + middleRightSection.y + y
+                    barSurfaceScreen: root.screen
                     standaloneLiquidGlassIslandActive: root.standaloneLiquidGlassIslandActive
                     originalIndex: Config.options.bar.layouts.center.findIndex(e => e.id === modelData.id)
                 }
@@ -250,6 +254,7 @@ Item { // Bar content region
                 barSection: 2
                 barBackgroundVisible: root.showBarBackground
                 barSurfaceY: bottomSection.y + y
+                barSurfaceScreen: root.screen
                 standaloneLiquidGlassIslandActive: root.standaloneLiquidGlassIslandActive
             }
         }
