@@ -163,7 +163,7 @@ Item {
             && (rootItem.standaloneLiquidGlassPillActive
                 || rootItem.standaloneVerticalLiquidGlassPillActive)
         sourceItem: wrapper
-        coordinateRoot: rootItem.barSurfaceRoot
+        coordinateRoot: rootItem.vertical ? rootItem.barSurfaceRoot : rootItem.QsWindow.window?.contentItem
         position: rootItem.vertical ? rootItem.barSurfaceY : rootItem.barSurfaceX
         extent: rootItem.vertical ? rootItem.implicitHeight : rootItem.width
         startRadius: rootItem.startRadius
