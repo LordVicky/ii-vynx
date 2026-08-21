@@ -88,7 +88,7 @@ Item {
 
     function updateWorkspaceOccupied() {
         workspaceOccupied = Array.from({ length: root.workspacesShown }, (_, i) => {
-            const wsId = workspaceGroup * root.workspacesShown + i + 1 + root.workspaceOffset;
+            const wsId = workspaceGroup * workspacesShown + i + 1 + root.workspaceOffset;
             return Hyprland.workspaces.values.some(ws => ws.id === wsId);
         })
     }
@@ -534,7 +534,7 @@ Item {
                                     ColorOverlay {
                                         anchors.fill: desaturatedIcon
                                         source: desaturatedIcon
-                                        color: ColorUtils.transparentize(Appearance.colors.colOnLayer1, 0.9)
+                                        color: ColorUtils.transparentize(BarPalette.foreground(Appearance.colors.colOnLayer1), 0.9)
                                     }
                                 }
                             }
@@ -564,7 +564,7 @@ Item {
         property bool showNumbers: Config.options.bar.workspaces.alwaysShowNumbers || root.showNumbersByMs
         property int workspaceValue
         property bool activeWorkspace
-        property color indColor: (activeWorkspace) ? Appearance.m3colors.m3onPrimary : (root.workspaceOccupied[index] ? Appearance.m3colors.m3onSecondaryContainer : Appearance.colors.colOnLayer1Inactive)
+        property color indColor: (activeWorkspace) ? Appearance.m3colors.m3onPrimary : (root.workspaceOccupied[index] ? BarPalette.foreground(Appearance.m3colors.m3onSecondaryContainer) : BarPalette.secondary(Appearance.colors.colOnLayer1Inactive))
 
         anchors.centerIn: parent
         width: root.workspaceDotSize
