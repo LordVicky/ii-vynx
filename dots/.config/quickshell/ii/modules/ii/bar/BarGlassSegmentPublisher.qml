@@ -41,15 +41,15 @@ Item {
             && root.active
             && screenName.length > 0
             && root.extent > 0;
+        const registrationMatches = root.registeredScreenName.length > 0
+            && root.registeredVertical === root.vertical
+            && root.registeredScreenName === screenName
+            && root.registeredSegmentKey === root.segmentKey;
 
-        if (root.registeredScreenName
-                && (!shouldRegister
-                    || root.registeredVertical !== root.vertical
-                    || root.registeredScreenName !== screenName
-                    || root.registeredSegmentKey !== root.segmentKey))
+        if (root.registeredScreenName && (!shouldRegister || !registrationMatches))
             root.clearRegistered();
 
-        if (!shouldRegister)
+        if (!shouldRegister || registrationMatches)
             return;
 
         GlobalStates.setLiveBarGlassSegment(
