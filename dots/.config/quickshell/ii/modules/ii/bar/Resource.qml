@@ -29,7 +29,7 @@ Item {
             lineWidth: Appearance.rounding.unsharpen
             value: percentage
             implicitSize: 20
-            colPrimary: root.warning ? Appearance.colors.colError : Appearance.colors.colOnSecondaryContainer
+            colPrimary: root.warning ? Appearance.colors.colError : BarPalette.foreground(Appearance.colors.colOnSecondaryContainer)
             accountForLightBleeding: !root.warning
             enableAnimation: false
 
@@ -63,7 +63,7 @@ Item {
             StyledText {
                 id: percentageText
                 anchors.centerIn: parent
-                color: Appearance.colors.colOnLayer1
+                color: BarPalette.foreground(Appearance.colors.colOnLayer1)
                 font.pixelSize: Appearance.font.pixelSize.small
                 text: `${Math.round(percentage * 100).toString()}`
             }
