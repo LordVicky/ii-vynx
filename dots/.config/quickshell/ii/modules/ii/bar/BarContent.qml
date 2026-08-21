@@ -179,8 +179,9 @@ Item { // Bar content region
         }
     }
 
-    Row { // Middle section
+    Item { // Middle section positioning anchor
         id: middleSection
+        width: 0
         anchors {
             top: parent.top
             bottom: parent.bottom
