@@ -157,7 +157,7 @@ Item {
         targetScreen: rootItem.vertical
             ? (rootItem.barSurfaceScreen ?? rootItem.QsWindow.window?.screen)
             : rootItem.QsWindow.window?.screen
-        segmentKey: `pill:${rootItem.barSection}:${rootItem.originalIndex}`
+        segmentKey: `pill:${rootItem.modelData.id}`
         active: !rootItem.highlighted
             && (rootItem.standaloneLiquidGlassPillActive
                 || rootItem.standaloneVerticalLiquidGlassPillActive)
