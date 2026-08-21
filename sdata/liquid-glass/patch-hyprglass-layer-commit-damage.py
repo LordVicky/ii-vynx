@@ -13,7 +13,7 @@ def main() -> int:
     text = target.read_text(encoding="utf-8")
 
     include_anchor = """#include <cstdlib>\n#include <sstream>\n"""
-    include_block = """#include <cstdlib>\n#include <fstream>\n#include <sstream>\n"""
+    include_block = """#include <hyprland/src/protocols/LayerShell.hpp>\n\n#include <cstdlib>\n#include <fstream>\n#include <sstream>\n"""
     if include_anchor not in text:
         raise SystemExit("HyprGlass layer-commit include anchor no longer matches main.cpp")
     text = text.replace(include_anchor, include_block, 1)
