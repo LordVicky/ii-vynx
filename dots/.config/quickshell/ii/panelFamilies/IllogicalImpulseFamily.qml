@@ -41,6 +41,7 @@ Scope {
     readonly property bool dedicatedPlainGlass: Config.options.appearance.surfaceStyle === "liquidGlass"
         && Config.options.bar.cornerStyle === 2
         && dedicatedAutoHideSurfaceReady
+    readonly property bool dedicatedVerticalGlass: Config.options.appearance.surfaceStyle === "liquidGlass"
 
     Component.onCompleted: Qt.callLater(() => updateBarExtraCondition())
     onUsingWrappedFrameChanged: updateBarExtraCondition()
@@ -75,6 +76,7 @@ Scope {
     PanelLoader { component: SessionScreen {} }
     PanelLoader { component: SidebarPolicies {} }
     PanelLoader { component: SidebarDashboard {} }
+    PanelLoader { extraCondition: Config.options.bar.vertical && barExtraCondition && dedicatedVerticalGlass; component: VerticalBarGlassLayer {} }
     PanelLoader { extraCondition: Config.options.bar.vertical && barExtraCondition; component: VerticalBar {} }
     PanelLoader { component: WallpaperSelector {} }
     PanelLoader { component: WrappedFrame {} }
