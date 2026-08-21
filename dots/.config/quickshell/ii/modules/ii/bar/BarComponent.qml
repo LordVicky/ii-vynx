@@ -20,6 +20,7 @@ Item {
     property bool highlighted: false
     property bool barBackgroundVisible: Config.options.bar.barBackgroundStyle === 1
     property real barSurfaceX: 0
+    property real barSurfaceY: 0
     property bool standaloneLiquidGlassIslandActive: false
     readonly property bool standaloneLiquidGlassPillActive: !rootItem.vertical
         && rootItem.barGroupStyle === 0
@@ -29,6 +30,10 @@ Item {
         && RuntimeServices.liquidGlass?.hyprGlassLoaded === true
         && RuntimeServices.liquidGlass?.configApplied === true
         && RuntimeServices.liquidGlass?.dedicatedBarSurfaceActive === true
+    readonly property bool standaloneVerticalLiquidGlassPillActive: rootItem.vertical
+        && rootItem.barGroupStyle === 0
+        && !rootItem.barBackgroundVisible
+        && GlobalStates.verticalBarGlassSurfaceActive
 
     implicitWidth: wrapper.implicitWidth
     implicitHeight: wrapper.implicitHeight
@@ -93,7 +98,7 @@ Item {
 
     readonly property int barGroupStyle: Config.options.bar.barGroupStyle
     readonly property int barBackgroundStyle: Config.options.bar.barBackgroundStyle
-    property color colBackground: (rootItem.standaloneLiquidGlassPillActive || rootItem.standaloneLiquidGlassIslandActive) ? "transparent" :
+    property color colBackground: (rootItem.standaloneLiquidGlassPillActive || rootItem.standaloneVerticalLiquidGlassPillActive || rootItem.standaloneLiquidGlassIslandActive) ? "transparent" :
                                    barGroupStyle == 0 ? Appearance.colors.colLayer1 :
                                    (barGroupStyle == 1 && barBackgroundStyle == 1) ? Appearance.colors.colLayer1 :
                                    (barGroupStyle == 1) ? Appearance.m3colors.m3surfaceContainerLow :
@@ -149,6 +154,18 @@ Item {
             surfaceActive: rootItem.standaloneLiquidGlassPillActive && !rootItem.highlighted
             surfaceX: rootItem.barSurfaceX
             surfaceWidth: rootItem.width
+            startRadius: rootItem.startRadius
+            endRadius: rootItem.endRadius
+        }
+    }
+
+    LazyLoader {
+        active: rootItem.standaloneVerticalLiquidGlassPillActive && !rootItem.highlighted
+        component: Vertical.VerticalBarPillGlass {
+            targetScreen: rootItem.QsWindow.window?.screen
+            surfaceActive: rootItem.standaloneVerticalLiquidGlassPillActive && !rootItem.highlighted
+            surfaceY: rootItem.barSurfaceY
+            surfaceHeight: rootItem.height
             startRadius: rootItem.startRadius
             endRadius: rootItem.endRadius
         }
