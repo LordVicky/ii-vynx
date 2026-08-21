@@ -25,6 +25,8 @@ Item {
     property string textAlign: "center"
     property bool changeTextWeight: false
     property int textRenderType: Text.NativeRendering
+    property color highlightedTextColor: Appearance.colors.colOnLayer0
+    property color secondaryTextColor: Appearance.colors.colSubtext
 
     property int lastIndex: -1
     property bool isMovingForward: true
@@ -74,6 +76,8 @@ Item {
                 defaultLyricsSize: root.defaultLyricsSize
                 changeTextWeight: root.changeTextWeight
                 textRenderType: root.textRenderType
+                highlightedTextColor: root.highlightedTextColor
+                secondaryTextColor: root.secondaryTextColor
                 textHorizontalAlignment: root.textAlign === "left"  ? Text.AlignLeft  :
                              root.textAlign === "right" ? Text.AlignRight :
                                                           Text.AlignHCenter
