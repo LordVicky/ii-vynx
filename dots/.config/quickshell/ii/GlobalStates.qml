@@ -141,6 +141,46 @@ Singleton {
             root.barGlassSegments = nextStore;
     }
 
+    function setLiveBarGlassSegment(vertical, screenName, key, segmentObject) {
+        if (!screenName || !key || !segmentObject)
+            return;
+
+        const store = vertical ? root.verticalBarGlassSegments : root.barGlassSegments;
+        const screenSegments = Object.assign({}, store[screenName] ?? {});
+        if (screenSegments[key] === segmentObject)
+            return;
+
+        screenSegments[key] = segmentObject;
+        const nextStore = Object.assign({}, store);
+        nextStore[screenName] = screenSegments;
+        if (vertical)
+            root.verticalBarGlassSegments = nextStore;
+        else
+            root.barGlassSegments = nextStore;
+    }
+
+    function clearLiveBarGlassSegment(vertical, screenName, key, segmentObject) {
+        if (!screenName || !key || !segmentObject)
+            return;
+
+        const store = vertical ? root.verticalBarGlassSegments : root.barGlassSegments;
+        if (store[screenName]?.[key] !== segmentObject)
+            return;
+
+        const screenSegments = Object.assign({}, store[screenName]);
+        delete screenSegments[key];
+        const nextStore = Object.assign({}, store);
+        if (Object.keys(screenSegments).length > 0)
+            nextStore[screenName] = screenSegments;
+        else
+            delete nextStore[screenName];
+
+        if (vertical)
+            root.verticalBarGlassSegments = nextStore;
+        else
+            root.barGlassSegments = nextStore;
+    }
+
     onPoliciesPanelOpenChanged: {
         if (policiesPanelOpen) {
             if (Config.options.sidebar.position == "right" || Config.options.sidebar.position == "left") {
