@@ -43,17 +43,17 @@ Revealer { // Scroll hint
             MaterialSymbol {
                 text: "keyboard_arrow_up"
                 iconSize: 14
-                color: Appearance.colors.colSubtext
+                color: BarPalette.secondary(Appearance.colors.colSubtext)
             }
             MaterialSymbol {
                 text: root.icon
                 iconSize: 14
-                color: Appearance.colors.colSubtext
+                color: BarPalette.secondary(Appearance.colors.colSubtext)
             }
             MaterialSymbol {
                 text: "keyboard_arrow_down"
                 iconSize: 14
-                color: Appearance.colors.colSubtext
+                color: BarPalette.secondary(Appearance.colors.colSubtext)
             }
         }
     }
