@@ -152,11 +152,30 @@ Item {
         }
     }
 
+    BarGlassSegmentPublisher {
+        vertical: rootItem.vertical
+        targetScreen: rootItem.vertical
+            ? (rootItem.barSurfaceScreen ?? rootItem.QsWindow.window?.screen)
+            : rootItem.QsWindow.window?.screen
+        segmentKey: `pill:${rootItem.barSection}:${rootItem.originalIndex}`
+        active: !rootItem.highlighted
+            && (rootItem.standaloneLiquidGlassPillActive
+                || rootItem.standaloneVerticalLiquidGlassPillActive)
+        position: rootItem.vertical ? rootItem.barSurfaceY : rootItem.barSurfaceX
+        extent: rootItem.vertical ? rootItem.implicitHeight : rootItem.width
+        startRadius: rootItem.startRadius
+        endRadius: rootItem.endRadius
+    }
+
     LazyLoader {
-        active: rootItem.standaloneLiquidGlassPillActive && !rootItem.highlighted
+        active: !GlobalStates.unifiedBarGlassSegmentsEnabled
+            && rootItem.standaloneLiquidGlassPillActive
+            && !rootItem.highlighted
         component: BarPillGlass {
             targetScreen: rootItem.QsWindow.window?.screen
-            surfaceActive: rootItem.standaloneLiquidGlassPillActive && !rootItem.highlighted
+            surfaceActive: !GlobalStates.unifiedBarGlassSegmentsEnabled
+                && rootItem.standaloneLiquidGlassPillActive
+                && !rootItem.highlighted
             surfaceX: rootItem.barSurfaceX
             surfaceWidth: rootItem.width
             startRadius: rootItem.startRadius
@@ -165,10 +184,14 @@ Item {
     }
 
     LazyLoader {
-        active: rootItem.standaloneVerticalLiquidGlassPillActive && !rootItem.highlighted
+        active: !GlobalStates.unifiedBarGlassSegmentsEnabled
+            && rootItem.standaloneVerticalLiquidGlassPillActive
+            && !rootItem.highlighted
         component: Vertical.VerticalBarPillGlass {
             targetScreen: rootItem.barSurfaceScreen ?? rootItem.QsWindow.window?.screen
-            surfaceActive: rootItem.standaloneVerticalLiquidGlassPillActive && !rootItem.highlighted
+            surfaceActive: !GlobalStates.unifiedBarGlassSegmentsEnabled
+                && rootItem.standaloneVerticalLiquidGlassPillActive
+                && !rootItem.highlighted
             surfaceY: rootItem.barSurfaceY
             surfaceHeight: rootItem.implicitHeight
             startRadius: rootItem.startRadius
