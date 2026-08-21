@@ -78,7 +78,7 @@ RippleButton {
         height: 19.5
         source: Config.options.bar.topLeftIcon == 'distro' ? SystemInfo.distroIcon : `${Config.options.bar.topLeftIcon}-symbolic`
         colorize: true
-        color: Appearance.colors.colOnLayer0
+        color: BarPalette.foreground(Appearance.colors.colOnLayer0)
 
         Rectangle {
             opacity: leftSidebarButton.showPing ? 1 : 0
