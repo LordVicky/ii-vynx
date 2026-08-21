@@ -1,8 +1,12 @@
 import QtQuick
 import qs
 
-QtObject {
+Item {
     id: root
+
+    width: 0
+    height: 0
+    visible: false
 
     required property bool vertical
     required property var targetScreen
