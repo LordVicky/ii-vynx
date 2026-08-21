@@ -15,18 +15,36 @@ PanelWindow {
     required property real startRadius
     required property real endRadius
     property string segmentKey: ""
+    property bool surfaceCommitPending: false
     readonly property real autoHideOffset: Number(GlobalStates.barAutoHideOffsets[root.targetScreen?.name ?? ""] ?? 0)
     readonly property string unifiedSegmentKey: root.segmentKey.length > 0
         ? root.segmentKey
         : `island:${Math.round(root.surfaceX * 1000)}:${Math.round(root.surfaceWidth * 1000)}`
 
-    function requestSurfaceCommit() {
+    function scheduleSurfaceCommit() {
+        root.surfaceCommitPending = true;
+    }
+
+    function commitPolishedSurface() {
+        if (!root.surfaceCommitPending)
+            return;
+
+        root.surfaceCommitPending = false;
         root.updatesEnabled = false;
         root.updatesEnabled = true;
     }
 
-    onSurfaceXChanged: root.requestSurfaceCommit()
-    onSurfaceWidthChanged: root.requestSurfaceCommit()
+    onSurfaceXChanged: root.scheduleSurfaceCommit()
+    onSurfaceWidthChanged: root.scheduleSurfaceCommit()
+
+    Connections {
+        target: root.contentItem
+        ignoreUnknownSignals: true
+
+        function onPolished() {
+            root.commitPolishedSurface();
+        }
+    }
 
     screen: root.targetScreen
     visible: root.surfaceActive
