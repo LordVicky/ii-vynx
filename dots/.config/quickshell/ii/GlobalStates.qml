@@ -168,7 +168,7 @@ Singleton {
             root.superDown = true
         }
         onReleased: {
-            root.superDown = false;
+            root.superDown = false
         }
     }
 }
