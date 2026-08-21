@@ -17,6 +17,25 @@ Item {
     required property real startRadius
     required property real endRadius
 
+    property var sourceItem: null
+    property var coordinateRoot: null
+    readonly property bool usesDirectGeometry: root.sourceItem !== null && root.coordinateRoot !== null
+    readonly property real resolvedPosition: {
+        if (!root.usesDirectGeometry)
+            return root.position;
+
+        let current = root.sourceItem;
+        let offset = 0;
+        while (current && current !== root.coordinateRoot) {
+            offset += root.vertical ? Number(current.y) : Number(current.x);
+            current = current.parent;
+        }
+        return current === root.coordinateRoot ? offset : root.position;
+    }
+    readonly property real resolvedExtent: root.usesDirectGeometry
+        ? (root.vertical ? Number(root.sourceItem.height) : Number(root.sourceItem.width))
+        : root.extent
+
     property bool registeredVertical: false
     property string registeredScreenName: ""
     property string registeredSegmentKey: ""
@@ -40,7 +59,7 @@ Item {
         const shouldRegister = GlobalStates.unifiedBarGlassSegmentsEnabled
             && root.active
             && screenName.length > 0
-            && root.extent > 0;
+            && root.resolvedExtent > 0;
         const registrationMatches = root.registeredScreenName.length > 0
             && root.registeredVertical === root.vertical
             && root.registeredScreenName === screenName
@@ -70,7 +89,7 @@ Item {
     onTargetScreenChanged: root.sync()
     onSegmentKeyChanged: root.sync()
     onActiveChanged: root.sync()
-    onExtentChanged: root.sync()
+    onResolvedExtentChanged: root.sync()
 
     Connections {
         target: GlobalStates
