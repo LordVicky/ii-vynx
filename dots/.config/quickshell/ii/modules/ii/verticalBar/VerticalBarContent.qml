@@ -54,7 +54,10 @@ Item { // Bar content region
 
     // Background shadow
     Loader {
-        active: root.showBarBackground && Config.options.bar.cornerStyle === 1 && Config.options.bar.floatStyleShadow
+        active: root.showBarBackground
+            && Config.options.bar.cornerStyle === 1
+            && Config.options.bar.floatStyleShadow
+            && !GlobalStates.verticalBarGlassSurfaceActive
         anchors.fill: barBackground
         sourceComponent: StyledRectangularShadow {
             anchors.fill: undefined // The loader's anchors act on this, and this should not have any anchor
@@ -69,10 +72,14 @@ Item { // Bar content region
             margins: Config.options.bar.cornerStyle === 1 ? (Appearance.sizes.hyprlandGapsOut) : 0 // idk why but +1 is needed
         }
         z: -10 // making sure its behind everything
-        color: root.showBarBackground ? Appearance.colors.colLayer0 : "transparent"
+        color: root.showBarBackground && !GlobalStates.verticalBarGlassSurfaceActive
+            ? Appearance.colors.colLayer0
+            : "transparent"
         radius: Config.options.bar.cornerStyle === 1 ? Appearance.rounding.windowRounding : 0
-        border.width: Config.options.bar.cornerStyle === 1 ? 1 : 0
-        border.color: root.showBarBackground ? Appearance.colors.colLayer0Border : "transparent"
+        border.width: Config.options.bar.cornerStyle === 1 && !GlobalStates.verticalBarGlassSurfaceActive ? 1 : 0
+        border.color: root.showBarBackground && !GlobalStates.verticalBarGlassSurfaceActive
+            ? Appearance.colors.colLayer0Border
+            : "transparent"
         Behavior on color {
             animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
         }
