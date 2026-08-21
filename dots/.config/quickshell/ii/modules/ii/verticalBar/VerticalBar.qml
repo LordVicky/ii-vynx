@@ -168,7 +168,9 @@ Scope {
                             right: undefined
                         }
                         width: Appearance.rounding.screenRounding
-                        active: showBarBackground && Config.options.bar.cornerStyle === 0 // Hug
+                        active: showBarBackground
+                            && Config.options.bar.cornerStyle === 0
+                            && !GlobalStates.verticalBarGlassSurfaceActive
 
                         states: State {
                             name: "right"
