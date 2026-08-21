@@ -15,11 +15,14 @@ PanelWindow {
     required property real surfaceHeight
     required property real startRadius
     required property real endRadius
+    property string segmentKey: ""
 
     readonly property bool rightSide: Config.options.bar.bottom
     readonly property real autoHideOffset: Number(GlobalStates.barAutoHideOffsets[root.targetScreen?.name ?? ""] ?? 0)
     readonly property real edgeInset: (Config.options.bar.cornerStyle === 1 ? Appearance.sizes.hyprlandGapsOut : 0) + 4
-    readonly property string unifiedSegmentKey: `island:${Math.round(root.surfaceY * 1000)}:${Math.round(root.surfaceHeight * 1000)}`
+    readonly property string unifiedSegmentKey: root.segmentKey.length > 0
+        ? root.segmentKey
+        : `island:${Math.round(root.surfaceY * 1000)}:${Math.round(root.surfaceHeight * 1000)}`
 
     screen: root.targetScreen
     visible: root.surfaceActive
