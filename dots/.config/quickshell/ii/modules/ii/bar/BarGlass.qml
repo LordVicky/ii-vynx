@@ -10,11 +10,15 @@ PanelWindow {
 
     required property bool surfaceActive
     required property bool showBarBackground
+    property var segments: []
     property real contentTopOffset: 0
     property real contentBottomOffset: 0
     readonly property real autoHideOffset: Number(GlobalStates.barAutoHideOffsets[root.screen?.name ?? ""] ?? 0)
+    readonly property bool unifiedSegmentsVisible: GlobalStates.unifiedBarGlassSegmentsEnabled
+        && !root.showBarBackground
+        && root.segments.length > 0
 
-    visible: root.surfaceActive && root.showBarBackground
+    visible: root.surfaceActive && (root.showBarBackground || root.unifiedSegmentsVisible)
     exclusionMode: ExclusionMode.Ignore
     focusable: false
     color: "transparent"
@@ -31,13 +35,17 @@ PanelWindow {
     }
 
     margins {
-        left: Appearance.sizes.hyprlandGapsOut
-        right: Appearance.sizes.hyprlandGapsOut
+        left: root.unifiedSegmentsVisible ? 0 : Appearance.sizes.hyprlandGapsOut
+        right: root.unifiedSegmentsVisible ? 0 : Appearance.sizes.hyprlandGapsOut
         top: Config.options.bar.bottom
             ? 0
-            : Appearance.sizes.hyprlandGapsOut + root.contentTopOffset + root.autoHideOffset
+            : (root.unifiedSegmentsVisible
+                ? (Config.options.bar.cornerStyle === 1 ? Appearance.sizes.hyprlandGapsOut : 0) + root.autoHideOffset
+                : Appearance.sizes.hyprlandGapsOut + root.contentTopOffset + root.autoHideOffset)
         bottom: Config.options.bar.bottom
-            ? Appearance.sizes.hyprlandGapsOut + root.contentBottomOffset + root.autoHideOffset
+            ? (root.unifiedSegmentsVisible
+                ? (Config.options.bar.cornerStyle === 1 ? Appearance.sizes.hyprlandGapsOut : 0) + root.autoHideOffset
+                : Appearance.sizes.hyprlandGapsOut + root.contentBottomOffset + root.autoHideOffset)
             : 0
     }
 
@@ -50,8 +58,28 @@ PanelWindow {
 
     Rectangle {
         anchors.fill: parent
+        visible: root.showBarBackground
         color: RuntimeServices.liquidGlass?.barSurfaceColor ?? "transparent"
         radius: height / 2
         antialiasing: true
+    }
+
+    Repeater {
+        model: root.unifiedSegmentsVisible ? root.segments : []
+
+        delegate: Rectangle {
+            required property var modelData
+
+            x: Math.round(modelData.position)
+            y: 4
+            width: Math.max(1, modelData.extent)
+            height: Math.max(1, root.height - 8)
+            color: RuntimeServices.liquidGlass?.barSurfaceColor ?? "transparent"
+            topLeftRadius: modelData.startRadius
+            bottomLeftRadius: modelData.startRadius
+            topRightRadius: modelData.endRadius
+            bottomRightRadius: modelData.endRadius
+            antialiasing: true
+        }
     }
 }
