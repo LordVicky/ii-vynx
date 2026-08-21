@@ -18,9 +18,29 @@ Scope {
         GlobalStates.verticalBarGlassSurfaceActive = root.surfaceReady;
     }
 
-    Component.onCompleted: root.syncSurfaceState()
-    Component.onDestruction: GlobalStates.verticalBarGlassSurfaceActive = false
+    function syncOwnershipState() {
+        if (RuntimeServices.liquidGlass)
+            RuntimeServices.liquidGlass.verticalBarDedicatedSurfaceReady = true;
+    }
+
+    Component.onCompleted: {
+        root.syncSurfaceState();
+        root.syncOwnershipState();
+    }
+    Component.onDestruction: {
+        GlobalStates.verticalBarGlassSurfaceActive = false;
+        if (RuntimeServices.liquidGlass)
+            RuntimeServices.liquidGlass.verticalBarDedicatedSurfaceReady = false;
+    }
     onSurfaceReadyChanged: root.syncSurfaceState()
+
+    Connections {
+        target: RuntimeServices
+
+        function onLiquidGlassChanged() {
+            root.syncOwnershipState();
+        }
+    }
 
     Variants {
         id: glassVariants
