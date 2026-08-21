@@ -155,6 +155,8 @@ Item {
     }
 
     BarGlassSegmentPublisher {
+        id: pillGeometry
+
         vertical: rootItem.vertical
         targetScreen: rootItem.vertical
             ? (rootItem.barSurfaceScreen ?? rootItem.QsWindow.window?.screen)
@@ -180,8 +182,8 @@ Item {
             surfaceActive: !GlobalStates.unifiedBarGlassSegmentsEnabled
                 && rootItem.standaloneLiquidGlassPillActive
                 && !rootItem.highlighted
-            surfaceX: rootItem.barSurfaceX
-            surfaceWidth: rootItem.width
+            surfaceX: pillGeometry.resolvedPosition
+            surfaceWidth: pillGeometry.resolvedExtent
             startRadius: rootItem.startRadius
             endRadius: rootItem.endRadius
         }
