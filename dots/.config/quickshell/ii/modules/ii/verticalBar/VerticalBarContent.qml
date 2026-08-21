@@ -126,6 +126,8 @@ Item { // Bar content region
                 vertical: true
                 list: leftRepeater.model
                 barSection: 0
+                barBackgroundVisible: root.showBarBackground
+                barSurfaceY: topSection.y + y
             }
         }
     }
@@ -138,6 +140,7 @@ Item { // Bar content region
         }
 
         ColumnLayout {
+            id: middleLeftSection
             anchors {
                 horizontalCenter: parent.horizontalCenter
                 bottom: centerCenter.top
@@ -150,6 +153,8 @@ Item { // Bar content region
                     vertical: true
                     list: Config.options.bar.layouts.center
                     barSection: 1
+                    barBackgroundVisible: root.showBarBackground
+                    barSurfaceY: middleSection.y + middleLeftSection.y + y
                     originalIndex: Config.options.bar.layouts.center.findIndex(e => e.id === modelData.id) // we have to recalculate the index because repeater.model has changed
                 }
             }
@@ -167,12 +172,15 @@ Item { // Bar content region
                     vertical: true
                     list: Config.options.bar.layouts.center
                     barSection: 1
+                    barBackgroundVisible: root.showBarBackground
+                    barSurfaceY: middleSection.y + centerCenter.y + y
                     originalIndex: Config.options.bar.layouts.center.findIndex(e => e.id === modelData.id)
                 }
             }
         }
 
         ColumnLayout {
+            id: middleRightSection
             anchors {
                 horizontalCenter: parent.horizontalCenter
                 top: centerCenter.bottom
@@ -185,6 +193,8 @@ Item { // Bar content region
                     vertical: true
                     list: Config.options.bar.layouts.center
                     barSection: 1
+                    barBackgroundVisible: root.showBarBackground
+                    barSurfaceY: middleSection.y + middleRightSection.y + y
                     originalIndex: Config.options.bar.layouts.center.findIndex(e => e.id === modelData.id)
                 }
             }
@@ -207,6 +217,8 @@ Item { // Bar content region
                 vertical: true
                 list: rightRepeater.model
                 barSection: 2
+                barBackgroundVisible: root.showBarBackground
+                barSurfaceY: bottomSection.y + y
             }
         }
     }
