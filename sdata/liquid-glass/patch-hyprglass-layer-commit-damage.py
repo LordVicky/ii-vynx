@@ -32,6 +32,28 @@ def main() -> int:
         raise SystemExit("HyprGlass render trace anchor no longer matches main.cpp")
     text = text.replace(render_anchor, render_block, 1)
 
+    layer_target = source_dir / "src" / "GlassLayerSurface.cpp"
+    layer_text = layer_target.read_text(encoding="utf-8")
+
+    layer_include_anchor = """#include <algorithm>\n#include <cmath>\n"""
+    layer_include_block = """#include <algorithm>\n#include <cmath>\n#include <fstream>\n"""
+    if layer_include_anchor not in layer_text:
+        raise SystemExit("HyprGlass layer-pass trace include anchor no longer matches GlassLayerSurface.cpp")
+    layer_text = layer_text.replace(layer_include_anchor, layer_include_block, 1)
+
+    pre_anchor = """    CBox transformBox = transformedLayerBox(*layerBox, monitor);\n\n    // Decide whether we need to re-sample and re-blur the background.\n"""
+    pre_block = """    CBox transformBox = transformedLayerBox(*layerBox, monitor);\n\n    if (layerSurface->m_namespace == \"quickshell:bar-glass\") {\n        std::ofstream trace(\"/tmp/ii-vynx-hyprglass-hook.log\", std::ios::app);\n        if (trace)\n            trace << \"pre-pass boxX=\" << transformBox.x << \" boxY=\" << transformBox.y\n                  << \" boxW=\" << transformBox.w << \" boxH=\" << transformBox.h << '\\n';\n    }\n\n    // Decide whether we need to re-sample and re-blur the background.\n"""
+    if pre_anchor not in layer_text:
+        raise SystemExit("HyprGlass pre-pass trace anchor no longer matches GlassLayerSurface.cpp")
+    layer_text = layer_text.replace(pre_anchor, pre_block, 1)
+
+    post_anchor = """    CBox rawBox       = *layerBox;\n    CBox transformBox = transformedLayerBox(rawBox, monitor);\n\n    const bool isDark          = resolveThemeIsDark();\n"""
+    post_block = """    CBox rawBox       = *layerBox;\n    CBox transformBox = transformedLayerBox(rawBox, monitor);\n\n    if (layerSurface->m_namespace == \"quickshell:bar-glass\") {\n        std::ofstream trace(\"/tmp/ii-vynx-hyprglass-hook.log\", std::ios::app);\n        if (trace)\n            trace << \"post-pass boxX=\" << transformBox.x << \" boxY=\" << transformBox.y\n                  << \" boxW=\" << transformBox.w << \" boxH=\" << transformBox.h << '\\n';\n    }\n\n    const bool isDark          = resolveThemeIsDark();\n"""
+    if post_anchor not in layer_text:
+        raise SystemExit("HyprGlass post-pass trace anchor no longer matches GlassLayerSurface.cpp")
+    layer_text = layer_text.replace(post_anchor, post_block, 1)
+    layer_target.write_text(layer_text, encoding="utf-8")
+
     init_anchor = """    HyprlandAPI::reloadConfig();\n"""
     init_block = """    // ii-vynx: wake the compositor as soon as a tracked glass layer commits\n    // new geometry instead of waiting for hkRenderLayer to run first.\n    auto layerCommitMatches = HyprlandAPI::findFunctionsByName(PHANDLE, \"onCommit\");\n    {\n        std::ostringstream line;\n        line << \"init matches=\" << layerCommitMatches.size();\n        traceLayerCommit(line.str(), true);\n    }\n    for (const auto& match : layerCommitMatches) {\n        if (match.demangled.contains(\"CLayerSurface::onCommit\")) {\n            traceLayerCommit(std::string(\"candidate \" ) + match.demangled);\n            g_layerCommitHook = HyprlandAPI::createFunctionHook(PHANDLE, match.address, (void*)hkLayerCommit);\n            if (g_layerCommitHook)\n                g_layerCommitHookActive = g_layerCommitHook->hook();\n            traceLayerCommit(std::string(\"hook created=\") + (g_layerCommitHook ? \"1\" : \"0\") +\n                             \" active=\" + (g_layerCommitHookActive ? \"1\" : \"0\"));\n            break;\n        }\n    }\n\n    if (!g_layerCommitHook || !g_layerCommitHookActive) {\n        HyprlandAPI::addNotificationV2(PHANDLE, {\n            {\"text\", std::string(\"[hyprglass] Could not hook CLayerSurface::onCommit — dynamic layer damage disabled\")},\n            {\"time\", (uint64_t)5000},\n            {\"color\", CHyprColor{1.0, 0.8, 0.2, 1.0}},\n        });\n    }\n\n    HyprlandAPI::reloadConfig();\n"""
 
