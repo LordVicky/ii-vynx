@@ -16,7 +16,7 @@ Singleton {
     property bool barOpen: true
     property var barAutoHideOffsets: ({})
     property bool verticalBarGlassSurfaceActive: false
-    property bool unifiedBarGlassSegmentsEnabled: false
+    property bool unifiedBarGlassSegmentsEnabled: true
     property var barGlassSegments: ({})
     property var verticalBarGlassSegments: ({})
     property bool crosshairOpen: false
@@ -54,7 +54,7 @@ Singleton {
     readonly property bool effectiveRightOpen: {
         switch (Config.options.sidebar.position) {
             case "default":  return dashboardPanelOpen; 
-            case "inverted": return policiesPanelOpen; 
+            case "inverted": return policiesPanelOpen;  
             case "left":     return false;
             case "right":    return dashboardPanelOpen || policiesPanelOpen;
             default:         return dashboardPanelOpen;
