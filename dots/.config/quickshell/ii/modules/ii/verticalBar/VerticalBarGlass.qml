@@ -119,9 +119,9 @@ PanelWindow {
             required property var modelData
 
             x: 4
-            y: Math.round(modelData.position)
+            y: Math.round(modelData.resolvedPosition)
             width: Math.max(1, Appearance.sizes.baseVerticalBarWidth - 8)
-            height: Math.max(1, modelData.extent)
+            height: Math.max(1, modelData.resolvedExtent)
             color: RuntimeServices.liquidGlass?.barSurfaceColor ?? "transparent"
             topLeftRadius: modelData.startRadius
             topRightRadius: modelData.startRadius
