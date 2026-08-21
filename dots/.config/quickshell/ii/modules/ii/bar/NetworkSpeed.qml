@@ -142,7 +142,7 @@ Item {
                 anchors.centerIn: parent
                 anchors.verticalCenterOffset: 1
                 font.pixelSize: Appearance.font.pixelSize.small
-                color: Appearance.colors.colOnLayer1
+                color: BarPalette.foreground(Appearance.colors.colOnLayer1)
                 text: getDisplayText()
             }
         }
@@ -156,12 +156,12 @@ Item {
 
             StyledText {
                 font.pixelSize: Appearance.font.pixelSize.small
-                color: Appearance.colors.colOnLayer1
+                color: BarPalette.foreground(Appearance.colors.colOnLayer1)
                 text: applyIcon(formatSpeed(NetworkUsage.networkDownloadSpeed), "↓")
             }
             StyledText {
                 font.pixelSize: Appearance.font.pixelSize.small
-                color: Appearance.colors.colOnLayer1
+                color: BarPalette.foreground(Appearance.colors.colOnLayer1)
                 text: applyIcon(formatSpeed(NetworkUsage.networkUploadSpeed), "↑")
             }
         }
