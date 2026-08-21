@@ -22,6 +22,7 @@ Item {
     property real barSurfaceX: 0
     property real barSurfaceY: 0
     property var barSurfaceScreen: null
+    property var barSurfaceRoot: null
     property bool standaloneLiquidGlassIslandActive: false
     readonly property bool standaloneLiquidGlassPillActive: !rootItem.vertical
         && rootItem.barGroupStyle === 0
@@ -161,6 +162,8 @@ Item {
         active: !rootItem.highlighted
             && (rootItem.standaloneLiquidGlassPillActive
                 || rootItem.standaloneVerticalLiquidGlassPillActive)
+        sourceItem: wrapper
+        coordinateRoot: rootItem.barSurfaceRoot
         position: rootItem.vertical ? rootItem.barSurfaceY : rootItem.barSurfaceX
         extent: rootItem.vertical ? rootItem.implicitHeight : rootItem.width
         startRadius: rootItem.startRadius
