@@ -3,6 +3,7 @@ pragma ComponentBehavior: Bound
 import qs.modules.common
 import qs.modules.common.widgets
 import qs.services
+import qs.modules.ii.bar as Bar
 import Quickshell
 import QtQuick
 import QtQuick.Layouts
@@ -41,14 +42,14 @@ MouseArea {
             fill: 0
             text: Icons.getWeatherIcon(Weather.data.wCode) ?? "cloud"
             iconSize: Appearance.font.pixelSize.large
-            color: Appearance.colors.colOnLayer1
+            color: Bar.BarPalette.foreground(Appearance.colors.colOnLayer1)
             Layout.alignment: root.vertical ? Qt.AlignHCenter : Qt.AlignVCenter
         }
 
         StyledText {
             visible: true
             font.pixelSize: Appearance.font.pixelSize.small
-            color: Appearance.colors.colOnLayer1
+            color: Bar.BarPalette.foreground(Appearance.colors.colOnLayer1)
             text: Weather.data?.temp ?? "--°"
             Layout.alignment: root.vertical ? Qt.AlignHCenter : Qt.AlignVCenter
         }
