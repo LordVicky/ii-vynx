@@ -21,9 +21,8 @@ PanelWindow {
         : `island:${Math.round(root.surfaceX * 1000)}:${Math.round(root.surfaceWidth * 1000)}`
 
     function requestSurfaceCommit() {
-        const window = root.contentItem?.window;
-        if (window)
-            window.update();
+        root.updatesEnabled = false;
+        root.updatesEnabled = true;
     }
 
     onSurfaceXChanged: root.requestSurfaceCommit()
