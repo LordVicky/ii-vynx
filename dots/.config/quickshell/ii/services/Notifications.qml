@@ -78,7 +78,10 @@ Singleton {
     property var filePath: Directories.notificationsPath
     property list<Notif> list: []
     property var popupList: list.filter((notif) => notif.popup);
-    property bool popupInhibited: (GlobalStates?.sidebarRightOpen ?? false) || silent
+    readonly property bool k4PresentationActive: Config.options.panelFamily === "ii"
+        && Config.options.bar.variant === "k4"
+    property bool popupInhibited: k4PresentationActive
+        || (GlobalStates?.sidebarRightOpen ?? false) || silent
     property var latestTimeForApp: ({})
     Component {
         id: notifComponent
@@ -103,7 +106,7 @@ Singleton {
         // Remove apps that no longer have notifications
         Object.keys(root.latestTimeForApp).forEach((appName) => {
             if (!root.list.some((notif) => notif.appName === appName)) {
-                delete root.latestTimeForApp[appName];
+                delete root.latestTimeForApp[notif.appName];
             }
         });
     }
