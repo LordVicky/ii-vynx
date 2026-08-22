@@ -4,183 +4,205 @@ Working branch: `agent/k4-bar-port`
 Source spec: `docs/k4-bar-port/SPEC.md`
 Tickets: `docs/k4-bar-port/TICKETS.md`
 Pinned k4 source: `48993812c88f0af5d0c5345cd273467043b889f1`
+Current Liquid Glass base merge-base: `cf40e91bfdd542b01cf81e060c9c448766080464`
 
 ## Current phase
 
-`K4-03 — Island state + plugin arbitration`: **validated and closed**.
+`K4-05 — Notifications and transient arbitration`: **implementation complete; final live validation pending**.
 
-Next ticket: `K4-04 — Core media/clock/volume parity`.
+Do not begin `K4-06 — k4 control center/panel` until the consolidated K4-05 runtime gate passes.
 
-Do not start dependent complex feature plugins before K4-04's own review/validation boundary.
+One K4-04 validation item is intentionally carried into that final gate: the workspace-change idle animation should be retested once with the final K4-05 branch state.
 
-## K4-01 — validated
+## K4-01 — validated and closed
 
-The user validated K4-01 in the live shell on 2026-08-22.
-
-Observed:
+Validated in the live shell on 2026-08-22:
 - Bar Settings exposes Standard and k4 Dynamic Island variants.
-- k4 Position and Alignment controls are visible while Standard-only settings are hidden.
-- k4 mode replaces the Standard bar.
-- source-contract tests passed.
+- k4 Position and Alignment controls appear while Standard-only settings are hidden.
+- k4 mode replaces the Standard bar rather than coexisting with it.
+- switching back restores Standard and preserves independent settings.
 
-K4-01 is closed.
-
-## K4-02 — validated
+## K4-02 — validated and closed
 
 Implemented and validated:
-- k4 visual tokens in `modules/ii/k4bar/K4Theme.qml`;
-- black k4 surface, 16px wings, 34px collapsed height, 880px surface ceiling;
-- inverse-wing `Shape` silhouette with bottom reflection and 8x MSAA;
-- collapsed-only compositor reservation and upstream delayed surface shrink;
-- upstream OutBack width/height animation timings;
-- pointer mask restricted to island geometry;
+- faithful black k4 surface, inverse wings, 34px collapsed reservation and reflected bottom geometry;
+- delayed layer-surface shrink while island width/height animate immediately;
+- island-only input mask;
 - centered clock with symmetric side reservation;
-- upstream moving three-workspace viewport and 1800ms return;
-- playing-media artwork + lightweight four-bar visualizer using live ii MPRIS state;
-- recording indicator using existing `Persistent.states.screenRecord` state;
-- k4 attribution through `licenses/k4-NOTICE.txt`.
+- moving three-workspace viewport after workspace changes;
+- live MPRIS artwork/visualizer lifecycle;
+- recording indicator through existing ii `Persistent.states.screenRecord` state;
+- top/bottom and lock/unlock ownership;
+- k4 MIT attribution in `licenses/k4-NOTICE.txt`.
 
-Round-1 runtime validation found and fixed two integration bugs:
-1. media lifecycle after the last MPRIS player disappeared (`59ee919e`);
-2. missing common-state import for `Persistent` recording state (`4a1e5abb`).
+Runtime fixes included the cold/restarted MPRIS lifecycle and missing Persistent-state import. The three-workspace viewport and vertical gesture motion remain intentional pinned-k4 behavior.
 
-Final live retest passed:
-- clock-only → launch/play media;
-- player exits completely → later relaunch/play without Quickshell restart;
-- pause/resume contraction and expansion;
-- ii-vynx recording indicator start/stop;
-- top/bottom reflection;
-- workspace transition;
-- lock/unlock ownership.
+## K4-03 — validated and closed
 
-The three-workspace viewport is intentional upstream k4 behavior and remains unchanged for the faithful-port phase.
+The deep host/state/plugin seam is in place:
+- `IslandState.qml` owns requested/active screen routing, geometry publication, placement, gestures, and temporary suppression;
+- `K4Plugin.qml` defines the enabled/active/priority/dimensions/view/focus/background/hover contract;
+- the pinned upstream transient property name is `transitorio`; an attempted English `transient` property caused Quickshell exit 255 because `transient` is a reserved QML identifier;
+- the parser failure was fixed across plugin, controller and demo contracts, then covered by regression tests;
+- `K4PluginController.qml` owns highest-priority arbitration, idle fallback, transient preemption, monitor ownership and hover timers;
+- expanded content is shown on only the active screen while other eligible screens retain the idle pill;
+- the exclusive zone stays at the collapsed 34px height;
+- suppression removes input/focus without moving surrounding windows;
+- placement and `sacudida` / `empujon` / `tiron` gestures follow the pinned host contract;
+- the temporary `k4barDebug` demo harness remains available for host regression validation.
 
-K4-02 is closed.
+The parser-fix live retest reached `INFO: Configuration Loaded` with no `modules/ii/k4bar` load error. Existing unrelated Quickshell warnings remain baseline noise unless they point at a changed K4 file or correlate with a failed behavior.
 
-## K4-03 — implemented
+K4-03 source tests passed 16/16 during its live gate. Multi-monitor compositor validation remains unavailable on the single-monitor test machine; the routing contract is source-covered.
 
-The deep host/state/plugin seam now exists before feature views:
-- `IslandState.qml` owns requested/active monitor routing, k4-compatible `arriba`/`abajo` position publication, `{x,y,ancho,alto}` geometry per screen, temporary placement ownership, gesture cooldown, and hidden/system-dialog suppression;
-- `K4Plugin.qml` defines the enabled/active/priority/`transitorio`/dimensions/view/focus/background/hover boundary;
-- disabled plugin requests are gated in the simplified K4-03 lifecycle so an inactive object cannot leave stale active/placement/gesture state; full destroy/recreate lifecycle remains K4-11;
-- `K4PluginController.qml` owns highest-priority enabled-active arbitration, idle fallback, transient preemption, monitor ownership, open publication, background-tap routing, and hover-exit timers;
-- `K4Bar.qml` renders the expanded winner only on `IslandState.activeScreen`; every other screen retains `K4IdlePill`;
-- the compositor exclusive zone remains 34px while expanded content floats over windows;
-- suppression keeps the layer surface mapped, sets island opacity to zero, removes its input mask, and drops keyboard focus instead of remapping the `PanelWindow`;
-- keyboard policy supports none, exclusive, on-hover exclusive, and on-demand; Escape closes the visible non-idle plugin after nested controls can consume the event;
-- only the visible enabled plugin view is loaded;
-- island geometry is published on animated x/width/height and top/bottom changes;
-- placement uses the upstream animated fraction model;
-- gestures use the upstream `sacudida` / `empujon` / `tiron` contract;
-- a temporary `k4barDebug` IPC harness supplies transient/secondary/primary demo plugins for K4-03 validation only.
+## Liquid Glass base state
 
-Key implementation/reviewer fixes:
-- `816aadb` — island state service;
-- `4608254c` — plugin contract;
-- `e1dbae2d` — arbitration controller;
-- `ec4595a5` — inert demo view;
-- `f64313df` — host wiring;
-- `a0b9614f` — restore upstream state vocabulary and reset host-scoped singleton state;
-- `bd0ca03b` — preserve monitor routing, geometry keys, and gesture names;
-- `c2f60b5b` — gate requests from disabled simplified-lifecycle plugins;
-- `23aace93` — expose geometry/state in debug status;
-- `9d1bec7c` — deterministic initial winner publication;
-- `5b28cae6` / `27c12964` / `fbe40506` — restore pinned k4 `transitorio` API after the translated identifier `transient` proved to be a reserved QML keyword;
-- `0470b463` — regression coverage for the `transitorio` parser contract;
-- `f7f5a0ea` — follow the K4-03 alignment state seam in K4-01 regression coverage.
+The branch was previously merged with the newer Liquid Glass dashboard exclusion architecture rather than preserving the obsolete Standard-only dashboard reserve shim.
 
-The parser regression produced Quickshell exit 255 before the `transitorio` fix. Live retest afterward reported `INFO: Configuration Loaded` with no k4bar load errors.
+At the K4-05 checkpoint the branch compares against `agent/liquid-glass-stage1` as:
+- behind: 0;
+- merge-base: `cf40e91bfdd542b01cf81e060c9c448766080464`.
 
-## Liquid Glass integration state
+No base sync is required before the K4-05 final test.
 
-The k4 branch is synchronized with the Liquid Glass base through `438de909`.
+## K4-04 — core media/clock/volume
 
-The newer Liquid Glass sidebar architecture removed the old top/bottom bar-specific dashboard inset mechanism entirely. The obsolete k4 Standard-only reserve shim was therefore removed during the two-parent sync rather than preserved.
+Implementation is complete and source-reviewed:
+- `K4Media.qml` delegates to ii's live MPRIS players and only polls position while a player view is watching;
+- `K4Audio.qml` delegates to ii Audio rather than creating another PipeWire owner;
+- k4 owns the volume HUD while selected, while unrelated ii brightness/gamma/protection OSD behavior remains available;
+- `K4Clock.qml` delegates to ii DateTime without another timer;
+- `K4Workspaces.qml` delegates to Hyprland workspace state;
+- Clock priority 50, Player priority 55 and Volume priority 40 follow pinned k4 activation ordering;
+- Player has artwork, visualizer, timeline/seek, previous/play-pause/next and recording controls;
+- the future k4 audio-panel output button remains deliberately inert until K4-06 rather than opening an ii sidebar.
 
-Regression coverage now asserts that no bar-specific dashboard inset state exists and `SidebarDashboardGlass` uses `ExclusionMode.Normal`.
+The remaining K4-04 validation debt is a workspace-change idle-animation retest. It is folded into the consolidated pre-K4-06 runtime gate.
 
-## K4-03 automated validation
+## K4-05 — notification ownership decision
 
-Run from the repository root:
+### One daemon/server
 
-```bash
-node --test \
-  tests/k4-bar-variant.test.js \
-  tests/k4-idle-shell.test.js \
-  tests/k4-plugin-host.test.js
-```
+`dots/.config/quickshell/ii/services/Notifications.qml` remains the **single Freedesktop notification server** used by the shell.
 
-User result on 2026-08-22:
-- tests: 16
-- pass: 16
-- fail: 0
+This is deliberate. Disabling that `NotificationServer` in k4 mode would also disable K4 notification delivery. The port therefore does not instantiate pinned k4's separate `services/Notifs.qml` server; `K4Notifications.qml` is an adapter over ii's existing server/state.
 
-## K4-03 live validation
+Repository searches found no shell-managed Dunst, Mako, SwayNC or Fnott daemon launch/configuration that would form a second notification owner.
 
-Validated on 2026-08-22:
-- idle publication: `occupant: "idle"`, `open: false`, nonzero `{ancho, alto}` geometry;
-- transient demo wins from idle;
-- Secondary preempts/dismisses the transient;
-- Primary preempts Secondary while preserving Secondary underneath;
-- closing Primary reveals Secondary again;
-- Escape closes Primary and keyboard focus returns normally;
-- Secondary background tap closes Secondary;
-- disabled Primary rejects an open request;
-- re-enabling Primary does not resurrect stale active state;
-- temporary placement ownership moves to `0.15`, then releases and returns to configured `0.5` placement;
-- all three physical gesture animations render and do not disturb plugin ownership;
-- hide/show suppression preserves the active plugin and does not move surrounding windows;
-- k4 → Standard → k4 clears host-scoped suppression/plugin state and restores the idle pill;
-- final cleanup returns to normal K4-02 idle behavior.
+### No duplicate legacy ii presentation in k4 mode
 
-Multi-monitor live routing was not applicable: the test machine currently exposes one monitor (`DP-3`). The multi-monitor routing contract remains source-covered and follows the pinned k4 host model, but has not yet received compositor validation on a multi-monitor setup.
+Two independent legacy-presentation paths are gated:
+1. `IllogicalImpulseFamily.qml` loads `NotificationPopup` only for the Standard bar variant.
+2. ii's shared `Notifications.qml` marks the legacy popup pipeline inhibited while `panelFamily === "ii" && bar.variant === "k4"`; notifications are still tracked, persisted and emitted to the K4 adapter, but the old popup flag/timer/unread path is not armed.
 
-### Gesture fidelity decision
+`K4Notifications.qml` also arms K4 transients only while the k4 variant owns presentation. Leaving k4 dismisses any pending K4 toast, preventing a Standard notification from being replayed after a quick Standard → k4 switch.
 
-The user supplied a recording of the K4-03 gestures. During the vertical gestures the full island silhouette visibly leaves the screen edge for a moment.
+### Toast and arbitration
 
-This is **intentional pinned-k4 behavior** and remains unchanged for the faithful-port stage. Upstream applies `Translate` to the island content/silhouette and explicitly describes vertical gestures as pushing the island into the screen:
-- `empujon`: y → 26px, then returns with OutBack;
-- `tiron`: y → 10px → 2px → 12px → 0;
-- bottom placement reverses the direction.
+Implemented:
+- newest notification adapter model over `Notifications.list`;
+- pinned 5-second toast timer;
+- hover hold/resume;
+- image → app icon → generic bell fallback;
+- non-default action buttons delegated to ii's tracked notification actions;
+- default body action when the live notification exposes one;
+- close hides the transient while preserving notification history;
+- priority-59 `transitorio` toast plugin;
+- 440px toast with pinned 96/112px height split;
+- pinned typography, icon fit, action-chip sizing/alignment and action hover accent;
+- explicit non-transient plugin preemption through the existing K4-03 controller.
 
-A Vynx-specific alternative that keeps the inverse wings pinned while deforming only the body may be considered later as customization, but is not part of the fidelity port.
+### Explicit-owner notification band
 
-K4-03 is closed.
+Pinned k4 does not steal the island when a real user-opened plugin already owns it. The port preserves that rule:
+- idle/clock/player/volume are passive owners and may be replaced by the normal toast;
+- an explicit plugin latches the new notification into a separate band for that toast's lifetime;
+- closing the explicit plugin mid-toast does not jump the same notification from band to island;
+- the band follows the active screen's published island geometry;
+- the band uses `ExclusionMode.Ignore`, so it never reserves compositor space or changes the 34px bar exclusive zone;
+- hover holds the shared toast timer, body click activates the notification, and close dismisses only the transient.
 
-## K4-03 Standards + Spec review
+### Fullscreen guarantee
+
+Pinned k4's generic `K4.Ventana` overlay surfaces use `WlrLayer.Overlay`, but its main island host normally uses the Top layer. A fullscreen surface may share/compete with Top ordering, so K4-05 explicitly hardens notification presentation:
+- normal non-notification K4 host state stays `WlrLayer.Top`;
+- while the toast plugin owns a screen, only that per-screen K4 host surface becomes `WlrLayer.Overlay`;
+- the separate notification band always uses `WlrLayer.Overlay`;
+- when the toast closes, the normal host returns to Top.
+
+This is an intentional robustness extension to guarantee the user's required notification visibility over fullscreen applications without making the entire k4 bar permanently overlay fullscreen content.
+
+### Recent notification history
+
+`K4NotifStrip.qml` ports the pinned max-three recent strip:
+- newest-first shared history;
+- max three visible rows;
+- notification count plus `+N more`;
+- clear-all;
+- image/app-icon/bell fallback;
+- one-line normalized summary/body;
+- per-row dismissal and activation.
+
+Clock and Player now render this strip and reserve the pinned vertical amounts:
+- Clock: `68 + stripHeight + 18` when history exists;
+- Player: base `115/140 + stripHeight + 15` when history exists.
+
+## K4-05 source-contract coverage
+
+`tests/k4-notifications.test.js` covers:
+- K4 adapter has no `NotificationServer`;
+- ii service contains the single shared `NotificationServer`;
+- legacy ii popup window and popup-state pipeline are inhibited during k4 ownership;
+- priority-59 transient contract;
+- toast content/actions/dismissal;
+- passive-vs-explicit band routing;
+- non-reserving band window;
+- notification Overlay layer vs ordinary Top layer;
+- max-three newest-first recent strip;
+- Clock/Player dynamic strip-height formulas.
+
+The source tests have been authored but are not marked executed by this status update because the GitHub connector environment does not provide a runnable checkout. They must be run in the final local gate.
+
+## K4-05 Standards + Spec review
 
 ### Standards
 
-- Arbitration policy is isolated from `PanelWindow` rendering in `K4PluginController`.
-- Long-lived host state is centralized in `IslandState`; feature plugins request behavior rather than writing host geometry directly.
-- The Standard bar implementation and global ii service owners are untouched.
-- No new notification/media/audio/network owner is introduced.
-- The layer surface remains mapped during temporary suppression.
-- Plugin views are lazy at the Loader boundary; inactive demo view components are not instantiated.
-- Disabled simplified-lifecycle plugins cannot issue new active, placement, or gesture requests.
-- Reviewer fixes preserve pinned k4 public state vocabulary rather than inventing an incompatible bridge.
-- Existing unrelated Quickshell warnings are treated as baseline noise unless they point at k4bar/changed files or correlate with a failed K4 behavior check.
+- No second notification server or external daemon was added.
+- Notification global ownership remains in the existing ii service; K4 uses a narrow adapter.
+- Legacy Standard presentation is gated instead of cloning or bypassing the underlying server.
+- Toast arbitration remains inside the existing plugin-controller boundary.
+- The band is a separate non-reserving surface because extending the island host surface would change clipping/input/exclusive-zone geometry.
+- Fullscreen z-order is controlled explicitly through layer-shell rather than compositor-specific window hacks.
+- Clock/Player consume one shared notification-strip component rather than duplicating history-row implementations.
+- No K4-06 panel behavior or ii-sidebar substitution was introduced.
 
 ### Spec
 
-K4-03 satisfies:
-- first-class island state;
-- base plugin interface and enabled lifecycle;
-- highest-priority active winner with idle fallback;
-- transient preemption;
-- requested/active monitor routing;
-- single-monitor expansion with idle pills elsewhere;
-- safe active-only view loading;
-- hover-exit timing;
-- keyboard/Escape policy;
-- temporary placement ownership;
-- physical gesture requests;
-- per-monitor geometry publication;
-- hidden/dialog rendering and input suppression.
+K4-05 implementation satisfies the ticket requirements in source:
+- explicit shared notification-owner decision;
+- K4 toast/history adapter;
+- island toast plugin;
+- action/dismiss/history behavior;
+- transient timing and hover hold;
+- explicit-plugin preemption/band behavior;
+- no competing `NotificationServer`;
+- no duplicate Standard popup presentation in k4 mode.
 
-Dynamic catalog discovery, plugin persistence, external plugin loading, and destroy/recreate lifecycle remain intentionally deferred to K4-11.
+Runtime/compositor acceptance remains pending the consolidated manual gate, especially fullscreen Overlay behavior.
 
-## Next action
+## Final gate before K4-06
 
-Begin `K4-04 — Core media/clock/volume parity` from `TICKETS.md` using small vertical slices and stop again at its live-shell validation boundary before advancing dependent work.
+Run one consolidated local/source + live-shell validation pass covering:
+- all existing K4 source-contract tests including `k4-core-desktop.test.js` and `k4-notifications.test.js`;
+- shell startup/load;
+- Standard notification regression;
+- k4 single-delivery notification arrival from idle;
+- action/close/timeout/hover behavior;
+- notification arrival while an explicit plugin owns the island;
+- fullscreen normal toast and fullscreen explicit-owner band;
+- recent strip under Clock and Player;
+- Standard → k4 → Standard notification ownership switching;
+- the deferred K4-04 workspace-change idle animation;
+- existing media/volume/recording regressions.
+
+Only after this gate passes should K4-05 be marked validated/closed and K4-06 begin.
