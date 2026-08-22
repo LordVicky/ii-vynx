@@ -37,7 +37,8 @@ QtObject {
     signal hoverTimedOut()
 
     function open() {
-        active = true
+        if (enabled)
+            active = true
     }
 
     function close() {
@@ -45,7 +46,8 @@ QtObject {
     }
 
     function requestPlacement(fraction, durationMs) {
-        IslandState.requestPlacement(name, fraction, durationMs || 0)
+        if (enabled)
+            IslandState.requestPlacement(name, fraction, durationMs || 0)
     }
 
     function releasePlacement() {
@@ -53,7 +55,8 @@ QtObject {
     }
 
     function requestGesture(gestureName, strength) {
-        IslandState.requestGesture(name, gestureName, strength)
+        if (enabled)
+            IslandState.requestGesture(name, gestureName, strength)
     }
 
     onEnabledChanged: {
