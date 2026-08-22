@@ -49,10 +49,13 @@ Singleton {
         requestedScreen = ""
     }
 
-    readonly property string position: Config.options.bar.k4.position
+    // Preserve k4's public vocabulary even though ii stores English config.
+    readonly property string position:
+        Config.options.bar.k4.position === "bottom" ? "abajo" : "arriba"
 
     // Geometry is in screen-local coordinates and includes the inverse wings.
-    property var rect: ({ x: 0, y: 0, width: 0, height: 0 })
+    // Keep upstream field names so adapted k4 plugins can consume it directly.
+    property var rect: ({ x: 0, y: 0, ancho: 0, alto: 0 })
     property var rects: ({})
 
     function publishRect(screenName, value, isPrimary) {
@@ -104,7 +107,8 @@ Singleton {
         }
     }
 
-    // Physical island gesture requests. The host owns the animations.
+    // Physical island gesture requests. The host owns the animations. Gesture
+    // names intentionally remain k4's sacudida/empujon/tiron contract.
     signal gesture(string name, real strength)
     property real lastGestureAt: 0
 
@@ -156,13 +160,19 @@ Singleton {
         onTriggered: dialogProbe.running = true
     }
 
+    // ii can unload the entire k4 host when switching bar variants. Reset
+    // host-scoped state so a debug hide/dialog/placement cannot poison a later
+    // k4 activation through this long-lived singleton.
     function resetHostPublication() {
         hovered = false
         occupant = ""
         open = false
         activeScreen = ""
         requestedScreen = ""
-        rect = ({ x: 0, y: 0, width: 0, height: 0 })
+        rect = ({ x: 0, y: 0, ancho: 0, alto: 0 })
         rects = ({})
+        hidden = false
+        systemDialogs = 0
+        releasePlacement("")
     }
 }
