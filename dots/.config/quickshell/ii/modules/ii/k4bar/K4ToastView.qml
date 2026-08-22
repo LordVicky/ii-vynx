@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
 import Quickshell.Widgets
-import qs.modules.common.widgets
 
 // Notification toast adapted from pinned k4 ToastView.qml. Notification
 // lifecycle/actions remain owned by ii-vynx's Notifications singleton.
@@ -36,47 +35,51 @@ Item {
         ClippingRectangle {
             Layout.preferredWidth: 38
             Layout.preferredHeight: 38
-            Layout.alignment: Qt.AlignTop
+            Layout.alignment: Qt.AlignVCenter
             radius: 19
             color: K4Theme.surface
 
             Image {
                 id: notificationIcon
                 anchors.fill: parent
+                anchors.margins: 6
                 source: root.iconSource
-                fillMode: Image.PreserveAspectCrop
+                fillMode: Image.PreserveAspectFit
                 asynchronous: true
                 cache: true
-                sourceSize.width: 96
-                sourceSize.height: 96
+                sourceSize.width: 76
+                sourceSize.height: 76
                 visible: status === Image.Ready
             }
 
-            MaterialSymbol {
+            Text {
                 anchors.centerIn: parent
                 visible: !notificationIcon.visible
-                text: "notifications"
-                fill: 1
-                iconSize: 18
+                text: K4Theme.ico.bell
                 color: K4Theme.ink
+                font.family: K4Theme.iconFont
+                font.pixelSize: 17
+                renderType: Text.NativeRendering
             }
         }
 
         ColumnLayout {
             Layout.fillWidth: true
-            Layout.fillHeight: true
-            spacing: 4
+            Layout.fillHeight: false
+            Layout.alignment: Qt.AlignVCenter
+            spacing: 2
 
             RowLayout {
                 Layout.fillWidth: true
-                spacing: 8
+                Layout.fillHeight: false
+                spacing: 6
 
                 Text {
                     Layout.fillWidth: true
-                    text: root.notification?.summary ?? ""
+                    text: (root.notification?.summary ?? "").replace(/\s*\n\s*/g, " ")
                     color: K4Theme.ink
                     font.family: K4Theme.uiFont
-                    font.pixelSize: 12
+                    font.pixelSize: 13
                     font.weight: Font.DemiBold
                     elide: Text.ElideRight
                     maximumLineCount: 1
@@ -90,34 +93,18 @@ Item {
                     font.pixelSize: 10
                     elide: Text.ElideRight
                     maximumLineCount: 1
-                    Layout.maximumWidth: 100
+                    Layout.maximumWidth: 90
                     renderType: Text.NativeRendering
-                }
-
-                Text {
-                    text: "×"
-                    color: closeHover.hovered ? K4Theme.ink : K4Theme.muted
-                    font.family: K4Theme.uiFont
-                    font.pixelSize: 15
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                    Layout.preferredWidth: 18
-                    Layout.preferredHeight: 18
-                    renderType: Text.NativeRendering
-
-                    HoverHandler { id: closeHover }
-                    TapHandler { onTapped: K4Notifications.dismissToast() }
                 }
             }
 
             Text {
                 Layout.fillWidth: true
-                Layout.fillHeight: root.buttons.length === 0
-                text: root.notification?.body ?? ""
+                text: (root.notification?.body ?? "").replace(/\s*\n\s*/g, " ")
                 color: K4Theme.muted
                 font.family: K4Theme.uiFont
                 font.pixelSize: 11
-                wrapMode: Text.Wrap
+                wrapMode: Text.WordWrap
                 elide: Text.ElideRight
                 maximumLineCount: root.buttons.length > 0 ? 1 : 2
                 renderType: Text.NativeRendering
@@ -125,42 +112,77 @@ Item {
 
             RowLayout {
                 Layout.fillWidth: true
+                Layout.topMargin: 2
                 spacing: 6
                 visible: root.buttons.length > 0
-
-                Item { Layout.fillWidth: true }
 
                 Repeater {
                     model: root.buttons
 
                     delegate: Rectangle {
+                        id: actionChip
                         required property var modelData
                         readonly property string label: modelData.text ?? modelData.identifier ?? ""
-                        Layout.preferredHeight: 24
-                        Layout.preferredWidth: Math.max(54, actionText.implicitWidth + 18)
-                        radius: 12
-                        color: actionHover.hovered ? K4Theme.track : K4Theme.surface
+                        Layout.preferredWidth: Math.min(actionLabel.implicitWidth + 20, 150)
+                        Layout.preferredHeight: 20
+                        radius: 10
+                        color: actionMouse.containsMouse ? K4Theme.blue : K4Theme.surfaceHi
+
+                        Behavior on color { ColorAnimation { duration: 120 } }
 
                         Text {
-                            id: actionText
-                            anchors.centerIn: parent
-                            text: parent.label
+                            id: actionLabel
+                            anchors.fill: parent
+                            anchors.leftMargin: 8
+                            anchors.rightMargin: 8
+                            text: actionChip.label
                             color: K4Theme.ink
                             font.family: K4Theme.uiFont
                             font.pixelSize: 10
-                            font.weight: Font.Medium
+                            font.weight: Font.DemiBold
+                            elide: Text.ElideRight
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
                             renderType: Text.NativeRendering
                         }
 
-                        HoverHandler { id: actionHover }
-                        TapHandler {
-                            onTapped: {
-                                K4Notifications.invokeAction(root.notification, modelData)
+                        MouseArea {
+                            id: actionMouse
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                K4Notifications.invokeAction(root.notification, actionChip.modelData)
                                 K4Notifications.dismissToast()
                             }
                         }
                     }
                 }
+
+                Item { Layout.fillWidth: true }
+            }
+        }
+
+        Item {
+            Layout.preferredWidth: 30
+            Layout.preferredHeight: 30
+            Layout.alignment: Qt.AlignVCenter
+
+            Text {
+                anchors.centerIn: parent
+                text: K4Theme.ico.close
+                color: closeMouse.containsMouse ? K4Theme.ink : K4Theme.muted
+                font.family: K4Theme.iconFont
+                font.pixelSize: 14
+                renderType: Text.NativeRendering
+            }
+
+            MouseArea {
+                id: closeMouse
+                anchors.fill: parent
+                hoverEnabled: true
+                cursorShape: Qt.PointingHandCursor
+                onClicked: K4Notifications.dismissToast()
             }
         }
     }
