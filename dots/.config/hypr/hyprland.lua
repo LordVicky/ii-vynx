@@ -51,10 +51,36 @@ hl.layer_rule({
     order = 1,
 })
 
+-- Policy glass uses side-specific namespaces so its visual layer follows the
+-- exact same compositor direction as the interactive policy sidebar.
+hl.layer_rule({
+    match = { namespace = "quickshell:sidebar-policies-glass-left" },
+    blur = false,
+    blur_popups = false,
+    animation = "slide left",
+    order = 1,
+})
+hl.layer_rule({
+    match = { namespace = "quickshell:sidebar-policies-glass-right" },
+    blur = false,
+    blur_popups = false,
+    animation = "slide right",
+    order = 1,
+})
+
 -- Optional runtime overrides are created only while Liquid Glass is active.
 -- Use dofile instead of require so a Hyprland reload always re-reads the
 -- generated fragment rather than retaining Lua's module cache.
 local liquidGlassOverride = HOME .. "/.config/hypr/hyprland/shellOverrides/liquid-glass.lua"
 if is_file_exists(liquidGlassOverride) then
     dofile(liquidGlassOverride)
+
+    -- The generated runtime fragment defines the vynx preset first. Register
+    -- the policy-only namespaces afterward so detached Material windows remain
+    -- outside the HyprGlass layer path.
+    if hl.plugin.hyprglass then
+        local hg = hl.plugin.hyprglass
+        hg.layer("quickshell:sidebar-policies-glass-left", { preset = "vynx", mask_threshold = 0.0025 })
+        hg.layer("quickshell:sidebar-policies-glass-right", { preset = "vynx", mask_threshold = 0.0025 })
+    end
 end
