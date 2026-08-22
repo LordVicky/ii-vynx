@@ -13,9 +13,10 @@ def patch_live_bar_refresh(source_dir: Path) -> None:
 """
     new = """    // ii-vynx: the upstream scene-generation cache does not track
     // per-frame window geometry or lower layer-surface content changes. Force
-    // the horizontal shell bar to resample whenever Hyprland renders it so a
-    // moving window or wallpaper parallax is reflected by the glass live.
-    const bool forceLiveBarRefresh = layerSurface->m_namespace == \"quickshell:bar\";
+    // the horizontal shell bar surfaces to resample whenever Hyprland renders
+    // them so moving windows and wallpaper parallax stay live in the glass.
+    const bool forceLiveBarRefresh = layerSurface->m_namespace == \"quickshell:bar\" ||
+                                     layerSurface->m_namespace == \"quickshell:bar-glass\";
     const bool backgroundChanged = forceLiveBarRefresh ||
                                    !m_hasCachedSample ||
                                    currentGeneration != m_lastSceneGeneration ||
