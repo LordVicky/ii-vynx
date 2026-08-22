@@ -35,11 +35,13 @@ test("ii family gives bar ownership to exactly the selected variant", () => {
 
 test("k4 host follows upstream all-screen top-bottom ownership seam", () => {
     const source = read("modules/ii/k4bar/K4Bar.qml");
+    const state = read("modules/ii/k4bar/IslandState.qml");
 
     assert.match(source, /model:\s*GlobalStates\.screenLocked \? \[\] : Quickshell\.screens/);
     assert.doesNotMatch(source, /Config\.options\.bar\.screenList/);
     assert.match(source, /Config\.options\.bar\.k4\.position === "bottom"/);
-    assert.match(source, /Config\.options\.bar\.k4\.alignment/);
+    assert.match(source, /property real smoothPlacement:\s*IslandState\.placement/);
+    assert.match(state, /Config\.options\.bar\.k4\.alignment/);
     assert.match(source, /exclusiveZone:\s*K4Theme\.baseHeight/);
     assert.match(source, /WlrLayershell\.namespace:\s*"quickshell:k4bar"/);
 });
