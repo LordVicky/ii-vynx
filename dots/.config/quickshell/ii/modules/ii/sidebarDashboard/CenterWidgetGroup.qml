@@ -10,7 +10,9 @@ import QtQuick.Layouts
 Rectangle {
     id: root
     radius: Appearance.rounding.normal
-    color: Appearance.colors.colLayer1
+    color: RuntimeServices.liquidGlass?.surfaceReady === true
+        ? "transparent"
+        : Appearance.colors.colLayer1
 
     NotificationList {
         anchors.fill: parent
