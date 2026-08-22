@@ -3,6 +3,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
+import Quickshell.Wayland
 import Quickshell.Widgets
 import qs
 import qs.modules.common
@@ -39,11 +40,14 @@ Scope {
             implicitWidth: 420
             implicitHeight: 56
             color: "transparent"
-            aboveWindows: true
             focusable: false
             exclusionMode: ExclusionMode.Ignore
             visible: shouldShow
             mask: Region { item: band }
+
+            WlrLayershell.namespace: "quickshell:k4bar-notification"
+            WlrLayershell.layer: WlrLayer.Overlay
+            WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
 
             Rectangle {
                 id: band
