@@ -16,6 +16,12 @@ Scope {
         return pos === "default" || pos === "right"; 
     }
 
+    SidebarDashboardGlass {
+        isOnRight: root.isOnRight
+        surfaceActive: RuntimeServices.liquidGlass?.surfaceReady === true
+        sidebarWidth: root.sidebarWidth
+    }
+
     PanelWindow {
         id: panelWindow
         visible: GlobalStates.sidebarRightOpen
