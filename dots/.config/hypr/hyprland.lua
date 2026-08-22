@@ -41,10 +41,13 @@ require("hyprland.shellOverrides.main")
 
 -- Dedicated Liquid Glass layers own their compositor blur. This namespace is
 -- never used by the Material dashboard, so the override is safe at all times.
+-- Use the compositor's native slide animation so the visual glass surface
+-- follows the interactive dashboard on the exact same layer animation clock.
 hl.layer_rule({
     match = { namespace = "quickshell:sidebar-dashboard-glass" },
     blur = false,
     blur_popups = false,
+    animation = "slide",
     order = 1,
 })
 
