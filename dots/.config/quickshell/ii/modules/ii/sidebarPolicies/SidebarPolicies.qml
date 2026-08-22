@@ -26,9 +26,8 @@ Scope { // Scope
         if (root.extend) return Appearance.sizes.sidebarWidthExtended;
         return pageCount >= 4 ? Appearance.sizes.sidebarWidthExpanded : Appearance.sizes.sidebarWidth;
     }
-    readonly property bool normalLiquidGlassActive: RuntimeServices.liquidGlass?.surfaceReady === true
+    readonly property bool attachedLiquidGlassActive: RuntimeServices.liquidGlass?.surfaceReady === true
         && !root.detach
-        && !root.pin
 
     function toggleDetach() {
         root.detach = !root.detach;
@@ -97,7 +96,8 @@ Scope { // Scope
 
     SidebarPoliciesGlass {
         isOnLeft: root.isOnLeft
-        surfaceActive: root.normalLiquidGlassActive
+        surfaceActive: root.attachedLiquidGlassActive
+        pinned: root.pin
         sidebarWidth: root.attachedSidebarWidth
     }
 
@@ -165,12 +165,12 @@ Scope { // Scope
             StyledRectangularShadow {
                 target: sidebarLeftBackground
                 radius: sidebarLeftBackground.radius
-                visible: !root.normalLiquidGlassActive
+                visible: !root.attachedLiquidGlassActive
             }
 
             Rectangle {
                 id: sidebarLeftBackground
-                color: root.normalLiquidGlassActive ? "transparent" : Appearance.colors.colLayer0
+                color: root.attachedLiquidGlassActive ? "transparent" : Appearance.colors.colLayer0
                 border.width: root.pin ? 0 : 1
                 border.color: root.pin ? "transparent" : Appearance.colors.colLayer0Border
                 radius: root.pin ? 0 : Appearance.rounding.screenRounding - Appearance.sizes.hyprlandGapsOut + 1
@@ -285,7 +285,7 @@ Scope { // Scope
                             right: !root.isOnLeft ? parent.right : undefined
                         }
                         implicitSize: Appearance.rounding.screenRounding
-                        color: Appearance.colors.colLayer0
+                        color: root.attachedLiquidGlassActive ? "transparent" : Appearance.colors.colLayer0
                         corner: root.isOnLeft ? RoundCorner.CornerEnum.TopLeft : RoundCorner.CornerEnum.TopRight
                     }
                     RoundCorner {
@@ -295,7 +295,7 @@ Scope { // Scope
                             right: !root.isOnLeft ? parent.right : undefined
                         }
                         implicitSize: Appearance.rounding.screenRounding
-                        color: Appearance.colors.colLayer0
+                        color: root.attachedLiquidGlassActive ? "transparent" : Appearance.colors.colLayer0
                         corner: root.isOnLeft ? RoundCorner.CornerEnum.BottomLeft : RoundCorner.CornerEnum.BottomRight
                     }
                 }
