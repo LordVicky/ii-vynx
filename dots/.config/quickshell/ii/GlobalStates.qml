@@ -16,9 +16,6 @@ Singleton {
     property bool barOpen: true
     property var barAutoHideOffsets: ({})
     property bool verticalBarGlassSurfaceActive: false
-    property bool unifiedBarGlassSegmentsEnabled: false
-    property var barGlassSegments: ({})
-    property var verticalBarGlassSegments: ({})
     property bool crosshairOpen: false
     property bool desktopWidgetKeyboardFocus: false // Suppresses global shortcuts while typing in a desktop widget (notes, world clock settings, ...)
     property bool mediaControlsOpen: false
@@ -86,46 +83,6 @@ Singleton {
         const nextOffsets = Object.assign({}, root.barAutoHideOffsets);
         delete nextOffsets[screenName];
         root.barAutoHideOffsets = nextOffsets;
-    }
-
-    function setLiveBarGlassSegment(vertical, screenName, key, segmentObject) {
-        if (!screenName || !key || !segmentObject)
-            return;
-
-        const store = vertical ? root.verticalBarGlassSegments : root.barGlassSegments;
-        const screenSegments = Object.assign({}, store[screenName] ?? {});
-        if (screenSegments[key] === segmentObject)
-            return;
-
-        screenSegments[key] = segmentObject;
-        const nextStore = Object.assign({}, store);
-        nextStore[screenName] = screenSegments;
-        if (vertical)
-            root.verticalBarGlassSegments = nextStore;
-        else
-            root.barGlassSegments = nextStore;
-    }
-
-    function clearLiveBarGlassSegment(vertical, screenName, key, segmentObject) {
-        if (!screenName || !key || !segmentObject)
-            return;
-
-        const store = vertical ? root.verticalBarGlassSegments : root.barGlassSegments;
-        if (store[screenName]?.[key] !== segmentObject)
-            return;
-
-        const screenSegments = Object.assign({}, store[screenName]);
-        delete screenSegments[key];
-        const nextStore = Object.assign({}, store);
-        if (Object.keys(screenSegments).length > 0)
-            nextStore[screenName] = screenSegments;
-        else
-            delete nextStore[screenName];
-
-        if (vertical)
-            root.verticalBarGlassSegments = nextStore;
-        else
-            root.barGlassSegments = nextStore;
     }
 
     onPoliciesPanelOpenChanged: {
