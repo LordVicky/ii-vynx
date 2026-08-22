@@ -143,6 +143,110 @@ def patch_live_sidebar_damage(source_dir: Path) -> None:
     target.write_text(text.replace(anchor, replacement, 1), encoding="utf-8")
 
 
+def patch_sidebar_close_snapshot(source_dir: Path) -> None:
+    surface_target = source_dir / "src" / "GlassLayerSurface.cpp"
+    surface_text = surface_target.read_text(encoding="utf-8")
+
+    old_sample_guard = """    if (!layerSurface->m_mapped) {
+        // During fade-out, re-sampling captures stale pixels. Reuse cached sample.
+        if (!m_hasCachedSample)
+            return;
+    } else if (backgroundChanged) {
+"""
+    new_sample_guard = """    const bool renderingSnapshot = g_pHyprRenderer->m_bRenderingSnapshot;
+    if (!layerSurface->m_mapped || renderingSnapshot) {
+        // Closing layers are rendered into a blank snapshot framebuffer. Never
+        // sample that target as the background; reuse the last real scene sample
+        // so the glass material is baked into Hyprland's close snapshot.
+        if (!m_hasCachedSample)
+            return;
+    } else if (backgroundChanged) {
+"""
+
+    if old_sample_guard not in surface_text:
+        raise SystemExit("HyprGlass close-snapshot cache patch no longer matches GlassLayerSurface.cpp")
+
+    surface_target.write_text(surface_text.replace(old_sample_guard, new_sample_guard, 1), encoding="utf-8")
+
+    main_target = source_dir / "src" / "main.cpp"
+    main_text = main_target.read_text(encoding="utf-8")
+
+    old_close = """static void clearLayerGlassOnClose(PHLLS layerSurface) {
+    if (!g_pGlobalState || !layerSurface)
+        return;
+
+    // Drop cached layer glass immediately. Otherwise the previous glass output
+    // can remain in the damage history while Hyprland switches to its close
+    // snapshot path, showing stale/black pixels for a frame.
+    std::erase_if(g_pGlobalState->layerSurfaces, [&](const auto& pair) {
+        return pair.first == layerSurface.get() || pair.second->getLayerSurface() == layerSurface;
+    });
+
+    if (auto monitor = layerSurface->m_monitor.lock())
+        g_pHyprRenderer->damageMonitor(monitor);
+}
+"""
+    new_close = """static void clearLayerGlassOnClose(PHLLS layerSurface) {
+    if (!g_pGlobalState || !layerSurface)
+        return;
+
+    const auto& ns = layerSurface->m_namespace;
+    const bool preserveForCloseSnapshot = ns == \"quickshell:sidebar-dashboard-glass\" ||
+                                          ns == \"quickshell:sidebar-policies-glass-left\" ||
+                                          ns == \"quickshell:sidebar-policies-glass-right\";
+
+    // Hyprland emits layer.closed immediately before it captures the close
+    // snapshot. Keep dedicated sidebar glass state alive through that synchronous
+    // capture so the snapshot can reuse the last valid background sample. Other
+    // layer namespaces retain upstream's immediate cleanup behavior.
+    if (!preserveForCloseSnapshot) {
+        std::erase_if(g_pGlobalState->layerSurfaces, [&](const auto& pair) {
+            return pair.first == layerSurface.get() || pair.second->getLayerSurface() == layerSurface;
+        });
+    }
+
+    if (auto monitor = layerSurface->m_monitor.lock())
+        g_pHyprRenderer->damageMonitor(monitor);
+}
+"""
+
+    if old_close not in main_text:
+        raise SystemExit("HyprGlass close-snapshot lifecycle patch no longer matches main.cpp")
+    main_text = main_text.replace(old_close, new_close, 1)
+
+    old_snapshot_bypass = """    // Hyprland renders closing layers from snapshots. Do not inject the glass
+    // pipeline while that snapshot is being captured: the snapshot framebuffer
+    // starts transparent/black, so sampling it as a background can bake a black
+    // rectangle into the fade-out snapshot.
+    if (g_pHyprRenderer->m_bRenderingSnapshot) {
+        ((renderLayerFn)g_pGlobalState->renderLayerHook->m_original)(thisptr, layerSurface, monitor, now, popups, lockscreen);
+        return;
+    }
+
+"""
+    new_snapshot_bypass = """    // Most HyprGlass layers keep upstream's snapshot bypass. Dedicated sidebar
+    // glass is different: its cached scene sample is preserved on close, so it
+    // can be composited into Hyprland's snapshot without sampling the blank
+    // snapshot framebuffer itself.
+    if (g_pHyprRenderer->m_bRenderingSnapshot) {
+        const auto& ns = layerSurface->m_namespace;
+        const bool preserveSidebarGlass = ns == \"quickshell:sidebar-dashboard-glass\" ||
+                                          ns == \"quickshell:sidebar-policies-glass-left\" ||
+                                          ns == \"quickshell:sidebar-policies-glass-right\";
+        if (!preserveSidebarGlass) {
+            ((renderLayerFn)g_pGlobalState->renderLayerHook->m_original)(thisptr, layerSurface, monitor, now, popups, lockscreen);
+            return;
+        }
+    }
+
+"""
+
+    if old_snapshot_bypass not in main_text:
+        raise SystemExit("HyprGlass close-snapshot render patch no longer matches main.cpp")
+
+    main_target.write_text(main_text.replace(old_snapshot_bypass, new_snapshot_bypass, 1), encoding="utf-8")
+
+
 def main() -> int:
     if len(sys.argv) != 2:
         raise SystemExit("usage: patch-hyprglass-layer-damage.py <hyprglass-source-dir>")
@@ -154,8 +258,9 @@ def main() -> int:
     patch_previous_layer_damage(source_dir)
     patch_live_policy_namespaces(source_dir)
     patch_live_sidebar_damage(source_dir)
+    patch_sidebar_close_snapshot(source_dir)
 
-    print("Enabled ii-vynx layer damage and live sidebar invalidation fixes.")
+    print("Enabled ii-vynx layer damage, live sidebar invalidation, and close-snapshot fixes.")
     return 0
 
 
