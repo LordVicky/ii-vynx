@@ -106,7 +106,7 @@ Singleton {
         // Remove apps that no longer have notifications
         Object.keys(root.latestTimeForApp).forEach((appName) => {
             if (!root.list.some((notif) => notif.appName === appName)) {
-                delete root.latestTimeForApp[notif.appName];
+                delete root.latestTimeForApp[appName];
             }
         });
     }
