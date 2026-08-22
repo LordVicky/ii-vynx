@@ -55,3 +55,9 @@ test("bar settings switch mode and hide Standard-only sections", () => {
     const standardOnlySections = settings.match(/visible:\s*page\.standardBar/g) || [];
     assert.ok(standardOnlySections.length >= 10, "Standard-only settings sections must be hidden in k4 mode");
 });
+
+test("dashboard only reserves Standard liquid-glass bar space", () => {
+    const dashboard = read("modules/ii/sidebarDashboard/SidebarDashboard.qml");
+
+    assert.match(dashboard, /readonly property bool reserveHorizontalBar:\s*Config\.options\.bar\.variant === "standard"[\s\S]*?RuntimeServices\.liquidGlass\?\.surfaceReady === true/);
+});
