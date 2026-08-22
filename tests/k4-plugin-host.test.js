@@ -59,9 +59,9 @@ test("base plugin contract separates enabled state from active island requests",
 test("plugin controller owns priority arbitration, transient preemption and monitor routing", () => {
     const source = readShell("modules/ii/k4bar/K4PluginController.qml");
 
-    assert.match(source, /candidate\.enabled \|\| !candidate\.active/);
+    assert.match(source, /!candidate\.enabled \|\| !candidate\.active/);
     assert.match(source, /candidate\.priority > best\.priority/);
-    assert.match(source, /candidate\.transient && candidate\.active/);
+    assert.match(source, /!candidate\.transient \|\| !candidate\.active/);
     assert.match(source, /typeof candidate\.close === "function"[\s\S]*?candidate\.close\(\)/);
 
     assert.match(source, /IslandState\.requestedScreen\.length > 0[\s\S]*?previous\.length === 0 \|\| previous === "idle"/);
