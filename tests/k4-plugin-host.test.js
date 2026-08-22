@@ -74,7 +74,10 @@ test("plugin controller owns priority arbitration, transient preemption and moni
     assert.match(source, /IslandState\.occupant = activePlugin\?\.name \?\? ""/);
     assert.match(source, /activePlugin\.islandHeight > K4Theme\.baseHeight/);
     assert.match(source, /onActivePluginChanged:\s*publishActivePlugin\(\)/);
-    assert.match(source, /Component\.onCompleted:\s*publishActivePlugin\(\)/);
+
+    assert.match(source, /property QtObject builtins:\s*K4BuiltinPlugins \{\}/);
+    assert.match(source, /function attachBuiltins\(\)[\s\S]*?builtins\.plugins[\s\S]*?plugins = combined/);
+    assert.match(source, /Component\.onCompleted:\s*\{[\s\S]*?attachBuiltins\(\)[\s\S]*?publishActivePlugin\(\)[\s\S]*?\}/);
 
     assert.match(source, /screenName === IslandState\.activeScreen \? winner : idlePlugin/);
     assert.match(source, /interval:\s*240[\s\S]*?IslandState\.hovered = false/);
