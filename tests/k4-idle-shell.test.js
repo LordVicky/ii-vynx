@@ -43,10 +43,13 @@ test("collapsed pill keeps clock centered with symmetric side reservation", () =
     assert.match(source, /anchors\.horizontalCenter:\s*parent\.horizontalCenter[\s\S]*?width:\s*46/);
 });
 
-test("idle media and workspace behavior follows k4 defaults", () => {
+test("idle media lifecycle and workspace behavior follows k4 defaults", () => {
     const source = readShell("modules/ii/k4bar/K4IdlePill.qml");
 
-    assert.match(source, /MprisController\.activePlayer/);
+    assert.match(source, /const players = Mpris\.players\.values/);
+    assert.match(source, /if \(players\[i\]\.isPlaying\)[\s\S]*?return players\[i\]/);
+    assert.match(source, /return players\.length > 0 \? players\[0\] : null/);
+    assert.doesNotMatch(source, /MprisController\.activePlayer/);
     assert.match(source, /visible:\s*root\.isPlaying/);
     assert.match(source, /model:\s*4/);
     assert.match(source, /SequentialAnimation on height[\s\S]*?running:\s*root\.isPlaying/);
@@ -59,6 +62,7 @@ test("idle media and workspace behavior follows k4 defaults", () => {
 test("recording indicator stays inline with the idle pill", () => {
     const source = readShell("modules/ii/k4bar/K4IdlePill.qml");
 
+    assert.match(source, /^import qs\.modules\.common$/m);
     assert.match(source, /Persistent\.states\.screenRecord\.active/);
     assert.match(source, /Persistent\.states\.screenRecord\.seconds/);
     assert.match(source, /color:\s*K4Theme\.red/);
