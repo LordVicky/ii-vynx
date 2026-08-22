@@ -6,6 +6,16 @@ QtObject {
     id: root
 
     property list<QtObject> plugins
+    property QtObject builtins: K4BuiltinPlugins {}
+
+    function attachBuiltins() {
+        const combined = []
+        for (let i = 0; i < plugins.length; ++i)
+            combined.push(plugins[i])
+        for (let i = 0; i < builtins.plugins.length; ++i)
+            combined.push(builtins.plugins[i])
+        plugins = combined
+    }
 
     function plugin(name) {
         for (let i = 0; i < plugins.length; ++i) {
@@ -65,7 +75,10 @@ QtObject {
     }
 
     onActivePluginChanged: publishActivePlugin()
-    Component.onCompleted: publishActivePlugin()
+    Component.onCompleted: {
+        attachBuiltins()
+        publishActivePlugin()
+    }
 
     function visiblePluginFor(screenName) {
         const winner = activePlugin
