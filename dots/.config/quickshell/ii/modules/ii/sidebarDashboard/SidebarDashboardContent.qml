@@ -34,10 +34,10 @@ Item {
         target: GlobalStates
         function onSidebarRightOpenChanged() {
             if (!GlobalStates.sidebarRightOpen) {
-                root.showWifiDialog = false
-                root.showBluetoothDialog = false
-                root.showAudioOutputDialog = false
-                root.showAudioInputDialog = false
+                root.showWifiDialog = false;
+                root.showBluetoothDialog = false;
+                root.showAudioOutputDialog = false;
+                root.showAudioInputDialog = false;
             }
         }
     }
