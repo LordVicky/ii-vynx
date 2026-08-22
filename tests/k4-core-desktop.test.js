@@ -56,6 +56,7 @@ test("audio adapter layers HUD timing on ii Audio without another PipeWire owner
 test("clock and workspace adapters delegate to existing ii and Hyprland state", () => {
     const clock = read("modules/ii/k4bar/K4Clock.qml");
     const workspaces = read("modules/ii/k4bar/K4Workspaces.qml");
+    const idle = read("modules/ii/k4bar/K4IdlePill.qml");
 
     assert.match(clock, /readonly property date date:\s*DateTime\.clock\.date/);
     assert.match(clock, /Qt\.locale\(Translation\.languageCode\)/);
@@ -63,7 +64,9 @@ test("clock and workspace adapters delegate to existing ii and Hyprland state", 
 
     assert.match(workspaces, /Hyprland\.workspaces\.values\.slice\(\)/);
     assert.match(workspaces, /values\.sort\(\(a, b\) => a\.id - b\.id\)/);
-    assert.match(workspaces, /Hyprland\.focusedWorkspace\?\.id \?\? -1/);
+    assert.match(workspaces, /readonly property int activeId:[\s\S]*?for \(let i = 0; i < list\.length; \+\+i\)[\s\S]*?if \(list\[i\]\.focused\)[\s\S]*?return list\[i\]\.id[\s\S]*?return -1/);
+    assert.doesNotMatch(executableSource(workspaces), /Hyprland\.focusedWorkspace/);
+    assert.match(idle, /readonly property bool focused:\s*modelData\.focused[\s\S]*?Layout\.preferredWidth:\s*focused \? 18 : 6/);
 });
 
 test("core built-ins preserve k4 priorities, activation defaults and dimensions", () => {
