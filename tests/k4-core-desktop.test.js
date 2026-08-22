@@ -31,6 +31,7 @@ test("media adapter preserves live MPRIS lifecycle and watcher-gated position up
 
 test("audio adapter layers HUD timing on ii Audio without another PipeWire owner", () => {
     const source = read("modules/ii/k4bar/K4Audio.qml");
+    const osd = read("modules/ii/onScreenDisplay/OnScreenDisplay.qml");
 
     assert.match(source, /import qs\.services/);
     assert.match(source, /readonly property var sink:\s*Audio\.sink/);
@@ -41,6 +42,15 @@ test("audio adapter layers HUD timing on ii Audio without another PipeWire owner
     assert.match(source, /if \(changed\)[\s\S]*?showOverlay\(\)/);
     assert.match(source, /function showOverlay\(\)[\s\S]*?overlayOpen = true[\s\S]*?overlayTimer\.restart\(\)/);
     assert.match(source, /id:\s*overlayTimer[\s\S]*?interval:\s*1600[\s\S]*?overlayOpen = false/);
+
+    assert.match(osd, /readonly property bool k4OwnsVolumeHud:\s*Config\.options\.bar\.variant === "k4"/);
+    assert.match(osd, /function onVolumeChanged\(\)[\s\S]*?!Audio\.ready \|\| root\.k4OwnsVolumeHud[\s\S]*?currentIndicator = "volume"/);
+    assert.match(osd, /function onMutedChanged\(\)[\s\S]*?!Audio\.ready \|\| root\.k4OwnsVolumeHud[\s\S]*?currentIndicator = "volume"/);
+    assert.match(osd, /target:\s*MprisController\.activePlayer[\s\S]*?function onVolumeChanged\(\)[\s\S]*?if \(root\.k4OwnsVolumeHud\)[\s\S]*?return/);
+    assert.match(osd, /onK4OwnsVolumeHudChanged:[\s\S]*?protectionMessage !== ""[\s\S]*?currentIndicator === "volume" \|\| currentIndicator === "playerVolume"[\s\S]*?osdTimeout\.stop\(\)/);
+    assert.match(osd, /function onSinkProtectionTriggered\(reason\)[\s\S]*?root\.triggerOsd\(\)/);
+    assert.match(osd, /target:\s*Brightness[\s\S]*?currentIndicator = "brightness"[\s\S]*?root\.triggerOsd\(\)/);
+    assert.match(osd, /target:\s*Hyprsunset[\s\S]*?currentIndicator = "gamma"[\s\S]*?root\.triggerOsd\(\)/);
 });
 
 test("clock and workspace adapters delegate to existing ii and Hyprland state", () => {
