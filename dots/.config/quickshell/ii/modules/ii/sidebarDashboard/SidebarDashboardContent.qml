@@ -55,7 +55,7 @@ Item {
         implicitHeight: parent.height - Appearance.sizes.hyprlandGapsOut * 2
         implicitWidth: sidebarWidth - Appearance.sizes.hyprlandGapsOut * 2
         color: RuntimeServices.liquidGlass?.surfaceReady === true
-            ? RuntimeServices.liquidGlass.surfaceColor
+            ? "transparent"
             : Appearance.colors.colLayer0
         border.width: 1
         border.color: Appearance.colors.colLayer0Border
