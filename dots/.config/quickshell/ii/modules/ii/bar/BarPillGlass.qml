@@ -16,6 +16,7 @@ PanelWindow {
     required property real endRadius
     property string segmentKey: ""
     property bool surfaceCommitPending: false
+    property bool surfaceCommitScheduled: false
     readonly property real autoHideOffset: Number(GlobalStates.barAutoHideOffsets[root.targetScreen?.name ?? ""] ?? 0)
     readonly property string unifiedSegmentKey: root.segmentKey.length > 0
         ? root.segmentKey
@@ -28,6 +29,25 @@ PanelWindow {
     function scheduleSurfaceCommit(reason) {
         root.surfaceCommitPending = true;
         root.traceSurfaceCommit(`schedule-${reason}`);
+
+        if (root.surfaceCommitScheduled)
+            return;
+
+        root.surfaceCommitScheduled = true;
+        Qt.callLater(root.forceSurfaceCommit);
+    }
+
+    function forceSurfaceCommit() {
+        root.surfaceCommitScheduled = false;
+        if (!root.surfaceCommitPending)
+            return;
+
+        const contentItem = root.contentItem;
+        if (!contentItem)
+            return;
+
+        contentItem.ensurePolished();
+        root.traceSurfaceCommit("polish-forced");
         surfaceVisual.update();
         root.traceSurfaceCommit("visual-frame-request");
     }
