@@ -30,7 +30,7 @@ Scope {
         name: "demo-transient"
         title: "Transient"
         priority: 59
-        transient: true
+        transitorio: true
         islandWidth: 250
         islandHeight: 88
         closeOnHoverExit: true
