@@ -22,7 +22,7 @@ Singleton {
     readonly property int baseHeight: 34
     readonly property int maxIslandHeight: 880
 
-    // Material Design Nerd Font glyphs used by K4-04 only.
+    // Material Design Nerd Font glyphs used by K4 built-ins.
     readonly property var ico: ({
         play: String.fromCodePoint(0xF040A),
         pause: String.fromCodePoint(0xF03E4),
@@ -33,6 +33,9 @@ Singleton {
         music: String.fromCodePoint(0xF0387),
         volHigh: String.fromCodePoint(0xF057E),
         volMed: String.fromCodePoint(0xF0580),
-        volOff: String.fromCodePoint(0xF0581)
+        volOff: String.fromCodePoint(0xF0581),
+        bell: String.fromCodePoint(0xF009A),
+        close: String.fromCodePoint(0xF0156),
+        clearAll: String.fromCodePoint(0xF039F)
     })
 }
