@@ -39,7 +39,8 @@ test("base plugin contract separates enabled state from active island requests",
     assert.match(source, /property bool enabled:\s*true/);
     assert.match(source, /property bool active:\s*false/);
     assert.match(source, /property int priority:\s*50/);
-    assert.match(source, /property bool transient:\s*false/);
+    assert.match(source, /property bool transitorio:\s*false/);
+    assert.doesNotMatch(source, /property bool transient\b/);
     assert.match(source, /property int islandWidth:\s*300/);
     assert.match(source, /property int islandHeight:\s*60/);
     assert.match(source, /property Component view:\s*null/);
@@ -64,7 +65,8 @@ test("plugin controller owns priority arbitration, transient preemption and moni
 
     assert.match(source, /!candidate\.enabled \|\| !candidate\.active/);
     assert.match(source, /candidate\.priority > best\.priority/);
-    assert.match(source, /!candidate\.transient \|\| !candidate\.active/);
+    assert.match(source, /!candidate\.transitorio \|\| !candidate\.active/);
+    assert.match(source, /winner\.transitorio/);
     assert.match(source, /typeof candidate\.close === "function"[\s\S]*?candidate\.close\(\)/);
 
     assert.match(source, /IslandState\.requestedScreen\.length > 0[\s\S]*?previous\.length === 0 \|\| previous === "idle"/);
@@ -84,7 +86,7 @@ test("host renders the winner on one monitor and keeps idle fallback elsewhere",
     const source = readShell("modules/ii/k4bar/K4Bar.qml");
 
     assert.match(source, /name:\s*"idle"[\s\S]*?priority:\s*0[\s\S]*?active:\s*true/);
-    assert.match(source, /name:\s*"demo-transient"[\s\S]*?priority:\s*59[\s\S]*?transient:\s*true/);
+    assert.match(source, /name:\s*"demo-transient"[\s\S]*?priority:\s*59[\s\S]*?transitorio:\s*true/);
     assert.match(source, /name:\s*"demo-secondary"[\s\S]*?priority:\s*70/);
     assert.match(source, /name:\s*"demo-primary"[\s\S]*?priority:\s*80/);
 
