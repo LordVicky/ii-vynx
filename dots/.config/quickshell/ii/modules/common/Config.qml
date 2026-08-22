@@ -493,6 +493,13 @@ Singleton {
             }
 
             property JsonObject bar: JsonObject {
+                property string variant: "standard" // "standard" | "k4"
+
+                property JsonObject k4: JsonObject {
+                    property string position: "top" // "top" | "bottom"
+                    property int alignment: 50 // 15 | 50 | 85
+                }
+
                 property JsonObject activeWindow: JsonObject {
                     property bool fixedSize: false
                 }
@@ -732,7 +739,7 @@ Singleton {
                 property JsonObject night: JsonObject {
                     property bool automatic: true
                     property string from: "19:00" // Format: "HH:mm", 24-hour time
-                    property string to: "06:30"   // Format: "HH:mm", 24-hour time
+                    property string to: "06:30" // Format: "HH:mm", 24-hour time
                     property int colorTemperature: 5000
                 }
                 property JsonObject antiFlashbang: JsonObject {
