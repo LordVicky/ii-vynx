@@ -15,21 +15,13 @@ PanelWindow {
     required property real startRadius
     required property real endRadius
     property string segmentKey: ""
-    property bool surfaceCommitPending: false
     property bool surfaceCommitScheduled: false
     readonly property real autoHideOffset: Number(GlobalStates.barAutoHideOffsets[root.targetScreen?.name ?? ""] ?? 0)
     readonly property string unifiedSegmentKey: root.segmentKey.length > 0
         ? root.segmentKey
         : `island:${Math.round(root.surfaceX * 1000)}:${Math.round(root.surfaceWidth * 1000)}`
 
-    function traceSurfaceCommit(eventName) {
-        console.warn(`[bar-glass-qml] event=${eventName} x=${root.surfaceX} width=${root.surfaceWidth} implicitWidth=${root.implicitWidth} pending=${root.surfaceCommitPending}`);
-    }
-
-    function scheduleSurfaceCommit(reason) {
-        root.surfaceCommitPending = true;
-        root.traceSurfaceCommit(`schedule-${reason}`);
-
+    function scheduleSurfaceCommit() {
         if (root.surfaceCommitScheduled)
             return;
 
@@ -39,39 +31,17 @@ PanelWindow {
 
     function forceSurfaceCommit() {
         root.surfaceCommitScheduled = false;
-        if (!root.surfaceCommitPending)
-            return;
 
         const contentItem = root.contentItem;
         if (!contentItem)
             return;
 
         contentItem.ensurePolished();
-        root.traceSurfaceCommit("polish-forced");
         surfaceVisual.update();
-        root.traceSurfaceCommit("visual-frame-request");
     }
 
-    function commitPolishedSurface() {
-        if (!root.surfaceCommitPending)
-            return;
-
-        root.traceSurfaceCommit("polished-pending");
-        root.surfaceCommitPending = false;
-        root.traceSurfaceCommit("polished-ready");
-    }
-
-    onSurfaceXChanged: root.scheduleSurfaceCommit("x")
-    onSurfaceWidthChanged: root.scheduleSurfaceCommit("width")
-
-    Connections {
-        target: root.contentItem
-        ignoreUnknownSignals: true
-
-        function onPolished() {
-            root.commitPolishedSurface();
-        }
-    }
+    onSurfaceXChanged: root.scheduleSurfaceCommit()
+    onSurfaceWidthChanged: root.scheduleSurfaceCommit()
 
     screen: root.targetScreen
     visible: root.surfaceActive
