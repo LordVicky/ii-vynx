@@ -30,7 +30,7 @@ test("island shell uses inverse wings, bottom reflection and stable surface sizi
     assert.match(source, /interval:\s*520[\s\S]*?surfaceHeight = panelWindow\.targetHeight/);
     assert.match(source, /Behavior on width[\s\S]*?duration:\s*440[\s\S]*?Easing\.OutBack/);
     assert.match(source, /Behavior on height[\s\S]*?duration:\s*400[\s\S]*?Easing\.OutBack/);
-    assert.match(source, /mask:\s*Region \{ item: island \}/);
+    assert.match(source, /mask:\s*Region \{ item: IslandState\.suppressed \? null : island \}/);
 });
 
 test("collapsed pill keeps clock centered with symmetric side reservation", () => {
