@@ -13,6 +13,30 @@ PanelWindow {
     property int sidebarWidth: Appearance.sizes.sidebarWidth
     property real topInset: 0
     property real bottomInset: 0
+    property bool surfaceCommitScheduled: false
+
+    function scheduleSurfaceCommit() {
+        if (root.surfaceCommitScheduled)
+            return;
+
+        root.surfaceCommitScheduled = true;
+        Qt.callLater(root.forceSurfaceCommit);
+    }
+
+    function forceSurfaceCommit() {
+        root.surfaceCommitScheduled = false;
+
+        const contentItem = root.contentItem;
+        if (!contentItem)
+            return;
+
+        contentItem.ensurePolished();
+        surfaceVisual.update();
+    }
+
+    onTopInsetChanged: root.scheduleSurfaceCommit()
+    onBottomInsetChanged: root.scheduleSurfaceCommit()
+    onVisibleChanged: if (visible) root.scheduleSurfaceCommit()
 
     visible: root.surfaceActive && GlobalStates.sidebarRightOpen
     exclusionMode: ExclusionMode.Ignore
@@ -45,6 +69,8 @@ PanelWindow {
     }
 
     Rectangle {
+        id: surfaceVisual
+
         anchors.fill: parent
         color: RuntimeServices.liquidGlass?.surfaceColor ?? "transparent"
         radius: Appearance.rounding.screenRounding - Appearance.sizes.hyprlandGapsOut + 1
