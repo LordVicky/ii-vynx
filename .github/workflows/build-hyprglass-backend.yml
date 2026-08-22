@@ -8,6 +8,7 @@ on:
     paths:
       - .github/workflows/build-hyprglass-backend.yml
       - sdata/liquid-glass/patch-hyprglass-backend.py
+      - sdata/liquid-glass/patch-hyprglass-layer-damage.py
 
 permissions:
   contents: write
@@ -178,7 +179,12 @@ jobs:
           set -euo pipefail
           git clone --depth 1 --branch "$HYPRGLASS_VERSION" https://github.com/hyprnux/hyprglass.git
           python3 sdata/liquid-glass/patch-hyprglass-backend.py hyprglass
-          grep -Fq 'forceLiveBarRefresh' hyprglass/src/GlassLayerSurface.cpp
+          python3 sdata/liquid-glass/patch-hyprglass-layer-damage.py hyprglass
+          grep -Fq 'forceLiveSurfaceRefresh' hyprglass/src/GlassLayerSurface.cpp
+          grep -Fq 'quickshell:sidebar-dashboard-glass' hyprglass/src/GlassLayerSurface.cpp
+          grep -Fq 'quickshell:sidebar-policies-glass-left' hyprglass/src/GlassLayerSurface.cpp
+          grep -Fq 'quickshell:sidebar-policies-glass-right' hyprglass/src/GlassLayerSurface.cpp
+          grep -Fq 'static auto onRenderPre' hyprglass/src/main.cpp
           grep -Fq 'getMaskEdgeField' hyprglass/src/Shaders.hpp
           make -C hyprglass -j"$(nproc)"
 
