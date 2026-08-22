@@ -28,6 +28,12 @@ PanelWindow {
     function scheduleSurfaceCommit(reason) {
         root.surfaceCommitPending = true;
         root.traceSurfaceCommit(`schedule-${reason}`);
+
+        const backingWindow = root.contentItem?.window;
+        if (backingWindow)
+            backingWindow.update();
+
+        root.traceSurfaceCommit("polish-frame-request");
     }
 
     function commitPolishedSurface() {
@@ -41,7 +47,7 @@ PanelWindow {
         if (backingWindow)
             backingWindow.update();
 
-        root.traceSurfaceCommit("frame-request");
+        root.traceSurfaceCommit("commit-frame-request");
     }
 
     onSurfaceXChanged: root.scheduleSurfaceCommit("x")
