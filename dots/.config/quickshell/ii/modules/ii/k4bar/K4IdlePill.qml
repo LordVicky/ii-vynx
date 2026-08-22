@@ -201,7 +201,7 @@ Item {
                     model: root.visibleWorkspaces
                     delegate: Rectangle {
                         required property var modelData
-                        readonly property bool focused: modelData.id === root.activeWorkspaceId
+                        readonly property bool focused: modelData.focused
                         Layout.preferredWidth: focused ? 18 : 6
                         Layout.preferredHeight: 6
                         Layout.alignment: Qt.AlignVCenter
