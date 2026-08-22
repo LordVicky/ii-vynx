@@ -41,6 +41,7 @@ jobs:
             pkgconf-pkg-config \
             pixman-devel \
             libdrm-devel \
+            glslang-devel \
             binutils \
             file \
             curl \
