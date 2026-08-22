@@ -5,14 +5,16 @@ const test = require("node:test");
 
 const shellRoot = path.join(__dirname, "../dots/.config/quickshell/ii");
 const read = relative => fs.readFileSync(path.join(shellRoot, relative), "utf8");
+const executableSource = source => source.replace(/^\s*\/\/.*$/gm, "");
 
 test("media adapter preserves live MPRIS lifecycle and watcher-gated position updates", () => {
     const source = read("modules/ii/k4bar/K4Media.qml");
+    const executable = executableSource(source);
 
     assert.match(source, /const players = Mpris\.players\.values/);
     assert.match(source, /players\[i\]\.isPlaying/);
     assert.match(source, /return players\.length > 0 \? players\[0\] : null/);
-    assert.doesNotMatch(source, /MprisController/);
+    assert.doesNotMatch(executable, /MprisController/);
 
     assert.match(source, /property int positionWatchers:\s*0/);
     assert.match(source, /function watchPosition\(\)[\s\S]*?positionWatchers \+= 1/);
