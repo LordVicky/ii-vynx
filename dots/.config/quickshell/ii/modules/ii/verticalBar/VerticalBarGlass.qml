@@ -11,18 +11,14 @@ PanelWindow {
 
     required property bool surfaceActive
     required property bool showBarBackground
-    property var segments: []
     property real autoHideOffset: 0
 
     readonly property bool hugStyle: Config.options.bar.cornerStyle === 0
     readonly property bool floatStyle: Config.options.bar.cornerStyle === 1
     readonly property bool rightSide: Config.options.bar.bottom
     readonly property real edgeInset: root.floatStyle ? Appearance.sizes.hyprlandGapsOut : 0
-    readonly property bool unifiedSegmentsVisible: GlobalStates.unifiedBarGlassSegmentsEnabled
-        && !root.showBarBackground
-        && root.segments.length > 0
 
-    visible: root.surfaceActive && (root.showBarBackground || root.unifiedSegmentsVisible)
+    visible: root.surfaceActive && root.showBarBackground
     exclusionMode: ExclusionMode.Ignore
     focusable: false
     color: "transparent"
@@ -46,8 +42,8 @@ PanelWindow {
         right: root.rightSide
             ? root.edgeInset + root.autoHideOffset
             : 0
-        top: root.unifiedSegmentsVisible ? 0 : (root.floatStyle ? Appearance.sizes.hyprlandGapsOut : 0)
-        bottom: root.unifiedSegmentsVisible ? 0 : (root.floatStyle ? Appearance.sizes.hyprlandGapsOut : 0)
+        top: root.floatStyle ? Appearance.sizes.hyprlandGapsOut : 0
+        bottom: root.floatStyle ? Appearance.sizes.hyprlandGapsOut : 0
     }
 
     // Visual only. The existing quickshell:verticalBar window remains the sole
@@ -60,7 +56,6 @@ PanelWindow {
     Rectangle {
         id: barBody
 
-        visible: root.showBarBackground
         anchors {
             top: parent.top
             bottom: parent.bottom
@@ -76,7 +71,7 @@ PanelWindow {
     Item {
         id: decorators
 
-        visible: root.showBarBackground && root.hugStyle
+        visible: root.hugStyle
         anchors {
             top: parent.top
             bottom: parent.bottom
@@ -109,25 +104,6 @@ PanelWindow {
             corner: root.rightSide
                 ? RoundCorner.CornerEnum.BottomRight
                 : RoundCorner.CornerEnum.BottomLeft
-        }
-    }
-
-    Repeater {
-        model: root.unifiedSegmentsVisible ? root.segments : []
-
-        delegate: Rectangle {
-            required property var modelData
-
-            x: 4
-            y: Math.round(modelData.resolvedPosition)
-            width: Math.max(1, Appearance.sizes.baseVerticalBarWidth - 8)
-            height: Math.max(1, modelData.resolvedExtent)
-            color: RuntimeServices.liquidGlass?.barSurfaceColor ?? "transparent"
-            topLeftRadius: modelData.startRadius
-            topRightRadius: modelData.startRadius
-            bottomLeftRadius: modelData.endRadius
-            bottomRightRadius: modelData.endRadius
-            antialiasing: true
         }
     }
 }
