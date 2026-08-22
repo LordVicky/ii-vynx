@@ -14,12 +14,8 @@ PanelWindow {
     required property real surfaceWidth
     required property real startRadius
     required property real endRadius
-    property string segmentKey: ""
     property bool surfaceCommitScheduled: false
     readonly property real autoHideOffset: Number(GlobalStates.barAutoHideOffsets[root.targetScreen?.name ?? ""] ?? 0)
-    readonly property string unifiedSegmentKey: root.segmentKey.length > 0
-        ? root.segmentKey
-        : `island:${Math.round(root.surfaceX * 1000)}:${Math.round(root.surfaceWidth * 1000)}`
 
     function scheduleSurfaceCommit() {
         if (root.surfaceCommitScheduled)
@@ -44,9 +40,7 @@ PanelWindow {
     onSurfaceWidthChanged: root.scheduleSurfaceCommit()
 
     screen: root.targetScreen
-    visible: root.surfaceActive
-        && root.surfaceWidth > 0
-        && !GlobalStates.unifiedBarGlassSegmentsEnabled
+    visible: root.surfaceActive && root.surfaceWidth > 0
     exclusionMode: ExclusionMode.Ignore
     focusable: false
     color: "transparent"
@@ -70,17 +64,6 @@ PanelWindow {
         bottom: Config.options.bar.bottom
             ? (Config.options.bar.cornerStyle === 1 ? Appearance.sizes.hyprlandGapsOut : 0) + 4 + root.autoHideOffset
             : 0
-    }
-
-    BarGlassSegmentPublisher {
-        vertical: false
-        targetScreen: root.targetScreen
-        segmentKey: root.unifiedSegmentKey
-        active: root.surfaceActive
-        position: root.surfaceX
-        extent: root.surfaceWidth
-        startRadius: root.startRadius
-        endRadius: root.endRadius
     }
 
     // Visual-only surface; the existing bar keeps all group input handling.
