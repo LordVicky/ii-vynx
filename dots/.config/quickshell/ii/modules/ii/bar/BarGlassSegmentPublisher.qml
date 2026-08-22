@@ -1,5 +1,4 @@
 import QtQuick
-import qs
 
 Item {
     id: root
@@ -41,68 +40,6 @@ Item {
             : root.extent;
     }
 
-    property bool registeredVertical: false
-    property string registeredScreenName: ""
-    property string registeredSegmentKey: ""
-
-    function clearRegistered() {
-        if (!root.registeredScreenName || !root.registeredSegmentKey)
-            return;
-
-        GlobalStates.clearLiveBarGlassSegment(
-            root.registeredVertical,
-            root.registeredScreenName,
-            root.registeredSegmentKey,
-            root
-        );
-        root.registeredScreenName = "";
-        root.registeredSegmentKey = "";
-    }
-
-    function sync() {
-        const screenName = root.targetScreen?.name ?? "";
-        const shouldRegister = GlobalStates.unifiedBarGlassSegmentsEnabled
-            && root.active
-            && screenName.length > 0
-            && root.resolvedExtent > 0;
-        const registrationMatches = root.registeredScreenName.length > 0
-            && root.registeredVertical === root.vertical
-            && root.registeredScreenName === screenName
-            && root.registeredSegmentKey === root.segmentKey;
-
-        if (root.registeredScreenName && (!shouldRegister || !registrationMatches))
-            root.clearRegistered();
-
-        if (!shouldRegister || registrationMatches)
-            return;
-
-        GlobalStates.setLiveBarGlassSegment(
-            root.vertical,
-            screenName,
-            root.segmentKey,
-            root
-        );
-        root.registeredVertical = root.vertical;
-        root.registeredScreenName = screenName;
-        root.registeredSegmentKey = root.segmentKey;
-    }
-
-    Component.onCompleted: root.sync()
-    Component.onDestruction: root.clearRegistered()
-
-    onVerticalChanged: root.sync()
-    onTargetScreenChanged: root.sync()
-    onSegmentKeyChanged: root.sync()
-    onActiveChanged: root.sync()
     onPositionChanged: root.geometryRevision += 1
     onExtentChanged: root.geometryRevision += 1
-    onResolvedExtentChanged: root.sync()
-
-    Connections {
-        target: GlobalStates
-
-        function onUnifiedBarGlassSegmentsEnabledChanged() {
-            root.sync();
-        }
-    }
 }
