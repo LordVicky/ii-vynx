@@ -174,6 +174,11 @@ Item {
                     }
                 }
             }
+
+            K4RecordingPill {
+                interactive: true
+                Layout.alignment: Qt.AlignVCenter
+            }
         }
 
         RowLayout {
