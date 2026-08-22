@@ -3,13 +3,14 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
+import qs
 import qs.modules.common
 
 Scope {
     id: root
 
     Variants {
-        model: Quickshell.screens
+        model: GlobalStates.screenLocked ? [] : Quickshell.screens
 
         delegate: PanelWindow {
             id: panelWindow
