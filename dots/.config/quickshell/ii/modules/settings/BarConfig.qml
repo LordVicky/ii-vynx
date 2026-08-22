@@ -11,6 +11,7 @@ ContentPage {
     forceWidth: true
     readonly property int index: 2 
     property bool register: parent.register ?? false
+    readonly property bool standardBar: Config.options.bar.variant === "standard"
 
     property var componentMap: ({
         "active_window": activeWindow,
@@ -28,8 +29,84 @@ ContentPage {
         page.contentY = item.y
     }
 
+    ContentSection {
+        icon: "view_cozy"
+        title: Translation.tr("Bar variant")
+
+        ConfigSelectionArray {
+            currentValue: Config.options.bar.variant
+            onSelected: newValue => Config.options.bar.variant = newValue
+            options: [
+                {
+                    displayName: Translation.tr("Standard"),
+                    icon: "toolbar",
+                    value: "standard"
+                },
+                {
+                    displayName: Translation.tr("k4 Dynamic Island"),
+                    icon: "responsive_layout",
+                    value: "k4"
+                }
+            ]
+        }
+    }
 
     ContentSection {
+        visible: !page.standardBar
+        icon: "responsive_layout"
+        title: Translation.tr("k4 Dynamic Island")
+
+        ContentSubsection {
+            title: Translation.tr("Position")
+
+            ConfigSelectionArray {
+                currentValue: Config.options.bar.k4.position
+                onSelected: newValue => Config.options.bar.k4.position = newValue
+                options: [
+                    {
+                        displayName: Translation.tr("Top"),
+                        icon: "arrow_upward",
+                        value: "top"
+                    },
+                    {
+                        displayName: Translation.tr("Bottom"),
+                        icon: "arrow_downward",
+                        value: "bottom"
+                    }
+                ]
+            }
+        }
+
+        ContentSubsection {
+            title: Translation.tr("Alignment")
+
+            ConfigSelectionArray {
+                currentValue: Config.options.bar.k4.alignment
+                onSelected: newValue => Config.options.bar.k4.alignment = newValue
+                options: [
+                    {
+                        displayName: Translation.tr("Left"),
+                        icon: "align_horizontal_left",
+                        value: 15
+                    },
+                    {
+                        displayName: Translation.tr("Center"),
+                        icon: "align_horizontal_center",
+                        value: 50
+                    },
+                    {
+                        displayName: Translation.tr("Right"),
+                        icon: "align_horizontal_right",
+                        value: 85
+                    }
+                ]
+            }
+        }
+    }
+
+
+    ContentSection {
+        visible: page.standardBar
         icon: "mobile_layout"
         title: Translation.tr("Bar layout")
         ContentSubsection {
@@ -68,6 +145,7 @@ ContentPage {
     }
 
     ContentSection {
+        visible: page.standardBar
         icon: "open_in_full"
         title: Translation.tr("Bar sizes")
 
@@ -96,6 +174,7 @@ ContentPage {
     }
 
     ContentSection {
+        visible: page.standardBar
         icon: "spoke"
         title: Translation.tr("Positioning & appearance")
 
@@ -260,6 +339,7 @@ ContentPage {
     
     ContentSection {
         id: activeWindow
+        visible: page.standardBar
         icon: "ad"
         title: Translation.tr("Active window")
         ConfigSwitch {
@@ -274,6 +354,7 @@ ContentPage {
 
     ContentSection {
         id: musicPlayer
+        visible: page.standardBar
         icon: "music_cast"
         title: Translation.tr("Media player")
 
@@ -388,6 +469,7 @@ ContentPage {
     
 
     ContentSection {
+        visible: page.standardBar
         icon: "notifications"
         title: Translation.tr("Notifications")
         ConfigSwitch {
@@ -402,6 +484,7 @@ ContentPage {
 
     ContentSection {
         id: systemTray
+        visible: page.standardBar
         icon: "shelf_auto_hide"
         title: Translation.tr("Tray")
 
@@ -426,6 +509,7 @@ ContentPage {
 
     ContentSection {
         id: indicators
+        visible: page.standardBar
         icon: "ad"
         title: Translation.tr("Indicators")
 
@@ -469,6 +553,7 @@ ContentPage {
 
     ContentSection {
         id: networkSpeed
+        visible: page.standardBar
         icon: "speed"
         title: Translation.tr("Network speed")
         
@@ -510,7 +595,7 @@ ContentPage {
                 ConfigSelectionArray {
                     currentValue: Config.options.bar.networkSpeed.iconPosition
                     onSelected: newValue => {
-                        Config.options.bar.networkSpeed.iconPosition = newValue;
+                        Config.options.bar.networkSpeed.iconPosition = newValue
                     }
                     options: [
                         { displayName: Translation.tr("Left"), icon: "align_horizontal_left", value: 0 },
@@ -546,6 +631,7 @@ ContentPage {
 
     ContentSection {
         id: utilityButtons
+        visible: page.standardBar
         icon: "widgets"
         title: Translation.tr("Utility buttons")
 
@@ -621,6 +707,7 @@ ContentPage {
 
     ContentSection {
         id: workspaces
+        visible: page.standardBar
         icon: "workspaces"
         title: Translation.tr("Workspaces")
 
@@ -751,6 +838,7 @@ ContentPage {
     }
 
     ContentSection {
+        visible: page.standardBar
         icon: "tooltip"
         title: Translation.tr("Tooltips")
         ConfigSwitch {
