@@ -11,6 +11,8 @@ PanelWindow {
     required property bool isOnRight
     required property bool surfaceActive
     property int sidebarWidth: Appearance.sizes.sidebarWidth
+    property real topInset: 0
+    property real bottomInset: 0
 
     visible: root.surfaceActive && GlobalStates.sidebarRightOpen
     exclusionMode: ExclusionMode.Ignore
@@ -29,8 +31,8 @@ PanelWindow {
     }
 
     margins {
-        top: Appearance.sizes.hyprlandGapsOut
-        bottom: Appearance.sizes.hyprlandGapsOut
+        top: Appearance.sizes.hyprlandGapsOut + root.topInset
+        bottom: Appearance.sizes.hyprlandGapsOut + root.bottomInset
         left: root.isOnRight ? 0 : Appearance.sizes.hyprlandGapsOut
         right: root.isOnRight ? Appearance.sizes.hyprlandGapsOut : 0
     }

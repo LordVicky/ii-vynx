@@ -15,11 +15,31 @@ Scope {
         const pos = Config.options.sidebar.position;
         return pos === "default" || pos === "right"; 
     }
+    readonly property bool reserveHorizontalBar: RuntimeServices.liquidGlass?.surfaceReady === true
+        && GlobalStates.barOpen
+        && !Config.options.bar.vertical
+    readonly property real horizontalBarReserve: {
+        if (!root.reserveHorizontalBar)
+            return 0;
+
+        switch (Config.options.bar.cornerStyle) {
+        case 0:
+            return Appearance.sizes.baseBarHeight + Appearance.rounding.screenRounding;
+        case 1:
+            return Appearance.sizes.baseBarHeight + Appearance.sizes.hyprlandGapsOut;
+        default:
+            return Appearance.sizes.baseBarHeight;
+        }
+    }
+    readonly property real topBarReserve: Config.options.bar.bottom ? 0 : root.horizontalBarReserve
+    readonly property real bottomBarReserve: Config.options.bar.bottom ? root.horizontalBarReserve : 0
 
     SidebarDashboardGlass {
         isOnRight: root.isOnRight
         surfaceActive: RuntimeServices.liquidGlass?.surfaceReady === true
         sidebarWidth: root.sidebarWidth
+        topInset: root.topBarReserve
+        bottomInset: root.bottomBarReserve
     }
 
     PanelWindow {
@@ -41,6 +61,11 @@ Scope {
             left: !root.isOnRight
             right: root.isOnRight
             bottom: true
+        }
+
+        margins {
+            top: root.topBarReserve
+            bottom: root.bottomBarReserve
         }
 
         onVisibleChanged: {
