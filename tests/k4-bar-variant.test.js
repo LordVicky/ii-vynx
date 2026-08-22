@@ -40,7 +40,7 @@ test("k4 host follows upstream all-screen top-bottom ownership seam", () => {
     assert.doesNotMatch(source, /Config\.options\.bar\.screenList/);
     assert.match(source, /Config\.options\.bar\.k4\.position === "bottom"/);
     assert.match(source, /Config\.options\.bar\.k4\.alignment/);
-    assert.match(source, /exclusiveZone:\s*34/);
+    assert.match(source, /exclusiveZone:\s*K4Theme\.baseHeight/);
     assert.match(source, /WlrLayershell\.namespace:\s*"quickshell:k4bar"/);
 });
 
