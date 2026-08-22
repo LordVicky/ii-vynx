@@ -12,9 +12,16 @@ import qs.modules.common.widgets
 Item {
     id: root
 
-    readonly property MprisPlayer activePlayer: MprisController.activePlayer
+    readonly property var activePlayer: {
+        const players = Mpris.players.values
+        for (let i = 0; i < players.length; ++i) {
+            if (players[i].isPlaying)
+                return players[i]
+        }
+        return players.length > 0 ? players[0] : null
+    }
     readonly property bool hasPlayer: activePlayer !== null
-    readonly property bool isPlaying: activePlayer?.isPlaying ?? false
+    readonly property bool isPlaying: hasPlayer && activePlayer.isPlaying
     readonly property string artSource: activePlayer?.trackArtUrl ?? ""
     readonly property bool recording: Persistent.states.screenRecord.active
 
