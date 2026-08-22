@@ -9,7 +9,8 @@ QtObject {
     readonly property list<QtObject> plugins: [
         volumePlugin,
         clockPlugin,
-        playerPlugin
+        playerPlugin,
+        toastPlugin
     ]
 
     // Pinned k4 dismisses Player as soon as playback pauses, which also removes
@@ -71,5 +72,27 @@ QtObject {
         islandWidth: 340
         islandHeight: K4Media.hasTimeline ? 140 : 115
         view: Component { K4PlayerView {} }
+    }
+
+    property QtObject toastPlugin: K4Plugin {
+        name: "toast"
+        title: "Notification"
+        priority: 59
+        transitorio: true
+        active: enabled && K4Notifications.toastOpen && !K4Notifications.inBand
+        islandWidth: 440
+        islandHeight: K4Notifications.buttons(K4Notifications.latest).length > 0 ? 112 : 96
+        handlesBackgroundTap: true
+
+        onBackgroundTapped: {
+            K4Notifications.activate(K4Notifications.latest)
+            K4Notifications.dismissToast()
+        }
+
+        function close() {
+            K4Notifications.dismissToast()
+        }
+
+        view: Component { K4ToastView {} }
     }
 }
