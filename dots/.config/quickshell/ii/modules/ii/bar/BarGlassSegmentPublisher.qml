@@ -8,13 +8,13 @@ Item {
     visible: false
 
     required property bool vertical
-    required property var targetScreen
-    required property string segmentKey
-    required property bool active
+    property var targetScreen: null
+    property string segmentKey: ""
+    property bool active: false
     required property real position
     required property real extent
-    required property real startRadius
-    required property real endRadius
+    property real startRadius: 0
+    property real endRadius: 0
 
     property var sourceItem: null
     property var coordinateRoot: null
