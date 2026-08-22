@@ -313,7 +313,6 @@ Item { // Bar content region
         component: BarPillGlass {
             targetScreen: root.screen
             surfaceActive: root.standaloneLiquidGlassIslandActive
-            segmentKey: "island:left"
             surfaceX: leftSection.x
             surfaceWidth: leftSection.width
             startRadius: Appearance.rounding.full
@@ -326,7 +325,6 @@ Item { // Bar content region
         component: BarPillGlass {
             targetScreen: root.screen
             surfaceActive: root.standaloneLiquidGlassIslandActive
-            segmentKey: "island:center"
             surfaceX: root.middleIslandX
             surfaceWidth: root.middleIslandWidth
             startRadius: Appearance.rounding.full
@@ -339,7 +337,6 @@ Item { // Bar content region
         component: BarPillGlass {
             targetScreen: root.screen
             surfaceActive: root.standaloneLiquidGlassIslandActive
-            segmentKey: "island:right"
             surfaceX: rightSection.x
             surfaceWidth: rightSection.width
             startRadius: Appearance.rounding.full
