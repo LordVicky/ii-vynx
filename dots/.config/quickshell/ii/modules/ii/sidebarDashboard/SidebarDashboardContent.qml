@@ -58,7 +58,7 @@ Item {
         color: RuntimeServices.liquidGlass?.surfaceReady === true
             ? "transparent"
             : Appearance.colors.colLayer0
-        border.width: 1
+        border.width: RuntimeServices.liquidGlass?.surfaceReady === true ? 0 : 1
         border.color: Appearance.colors.colLayer0Border
         radius: Appearance.rounding.screenRounding - Appearance.sizes.hyprlandGapsOut + 1
 

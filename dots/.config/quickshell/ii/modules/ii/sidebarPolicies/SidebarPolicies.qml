@@ -171,7 +171,7 @@ Scope { // Scope
             Rectangle {
                 id: sidebarLeftBackground
                 color: root.attachedLiquidGlassActive ? "transparent" : Appearance.colors.colLayer0
-                border.width: root.pin ? 0 : 1
+                border.width: root.attachedLiquidGlassActive || root.pin ? 0 : 1
                 border.color: root.pin ? "transparent" : Appearance.colors.colLayer0Border
                 radius: root.pin ? 0 : Appearance.rounding.screenRounding - Appearance.sizes.hyprlandGapsOut + 1
                 
