@@ -14,6 +14,7 @@ Scope {
     id: root
     property string protectionMessage: ""
     property var focusedScreen: Quickshell.screens.find(s => s.name === Hyprland.focusedMonitor?.name)
+    readonly property bool k4OwnsVolumeHud: Config.options.bar.variant === "k4"
 
     property string currentIndicator: "volume"
     property var indicators: [
@@ -38,6 +39,15 @@ Scope {
     function triggerOsd() {
         GlobalStates.osdVolumeOpen = true;
         osdTimeout.restart();
+    }
+
+    onK4OwnsVolumeHudChanged: {
+        if (!k4OwnsVolumeHud)
+            return;
+        if (currentIndicator === "volume" || currentIndicator === "playerVolume") {
+            GlobalStates.osdVolumeOpen = false;
+            osdTimeout.stop();
+        }
     }
 
     Timer {
@@ -70,16 +80,17 @@ Scope {
     }
 
     Connections {
-        // Listen to volume changes
+        // Listen to volume changes. K4 owns the routine volume HUD while its bar
+        // variant is selected, so do not render the ii HUD for the same event.
         target: Audio.sink?.audio ?? null
         function onVolumeChanged() {
-            if (!Audio.ready)
+            if (!Audio.ready || root.k4OwnsVolumeHud)
                 return;
             root.currentIndicator = "volume";
             root.triggerOsd();
         }
         function onMutedChanged() {
-            if (!Audio.ready)
+            if (!Audio.ready || root.k4OwnsVolumeHud)
                 return;
             root.currentIndicator = "volume";
             root.triggerOsd();
@@ -87,7 +98,8 @@ Scope {
     }
 
     Connections {
-        // Listen to protection triggers
+        // Keep protection warnings independent of routine HUD ownership: k4's
+        // compact meter has no equivalent for the reason/message yet.
         target: Audio
         function onSinkProtectionTriggered(reason) {
             root.protectionMessage = reason;
@@ -97,9 +109,11 @@ Scope {
     }
 
     Connections {
-        // Listen to MPRIS/MPD media player volume changes
+        // Listen to MPRIS/MPD media player volume changes.
         target: MprisController.activePlayer ?? null
         function onVolumeChanged() {
+            if (root.k4OwnsVolumeHud)
+                return;
             if (MprisController.canChangeVolume) {
                 root.currentIndicator = "playerVolume";
                 root.triggerOsd();
