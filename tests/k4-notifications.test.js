@@ -68,3 +68,25 @@ test("k4 toast view exposes notification content, actions and dismissal", () => 
     assert.match(source, /K4Notifications\.invokeAction\(root\.notification, modelData\)/);
     assert.match(source, /K4Notifications\.dismissToast\(\)/);
 });
+
+test("explicit island owners route notifications to a non-reserving band window", () => {
+    const adapter = read("modules/ii/k4bar/K4Notifications.qml");
+    const host = read("modules/ii/k4bar/K4ToastBandHost.qml");
+    const bar = read("modules/ii/k4bar/K4Bar.qml");
+
+    assert.match(adapter, /readonly property var passiveToastOwners:[\s\S]*?"idle"[\s\S]*?"clock"[\s\S]*?"player"[\s\S]*?"volume"/);
+    assert.match(adapter, /function routeToast\(\)[\s\S]*?inBand = passiveToastOwners\.indexOf\(owner\) < 0/);
+    assert.match(adapter, /target:\s*IslandState[\s\S]*?function onHoveredChanged\(\)[\s\S]*?holdToast\(\)[\s\S]*?resumeToast\(\)/);
+
+    assert.match(bar, /K4ToastBandHost\s*\{\s*\}/);
+    assert.match(host, /Variants\s*\{[\s\S]*?model:\s*GlobalStates\.screenLocked \? \[\] : Quickshell\.screens/);
+    assert.match(host, /PanelWindow\s*\{[\s\S]*?exclusionMode:\s*ExclusionMode\.Ignore/);
+    assert.match(host, /implicitWidth:\s*420/);
+    assert.match(host, /implicitHeight:\s*56/);
+    assert.match(host, /K4Notifications\.toastOpen && K4Notifications\.inBand/);
+    assert.match(host, /IslandState\.rects\[bandWindow\.screen\.name\]/);
+    assert.match(host, /K4Notifications\.activate\(K4Notifications\.latest\)/);
+    assert.match(host, /K4Notifications\.dismissToast\(\)/);
+    assert.match(host, /K4Notifications\.holdToast\(\)/);
+    assert.match(host, /K4Notifications\.resumeToast\(\)/);
+});
