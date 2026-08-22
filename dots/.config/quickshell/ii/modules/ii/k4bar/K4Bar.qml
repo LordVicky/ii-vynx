@@ -82,6 +82,10 @@ Scope {
         plugins: [idlePlugin, demoTransient, demoSecondary, demoPrimary]
     }
 
+    // Band notifications need their own non-reserving surface so an explicit
+    // plugin can keep ownership of the island without clipping the toast.
+    K4ToastBandHost {}
+
     function openDemo(plugin, screenName) {
         if (screenName)
             IslandState.requestScreen(screenName)
