@@ -85,8 +85,6 @@ Scope {
     function openDemo(plugin, screenName) {
         if (screenName)
             IslandState.requestScreen(screenName)
-        else
-            IslandState.requestFocusedScreen()
         plugin.open()
     }
 
@@ -289,8 +287,8 @@ Scope {
                         x: island.x,
                         y: panelWindow.bottom
                             ? panelWindow.screen.height - island.height : 0,
-                        width: island.width,
-                        height: island.height
+                        ancho: island.width,
+                        alto: island.height
                     }, panelWindow.modelData === Quickshell.screens[0])
                 }
 
@@ -349,13 +347,13 @@ Scope {
                         gestureTranslate.x = 0
                         gestureTranslate.y = 0
 
-                        if (name === "shake") {
+                        if (name === "sacudida") {
                             shakeAnimation.strength = strength
                             shakeAnimation.start()
-                        } else if (name === "push") {
+                        } else if (name === "empujon") {
                             pushAnimation.strength = strength
                             pushAnimation.start()
-                        } else if (name === "tug") {
+                        } else if (name === "tiron") {
                             tugAnimation.strength = strength
                             tugAnimation.start()
                         }
