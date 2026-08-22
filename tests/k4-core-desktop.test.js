@@ -66,7 +66,12 @@ test("clock and workspace adapters delegate to existing ii and Hyprland state", 
     assert.match(workspaces, /values\.sort\(\(a, b\) => a\.id - b\.id\)/);
     assert.match(workspaces, /readonly property int activeId:[\s\S]*?for \(let i = 0; i < list\.length; \+\+i\)[\s\S]*?if \(list\[i\]\.focused\)[\s\S]*?return list\[i\]\.id[\s\S]*?return -1/);
     assert.doesNotMatch(executableSource(workspaces), /Hyprland\.focusedWorkspace/);
-    assert.match(idle, /readonly property bool focused:\s*modelData\.focused[\s\S]*?Layout\.preferredWidth:\s*focused \? 18 : 6/);
+
+    assert.match(idle, /Repeater\s*\{[\s\S]*?model:\s*3[\s\S]*?required property int index/);
+    assert.match(idle, /readonly property var workspace:\s*index < root\.visibleWorkspaces\.length \? root\.visibleWorkspaces\[index\] : null/);
+    assert.match(idle, /readonly property bool focused:\s*workspace !== null && workspace\.id === root\.activeWorkspaceId/);
+    assert.doesNotMatch(idle, /model:\s*root\.visibleWorkspaces/);
+    assert.match(idle, /Layout\.preferredWidth:\s*focused \? 18 : 6/);
 });
 
 test("core built-ins preserve k4 priorities, activation defaults and dimensions", () => {
