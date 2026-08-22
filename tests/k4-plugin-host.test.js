@@ -71,6 +71,8 @@ test("plugin controller owns priority arbitration, transient preemption and moni
     assert.match(source, /IslandState\.activeScreen = IslandState\.takeRequestedScreen\(\)/);
     assert.match(source, /IslandState\.occupant = activePlugin\?\.name \?\? ""/);
     assert.match(source, /activePlugin\.islandHeight > K4Theme\.baseHeight/);
+    assert.match(source, /onActivePluginChanged:\s*publishActivePlugin\(\)/);
+    assert.match(source, /Component\.onCompleted:\s*publishActivePlugin\(\)/);
 
     assert.match(source, /screenName === IslandState\.activeScreen \? winner : idlePlugin/);
     assert.match(source, /interval:\s*240[\s\S]*?IslandState\.hovered = false/);
