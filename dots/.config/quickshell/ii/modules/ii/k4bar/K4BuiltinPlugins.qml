@@ -12,6 +12,36 @@ QtObject {
         playerPlugin
     ]
 
+    // Pinned k4 dismisses Player as soon as playback pauses, which also removes
+    // the Player's own Resume control. Preserve the upstream paused-hover default
+    // (Clock), but keep an already-open Player alive for the current hover.
+    property bool playerHoverSession: false
+
+    property var playerSessionMediaConnections: Connections {
+        target: K4Media
+
+        function onIsPlayingChanged() {
+            if (IslandState.hovered && K4Media.isPlaying)
+                root.playerHoverSession = true
+        }
+
+        function onHasPlayerChanged() {
+            if (!K4Media.hasPlayer)
+                root.playerHoverSession = false
+        }
+    }
+
+    property var playerSessionHoverConnections: Connections {
+        target: IslandState
+
+        function onHoveredChanged() {
+            if (!IslandState.hovered)
+                root.playerHoverSession = false
+            else if (K4Media.isPlaying)
+                root.playerHoverSession = true
+        }
+    }
+
     property QtObject volumePlugin: K4Plugin {
         name: "volume"
         title: "Volume"
@@ -36,7 +66,8 @@ QtObject {
         name: "player"
         title: "Player"
         priority: 55
-        active: enabled && IslandState.hovered && K4Media.isPlaying
+        active: enabled && IslandState.hovered && K4Media.hasPlayer
+            && (K4Media.isPlaying || root.playerHoverSession)
         islandWidth: 340
         islandHeight: K4Media.hasTimeline ? 140 : 115
         view: Component { K4PlayerView {} }
