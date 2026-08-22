@@ -29,6 +29,7 @@ import qs.modules.ii.wrappedFrame
 Scope {
     property bool barExtraCondition: true
     readonly property bool usingStandardBar: Config.options.bar.variant === "standard"
+    readonly property bool usingK4Bar: Config.options.bar.variant === "k4"
     readonly property bool usingWrappedFrame: Config.options.appearance.fakeScreenRounding === 3
     readonly property bool barBot: Config.options.bar.bottom
     readonly property bool barVert: Config.options.bar.vertical
@@ -61,7 +62,7 @@ Scope {
     PanelLoader { extraCondition: usingStandardBar && !Config.options.bar.vertical && barExtraCondition && dedicatedBarGlass; component: BarGlassLayer {} }
     PanelLoader { extraCondition: usingStandardBar && !Config.options.bar.vertical && barExtraCondition && dedicatedPlainGlass; component: BarPlainGlassLayer {} }
     PanelLoader { extraCondition: usingStandardBar && !Config.options.bar.vertical && barExtraCondition; component: Bar {} }
-    PanelLoader { extraCondition: !usingStandardBar; component: K4Bar {} }
+    PanelLoader { extraCondition: usingK4Bar; component: K4Bar {} }
     PanelLoader { extraCondition: Config.options.background.enable; component: Background {} }
     PanelLoader { component: Cheatsheet {} }
     PanelLoader { extraCondition: Config.options.dock.enable; component: Dock {} }
