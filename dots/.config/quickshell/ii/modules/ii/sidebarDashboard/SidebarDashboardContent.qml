@@ -47,6 +47,7 @@ Item {
 
     StyledRectangularShadow {
         target: sidebarRightBackground
+        visible: RuntimeServices.liquidGlass?.surfaceReady !== true
     }
     Rectangle {
         id: sidebarRightBackground
