@@ -289,35 +289,35 @@ hyprctl reload
         }
 
         onExited: (exitCode, exitStatus) => {
-            let loaded = false
+            let loaded = false;
 
             if (exitCode === 0) {
                 try {
-                    const plugins = JSON.parse(loadedOutput.text)
-                    loaded = plugins.some(plugin => String(plugin.name).toLowerCase() === "hyprglass")
+                    const plugins = JSON.parse(loadedOutput.text);
+                    loaded = plugins.some(plugin => String(plugin.name).toLowerCase() === "hyprglass");
                 } catch (error) {
-                    root.finish("error", "Could not parse Hyprland plugin state.")
-                    return
+                    root.finish("error", "Could not parse Hyprland plugin state.");
+                    return;
                 }
             } else {
-                root.finish("error", loadedError.text.trim() || "Could not query Hyprland plugins.")
-                return
+                root.finish("error", loadedError.text.trim() || "Could not query Hyprland plugins.");
+                return;
             }
 
-            root.hyprGlassLoaded = loaded
+            root.hyprGlassLoaded = loaded;
 
             if (loaded) {
-                root.hyprGlassInstalled = true
-                root.applyConfig()
-                return
+                root.hyprGlassInstalled = true;
+                root.applyConfig();
+                return;
             }
 
             if (root.checkingAfterLoad) {
-                root.finish("error", "HyprGlass did not load after hyprctl plugin load.")
-                return
+                root.finish("error", "HyprGlass did not load after hyprctl plugin load.");
+                return;
             }
 
-            root.probeHyprlandVersion()
+            root.probeHyprlandVersion();
         }
     }
 
@@ -335,23 +335,23 @@ hyprctl reload
 
         onExited: (exitCode, exitStatus) => {
             if (exitCode !== 0) {
-                root.finish("error", versionError.text.trim() || "Could not query the Hyprland version.")
-                return
+                root.finish("error", versionError.text.trim() || "Could not query the Hyprland version.");
+                return;
             }
 
             try {
-                const version = JSON.parse(versionOutput.text)
-                root.hyprlandVersion = String(version.version ?? "").trim()
-                root.hyprlandCommit = String(version.commit ?? "").trim()
-                const abiHash = String(version.abiHash ?? "").trim()
-                const abiMarker = abiHash.indexOf("_aq_")
-                root.hyprlandAbiSuffix = abiMarker >= 0 ? abiHash.slice(abiMarker) : ""
+                const version = JSON.parse(versionOutput.text);
+                root.hyprlandVersion = String(version.version ?? "").trim();
+                root.hyprlandCommit = String(version.commit ?? "").trim();
+                const abiHash = String(version.abiHash ?? "").trim();
+                const abiMarker = abiHash.indexOf("_aq_");
+                root.hyprlandAbiSuffix = abiMarker >= 0 ? abiHash.slice(abiMarker) : "";
             } catch (error) {
-                root.finish("error", "Could not parse the Hyprland version.")
-                return
+                root.finish("error", "Could not parse the Hyprland version.");
+                return;
             }
 
-            root.probeBundledPlugin()
+            root.probeBundledPlugin();
         }
     }
 
@@ -369,33 +369,33 @@ hyprctl reload
 
         onExited: (exitCode, exitStatus) => {
             if (exitCode === 66) {
-                root.finish("unavailable", `No bundled HyprGlass build for Hyprland ${root.hyprlandVersion} ABI ${root.hyprlandAbiSuffix}.`)
-                return
+                root.finish("unavailable", `No bundled HyprGlass build for Hyprland ${root.hyprlandVersion} ABI ${root.hyprlandAbiSuffix}.`);
+                return;
             }
 
             if (exitCode === 67) {
-                root.finish("unavailable", bundleError.text.trim() || "Bundled HyprGlass has unresolved runtime dependencies.")
-                return
+                root.finish("unavailable", bundleError.text.trim() || "Bundled HyprGlass has unresolved runtime dependencies.");
+                return;
             }
 
             if (exitCode === 68) {
-                root.finish("unavailable", "Could not validate bundled HyprGlass runtime dependencies because ldd is unavailable.")
-                return
+                root.finish("unavailable", "Could not validate bundled HyprGlass runtime dependencies because ldd is unavailable.");
+                return;
             }
 
             if (exitCode !== 0) {
-                root.finish("error", bundleError.text.trim() || "Could not resolve the bundled HyprGlass plugin.")
-                return
+                root.finish("error", bundleError.text.trim() || "Could not resolve the bundled HyprGlass plugin.");
+                return;
             }
 
-            root.managedPluginPath = bundleOutput.text.trim()
+            root.managedPluginPath = bundleOutput.text.trim();
             if (root.managedPluginPath.length === 0) {
-                root.finish("error", "Bundled HyprGlass path was empty.")
-                return
+                root.finish("error", "Bundled HyprGlass path was empty.");
+                return;
             }
 
-            root.hyprGlassInstalled = true
-            root.loadManagedPlugin()
+            root.hyprGlassInstalled = true;
+            root.loadManagedPlugin();
         }
     }
 
@@ -410,12 +410,12 @@ hyprctl reload
 
         onExited: (exitCode, exitStatus) => {
             if (exitCode !== 0) {
-                root.shellManagedPlugin = false
-                root.finish("error", pluginLoadError.text.trim() || "Could not load the bundled HyprGlass plugin.")
-                return
+                root.shellManagedPlugin = false;
+                root.finish("error", pluginLoadError.text.trim() || "Could not load the bundled HyprGlass plugin.");
+                return;
             }
 
-            root.probeLoaded(true)
+            root.probeLoaded(true);
         }
     }
 
@@ -430,16 +430,16 @@ hyprctl reload
 
         onExited: (exitCode, exitStatus) => {
             if (exitCode !== 0) {
-                root.finish("error", configApplyError.text.trim() || "Could not configure HyprGlass.")
-                return
+                root.finish("error", configApplyError.text.trim() || "Could not configure HyprGlass.");
+                return;
             }
 
-            root.configApplied = true
-            root.finish(root.shellManagedPlugin ? "managed" : "user", "")
+            root.configApplied = true;
+            root.finish(root.shellManagedPlugin ? "managed" : "user", "");
 
             if (root.reapplyPending) {
-                root.reapplyPending = false
-                configApplyDebounce.restart()
+                root.reapplyPending = false;
+                configApplyDebounce.restart();
             }
         }
     }
