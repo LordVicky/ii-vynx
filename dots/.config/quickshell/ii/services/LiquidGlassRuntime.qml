@@ -206,6 +206,8 @@ if hl.plugin.hyprglass then
     hg.layer("${root.horizontalBarNamespace}", { preset = "vynx", mask_threshold = 0.0025 })
 ${root.dedicatedVerticalBarSurfaceActive ? "" : '    hg.layer("quickshell:verticalBar", { preset = "vynx", mask_threshold = 0.05 })'}
     hg.layer("quickshell:popup", { preset = "vynx", mask_threshold = 0.05 })
+    hg.layer("quickshell:sidebarLeft", { preset = "vynx", mask_threshold = 0.05 })
+    hg.layer("quickshell:sidebarRight", { preset = "vynx", mask_threshold = 0.05 })
 end
 VYNX_LIQUID_GLASS
 hyprctl reload
