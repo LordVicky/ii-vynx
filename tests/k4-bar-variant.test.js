@@ -58,8 +58,11 @@ test("bar settings switch mode and hide Standard-only sections", () => {
     assert.ok(standardOnlySections.length >= 10, "Standard-only settings sections must be hidden in k4 mode");
 });
 
-test("dashboard only reserves Standard liquid-glass bar space", () => {
+test("dashboard no longer carries bar-specific liquid-glass inset state", () => {
     const dashboard = read("modules/ii/sidebarDashboard/SidebarDashboard.qml");
+    const glass = read("modules/ii/sidebarDashboard/SidebarDashboardGlass.qml");
 
-    assert.match(dashboard, /readonly property bool reserveHorizontalBar:\s*Config\.options\.bar\.variant === "standard"[\s\S]*?RuntimeServices\.liquidGlass\?\.surfaceReady === true/);
+    assert.doesNotMatch(dashboard, /reserveHorizontalBar|horizontalBarReserve|topBarReserve|bottomBarReserve/);
+    assert.doesNotMatch(glass, /topInset|bottomInset|surfaceCommitScheduled/);
+    assert.match(glass, /exclusionMode:\s*ExclusionMode\.Normal/);
 });
