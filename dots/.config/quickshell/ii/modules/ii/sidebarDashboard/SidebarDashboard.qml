@@ -15,7 +15,8 @@ Scope {
         const pos = Config.options.sidebar.position;
         return pos === "default" || pos === "right"; 
     }
-    readonly property bool reserveHorizontalBar: RuntimeServices.liquidGlass?.surfaceReady === true
+    readonly property bool reserveHorizontalBar: Config.options.bar.variant === "standard"
+        && RuntimeServices.liquidGlass?.surfaceReady === true
         && GlobalStates.barOpen
         && !Config.options.bar.vertical
     readonly property real horizontalBarReserve: {
