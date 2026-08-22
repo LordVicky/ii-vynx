@@ -42,7 +42,7 @@ Scope {
     }
 
     onK4OwnsVolumeHudChanged: {
-        if (!k4OwnsVolumeHud)
+        if (!k4OwnsVolumeHud || protectionMessage !== "")
             return;
         if (currentIndicator === "volume" || currentIndicator === "playerVolume") {
             GlobalStates.osdVolumeOpen = false;
