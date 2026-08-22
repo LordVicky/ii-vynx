@@ -34,10 +34,10 @@ Item {
         target: GlobalStates
         function onSidebarRightOpenChanged() {
             if (!GlobalStates.sidebarRightOpen) {
-                root.showWifiDialog = false
-                root.showBluetoothDialog = false
-                root.showAudioOutputDialog = false
-                root.showAudioInputDialog = false
+                root.showWifiDialog = false;
+                root.showBluetoothDialog = false;
+                root.showAudioOutputDialog = false;
+                root.showAudioInputDialog = false;
             }
         }
     }
@@ -134,10 +134,10 @@ Item {
         dialog: BluetoothDialog {}
         onShownChanged: {
             if (!shown) {
-                Bluetooth.defaultAdapter.discovering = false
+                Bluetooth.defaultAdapter.discovering = false;
             } else {
-                Bluetooth.defaultAdapter.enabled = true
-                Bluetooth.defaultAdapter.discovering = true
+                Bluetooth.defaultAdapter.enabled = true;
+                Bluetooth.defaultAdapter.discovering = true;
             }
         }
     }
@@ -151,9 +151,9 @@ Item {
         shownPropertyString: "showWifiDialog"
         dialog: WifiDialog {}
         onShownChanged: {
-            if (!shown) return
-            Network.enableWifi()
-            Network.rescanWifi()
+            if (!shown) return;
+            Network.enableWifi();
+            Network.rescanWifi();
         }
     }
 
@@ -164,22 +164,22 @@ Item {
         readonly property bool shown: root[shownPropertyString]
         anchors.fill: parent
 
-        onShownChanged: if (shown) toggleDialogLoader.active = true
+        onShownChanged: if (shown) toggleDialogLoader.active = true;
         active: shown
         onActiveChanged: {
             if (active) {
-                item.show = true
-                item.forceActiveFocus()
+                item.show = true;
+                item.forceActiveFocus();
             }
         }
         Connections {
             target: toggleDialogLoader.item
             function onDismiss() {
                 toggleDialogLoader.item.show = false
-                root[toggleDialogLoader.shownPropertyString] = false
+                root[toggleDialogLoader.shownPropertyString] = false;
             }
             function onVisibleChanged() {
-                if (!toggleDialogLoader.item.visible && !root[toggleDialogLoader.shownPropertyString]) toggleDialogLoader.active = false
+                if (!toggleDialogLoader.item.visible && !root[toggleDialogLoader.shownPropertyString]) toggleDialogLoader.active = false;
             }
         }
     }
@@ -194,19 +194,19 @@ Item {
         Connections {
             target: quickPanelImplLoader.item
             function onOpenAudioOutputDialog() {
-                root.showAudioOutputDialog = true
+                root.showAudioOutputDialog = true;
             }
             function onOpenAudioInputDialog() {
-                root.showAudioInputDialog = true
+                root.showAudioInputDialog = true;
             }
             function onOpenBluetoothDialog() {
-                root.showBluetoothDialog = true
+                root.showBluetoothDialog = true;
             }
             function onOpenNightLightDialog() {
-                root.showNightLightDialog = true
+                root.showNightLightDialog = true;
             }
             function onOpenWifiDialog() {
-                root.showWifiDialog = true
+                root.showWifiDialog = true;
             }
         }
     }
@@ -284,7 +284,7 @@ Item {
                 buttonIcon: "restart_alt"
                 onClicked: {
                     Quickshell.execDetached(["hyprctl", "reload"])
-                    Quickshell.reload(true)
+                    Quickshell.reload(true);
                 }
                 StyledToolTip {
                     text: Translation.tr("Reload Hyprland & Quickshell")
@@ -294,8 +294,8 @@ Item {
                 toggled: false
                 buttonIcon: "settings"
                 onClicked: {
-                    GlobalStates.sidebarRightOpen = false
-                    Quickshell.execDetached(["qs", "-p", root.settingsQmlPath])
+                    GlobalStates.sidebarRightOpen = false;
+                    Quickshell.execDetached(["qs", "-p", root.settingsQmlPath]);
                 }
                 StyledToolTip {
                     text: Translation.tr("Settings")
@@ -310,14 +310,14 @@ Item {
                     id: confirmTimer
                     interval: 2000
                     onTriggered: {
-                        confirmTimer.stop()
+                        confirmTimer.stop();
                         updateButton.confirm = false
                     }
                 }
                 onClicked: {
                     if (confirm) {
-                        Quickshell.execDetached([Directories.cliPath, "update", "--no-confirm", "--no-backup"])
-                        GlobalStates.sidebarRightOpen = false
+                        Quickshell.execDetached([Directories.cliPath, "update", "--no-confirm", "--no-backup"]);
+                        GlobalStates.sidebarRightOpen = false;
                     } else {
                         confirm = true
                         confirmTimer.start()
@@ -332,7 +332,7 @@ Item {
                 toggled: false
                 buttonIcon: "power_settings_new"
                 onClicked: {
-                    GlobalStates.sessionOpen = true
+                    GlobalStates.sessionOpen = true;
                 }
                 StyledToolTip {
                     text: Translation.tr("Session")
