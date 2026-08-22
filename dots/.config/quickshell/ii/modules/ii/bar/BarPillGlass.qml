@@ -36,9 +36,12 @@ PanelWindow {
 
         root.traceSurfaceCommit("polished-pending");
         root.surfaceCommitPending = false;
-        root.updatesEnabled = false;
-        root.updatesEnabled = true;
-        root.traceSurfaceCommit("flush");
+
+        const backingWindow = root.contentItem?.window;
+        if (backingWindow)
+            backingWindow.update();
+
+        root.traceSurfaceCommit("frame-request");
     }
 
     onSurfaceXChanged: root.scheduleSurfaceCommit("x")
