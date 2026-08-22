@@ -28,12 +28,8 @@ PanelWindow {
     function scheduleSurfaceCommit(reason) {
         root.surfaceCommitPending = true;
         root.traceSurfaceCommit(`schedule-${reason}`);
-
-        const backingWindow = root.contentItem?.window;
-        if (backingWindow)
-            backingWindow.update();
-
-        root.traceSurfaceCommit("polish-frame-request");
+        surfaceVisual.update();
+        root.traceSurfaceCommit("visual-frame-request");
     }
 
     function commitPolishedSurface() {
@@ -42,12 +38,7 @@ PanelWindow {
 
         root.traceSurfaceCommit("polished-pending");
         root.surfaceCommitPending = false;
-
-        const backingWindow = root.contentItem?.window;
-        if (backingWindow)
-            backingWindow.update();
-
-        root.traceSurfaceCommit("commit-frame-request");
+        root.traceSurfaceCommit("polished-ready");
     }
 
     onSurfaceXChanged: root.scheduleSurfaceCommit("x")
@@ -109,6 +100,8 @@ PanelWindow {
     }
 
     Rectangle {
+        id: surfaceVisual
+
         anchors.fill: parent
         color: RuntimeServices.liquidGlass?.barSurfaceColor ?? "transparent"
         topLeftRadius: root.startRadius
