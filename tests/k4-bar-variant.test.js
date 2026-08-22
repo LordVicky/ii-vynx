@@ -36,7 +36,7 @@ test("ii family gives bar ownership to exactly the selected variant", () => {
 test("k4 host follows upstream all-screen top-bottom ownership seam", () => {
     const source = read("modules/ii/k4bar/K4Bar.qml");
 
-    assert.match(source, /Variants\s*\{[\s\S]*?model:\s*Quickshell\.screens/);
+    assert.match(source, /model:\s*GlobalStates\.screenLocked \? \[\] : Quickshell\.screens/);
     assert.doesNotMatch(source, /Config\.options\.bar\.screenList/);
     assert.match(source, /Config\.options\.bar\.k4\.position === "bottom"/);
     assert.match(source, /Config\.options\.bar\.k4\.alignment/);
