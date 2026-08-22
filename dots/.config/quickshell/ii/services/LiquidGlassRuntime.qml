@@ -21,6 +21,10 @@ Scope {
     property bool checkingAfterLoad: false
     property bool reapplyPending: false
     property bool verticalBarDedicatedSurfaceReady: false
+    readonly property bool surfaceReady: Config.options.appearance.surfaceStyle === "liquidGlass"
+        && root.ready
+        && root.hyprGlassLoaded
+        && root.configApplied
     readonly property bool dedicatedBarSurfaceActive: (Config.options.bar.cornerStyle === 0 || Config.options.bar.cornerStyle === 1 || Config.options.bar.cornerStyle === 2)
     readonly property bool dedicatedVerticalBarSurfaceActive: Config.options.bar.vertical && root.verticalBarDedicatedSurfaceReady
     readonly property string horizontalBarNamespace: root.dedicatedBarSurfaceActive
@@ -78,6 +82,7 @@ Scope {
 
         return Qt.rgba(red, green, blue, alpha);
     }
+    readonly property color surfaceColor: root.barSurfaceColor
     readonly property string rendererConfigSignature: [
         root.blurStrength,
         root.refractionStrength,
