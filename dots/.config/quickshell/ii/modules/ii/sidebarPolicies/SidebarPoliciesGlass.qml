@@ -18,9 +18,9 @@ PanelWindow {
     color: "transparent"
     implicitWidth: Appearance.sizes.sidebarWidthExtended + Appearance.sizes.elevationMargin
 
-    // Reuse the established sidebar glass namespace so HyprGlass and Hyprland
-    // apply the same preset and slide animation to both attached sidebars.
-    WlrLayershell.namespace: "quickshell:sidebar-dashboard-glass"
+    WlrLayershell.namespace: root.isOnLeft
+        ? "quickshell:sidebar-policies-glass-left"
+        : "quickshell:sidebar-policies-glass-right"
     WlrLayershell.layer: WlrLayer.Top
 
     anchors {
