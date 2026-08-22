@@ -39,6 +39,15 @@ end
 -- Shell overrides --
 require("hyprland.shellOverrides.main")
 
+-- Dedicated Liquid Glass layers own their compositor blur. This namespace is
+-- never used by the Material dashboard, so the override is safe at all times.
+hl.layer_rule({
+    match = { namespace = "quickshell:sidebar-dashboard-glass" },
+    blur = false,
+    blur_popups = false,
+    order = 1,
+})
+
 -- Optional runtime overrides are created only while Liquid Glass is active.
 -- Use dofile instead of require so a Hyprland reload always re-reads the
 -- generated fragment rather than retaining Lua's module cache.
