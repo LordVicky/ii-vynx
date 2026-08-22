@@ -46,7 +46,7 @@ QtObject {
         }
     }
 
-    onActivePluginChanged: {
+    function publishActivePlugin() {
         dismissTransients()
 
         const previous = IslandState.occupant
@@ -63,6 +63,9 @@ QtObject {
             && activePlugin.name !== "idle"
             && activePlugin.islandHeight > K4Theme.baseHeight
     }
+
+    onActivePluginChanged: publishActivePlugin()
+    Component.onCompleted: publishActivePlugin()
 
     function visiblePluginFor(screenName) {
         const winner = activePlugin
