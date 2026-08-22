@@ -45,11 +45,21 @@ test("collapsed pill keeps clock centered with symmetric side reservation", () =
 
 test("idle media lifecycle and workspace behavior follows k4 defaults", () => {
     const source = readShell("modules/ii/k4bar/K4IdlePill.qml");
+    const media = readShell("modules/ii/k4bar/K4Media.qml");
 
-    assert.match(source, /const players = Mpris\.players\.values/);
-    assert.match(source, /if \(players\[i\]\.isPlaying\)[\s\S]*?return players\[i\]/);
-    assert.match(source, /return players\.length > 0 \? players\[0\] : null/);
-    assert.doesNotMatch(source, /MprisController\.activePlayer/);
+    assert.match(source, /readonly property var activePlayer:\s*K4Media\.activePlayer/);
+    assert.match(source, /readonly property bool isPlaying:\s*K4Media\.isPlaying/);
+    assert.match(source, /K4Media\.coverFor\(activePlayer\)/);
+    assert.match(source, /readonly property var workspaces:\s*K4Workspaces\.list/);
+    assert.match(source, /readonly property int activeWorkspaceId:\s*K4Workspaces\.activeId/);
+    assert.match(source, /target:\s*K4Workspaces[\s\S]*?onActiveIdChanged[\s\S]*?onListChanged/);
+    assert.match(source, /Qt\.formatDateTime\(K4Clock\.date, "HH:mm"\)/);
+
+    assert.match(media, /const players = Mpris\.players\.values/);
+    assert.match(media, /if \(players\[i\]\.isPlaying\)[\s\S]*?return players\[i\]/);
+    assert.match(media, /return players\.length > 0 \? players\[0\] : null/);
+    assert.doesNotMatch(media, /MprisController\.activePlayer/);
+
     assert.match(source, /visible:\s*root\.isPlaying/);
     assert.match(source, /model:\s*4/);
     assert.match(source, /SequentialAnimation on height[\s\S]*?running:\s*root\.isPlaying/);
