@@ -17,6 +17,7 @@ Singleton {
     readonly property color surfaceHi: "#2c2c2e"
     readonly property color track: "#3a3a3c"
     readonly property color red: "#ff453a"
+    readonly property color blue: "#0a84ff"
 
     readonly property int wing: 16
     readonly property int baseHeight: 34
