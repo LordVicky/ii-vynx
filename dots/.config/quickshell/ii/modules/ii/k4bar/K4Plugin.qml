@@ -17,7 +17,7 @@ QtObject {
     property bool enabled: true
     property bool active: false
     property int priority: 50
-    property bool transient: false
+    property bool transitorio: false
 
     property int islandWidth: 300
     property int islandHeight: 60
