@@ -197,11 +197,16 @@ Item {
                     NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
                 }
 
+                // Keep three delegates alive while the viewport re-slices. Binding
+                // Repeater.model directly to visibleWorkspaces destroys/recreates
+                // delegates at their final widths, which bypasses the pill Behavior.
                 Repeater {
-                    model: root.visibleWorkspaces
+                    model: 3
                     delegate: Rectangle {
-                        required property var modelData
-                        readonly property bool focused: modelData.focused
+                        required property int index
+                        readonly property var workspace: index < root.visibleWorkspaces.length ? root.visibleWorkspaces[index] : null
+                        readonly property bool focused: workspace !== null && workspace.id === root.activeWorkspaceId
+                        visible: workspace !== null
                         Layout.preferredWidth: focused ? 18 : 6
                         Layout.preferredHeight: 6
                         Layout.alignment: Qt.AlignVCenter
