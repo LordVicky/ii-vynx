@@ -303,5 +303,11 @@ Item {
                 Layout.alignment: Qt.AlignVCenter
             }
         }
+
+        K4NotifStrip {
+            max: 3
+            Layout.fillWidth: true
+            Layout.topMargin: 2
+        }
     }
 }
