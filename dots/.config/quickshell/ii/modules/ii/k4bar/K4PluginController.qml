@@ -33,13 +33,13 @@ QtObject {
 
     function dismissTransients() {
         const winner = activePlugin
-        if (!winner || winner.transient)
+        if (!winner || winner.transitorio)
             return
 
         for (let i = 0; i < plugins.length; ++i) {
             const candidate = plugins[i]
             if (!candidate || candidate === winner
-                    || !candidate.transient || !candidate.active)
+                    || !candidate.transitorio || !candidate.active)
                 continue
             if (typeof candidate.close === "function")
                 candidate.close()
