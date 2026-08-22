@@ -54,6 +54,34 @@ def main() -> int:
     layer_text = layer_text.replace(post_anchor, post_block, 1)
     layer_target.write_text(layer_text, encoding="utf-8")
 
+    pre_draw_target = source_dir / "src" / "GlassLayerPassElement.cpp"
+    pre_draw_text = pre_draw_target.read_text(encoding="utf-8")
+    pre_draw_include_anchor = """#include <cmath>\n\nCGlassLayerPassElement::CGlassLayerPassElement"""
+    pre_draw_include_block = """#include <cmath>\n#include <fstream>\n\nCGlassLayerPassElement::CGlassLayerPassElement"""
+    if pre_draw_include_anchor not in pre_draw_text:
+        raise SystemExit("HyprGlass pre-pass draw trace include anchor no longer matches GlassLayerPassElement.cpp")
+    pre_draw_text = pre_draw_text.replace(pre_draw_include_anchor, pre_draw_include_block, 1)
+
+    pre_draw_anchor = """std::vector<UP<IPassElement>> CGlassLayerPassElement::draw() {\n    if (m_data.layerState && m_data.layerState->getLayerSurface())\n        m_data.layerState->sampleAndRedirect(g_pHyprRenderer->m_renderData.pMonitor.lock(), m_data.alpha);\n\n    return {};\n}\n"""
+    pre_draw_block = """std::vector<UP<IPassElement>> CGlassLayerPassElement::draw() {\n    if (m_data.layerState) {\n        auto layerSurface = m_data.layerState->getLayerSurface();\n        if (layerSurface && layerSurface->m_namespace == \"quickshell:bar-glass\") {\n            std::ofstream trace(\"/tmp/ii-vynx-hyprglass-hook.log\", std::ios::app);\n            if (trace)\n                trace << \"pre-draw-enter\\n\";\n        }\n    }\n\n    if (m_data.layerState && m_data.layerState->getLayerSurface())\n        m_data.layerState->sampleAndRedirect(g_pHyprRenderer->m_renderData.pMonitor.lock(), m_data.alpha);\n\n    return {};\n}\n"""
+    if pre_draw_anchor not in pre_draw_text:
+        raise SystemExit("HyprGlass pre-pass draw trace anchor no longer matches GlassLayerPassElement.cpp")
+    pre_draw_target.write_text(pre_draw_text.replace(pre_draw_anchor, pre_draw_block, 1), encoding="utf-8")
+
+    post_draw_target = source_dir / "src" / "GlassLayerCompositeElement.cpp"
+    post_draw_text = post_draw_target.read_text(encoding="utf-8")
+    post_draw_include_anchor = """#include <cmath>\n\nCGlassLayerCompositeElement::CGlassLayerCompositeElement"""
+    post_draw_include_block = """#include <cmath>\n#include <fstream>\n\nCGlassLayerCompositeElement::CGlassLayerCompositeElement"""
+    if post_draw_include_anchor not in post_draw_text:
+        raise SystemExit("HyprGlass post-pass draw trace include anchor no longer matches GlassLayerCompositeElement.cpp")
+    post_draw_text = post_draw_text.replace(post_draw_include_anchor, post_draw_include_block, 1)
+
+    post_draw_anchor = """std::vector<UP<IPassElement>> CGlassLayerCompositeElement::draw() {\n    if (m_data.layerState && m_data.layerState->getLayerSurface())\n        m_data.layerState->compositeAndRestore(g_pHyprRenderer->m_renderData.pMonitor.lock(), m_data.alpha);\n\n    return {};\n}\n"""
+    post_draw_block = """std::vector<UP<IPassElement>> CGlassLayerCompositeElement::draw() {\n    if (m_data.layerState) {\n        auto layerSurface = m_data.layerState->getLayerSurface();\n        if (layerSurface && layerSurface->m_namespace == \"quickshell:bar-glass\") {\n            std::ofstream trace(\"/tmp/ii-vynx-hyprglass-hook.log\", std::ios::app);\n            if (trace)\n                trace << \"post-draw-enter\\n\";\n        }\n    }\n\n    if (m_data.layerState && m_data.layerState->getLayerSurface())\n        m_data.layerState->compositeAndRestore(g_pHyprRenderer->m_renderData.pMonitor.lock(), m_data.alpha);\n\n    return {};\n}\n"""
+    if post_draw_anchor not in post_draw_text:
+        raise SystemExit("HyprGlass post-pass draw trace anchor no longer matches GlassLayerCompositeElement.cpp")
+    post_draw_target.write_text(post_draw_text.replace(post_draw_anchor, post_draw_block, 1), encoding="utf-8")
+
     init_anchor = """    HyprlandAPI::reloadConfig();\n"""
     init_block = """    // ii-vynx: wake the compositor as soon as a tracked glass layer commits\n    // new geometry instead of waiting for hkRenderLayer to run first.\n    auto layerCommitMatches = HyprlandAPI::findFunctionsByName(PHANDLE, \"onCommit\");\n    {\n        std::ostringstream line;\n        line << \"init matches=\" << layerCommitMatches.size();\n        traceLayerCommit(line.str(), true);\n    }\n    for (const auto& match : layerCommitMatches) {\n        if (match.demangled.contains(\"CLayerSurface::onCommit\")) {\n            traceLayerCommit(std::string(\"candidate \" ) + match.demangled);\n            g_layerCommitHook = HyprlandAPI::createFunctionHook(PHANDLE, match.address, (void*)hkLayerCommit);\n            if (g_layerCommitHook)\n                g_layerCommitHookActive = g_layerCommitHook->hook();\n            traceLayerCommit(std::string(\"hook created=\") + (g_layerCommitHook ? \"1\" : \"0\") +\n                             \" active=\" + (g_layerCommitHookActive ? \"1\" : \"0\"));\n            break;\n        }\n    }\n\n    if (!g_layerCommitHook || !g_layerCommitHookActive) {\n        HyprlandAPI::addNotificationV2(PHANDLE, {\n            {\"text\", std::string(\"[hyprglass] Could not hook CLayerSurface::onCommit — dynamic layer damage disabled\")},\n            {\"time\", (uint64_t)5000},\n            {\"color\", CHyprColor{1.0, 0.8, 0.2, 1.0}},\n        });\n    }\n\n    HyprlandAPI::reloadConfig();\n"""
 
