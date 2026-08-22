@@ -158,19 +158,10 @@ Item {
         id: pillGeometry
 
         vertical: rootItem.vertical
-        targetScreen: rootItem.vertical
-            ? (rootItem.barSurfaceScreen ?? rootItem.QsWindow.window?.screen)
-            : rootItem.QsWindow.window?.screen
-        segmentKey: `pill:${rootItem.modelData.id}`
-        active: !rootItem.highlighted
-            && (rootItem.standaloneLiquidGlassPillActive
-                || rootItem.standaloneVerticalLiquidGlassPillActive)
         sourceItem: wrapper
         coordinateRoot: rootItem.vertical ? rootItem.barSurfaceRoot : rootItem.QsWindow.window?.contentItem
         position: rootItem.vertical ? rootItem.barSurfaceY : rootItem.barSurfaceX
         extent: rootItem.vertical ? rootItem.implicitHeight : rootItem.width
-        startRadius: rootItem.startRadius
-        endRadius: rootItem.endRadius
     }
 
     LazyLoader {
