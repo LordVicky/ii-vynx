@@ -167,6 +167,7 @@ Scope {
                 controller.visiblePluginFor(panelWindow.screen.name)
             readonly property bool showingIdle:
                 !pluginVisible || pluginVisible.name === "idle"
+            readonly property bool notificationOverlay: pluginVisible?.name === "toast"
             readonly property int islandBodyWidth: showingIdle
                 ? idleContent.desiredBodyWidth : pluginVisible.islandWidth
             readonly property int islandBodyHeight: showingIdle
@@ -180,10 +181,10 @@ Scope {
             anchors.left: true
             anchors.right: true
             color: "transparent"
-            aboveWindows: true
             focusable: true
 
             WlrLayershell.namespace: "quickshell:k4bar"
+            WlrLayershell.layer: notificationOverlay ? WlrLayer.Overlay : WlrLayer.Top
             WlrLayershell.keyboardFocus: {
                 if (IslandState.suppressed)
                     return WlrKeyboardFocus.None
