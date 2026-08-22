@@ -59,7 +59,8 @@ QtObject {
         priority: 50
         active: enabled && IslandState.hovered
         islandWidth: Persistent.states.screenRecord.active ? 352 : 328
-        islandHeight: 68
+        readonly property int notificationStripHeight: K4Notifications.stripHeight(3)
+        islandHeight: 68 + (notificationStripHeight > 0 ? notificationStripHeight + 18 : 0)
         view: Component { K4ClockView {} }
     }
 
@@ -70,7 +71,9 @@ QtObject {
         active: enabled && IslandState.hovered && K4Media.hasPlayer
             && (K4Media.isPlaying || root.playerHoverSession)
         islandWidth: 340
-        islandHeight: K4Media.hasTimeline ? 140 : 115
+        readonly property int notificationStripHeight: K4Notifications.stripHeight(3)
+        islandHeight: (K4Media.hasTimeline ? 140 : 115)
+            + (notificationStripHeight > 0 ? notificationStripHeight + 15 : 0)
         view: Component { K4PlayerView {} }
     }
 
