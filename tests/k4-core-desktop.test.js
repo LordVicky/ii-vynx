@@ -1,0 +1,95 @@
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
+const test = require("node:test");
+
+const shellRoot = path.join(__dirname, "../dots/.config/quickshell/ii");
+const read = relative => fs.readFileSync(path.join(shellRoot, relative), "utf8");
+
+test("media adapter preserves live MPRIS lifecycle and watcher-gated position updates", () => {
+    const source = read("modules/ii/k4bar/K4Media.qml");
+
+    assert.match(source, /const players = Mpris\.players\.values/);
+    assert.match(source, /players\[i\]\.isPlaying/);
+    assert.match(source, /return players\.length > 0 \? players\[0\] : null/);
+    assert.doesNotMatch(source, /MprisController/);
+
+    assert.match(source, /property int positionWatchers:\s*0/);
+    assert.match(source, /function watchPosition\(\)[\s\S]*?positionWatchers \+= 1/);
+    assert.match(source, /function unwatchPosition\(\)[\s\S]*?Math\.max\(0, positionWatchers - 1\)/);
+    assert.match(source, /interval:\s*500[\s\S]*?running:\s*root\.isPlaying && root\.positionWatchers > 0/);
+
+    assert.match(source, /property bool hasTimeline:\s*false/);
+    assert.match(source, /id:\s*timelineDropTimer[\s\S]*?interval:\s*1500/);
+    assert.match(source, /function seekTo\(fraction\)[\s\S]*?player\.position = Math\.max\(0, Math\.min\(1, fraction\)\) \* player\.length/);
+    assert.match(source, /function previous\(\)[\s\S]*?activePlayer\.previous\(\)/);
+    assert.match(source, /function next\(\)[\s\S]*?activePlayer\.next\(\)/);
+    assert.match(source, /function togglePlaying\(\)[\s\S]*?activePlayer\.togglePlaying\(\)/);
+});
+
+test("audio adapter layers HUD timing on ii Audio without another PipeWire owner", () => {
+    const source = read("modules/ii/k4bar/K4Audio.qml");
+
+    assert.match(source, /import qs\.services/);
+    assert.match(source, /readonly property var sink:\s*Audio\.sink/);
+    assert.doesNotMatch(source, /PwObjectTracker|Pipewire\.|Process\s*\{/);
+
+    assert.match(source, /property bool initialized:\s*false/);
+    assert.match(source, /const changed = initialized[\s\S]*?nextVolume !== volume \|\| nextMuted !== muted/);
+    assert.match(source, /if \(changed\)[\s\S]*?showOverlay\(\)/);
+    assert.match(source, /function showOverlay\(\)[\s\S]*?overlayOpen = true[\s\S]*?overlayTimer\.restart\(\)/);
+    assert.match(source, /id:\s*overlayTimer[\s\S]*?interval:\s*1600[\s\S]*?overlayOpen = false/);
+});
+
+test("clock and workspace adapters delegate to existing ii and Hyprland state", () => {
+    const clock = read("modules/ii/k4bar/K4Clock.qml");
+    const workspaces = read("modules/ii/k4bar/K4Workspaces.qml");
+
+    assert.match(clock, /readonly property date date:\s*DateTime\.clock\.date/);
+    assert.match(clock, /Qt\.locale\(Translation\.languageCode\)/);
+    assert.doesNotMatch(clock, /Timer\s*\{/);
+
+    assert.match(workspaces, /Hyprland\.workspaces\.values\.slice\(\)/);
+    assert.match(workspaces, /values\.sort\(\(a, b\) => a\.id - b\.id\)/);
+    assert.match(workspaces, /Hyprland\.focusedWorkspace\?\.id \?\? -1/);
+});
+
+test("core built-ins preserve k4 priorities, activation defaults and dimensions", () => {
+    const source = read("modules/ii/k4bar/K4BuiltinPlugins.qml");
+
+    assert.match(source, /name:\s*"volume"[\s\S]*?priority:\s*40[\s\S]*?active:\s*enabled && K4Audio\.overlayOpen[\s\S]*?islandWidth:\s*240[\s\S]*?islandHeight:\s*40/);
+    assert.match(source, /name:\s*"clock"[\s\S]*?priority:\s*50[\s\S]*?active:\s*enabled && IslandState\.hovered[\s\S]*?islandHeight:\s*68/);
+    assert.match(source, /name:\s*"player"[\s\S]*?priority:\s*55[\s\S]*?active:\s*enabled && IslandState\.hovered && K4Media\.isPlaying[\s\S]*?islandWidth:\s*340[\s\S]*?K4Media\.hasTimeline \? 140 : 115/);
+    assert.match(source, /view:\s*Component \{ K4VolumeView \{\} \}/);
+    assert.match(source, /view:\s*Component \{ K4ClockView \{\} \}/);
+    assert.match(source, /view:\s*Component \{ K4PlayerView \{\} \}/);
+});
+
+test("core views preserve k4 volume, clock and player interaction contracts", () => {
+    const theme = read("modules/ii/k4bar/K4Theme.qml");
+    const volume = read("modules/ii/k4bar/K4VolumeView.qml");
+    const clock = read("modules/ii/k4bar/K4ClockView.qml");
+    const player = read("modules/ii/k4bar/K4PlayerView.qml");
+
+    assert.match(theme, /readonly property string iconFont:\s*"MesloLGS Nerd Font Mono"/);
+    for (const glyph of ["play", "pause", "next", "prev", "shuffle", "output", "music", "volHigh", "volMed", "volOff"])
+        assert.match(theme, new RegExp(`${glyph}:\\s*String\\.fromCodePoint`));
+
+    assert.match(volume, /anchors\.leftMargin:\s*14[\s\S]*?anchors\.rightMargin:\s*14[\s\S]*?spacing:\s*10/);
+    assert.match(volume, /K4Audio\.muted \? "—" : K4Audio\.volume \+ "%"/);
+    assert.match(volume, /K4Audio\.volume \/ 100/);
+    assert.match(volume, /NumberAnimation \{ duration:\s*140/);
+
+    assert.match(clock, /anchors\.leftMargin:\s*22[\s\S]*?anchors\.rightMargin:\s*22/);
+    assert.match(clock, /anchors\.horizontalCenter:\s*parent\.horizontalCenter[\s\S]*?Qt\.formatDateTime\(K4Clock\.date, "HH:mm"\)[\s\S]*?font\.pixelSize:\s*30/);
+    assert.match(clock, /Persistent\.states\.screenRecord\.active/);
+
+    assert.match(player, /Component\.onCompleted:[\s\S]*?K4Media\.watchPosition\(\)/);
+    assert.match(player, /Component\.onDestruction:\s*K4Media\.unwatchPosition\(\)/);
+    assert.match(player, /visible:\s*K4Media\.hasTimeline/);
+    assert.match(player, /K4Media\.seekTo\(mouse\.x \/ width\)/);
+    assert.match(player, /onActivated:\s*K4Media\.previous\(\)/);
+    assert.match(player, /onActivated:\s*K4Media\.togglePlaying\(\)/);
+    assert.match(player, /onActivated:\s*K4Media\.next\(\)/);
+    assert.match(player, /glyph:\s*K4Theme\.ico\.output[\s\S]*?enabledAction:\s*false/);
+});
