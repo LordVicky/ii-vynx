@@ -41,3 +41,30 @@ test("standard notification popup is disabled while k4 owns notification present
         /PanelLoader\s*\{\s*extraCondition:\s*usingStandardBar;\s*component:\s*NotificationPopup\s*\{\s*\}\s*\}/
     );
 });
+
+test("k4 toast participates as the pinned priority-59 transient", () => {
+    const builtins = read("modules/ii/k4bar/K4BuiltinPlugins.qml");
+
+    assert.match(builtins, /toastPlugin/);
+    assert.match(builtins, /name:\s*"toast"[\s\S]*?priority:\s*59[\s\S]*?transitorio:\s*true/);
+    assert.match(builtins, /active:\s*enabled && K4Notifications\.toastOpen && !K4Notifications\.inBand/);
+    assert.match(builtins, /islandWidth:\s*440/);
+    assert.match(builtins, /islandHeight:\s*K4Notifications\.buttons\(K4Notifications\.latest\)\.length > 0 \? 112 : 96/);
+    assert.match(builtins, /handlesBackgroundTap:\s*true/);
+    assert.match(builtins, /onBackgroundTapped:[\s\S]*?K4Notifications\.activate\(K4Notifications\.latest\)[\s\S]*?K4Notifications\.dismissToast\(\)/);
+    assert.match(builtins, /function close\(\)[\s\S]*?K4Notifications\.dismissToast\(\)/);
+    assert.match(builtins, /view:\s*Component \{ K4ToastView \{\} \}/);
+});
+
+test("k4 toast view exposes notification content, actions and dismissal", () => {
+    const source = read("modules/ii/k4bar/K4ToastView.qml");
+
+    assert.match(source, /readonly property var notification:\s*K4Notifications\.latest/);
+    assert.match(source, /readonly property var buttons:\s*K4Notifications\.buttons\(notification\)/);
+    assert.match(source, /notification\?\.summary \?\? ""/);
+    assert.match(source, /notification\?\.appName \?\? ""/);
+    assert.match(source, /notification\?\.body \?\? ""/);
+    assert.match(source, /model:\s*root\.buttons/);
+    assert.match(source, /K4Notifications\.invokeAction\(root\.notification, modelData\)/);
+    assert.match(source, /K4Notifications\.dismissToast\(\)/);
+});
