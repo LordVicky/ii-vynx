@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 from pathlib import Path
-import subprocess
 import sys
 
 
@@ -63,9 +62,6 @@ def main() -> int:
         raise SystemExit("HyprGlass layer-move damage patch no longer matches GlassLayerSurface.cpp")
 
     target.write_text(text.replace(old, new, 1), encoding="utf-8")
-
-    commit_patch = Path(__file__).with_name("patch-hyprglass-layer-commit-damage.py")
-    subprocess.run([sys.executable, str(commit_patch), str(source_dir)], check=True)
 
     print("Enabled ii-vynx previous-layer damage fix.")
     return 0
