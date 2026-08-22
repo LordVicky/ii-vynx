@@ -288,7 +288,7 @@ Item { // Bar content region
         active: root.standaloneLiquidGlassIslandActive && bottomSection.height > 0
         component: VerticalBarPillGlass {
             targetScreen: root.screen
-            surfaceActive: root.standaloneLiquidGlassIslandIslandActive
+            surfaceActive: root.standaloneLiquidGlassIslandActive
             surfaceY: bottomSection.y
             surfaceHeight: bottomSection.height
             startRadius: Appearance.rounding.full
