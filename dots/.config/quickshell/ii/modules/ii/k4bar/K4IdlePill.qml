@@ -1,10 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
-import Quickshell.Hyprland
-import Quickshell.Services.Mpris
 import Quickshell.Widgets
-import qs
-import qs.services
 import qs.modules.common
 import qs.modules.common.widgets
 
@@ -13,25 +9,14 @@ import qs.modules.common.widgets
 Item {
     id: root
 
-    readonly property var activePlayer: {
-        const players = Mpris.players.values
-        for (let i = 0; i < players.length; ++i) {
-            if (players[i].isPlaying)
-                return players[i]
-        }
-        return players.length > 0 ? players[0] : null
-    }
-    readonly property bool hasPlayer: activePlayer !== null
-    readonly property bool isPlaying: hasPlayer && activePlayer.isPlaying
-    readonly property string artSource: activePlayer?.trackArtUrl ?? ""
+    readonly property var activePlayer: K4Media.activePlayer
+    readonly property bool hasPlayer: K4Media.hasPlayer
+    readonly property bool isPlaying: K4Media.isPlaying
+    readonly property string artSource: K4Media.coverFor(activePlayer)
     readonly property bool recording: Persistent.states.screenRecord.active
 
-    readonly property var workspaces: {
-        const values = Hyprland.workspaces.values.slice()
-        values.sort((a, b) => a.id - b.id)
-        return values
-    }
-    readonly property int activeWorkspaceId: Hyprland.focusedWorkspace?.id ?? -1
+    readonly property var workspaces: K4Workspaces.list
+    readonly property int activeWorkspaceId: K4Workspaces.activeId
 
     property bool started: false
     property bool showingWorkspaces: false
@@ -102,13 +87,9 @@ Item {
     }
 
     Connections {
-        target: Hyprland
-        function onFocusedWorkspaceChanged() { root.showWorkspaceChange() }
-    }
-
-    Connections {
-        target: Hyprland.workspaces
-        function onValuesChanged() { root.adjustWorkspaceWindow() }
+        target: K4Workspaces
+        function onActiveIdChanged() { root.showWorkspaceChange() }
+        function onListChanged() { root.adjustWorkspaceWindow() }
     }
 
     Item {
@@ -194,7 +175,7 @@ Item {
 
             Text {
                 anchors.centerIn: parent
-                text: Qt.formatDateTime(DateTime.clock.date, "HH:mm")
+                text: Qt.formatDateTime(K4Clock.date, "HH:mm")
                 font.family: K4Theme.uiFont
                 font.pixelSize: 12
                 font.weight: Font.Medium
