@@ -174,13 +174,11 @@ Item {
     }
 
     LazyLoader {
-        active: !GlobalStates.unifiedBarGlassSegmentsEnabled
-            && rootItem.standaloneLiquidGlassPillActive
+        active: rootItem.standaloneLiquidGlassPillActive
             && !rootItem.highlighted
         component: BarPillGlass {
             targetScreen: rootItem.QsWindow.window?.screen
-            surfaceActive: !GlobalStates.unifiedBarGlassSegmentsEnabled
-                && rootItem.standaloneLiquidGlassPillActive
+            surfaceActive: rootItem.standaloneLiquidGlassPillActive
                 && !rootItem.highlighted
             surfaceX: pillGeometry.resolvedPosition
             surfaceWidth: pillGeometry.resolvedExtent
@@ -190,13 +188,11 @@ Item {
     }
 
     LazyLoader {
-        active: !GlobalStates.unifiedBarGlassSegmentsEnabled
-            && rootItem.standaloneVerticalLiquidGlassPillActive
+        active: rootItem.standaloneVerticalLiquidGlassPillActive
             && !rootItem.highlighted
         component: Vertical.VerticalBarPillGlass {
             targetScreen: rootItem.barSurfaceScreen ?? rootItem.QsWindow.window?.screen
-            surfaceActive: !GlobalStates.unifiedBarGlassSegmentsEnabled
-                && rootItem.standaloneVerticalLiquidGlassPillActive
+            surfaceActive: rootItem.standaloneVerticalLiquidGlassPillActive
                 && !rootItem.highlighted
             surfaceY: rootItem.barSurfaceY
             surfaceHeight: rootItem.implicitHeight
@@ -210,35 +206,22 @@ Item {
 
     Component { id: timerComp; TimerWidget {} }
     Component { id: timerCompVert; Vertical.VerticalTimerWidget {} }
-
     Component { id: screenshareIndicatorComp; ScreenShareIndicator {} }
-
     Component { id: recordIndicatorComp; RecordIndicator { vertical: rootItem.vertical } }
-
     Component { id: activeWindowComp; ActiveWindow { vertical: rootItem.vertical } }
-
     Component { id: systemMonitorComp; Resources {} }
     Component { id: systemMonitorCompVert; Vertical.Resources {} }
-
     Component { id: musicPlayerCompVert; Vertical.VerticalMedia {} }
     Component { id: musicPlayerComp; Media {} }
-
     Component { id: utilityButtonsComp; UtilButtons { vertical: rootItem.vertical } }
-
     Component { id: batteryComp; BatteryIndicator {} }
     Component { id: batteryCompVert; Vertical.BatteryIndicator {} }
-
     Component { id: clockCompVert; Vertical.VerticalClockWidget {} }
     Component { id: clockComp; ClockWidget {} }
-
     Component { id: systemTrayComp; SysTray { vertical: rootItem.vertical } }
-
     Component { id: dateCompVert; Vertical.VerticalDateWidget {} }
-
     Component { id: workspaceComp; Workspaces { vertical: rootItem.vertical } }
-
     Component { id: policiesPanelButton; PoliciesPanelButton {} }
-    
     Component { id: dashboardPanelButton; DashboardPanelButton {} }
     Component { id: networkSpeedComp; NetworkSpeed { vertical: rootItem.vertical } }
     Component { id: dashboardPanelButtonVert; VerticalDashboardPanelButton {} }
