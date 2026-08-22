@@ -21,21 +21,28 @@ PanelWindow {
         ? root.segmentKey
         : `island:${Math.round(root.surfaceX * 1000)}:${Math.round(root.surfaceWidth * 1000)}`
 
-    function scheduleSurfaceCommit() {
+    function traceSurfaceCommit(eventName) {
+        console.warn(`[bar-glass-qml] event=${eventName} x=${root.surfaceX} width=${root.surfaceWidth} implicitWidth=${root.implicitWidth} pending=${root.surfaceCommitPending}`);
+    }
+
+    function scheduleSurfaceCommit(reason) {
         root.surfaceCommitPending = true;
+        root.traceSurfaceCommit(`schedule-${reason}`);
     }
 
     function commitPolishedSurface() {
         if (!root.surfaceCommitPending)
             return;
 
+        root.traceSurfaceCommit("polished-pending");
         root.surfaceCommitPending = false;
         root.updatesEnabled = false;
         root.updatesEnabled = true;
+        root.traceSurfaceCommit("flush");
     }
 
-    onSurfaceXChanged: root.scheduleSurfaceCommit()
-    onSurfaceWidthChanged: root.scheduleSurfaceCommit()
+    onSurfaceXChanged: root.scheduleSurfaceCommit("x")
+    onSurfaceWidthChanged: root.scheduleSurfaceCommit("width")
 
     Connections {
         target: root.contentItem
