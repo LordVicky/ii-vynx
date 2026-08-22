@@ -7,6 +7,7 @@ const repoRoot = path.join(__dirname, "..");
 const shellRoot = path.join(repoRoot, "dots/.config/quickshell/ii");
 const readShell = relative => fs.readFileSync(path.join(shellRoot, relative), "utf8");
 const readRepo = relative => fs.readFileSync(path.join(repoRoot, relative), "utf8");
+const executableSource = source => source.replace(/^\s*\/\/.*$/gm, "");
 
 test("k4 visual tokens preserve the pinned upstream collapsed geometry", () => {
     const theme = readShell("modules/ii/k4bar/K4Theme.qml");
@@ -46,6 +47,7 @@ test("collapsed pill keeps clock centered with symmetric side reservation", () =
 test("idle media lifecycle and workspace behavior follows k4 defaults", () => {
     const source = readShell("modules/ii/k4bar/K4IdlePill.qml");
     const media = readShell("modules/ii/k4bar/K4Media.qml");
+    const executableMedia = executableSource(media);
 
     assert.match(source, /readonly property var activePlayer:\s*K4Media\.activePlayer/);
     assert.match(source, /readonly property bool isPlaying:\s*K4Media\.isPlaying/);
@@ -58,7 +60,7 @@ test("idle media lifecycle and workspace behavior follows k4 defaults", () => {
     assert.match(media, /const players = Mpris\.players\.values/);
     assert.match(media, /if \(players\[i\]\.isPlaying\)[\s\S]*?return players\[i\]/);
     assert.match(media, /return players\.length > 0 \? players\[0\] : null/);
-    assert.doesNotMatch(media, /MprisController\.activePlayer/);
+    assert.doesNotMatch(executableMedia, /MprisController\.activePlayer/);
 
     assert.match(source, /visible:\s*root\.isPlaying/);
     assert.match(source, /model:\s*4/);
