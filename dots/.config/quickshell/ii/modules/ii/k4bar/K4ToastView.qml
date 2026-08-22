@@ -96,7 +96,7 @@ Item {
 
                 Text {
                     text: "×"
-                    color: closeTap.hovered ? K4Theme.ink : K4Theme.muted
+                    color: closeHover.hovered ? K4Theme.ink : K4Theme.muted
                     font.family: K4Theme.uiFont
                     font.pixelSize: 15
                     horizontalAlignment: Text.AlignHCenter
@@ -105,10 +105,8 @@ Item {
                     Layout.preferredHeight: 18
                     renderType: Text.NativeRendering
 
-                    TapHandler {
-                        id: closeTap
-                        onTapped: K4Notifications.dismissToast()
-                    }
+                    HoverHandler { id: closeHover }
+                    TapHandler { onTapped: K4Notifications.dismissToast() }
                 }
             }
 
@@ -141,7 +139,7 @@ Item {
                         Layout.preferredHeight: 24
                         Layout.preferredWidth: Math.max(54, actionText.implicitWidth + 18)
                         radius: 12
-                        color: actionTap.hovered ? K4Theme.track : K4Theme.surface
+                        color: actionHover.hovered ? K4Theme.track : K4Theme.surface
 
                         Text {
                             id: actionText
@@ -154,8 +152,8 @@ Item {
                             renderType: Text.NativeRendering
                         }
 
+                        HoverHandler { id: actionHover }
                         TapHandler {
-                            id: actionTap
                             onTapped: {
                                 K4Notifications.invokeAction(root.notification, modelData)
                                 K4Notifications.dismissToast()
