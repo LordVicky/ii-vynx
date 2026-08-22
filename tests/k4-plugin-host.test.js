@@ -52,6 +52,9 @@ test("base plugin contract separates enabled state from active island requests",
     assert.match(source, /property bool closeOnHoverExit:\s*false/);
     assert.match(source, /property int hoverExitDelay:\s*700/);
 
+    assert.match(source, /function open\(\)[\s\S]*?if \(enabled\)[\s\S]*?active = true/);
+    assert.match(source, /function requestPlacement\(fraction, durationMs\)[\s\S]*?if \(enabled\)[\s\S]*?IslandState\.requestPlacement/);
+    assert.match(source, /function requestGesture\(gestureName, strength\)[\s\S]*?if \(enabled\)[\s\S]*?IslandState\.requestGesture/);
     assert.match(source, /onEnabledChanged:[\s\S]*?active = false[\s\S]*?releasePlacement\(\)/);
     assert.match(source, /Component\.onDestruction:\s*releasePlacement\(\)/);
 });
