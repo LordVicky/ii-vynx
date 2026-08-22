@@ -63,7 +63,6 @@ Scope {
 
             screen: modelData
             surfaceActive: root.surfaceReady
-            segments: Object.values(GlobalStates.verticalBarGlassSegments[modelData.name] ?? {})
             autoHideOffset: Number(GlobalStates.barAutoHideOffsets[modelData.name] ?? 0)
             showBarBackground: Config.options.bar.barBackgroundStyle === 1
                 || (Config.options.bar.barBackgroundStyle === 2 && glassSurface.hasActiveWindows)
