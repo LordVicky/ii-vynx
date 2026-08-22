@@ -12,7 +12,10 @@ Singleton {
     property var latest: null
     property int count: 0
     property bool toastOpen: false
+    property bool inBand: false
+    property string previousOwner: ""
 
+    readonly property var passiveToastOwners: ["", "toast", "idle", "clock", "player", "volume"]
     readonly property var recent: Notifications.list.slice().reverse()
 
     function stripHeight(max) {
@@ -36,6 +39,16 @@ Singleton {
                 return actions[i]
         }
         return null
+    }
+
+    function iconFor(notification) {
+        if (!notification)
+            return ""
+        if (notification.image?.length > 0)
+            return notification.image
+        if (notification.appIcon?.length > 0)
+            return Quickshell.iconPath(notification.appIcon, true)
+        return ""
     }
 
     function canInvoke(notification) {
@@ -78,9 +91,15 @@ Singleton {
         Notifications.markAllRead()
     }
 
+    function routeToast() {
+        const owner = IslandState.occupant === "toast" ? previousOwner : IslandState.occupant
+        inBand = passiveToastOwners.indexOf(owner) < 0
+    }
+
     function dismissToast() {
         toastTimer.stop()
         toastOpen = false
+        inBand = false
     }
 
     function holdToast() {
@@ -93,11 +112,28 @@ Singleton {
     }
 
     Connections {
+        target: IslandState
+
+        function onOccupantChanged() {
+            if (IslandState.occupant !== "toast")
+                root.previousOwner = IslandState.occupant
+        }
+
+        function onHoveredChanged() {
+            if (IslandState.hovered)
+                root.holdToast()
+            else
+                root.resumeToast()
+        }
+    }
+
+    Connections {
         target: Notifications
 
         function onNotify(notification) {
             root.latest = notification
             root.count += 1
+            root.routeToast()
             root.toastOpen = true
             toastTimer.restart()
         }
