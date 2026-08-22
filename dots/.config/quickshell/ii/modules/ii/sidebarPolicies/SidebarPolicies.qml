@@ -20,6 +20,15 @@ Scope { // Scope
         const pos = Config.options.sidebar.position;
         return pos === "default" || pos === "left"; 
     }
+    readonly property real attachedSidebarWidth: {
+        const pageCount = root.sidebarContent?.tabCount ?? 0;
+
+        if (root.extend) return Appearance.sizes.sidebarWidthExtended;
+        return pageCount >= 4 ? Appearance.sizes.sidebarWidthExpanded : Appearance.sizes.sidebarWidth;
+    }
+    readonly property bool normalLiquidGlassActive: RuntimeServices.liquidGlass?.surfaceReady === true
+        && !root.detach
+        && !root.pin
 
     function toggleDetach() {
         root.detach = !root.detach;
@@ -86,6 +95,12 @@ Scope { // Scope
         }
     }
 
+    SidebarPoliciesGlass {
+        isOnLeft: root.isOnLeft
+        surfaceActive: root.normalLiquidGlassActive
+        sidebarWidth: root.attachedSidebarWidth
+    }
+
     Loader {
         id: sidebarLoader
         active: true
@@ -94,12 +109,7 @@ Scope { // Scope
             id: panelWindow
             visible: GlobalStates.sidebarLeftOpen
             
-            readonly property real sidebarWidth: {
-                const pageCount = root.sidebarContent?.tabCount ?? 0;
-
-                if (root.extend) return Appearance.sizes.sidebarWidthExtended;
-                return pageCount >= 4 ? Appearance.sizes.sidebarWidthExpanded : Appearance.sizes.sidebarWidth;
-            }
+            readonly property real sidebarWidth: root.attachedSidebarWidth
             
             property var contentParent: sidebarLeftBackground
 
@@ -155,11 +165,12 @@ Scope { // Scope
             StyledRectangularShadow {
                 target: sidebarLeftBackground
                 radius: sidebarLeftBackground.radius
+                visible: !root.normalLiquidGlassActive
             }
 
             Rectangle {
                 id: sidebarLeftBackground
-                color: Appearance.colors.colLayer0
+                color: root.normalLiquidGlassActive ? "transparent" : Appearance.colors.colLayer0
                 border.width: root.pin ? 0 : 1
                 border.color: root.pin ? "transparent" : Appearance.colors.colLayer0Border
                 radius: root.pin ? 0 : Appearance.rounding.screenRounding - Appearance.sizes.hyprlandGapsOut + 1
