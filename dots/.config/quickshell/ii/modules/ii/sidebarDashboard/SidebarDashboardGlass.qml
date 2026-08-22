@@ -11,35 +11,9 @@ PanelWindow {
     required property bool isOnRight
     required property bool surfaceActive
     property int sidebarWidth: Appearance.sizes.sidebarWidth
-    property real topInset: 0
-    property real bottomInset: 0
-    property bool surfaceCommitScheduled: false
-
-    function scheduleSurfaceCommit() {
-        if (root.surfaceCommitScheduled)
-            return;
-
-        root.surfaceCommitScheduled = true;
-        Qt.callLater(root.forceSurfaceCommit);
-    }
-
-    function forceSurfaceCommit() {
-        root.surfaceCommitScheduled = false;
-
-        const contentItem = root.contentItem;
-        if (!contentItem)
-            return;
-
-        contentItem.ensurePolished();
-        surfaceVisual.update();
-    }
-
-    onTopInsetChanged: root.scheduleSurfaceCommit()
-    onBottomInsetChanged: root.scheduleSurfaceCommit()
-    onVisibleChanged: if (visible) root.scheduleSurfaceCommit()
 
     visible: root.surfaceActive && GlobalStates.sidebarRightOpen
-    exclusionMode: ExclusionMode.Ignore
+    exclusionMode: ExclusionMode.Normal
     focusable: false
     color: "transparent"
     implicitWidth: root.sidebarWidth - Appearance.sizes.hyprlandGapsOut - Appearance.sizes.elevationMargin
@@ -55,8 +29,8 @@ PanelWindow {
     }
 
     margins {
-        top: Appearance.sizes.hyprlandGapsOut + root.topInset
-        bottom: Appearance.sizes.hyprlandGapsOut + root.bottomInset
+        top: Appearance.sizes.hyprlandGapsOut
+        bottom: Appearance.sizes.hyprlandGapsOut
         left: root.isOnRight ? 0 : Appearance.sizes.hyprlandGapsOut
         right: root.isOnRight ? Appearance.sizes.hyprlandGapsOut : 0
     }
@@ -69,8 +43,6 @@ PanelWindow {
     }
 
     Rectangle {
-        id: surfaceVisual
-
         anchors.fill: parent
         color: RuntimeServices.liquidGlass?.surfaceColor ?? "transparent"
         radius: Appearance.rounding.screenRounding - Appearance.sizes.hyprlandGapsOut + 1
