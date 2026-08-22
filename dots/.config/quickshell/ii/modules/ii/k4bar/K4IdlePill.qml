@@ -5,6 +5,7 @@ import Quickshell.Services.Mpris
 import Quickshell.Widgets
 import qs
 import qs.services
+import qs.modules.common
 import qs.modules.common.widgets
 
 // Collapsed k4 pill adapted against the pinned upstream Idle view.
