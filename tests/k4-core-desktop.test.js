@@ -70,6 +70,7 @@ test("core views preserve k4 volume, clock and player interaction contracts", ()
     const volume = read("modules/ii/k4bar/K4VolumeView.qml");
     const clock = read("modules/ii/k4bar/K4ClockView.qml");
     const player = read("modules/ii/k4bar/K4PlayerView.qml");
+    const recording = read("modules/ii/k4bar/K4RecordingPill.qml");
 
     assert.match(theme, /readonly property string iconFont:\s*"MesloLGS Nerd Font Mono"/);
     for (const glyph of ["play", "pause", "next", "prev", "shuffle", "output", "music", "volHigh", "volMed", "volOff"])
@@ -82,7 +83,7 @@ test("core views preserve k4 volume, clock and player interaction contracts", ()
 
     assert.match(clock, /anchors\.leftMargin:\s*22[\s\S]*?anchors\.rightMargin:\s*22/);
     assert.match(clock, /anchors\.horizontalCenter:\s*parent\.horizontalCenter[\s\S]*?Qt\.formatDateTime\(K4Clock\.date, "HH:mm"\)[\s\S]*?font\.pixelSize:\s*30/);
-    assert.match(clock, /Persistent\.states\.screenRecord\.active/);
+    assert.match(clock, /K4RecordingPill\s*\{[\s\S]*?interactive:\s*true/);
 
     assert.match(player, /Component\.onCompleted:[\s\S]*?K4Media\.watchPosition\(\)/);
     assert.match(player, /Component\.onDestruction:\s*K4Media\.unwatchPosition\(\)/);
@@ -91,5 +92,11 @@ test("core views preserve k4 volume, clock and player interaction contracts", ()
     assert.match(player, /onActivated:\s*K4Media\.previous\(\)/);
     assert.match(player, /onActivated:\s*K4Media\.togglePlaying\(\)/);
     assert.match(player, /onActivated:\s*K4Media\.next\(\)/);
+    assert.match(player, /K4RecordingPill\s*\{[\s\S]*?interactive:\s*true/);
     assert.match(player, /glyph:\s*K4Theme\.ico\.output[\s\S]*?enabledAction:\s*false/);
+
+    assert.match(recording, /Persistent\.states\.screenRecord\.active/);
+    assert.match(recording, /Persistent\.states\.screenRecord\.seconds/);
+    assert.match(recording, /Quickshell\.execDetached\(Directories\.recordScriptPath\)/);
+    assert.match(recording, /color:\s*K4Theme\.red/);
 });
