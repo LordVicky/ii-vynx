@@ -2,6 +2,7 @@ pragma Singleton
 
 import QtQuick
 import Quickshell
+import qs.modules.common
 import qs.services
 
 // k4 notification presentation state backed by ii-vynx's existing
@@ -15,8 +16,15 @@ Singleton {
     property bool inBand: false
     property string previousOwner: ""
 
+    readonly property bool presentationActive: Config.options.panelFamily === "ii"
+        && Config.options.bar.variant === "k4"
     readonly property var passiveToastOwners: ["", "toast", "idle", "clock", "player", "volume"]
     readonly property var recent: Notifications.list.slice().reverse()
+
+    onPresentationActiveChanged: {
+        if (!presentationActive)
+            dismissToast()
+    }
 
     function stripHeight(max) {
         const n = Math.min(max, recent.length)
@@ -131,6 +139,8 @@ Singleton {
         target: Notifications
 
         function onNotify(notification) {
+            if (!root.presentationActive)
+                return
             root.latest = notification
             root.count += 1
             root.routeToast()
