@@ -8,16 +8,8 @@ import qs.modules.common
 Scope {
     id: root
 
-    readonly property var screens: {
-        const allScreens = Quickshell.screens;
-        const configured = Config.options.bar.screenList;
-        if (!configured || configured.length === 0)
-            return allScreens;
-        return allScreens.filter(screen => configured.includes(screen.name));
-    }
-
     Variants {
-        model: root.screens
+        model: Quickshell.screens
 
         delegate: PanelWindow {
             id: panelWindow
