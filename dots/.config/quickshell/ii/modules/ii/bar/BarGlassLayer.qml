@@ -35,7 +35,6 @@ Scope {
 
             screen: modelData
             surfaceActive: root.surfaceReady
-            segments: Object.values(GlobalStates.barGlassSegments[modelData.name] ?? {})
             showBarBackground: Config.options.bar.barBackgroundStyle === 1
                 || (Config.options.bar.barBackgroundStyle === 2 && glassSurface.hasActiveWindows)
 
