@@ -12,5 +12,13 @@ Singleton {
         return values
     }
 
-    readonly property int activeId: Hyprland.focusedWorkspace?.id ?? -1
+    // Match pinned k4's focus seam: the workspace objects carry their own focus
+    // state, so activeId changes in the same update path that drives pill focus.
+    readonly property int activeId: {
+        for (let i = 0; i < list.length; ++i) {
+            if (list[i].focused)
+                return list[i].id
+        }
+        return -1
+    }
 }
