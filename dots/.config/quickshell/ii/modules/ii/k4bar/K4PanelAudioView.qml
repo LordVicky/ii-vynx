@@ -1,8 +1,16 @@
 import QtQuick
 import QtQuick.Layouts
+import Quickshell.Services.Pipewire
 
 Item {
     id: root
+
+    // Non-default PipeWire nodes expose their audio/name properties only while
+    // observed. Keep that observation scoped to the open Panel view rather than
+    // creating another service owner or a permanent background tracker.
+    PwObjectTracker {
+        objects: K4AudioDevices.outputs.concat(K4AudioDevices.inputs)
+    }
 
     component DeviceGroup: ColumnLayout {
         id: group
