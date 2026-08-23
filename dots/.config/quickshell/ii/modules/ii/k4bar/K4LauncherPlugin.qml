@@ -11,12 +11,11 @@ K4Plugin {
     name: "launcher"
     title: "Launcher"
     priority: 80
-    active: enabled && (open || closing)
+    active: enabled && open
     viewLoaded: open
     grabKeyboard: open
 
     property bool open: false
-    property bool closing: false
     property string query: ""
     property int index: 0
     property var matches: []
@@ -44,27 +43,24 @@ K4Plugin {
     function openSearch(initial = "") {
         K4Panel.close()
         K4Notifications.dismissToast()
-        closeTimer.stop()
-        closing = false
         query = String(initial || "")
         index = 0
         open = true
         rebuild()
     }
 
+    // The ii-vynx island host already animates width/height to the next owner.
+    // Keeping a synthetic closing owner here left a blank 720x440 island for
+    // 320 ms before that animation could start, so release ownership at once.
     function close() {
-        if (!open && !closing)
+        if (!open)
             return
         open = false
-        closing = true
         query = ""
-        closeTimer.restart()
     }
 
     function yieldToNotification() {
-        closeTimer.stop()
         open = false
-        closing = false
         query = ""
     }
 
@@ -85,12 +81,6 @@ K4Plugin {
     Connections {
         target: Notifications
         function onNotify(notification) { root.yieldToNotification() }
-    }
-
-    Timer {
-        id: closeTimer
-        interval: 320
-        onTriggered: root.closing = false
     }
 
     Component.onCompleted: K4Launcher.plugin = root
