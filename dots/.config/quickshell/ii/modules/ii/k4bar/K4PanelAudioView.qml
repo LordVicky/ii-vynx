@@ -50,9 +50,11 @@ Item {
                 Behavior on color { ColorAnimation { duration: 110 } }
 
                 HoverHandler { id: rowHover }
-                TapHandler {
+                MouseArea {
+                    anchors.fill: parent
+                    z: -1
                     cursorShape: Qt.PointingHandCursor
-                    onTapped: {
+                    onClicked: {
                         if (group.input)
                             K4AudioDevices.selectInput(row.modelData)
                         else
