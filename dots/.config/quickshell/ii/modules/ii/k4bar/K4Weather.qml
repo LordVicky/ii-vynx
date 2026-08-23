@@ -33,17 +33,20 @@ Singleton {
         return Weather.useUSCS ? `${valueF}°F` : `${valueC}°C`
     }
 
+    // Upstream k4 uses the Nerd Fonts Weather Icons E3xx range. The ii-vynx
+    // font install reliably carries Material Design Icons instead, so use the
+    // equivalent MDI weather glyphs already used by the rest of this shell.
     function icon(code) {
         const n = Number(code)
-        if (n === 113) return String.fromCodePoint(0xE30D)
-        if (n === 116) return String.fromCodePoint(0xE302)
-        if (n === 119 || n === 122) return String.fromCodePoint(0xE312)
-        if (n === 143 || n === 248 || n === 260) return String.fromCodePoint(0xE303)
+        if (n === 113) return String.fromCodePoint(0xF0599) // sunny
+        if (n === 116) return String.fromCodePoint(0xF0595) // partly cloudy
+        if (n === 119 || n === 122) return String.fromCodePoint(0xF0590) // cloudy
+        if (n === 143 || n === 248 || n === 260) return String.fromCodePoint(0xF0591) // fog
         if ([179, 182, 185, 227, 230, 323, 326, 329, 332, 335, 338, 368, 371].indexOf(n) >= 0)
-            return String.fromCodePoint(0xE31A)
-        if ([200, 386, 389, 392, 395].indexOf(n) >= 0) return String.fromCodePoint(0xE30F)
-        if (n >= 176 && n <= 365) return String.fromCodePoint(0xE318)
-        return String.fromCodePoint(0xE374)
+            return String.fromCodePoint(0xF0598) // snow
+        if ([200, 386, 389, 392, 395].indexOf(n) >= 0) return String.fromCodePoint(0xF067E) // lightning/rain
+        if (n >= 176 && n <= 365) return String.fromCodePoint(0xF0597) // rain
+        return String.fromCodePoint(0xF0595)
     }
 
     function refresh() {
