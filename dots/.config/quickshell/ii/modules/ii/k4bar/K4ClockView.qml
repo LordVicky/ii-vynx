@@ -6,6 +6,8 @@ import QtQuick.Layouts
 Item {
     id: root
 
+    property var trayPlugin: null
+
     opacity: 0
     Component.onCompleted: fadeIn.start()
 
@@ -65,10 +67,21 @@ Item {
                 renderType: Text.NativeRendering
             }
 
-            K4RecordingPill {
+            RowLayout {
                 anchors.right: parent.right
                 anchors.verticalCenter: parent.verticalCenter
-                interactive: true
+                spacing: 6
+
+                K4TrayRow {
+                    visible: root.trayPlugin !== null && K4Tray.count > 0
+                    trayPlugin: root.trayPlugin
+                    max: 5
+                    iconSize: 16
+                }
+
+                K4RecordingPill {
+                    interactive: true
+                }
             }
         }
 
