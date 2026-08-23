@@ -25,7 +25,7 @@ Singleton {
 
     function target() {
         if (Weather.gpsActive && Weather.location.valid)
-            return `${Weather.location.lat},${Weather.location.lon}`
+            return `${Weather.location.lat},${Weather.location.long}`
         return Weather.formatCityName(Config.options.bar.weather.city || "")
     }
 

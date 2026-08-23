@@ -18,6 +18,13 @@ test('K4 weather bridges the ii-owned weather service without a second periodic 
   assert.doesNotMatch(source, /PositionSource\s*\{/);
 });
 
+test('K4 weather uses the live ii GPS coordinate keys', () => {
+  const source = read(`${base}/K4Weather.qml`);
+  assert.match(source, /Weather\.location\.lat/);
+  assert.match(source, /Weather\.location\.long/);
+  assert.doesNotMatch(source, /Weather\.location\.lon\b/);
+});
+
 test('K4 weather is a registered utility with upstream dimensions and policies', () => {
   const plugin = read(`${base}/K4WeatherPlugin.qml`);
   const builtins = read(`${base}/K4BuiltinPlugins.qml`);
