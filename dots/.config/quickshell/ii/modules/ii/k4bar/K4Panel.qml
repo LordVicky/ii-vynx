@@ -1,6 +1,7 @@
 pragma Singleton
 
 import QtQuick
+import Quickshell
 
 // Narrow global entry point for controls that need to navigate into the panel
 // (for example Player's output-device button). The K4PanelPlugin remains the
