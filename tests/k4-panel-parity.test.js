@@ -45,7 +45,7 @@ test("sound discovers raw device candidates before view-scoped audio tracking", 
     assert.match(adapter, /name\.indexOf\("midi"\) < 0/);
     assert.match(adapter, /Audio\.outputDeviceCandidates\.filter\(root\.isPanelDevice\)/);
     assert.match(adapter, /Audio\.inputDeviceCandidates\.filter\(root\.isPanelDevice\)/);
-    assert.match(view, /objects:\s*K4AudioDevices\.outputs\.concat\(K4AudioDevices\.inputs\)/);
+    assert.match(view, /objects:\s*root\.visible\s*\?[\s\S]*?K4AudioDevices\.outputs\.concat\(K4AudioDevices\.inputs\)[\s\S]*?:\s*\[\]/);
     assert.match(view, /group\.activeNode && group\.activeNode\.id === modelData\.id/);
 });
 
