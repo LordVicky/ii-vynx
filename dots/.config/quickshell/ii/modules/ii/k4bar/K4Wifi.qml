@@ -35,6 +35,12 @@ Singleton {
             Network.connectToWifiNetwork(network)
     }
 
+    function forget(network) {
+        if (!network)
+            return
+        Network.forgetWifiNetwork(network)
+    }
+
     function submitPassword() {
         if (!passwordTarget || password.length === 0)
             return
