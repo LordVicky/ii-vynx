@@ -18,7 +18,10 @@ Singleton {
 
     readonly property bool presentationActive: Config.options.panelFamily === "ii"
         && Config.options.bar.variant === "k4"
-    readonly property var passiveToastOwners: ["", "toast", "idle", "clock", "player", "volume"]
+    // Panel is an upstream exception to the explicit-owner band rule: a new
+    // notification closes Panel and takes the island, so route it like the
+    // passive owners to avoid signal-order races between the two listeners.
+    readonly property var passiveToastOwners: ["", "toast", "idle", "clock", "player", "volume", "panel"]
     readonly property var recent: Notifications.list.slice().reverse()
     readonly property var history: recent
 
