@@ -63,6 +63,7 @@ Scope {
     PanelLoader { extraCondition: usingStandardBar && !Config.options.bar.vertical && barExtraCondition && dedicatedPlainGlass; component: BarPlainGlassLayer {} }
     PanelLoader { extraCondition: usingStandardBar && !Config.options.bar.vertical && barExtraCondition; component: Bar {} }
     PanelLoader { extraCondition: usingK4Bar; component: K4Bar {} }
+    PanelLoader { extraCondition: usingK4Bar; component: K4LauncherRouting {} }
     PanelLoader { extraCondition: Config.options.background.enable; component: Background {} }
     PanelLoader { component: Cheatsheet {} }
     PanelLoader { extraCondition: Config.options.dock.enable; component: Dock {} }
@@ -72,7 +73,7 @@ Scope {
     PanelLoader { component: OnScreenDisplay {} }
     PanelLoader { component: OnScreenKeyboard {} }
     PanelLoader { component: Overlay {} }
-    PanelLoader { component: Overview {} }
+    PanelLoader { extraCondition: usingStandardBar; component: Overview {} }
     PanelLoader { component: Polkit {} }
     PanelLoader { component: RegionSelector {} }
     PanelLoader { component: ScreenCorners {} }
