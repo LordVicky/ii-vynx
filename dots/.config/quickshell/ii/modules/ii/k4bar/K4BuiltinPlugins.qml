@@ -7,30 +7,18 @@ QtObject {
     id: root
 
     readonly property list<QtObject> plugins: [
-        volumePlugin,
-        clockPlugin,
-        playerPlugin,
-        toastPlugin,
-        panelPlugin,
-        appsPlugin,
-        launcherPlugin,
-        clipboardPlugin,
-        filesPlugin,
-        windowsPlugin
+        volumePlugin, clockPlugin, playerPlugin, toastPlugin, panelPlugin,
+        appsPlugin, launcherPlugin, clipboardPlugin, filesPlugin, windowsPlugin,
+        systemPlugin
     ]
 
     property bool playerHoverSession: false
 
     property var playerSessionMediaConnections: Connections {
         target: K4Media
-        function onIsPlayingChanged() {
-            if (IslandState.hovered && K4Media.isPlaying) root.playerHoverSession = true
-        }
-        function onHasPlayerChanged() {
-            if (!K4Media.hasPlayer) root.playerHoverSession = false
-        }
+        function onIsPlayingChanged() { if (IslandState.hovered && K4Media.isPlaying) root.playerHoverSession = true }
+        function onHasPlayerChanged() { if (!K4Media.hasPlayer) root.playerHoverSession = false }
     }
-
     property var playerSessionHoverConnections: Connections {
         target: IslandState
         function onHoveredChanged() {
@@ -45,7 +33,6 @@ QtObject {
         islandWidth: 240; islandHeight: 40
         view: Component { K4VolumeView {} }
     }
-
     property QtObject clockPlugin: K4Plugin {
         name: "clock"; title: "Clock"; priority: 50
         active: enabled && IslandState.hovered
@@ -54,29 +41,21 @@ QtObject {
         islandHeight: 68 + (notificationStripHeight > 0 ? notificationStripHeight + 18 : 0)
         view: Component { K4ClockView {} }
     }
-
     property QtObject playerPlugin: K4Plugin {
         name: "player"; title: "Player"; priority: 55
-        active: enabled && IslandState.hovered && K4Media.hasPlayer
-            && (K4Media.isPlaying || root.playerHoverSession)
+        active: enabled && IslandState.hovered && K4Media.hasPlayer && (K4Media.isPlaying || root.playerHoverSession)
         islandWidth: 340
         readonly property int notificationStripHeight: K4Notifications.stripHeight(3)
-        islandHeight: (K4Media.hasTimeline ? 140 : 115)
-            + (notificationStripHeight > 0 ? notificationStripHeight + 15 : 0)
+        islandHeight: (K4Media.hasTimeline ? 140 : 115) + (notificationStripHeight > 0 ? notificationStripHeight + 15 : 0)
         view: Component { K4PlayerView {} }
     }
-
     property QtObject toastPlugin: K4Plugin {
-        name: "toast"; title: "Notification"; priority: 59
-        transitorio: true
+        name: "toast"; title: "Notification"; priority: 59; transitorio: true
         active: enabled && K4Notifications.toastOpen && !K4Notifications.inBand
         islandWidth: 440
         islandHeight: K4Notifications.buttons(K4Notifications.latest).length > 0 ? 112 : 96
         handlesBackgroundTap: true
-        onBackgroundTapped: {
-            K4Notifications.activate(K4Notifications.latest)
-            K4Notifications.dismissToast()
-        }
+        onBackgroundTapped: { K4Notifications.activate(K4Notifications.latest); K4Notifications.dismissToast() }
         function close() { K4Notifications.dismissToast() }
         view: Component { K4ToastView {} }
     }
@@ -87,4 +66,5 @@ QtObject {
     property QtObject clipboardPlugin: K4ClipboardPlugin {}
     property QtObject filesPlugin: K4FilesPlugin {}
     property QtObject windowsPlugin: K4WindowsPlugin {}
+    property QtObject systemPlugin: K4SystemPlugin {}
 }
