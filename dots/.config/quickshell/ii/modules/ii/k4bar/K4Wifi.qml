@@ -1,6 +1,7 @@
 pragma Singleton
 
 import QtQuick
+import Quickshell
 import qs.services
 
 // Presentation adapter only. Network.qml remains the single nmcli owner.
