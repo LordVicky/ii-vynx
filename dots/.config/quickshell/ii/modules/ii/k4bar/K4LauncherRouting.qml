@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import Quickshell.Hyprland
 import qs
 
 // Variant-local compatibility layer for ii-vynx's existing search shortcut and

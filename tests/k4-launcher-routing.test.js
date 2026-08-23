@@ -16,6 +16,12 @@ test("standard Overview and K4 launcher routing are mutually exclusive at the fa
     assert.doesNotMatch(source, /PanelLoader \{ component: Overview \{\} \}/);
 });
 
+test("K4 routing imports the Hyprland shortcut provider", () => {
+    const source = readShell("modules/ii/k4bar/K4LauncherRouting.qml");
+
+    assert.match(source, /^import Quickshell\.Hyprland$/m);
+});
+
 test("K4 routing reuses the existing search shortcut and IPC names without opening ii Overview", () => {
     const source = readShell("modules/ii/k4bar/K4LauncherRouting.qml");
 

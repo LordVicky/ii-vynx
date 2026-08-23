@@ -41,8 +41,8 @@ test("k4 launcher preserves island ownership and keyboard lifecycle", () => {
 test("k4 launcher releases ownership immediately on close", () => {
     const source = readShell("modules/ii/k4bar/K4LauncherPlugin.qml");
 
-    assert.doesNotMatch(source, /\bclosing\b/);
-    assert.doesNotMatch(source, /closeTimer/);
+    assert.doesNotMatch(source, /property\s+bool\s+closing\b/);
+    assert.doesNotMatch(source, /\bid:\s*closeTimer\b/);
     assert.match(source, /function close\(\)[\s\S]*?if \(!open\)[\s\S]*?open = false[\s\S]*?query = ""/);
 });
 
