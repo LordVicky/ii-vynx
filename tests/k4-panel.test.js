@@ -33,14 +33,22 @@ test("unhandled island background taps open panel Controls on the clicked screen
 
     assert.match(builtins, /panelPlugin/);
     assert.match(builtins, /K4PanelPlugin\s*\{/);
+    assert.match(controller, /function\s+backgroundTap\(screenName\)/);
+    assert.match(controller, /handlesBackgroundTap/);
+    assert.match(controller, /backgroundTapped\(\)/);
     assert.match(controller, /IslandState\.requestScreen\(screenName\)/);
     assert.match(controller, /plugin\("panel"\)/);
     assert.match(controller, /panel\.openTab\("controls"\)/);
+});
 
-    const backgroundTap = controller.match(/function\s+backgroundTap\(screenName\)\s*\{([\s\S]*?)\n\s*\}/)?.[1] ?? "";
-    assert.match(backgroundTap, /handlesBackgroundTap/);
-    assert.match(backgroundTap, /backgroundTapped\(\)/);
-    assert.match(backgroundTap, /openTab\("controls"\)/);
+test("panel scans and discovers only while the matching detail is open", async () => {
+    const panel = await read("modules/ii/k4bar/K4PanelPlugin.qml");
+
+    assert.match(panel, /K4Bluetooth\.setDiscovering\(open\s*&&\s*tab\s*===\s*"bluetooth"\)/);
+    assert.match(panel, /open\s*&&\s*tab\s*===\s*"wifi"\s*&&\s*K4Wifi\.enabled/);
+    assert.match(panel, /K4Wifi\.scan\(\)/);
+    assert.match(panel, /onOpenChanged:\s*syncDetailActivity\(\)/);
+    assert.match(panel, /onTabChanged:\s*syncDetailActivity\(\)/);
 });
 
 test("panel adapters delegate to existing ii service owners", async () => {
@@ -84,20 +92,21 @@ test("panel controls compose existing K4 media, notification, clock and workspac
 });
 
 test("shortcut strip persists upstream ids but renders only live K4 targets", async () => {
-    const config = await read("modules/common/Config.qml");
+    const settings = await read("modules/ii/k4bar/K4ShortcutSettings.qml");
     const shortcuts = await read("modules/ii/k4bar/K4ShortcutStrip.qml");
 
-    assert.match(config, /property\s+var\s+shortcuts:\s*\[\s*"game",\s*"hyprtheme",\s*"system",\s*"clipboard"\s*\]/);
-    assert.match(shortcuts, /Config\.options\.bar\.k4\.shortcuts/);
+    assert.match(settings, /property\s+var\s+shortcuts:\s*\[\s*"game",\s*"hyprtheme",\s*"system",\s*"clipboard"\s*\]/);
+    assert.match(settings, /\.local\/state\/ii-vynx-k4-shortcuts\.json/);
+    assert.match(shortcuts, /K4ShortcutSettings\.shortcuts/);
     assert.match(shortcuts, /controller\.plugin\(/);
-    assert.match(shortcuts, /enabled/);
+    assert.match(shortcuts, /target\s*&&\s*target\.enabled/);
     assert.match(shortcuts, /function\s+slotFor\s*\(/);
     assert.match(shortcuts, /function\s+applyReorder\s*\(/);
     assert.match(shortcuts, /dragging/);
     assert.match(shortcuts, /destination/);
-    assert.match(shortcuts, /Config\.options\.bar\.k4\.shortcuts\s*=/);
+    assert.match(shortcuts, /K4ShortcutSettings\.setShortcuts\(/);
     assert.match(shortcuts, /name:\s*"All"/);
-    assert.match(shortcuts, /controller\.plugin\("apps"\)/);
+    assert.match(shortcuts, /plugin\("apps"\)/);
 });
 
 test("panel detail views expose Wi-Fi, Bluetooth, audio and full notification actions", async () => {
@@ -109,11 +118,12 @@ test("panel detail views expose Wi-Fi, Bluetooth, audio and full notification ac
     assert.match(wifi, /K4Wifi\.networks/);
     assert.match(wifi, /K4Wifi\.toggle\(\)/);
     assert.match(wifi, /K4Wifi\.activate\(/);
-    assert.match(wifi, /password/);
+    assert.match(wifi, /password/i);
 
     assert.match(bluetooth, /K4Bluetooth\.devices/);
     assert.match(bluetooth, /K4Bluetooth\.toggle\(\)/);
     assert.match(bluetooth, /K4Bluetooth\.activate\(/);
+    assert.match(bluetooth, /onForgotten:\s*K4Bluetooth\.togglePair/);
 
     assert.match(audio, /K4AudioDevices\.outputs/);
     assert.match(audio, /K4AudioDevices\.inputs/);
@@ -121,9 +131,19 @@ test("panel detail views expose Wi-Fi, Bluetooth, audio and full notification ac
     assert.match(audio, /K4AudioDevices\.selectInput\(/);
 
     assert.match(notifications, /K4Notifications\.history/);
-    assert.match(notifications, /K4Notifications\.clear\(\)/);
     assert.match(notifications, /K4Notifications\.dismiss\(/);
     assert.match(notifications, /K4Notifications\.activate\(/);
+    assert.match(notifications, /K4Notifications\.invokeAction\(/);
+    const panel = await read("modules/ii/k4bar/K4PanelView.qml");
+    assert.match(panel, /K4Notifications\.clear\(\)/);
+});
+
+test("panel notifications close the panel and take the normal toast path", async () => {
+    const panel = await read("modules/ii/k4bar/K4PanelPlugin.qml");
+    const notifications = await read("modules/ii/k4bar/K4Notifications.qml");
+
+    assert.match(panel, /function\s+onNotify\(notification\)\s*\{\s*root\.open\s*=\s*false\s*\}/);
+    assert.match(notifications, /passiveToastOwners:[^\n]*"panel"/);
 });
 
 test("player output control opens the K4 sound panel instead of an ii sidebar", async () => {
