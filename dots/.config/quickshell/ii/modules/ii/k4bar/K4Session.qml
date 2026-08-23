@@ -1,13 +1,12 @@
 pragma Singleton
 
 import QtQuick
-import Quickshell
 import Quickshell.Io
-import qs
+import qs.modules.common.functions
 
-// Session-action adapter. The existing ii-vynx Lock remains the sole
-// ext-session-lock owner; K4 only toggles GlobalStates.screenLocked and invokes
-// the same compositor/system facilities for explicit session actions.
+// Session-action presentation adapter. ii-vynx Session remains the single
+// owner for lock/suspend/logout/power actions; K4 only selects and confirms
+// those existing actions. Availability probing stays local and read-only.
 Singleton {
     id: root
 
@@ -29,22 +28,22 @@ Singleton {
     function run(key) {
         switch (key) {
         case "lock":
-            GlobalStates.screenLocked = true
+            Session.lock()
             break
         case "suspend":
-            Quickshell.execDetached(["systemctl", "suspend"])
+            Session.suspend()
             break
         case "hibernate":
-            Quickshell.execDetached(["systemctl", "hibernate"])
+            Session.hibernate()
             break
         case "logout":
-            Quickshell.execDetached(["hyprctl", "dispatch", "exit"])
+            Session.logout()
             break
         case "reboot":
-            Quickshell.execDetached(["systemctl", "reboot"])
+            Session.reboot()
             break
         case "poweroff":
-            Quickshell.execDetached(["systemctl", "poweroff"])
+            Session.poweroff()
             break
         }
     }

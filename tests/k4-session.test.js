@@ -7,12 +7,17 @@ const root = path.resolve(__dirname, "..");
 const base = path.join(root, "dots/.config/quickshell/ii/modules/ii/k4bar");
 const read = name => fs.readFileSync(path.join(base, name), "utf8");
 
-test("session adapter delegates locking to the existing ii lock owner", () => {
+test("session adapter delegates actions to the existing ii session owner", () => {
     const source = read("K4Session.qml");
-    assert.match(source, /GlobalStates\.screenLocked = true/);
+    assert.match(source, /import qs\.modules\.common\.functions/);
+    assert.match(source, /Session\.lock\(\)/);
+    assert.match(source, /Session\.suspend\(\)/);
+    assert.match(source, /Session\.hibernate\(\)/);
+    assert.match(source, /Session\.logout\(\)/);
+    assert.match(source, /Session\.reboot\(\)/);
+    assert.match(source, /Session\.poweroff\(\)/);
+    assert.doesNotMatch(source, /GlobalStates\.screenLocked|Quickshell\.execDetached|hyprctl|systemctl/);
     assert.doesNotMatch(source, /WlSessionLock|SessionLock|LockSurface/);
-    assert.match(source, /systemctl",\s*"suspend/);
-    assert.match(source, /hyprctl",\s*"dispatch",\s*"exit/);
 });
 
 test("session plugin preserves upstream priority, dynamic width and confirmation", () => {
