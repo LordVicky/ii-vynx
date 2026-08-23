@@ -77,6 +77,9 @@ QtObject {
     onActivePluginChanged: publishActivePlugin()
     Component.onCompleted: {
         attachBuiltins()
+        const panel = plugin("panel")
+        if (panel)
+            panel.controller = root
         publishActivePlugin()
     }
 
@@ -154,6 +157,9 @@ QtObject {
     function reset() {
         hoverClearTimer.stop()
         pluginHoverExitTimer.stop()
+        const panel = plugin("panel")
+        if (panel?.controller === root)
+            panel.controller = null
         IslandState.resetHostPublication()
     }
 }
