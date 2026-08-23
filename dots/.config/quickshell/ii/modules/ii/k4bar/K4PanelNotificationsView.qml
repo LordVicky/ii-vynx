@@ -32,9 +32,11 @@ Item {
                 Behavior on color { ColorAnimation { duration: 110 } }
 
                 HoverHandler { id: cardHover }
-                TapHandler {
+                MouseArea {
+                    anchors.fill: parent
+                    z: -1
                     cursorShape: Qt.PointingHandCursor
-                    onTapped: K4Notifications.activate(card.modelData)
+                    onClicked: K4Notifications.activate(card.modelData)
                 }
 
                 RowLayout {
