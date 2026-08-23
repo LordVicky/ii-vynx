@@ -18,6 +18,8 @@ Singleton {
     readonly property color track: "#3a3a3c"
     readonly property color red: "#ff453a"
     readonly property color blue: "#0a84ff"
+    readonly property color green: "#30d158"
+    readonly property color yellow: "#ffd60a"
 
     readonly property int wing: 16
     readonly property int baseHeight: 34
@@ -36,7 +38,20 @@ Singleton {
         volMed: String.fromCodePoint(0xF0580),
         volOff: String.fromCodePoint(0xF0581),
         bell: String.fromCodePoint(0xF009A),
+        bellOutline: String.fromCodePoint(0xF009C),
         close: String.fromCodePoint(0xF0156),
-        clearAll: String.fromCodePoint(0xF039F)
+        clearAll: String.fromCodePoint(0xF039F),
+        back: String.fromCodePoint(0xF0141),
+        forward: String.fromCodePoint(0xF0142),
+        chevronUp: String.fromCodePoint(0xF0143),
+        wifi: String.fromCodePoint(0xF05A9),
+        wifiOff: String.fromCodePoint(0xF092E),
+        bluetooth: String.fromCodePoint(0xF00AF),
+        bluetoothOff: String.fromCodePoint(0xF00B2),
+        lock: String.fromCodePoint(0xF033E),
+        check: String.fromCodePoint(0xF012C),
+        grid: String.fromCodePoint(0xF02C1),
+        speaker: String.fromCodePoint(0xF057E),
+        microphone: String.fromCodePoint(0xF036C)
     })
 }
