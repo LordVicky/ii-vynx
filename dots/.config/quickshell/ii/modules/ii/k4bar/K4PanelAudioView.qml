@@ -49,6 +49,8 @@ Item {
                 readonly property bool selected: group.activeNode === modelData
                 readonly property int volume: K4AudioDevices.volumeFor(modelData)
                 readonly property bool muted: K4AudioDevices.mutedFor(modelData)
+                readonly property int base: K4AudioDevices.baseFor(modelData)
+                readonly property real db: K4AudioDevices.dbOverNatural(modelData)
 
                 Layout.fillWidth: true
                 Layout.preferredHeight: 54
@@ -102,6 +104,15 @@ Item {
                         }
 
                         Text {
+                            visible: row.base > 0 && row.volume > row.base
+                            text: "+" + row.db.toFixed(0) + " dB"
+                            color: row.selected ? K4Theme.yellow : K4Theme.dim
+                            font.family: K4Theme.uiFont
+                            font.pixelSize: 9
+                            renderType: Text.NativeRendering
+                        }
+
+                        Text {
                             text: row.volume + "%"
                             color: row.muted ? K4Theme.dim : K4Theme.muted
                             font.family: K4Theme.uiFont
@@ -134,7 +145,20 @@ Item {
                                 width: track.width * Math.min(1, row.volume / 150)
                                 height: parent.height
                                 radius: parent.radius
-                                color: row.selected ? K4Theme.green : K4Theme.muted
+                                color: !row.selected ? K4Theme.muted
+                                    : row.base > 0 && row.volume > row.base
+                                        ? K4Theme.yellow : K4Theme.green
+                            }
+
+                            Rectangle {
+                                visible: row.base > 0
+                                x: track.width * (row.base / 150) - 1
+                                y: -3
+                                width: 2
+                                height: 10
+                                radius: 1
+                                color: K4Theme.ink
+                                opacity: 0.55
                             }
                         }
 
