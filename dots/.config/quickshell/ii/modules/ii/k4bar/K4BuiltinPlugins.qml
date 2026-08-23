@@ -15,7 +15,8 @@ QtObject {
         appsPlugin,
         launcherPlugin,
         clipboardPlugin,
-        filesPlugin
+        filesPlugin,
+        windowsPlugin
     ]
 
     property bool playerHoverSession: false
@@ -85,4 +86,5 @@ QtObject {
     property QtObject launcherPlugin: K4LauncherPlugin {}
     property QtObject clipboardPlugin: K4ClipboardPlugin {}
     property QtObject filesPlugin: K4FilesPlugin {}
+    property QtObject windowsPlugin: K4WindowsPlugin {}
 }
