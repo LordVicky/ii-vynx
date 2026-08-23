@@ -17,8 +17,10 @@ Singleton {
         return name.indexOf("bluez_") === 0 && name.indexOf("midi") < 0
     }
 
-    readonly property var outputs: Audio.outputDevices.filter(root.isPanelDevice)
-    readonly property var inputs: Audio.inputDevices.filter(root.isPanelDevice)
+    // Use raw candidates here: non-default nodes may not expose node.audio until
+    // K4PanelAudioView's scoped PwObjectTracker observes them.
+    readonly property var outputs: Audio.outputDeviceCandidates.filter(root.isPanelDevice)
+    readonly property var inputs: Audio.inputDeviceCandidates.filter(root.isPanelDevice)
     readonly property var activeOutput: Audio.sink
     readonly property var activeInput: Audio.source
 
