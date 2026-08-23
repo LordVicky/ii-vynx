@@ -1,6 +1,7 @@
 pragma Singleton
 
 import QtQuick
+import Quickshell
 import qs.services
 
 // Presentation adapter only. Audio.qml remains ii-vynx's single PipeWire owner;
