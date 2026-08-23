@@ -130,7 +130,8 @@ test("shortcut strip persists upstream ids but renders only live K4 targets", as
     const shortcuts = await read("modules/ii/k4bar/K4ShortcutStrip.qml");
 
     assert.match(settings, /property\s+var\s+shortcuts:\s*\[\s*"game",\s*"hyprtheme",\s*"system",\s*"clipboard"\s*\]/);
-    assert.match(settings, /\.local\/state\/ii-vynx-k4-shortcuts\.json/);
+    assert.match(settings, /Directories\.state/);
+    assert.match(settings, /ii-vynx-k4-shortcuts\.json/);
     assert.match(shortcuts, /K4ShortcutSettings\.shortcuts/);
     assert.match(shortcuts, /controller\.plugin\(/);
     assert.match(shortcuts, /target\s*&&\s*target\.enabled/);
