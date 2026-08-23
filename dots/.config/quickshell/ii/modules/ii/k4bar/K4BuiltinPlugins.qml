@@ -14,53 +14,39 @@ QtObject {
         panelPlugin,
         appsPlugin,
         launcherPlugin,
-        clipboardPlugin
+        clipboardPlugin,
+        filesPlugin
     ]
 
-    // Pinned k4 dismisses Player as soon as playback pauses, which also removes
-    // the Player's own Resume control. Preserve the upstream paused-hover default
-    // (Clock), but keep an already-open Player alive for the current hover.
     property bool playerHoverSession: false
 
     property var playerSessionMediaConnections: Connections {
         target: K4Media
-
         function onIsPlayingChanged() {
-            if (IslandState.hovered && K4Media.isPlaying)
-                root.playerHoverSession = true
+            if (IslandState.hovered && K4Media.isPlaying) root.playerHoverSession = true
         }
-
         function onHasPlayerChanged() {
-            if (!K4Media.hasPlayer)
-                root.playerHoverSession = false
+            if (!K4Media.hasPlayer) root.playerHoverSession = false
         }
     }
 
     property var playerSessionHoverConnections: Connections {
         target: IslandState
-
         function onHoveredChanged() {
-            if (!IslandState.hovered)
-                root.playerHoverSession = false
-            else if (K4Media.isPlaying)
-                root.playerHoverSession = true
+            if (!IslandState.hovered) root.playerHoverSession = false
+            else if (K4Media.isPlaying) root.playerHoverSession = true
         }
     }
 
     property QtObject volumePlugin: K4Plugin {
-        name: "volume"
-        title: "Volume"
-        priority: 40
+        name: "volume"; title: "Volume"; priority: 40
         active: enabled && K4Audio.overlayOpen
-        islandWidth: 240
-        islandHeight: 40
+        islandWidth: 240; islandHeight: 40
         view: Component { K4VolumeView {} }
     }
 
     property QtObject clockPlugin: K4Plugin {
-        name: "clock"
-        title: "Clock"
-        priority: 50
+        name: "clock"; title: "Clock"; priority: 50
         active: enabled && IslandState.hovered
         islandWidth: Persistent.states.screenRecord.active ? 352 : 328
         readonly property int notificationStripHeight: K4Notifications.stripHeight(3)
@@ -69,9 +55,7 @@ QtObject {
     }
 
     property QtObject playerPlugin: K4Plugin {
-        name: "player"
-        title: "Player"
-        priority: 55
+        name: "player"; title: "Player"; priority: 55
         active: enabled && IslandState.hovered && K4Media.hasPlayer
             && (K4Media.isPlaying || root.playerHoverSession)
         islandWidth: 340
@@ -82,24 +66,17 @@ QtObject {
     }
 
     property QtObject toastPlugin: K4Plugin {
-        name: "toast"
-        title: "Notification"
-        priority: 59
+        name: "toast"; title: "Notification"; priority: 59
         transitorio: true
         active: enabled && K4Notifications.toastOpen && !K4Notifications.inBand
         islandWidth: 440
         islandHeight: K4Notifications.buttons(K4Notifications.latest).length > 0 ? 112 : 96
         handlesBackgroundTap: true
-
         onBackgroundTapped: {
             K4Notifications.activate(K4Notifications.latest)
             K4Notifications.dismissToast()
         }
-
-        function close() {
-            K4Notifications.dismissToast()
-        }
-
+        function close() { K4Notifications.dismissToast() }
         view: Component { K4ToastView {} }
     }
 
@@ -107,4 +84,5 @@ QtObject {
     property QtObject appsPlugin: K4AppsPlugin {}
     property QtObject launcherPlugin: K4LauncherPlugin {}
     property QtObject clipboardPlugin: K4ClipboardPlugin {}
+    property QtObject filesPlugin: K4FilesPlugin {}
 }
