@@ -25,15 +25,26 @@ K4Plugin {
     hoverExitDelay: 900
     onHoverTimedOut: close()
 
+    function prepareOpen() {
+        K4Panel.close()
+        K4Notifications.dismissToast()
+    }
+
     function toggle() {
         if (open) {
             close()
             return
         }
-        K4Panel.close()
-        K4Notifications.dismissToast()
+        prepareOpen()
         if (!selected || K4Tray.sorted.indexOf(selected) < 0)
             selected = K4Tray.count > 0 ? K4Tray.sorted[0] : null
+        open = true
+    }
+
+    function openFor(item) {
+        if (!item) return
+        prepareOpen()
+        selected = item
         open = true
     }
 
