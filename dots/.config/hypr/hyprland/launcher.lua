@@ -9,11 +9,11 @@ hl.unbind("SUPER + SUPER_L")
 hl.unbind("SUPER + SUPER_R")
 
 hl.bind("SUPER + SUPER_L", hl.dsp.global("quickshell:searchToggleRelease"),
-    { bypass = true, description = "Shell: Toggle search" })
+    { dont_inhibit = true, description = "Shell: Toggle search" })
 hl.bind("SUPER + SUPER_R", hl.dsp.global("quickshell:searchToggleRelease"),
-    { bypass = true })
+    { dont_inhibit = true })
 
 hl.bind("SUPER + SUPER_L", hl.dsp.exec_cmd(qsIsAlive .. " || pkill fuzzel || fuzzel"),
-    { bypass = true })
+    { dont_inhibit = true })
 hl.bind("SUPER + SUPER_R", hl.dsp.exec_cmd(qsIsAlive .. " || pkill fuzzel || fuzzel"),
-    { bypass = true })
+    { dont_inhibit = true })
