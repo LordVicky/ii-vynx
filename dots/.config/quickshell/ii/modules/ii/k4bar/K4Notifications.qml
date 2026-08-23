@@ -20,6 +20,7 @@ Singleton {
         && Config.options.bar.variant === "k4"
     readonly property var passiveToastOwners: ["", "toast", "idle", "clock", "player", "volume"]
     readonly property var recent: Notifications.list.slice().reverse()
+    readonly property var history: recent
 
     onPresentationActiveChanged: {
         if (!presentationActive)
