@@ -14,6 +14,8 @@ test('K4 tray consumes ii TrayService rather than creating a second tray owner',
   assert.match(source, /TrayService\.togglePin/);
   assert.doesNotMatch(source, /SystemTray\.items/);
   assert.doesNotMatch(source, /Process\s*\{/);
+  assert.match(source, /if \(!item \|\| item\.onlyMenu\) return false/);
+  assert.match(source, /return true/);
 });
 
 test('K4 tray plugin preserves upstream dimensions and hover policy without joining Apps', () => {
@@ -26,8 +28,24 @@ test('K4 tray plugin preserves upstream dimensions and hover policy without join
   assert.match(plugin, /islandHeight:\s*360/);
   assert.match(plugin, /closeOnHoverExit:\s*true/);
   assert.match(plugin, /hoverExitDelay:\s*900/);
+  assert.match(plugin, /function\s+openFor\(item\)/);
   assert.match(plugin, /target:\s*"k4\.tray"/);
   assert.match(builtins, /property QtObject trayPlugin:\s*K4TrayPlugin\s*\{\}/);
+});
+
+test('K4 tray is visible and interactive from the hover clock', () => {
+  const row = read(`${base}/K4TrayRow.qml`);
+  const clock = read(`${base}/K4ClockView.qml`);
+  const builtins = read(`${base}/K4BuiltinPlugins.qml`);
+  assert.match(row, /model:\s*K4Tray\.sorted\.slice\(0, root\.shown\)/);
+  assert.match(row, /K4Tray\.primary\(cell\.modelData\)/);
+  assert.match(row, /root\.trayPlugin\.openFor\(cell\.modelData\)/);
+  assert.match(row, /K4Tray\.secondary\(cell\.modelData\)/);
+  assert.match(row, /K4Tray\.scroll\(cell\.modelData/);
+  assert.match(clock, /K4TrayRow\s*\{/);
+  assert.match(clock, /trayPlugin:\s*root\.trayPlugin/);
+  assert.match(builtins, /K4ClockView\s*\{\s*trayPlugin:\s*root\.trayPlugin\s*\}/);
+  assert.match(builtins, /Math\.min\(K4Tray\.count, 5\) \* 24/);
 });
 
 test('K4 tray view uses the selected live item DBus menu and upstream interactions', () => {
