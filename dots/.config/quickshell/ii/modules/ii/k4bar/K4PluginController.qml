@@ -42,8 +42,7 @@ QtObject {
         if (!target || !target.enabled || target.application !== true
                 || typeof target.openApplication !== "function")
             return false
-        target.openApplication()
-        return true
+        return target.openApplication() !== false
     }
 
     readonly property var idlePlugin: plugin("idle")

@@ -47,12 +47,11 @@ QtObject {
             active = true
     }
 
-    // Explicit application-entry activation avoids guessing whether a plugin's
-    // user-facing open state is represented by open(), toggle(), or another
-    // internal property. Utility plugins may override this narrow seam.
+    // A utility must opt into both the catalog and its activation behavior.
+    // Do not assign active here: many concrete plugins bind active to their own
+    // state, and an assignment would destroy that binding.
     function openApplication() {
-        if (enabled)
-            active = true
+        return false
     }
 
     function close() {

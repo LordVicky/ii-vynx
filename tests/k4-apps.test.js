@@ -12,7 +12,8 @@ test("k4 plugin contract carries explicit utility metadata", () => {
 
     assert.match(source, /property bool application:\s*false/);
     assert.match(source, /property string applicationGlyph:\s*""/);
-    assert.match(source, /function openApplication\(\)[\s\S]*?if \(enabled\)[\s\S]*?active = true/);
+    assert.match(source, /function openApplication\(\)[\s\S]*?return false/);
+    assert.doesNotMatch(source, /function openApplication\(\)[\s\S]*?active = true/);
 });
 
 test("k4 controller exposes applications from the existing plugin registry", () => {
@@ -23,7 +24,7 @@ test("k4 controller exposes applications from the existing plugin registry", () 
     assert.match(source, /result\.push\(candidate\)/);
     assert.match(source, /function openApplication\(name\)/);
     assert.match(source, /!target\.enabled \|\| target\.application !== true/);
-    assert.match(source, /target\.openApplication\(\)/);
+    assert.match(source, /return target\.openApplication\(\) !== false/);
     assert.doesNotMatch(source, /property\s+var\s+applicationCatalog/);
 });
 
