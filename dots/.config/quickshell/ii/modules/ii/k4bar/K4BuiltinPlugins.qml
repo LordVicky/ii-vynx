@@ -9,7 +9,7 @@ QtObject {
     readonly property list<QtObject> plugins: [
         volumePlugin, clockPlugin, playerPlugin, toastPlugin, panelPlugin,
         appsPlugin, launcherPlugin, clipboardPlugin, filesPlugin, windowsPlugin,
-        systemPlugin, sessionPlugin, keysPlugin, weatherPlugin
+        systemPlugin, sessionPlugin, keysPlugin, weatherPlugin, trayPlugin
     ]
 
     property bool playerHoverSession: false
@@ -69,4 +69,5 @@ QtObject {
     property QtObject sessionPlugin: K4SessionPlugin {}
     property QtObject keysPlugin: K4KeysPlugin {}
     property QtObject weatherPlugin: K4WeatherPlugin {}
+    property QtObject trayPlugin: K4TrayPlugin {}
 }
