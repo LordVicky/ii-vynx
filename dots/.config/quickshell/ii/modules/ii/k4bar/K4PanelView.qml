@@ -371,7 +371,7 @@ Item {
                                     clip: true
 
                                     Rectangle {
-                                        width: volumeTrack.width * Math.max(0, Math.min(1, K4Audio.volume))
+                                        width: volumeTrack.width * Math.max(0, Math.min(1, K4Audio.volume / 100))
                                         height: parent.height
                                         radius: parent.radius
                                         color: K4Audio.muted ? K4Theme.dim : K4Theme.ink
@@ -385,7 +385,7 @@ Item {
                                         anchors.leftMargin: 8
                                         anchors.verticalCenter: parent.verticalCenter
                                         text: K4Audio.muted ? K4Theme.ico.volOff : K4Theme.ico.volMed
-                                        color: K4Audio.volume > 0.14 && !K4Audio.muted
+                                        color: K4Audio.volume > 12 && !K4Audio.muted
                                             ? K4Theme.islandBg : K4Theme.muted
                                         font.family: K4Theme.iconFont
                                         font.pixelSize: 12
@@ -396,7 +396,7 @@ Item {
                                 MouseArea {
                                     anchors.fill: parent
                                     cursorShape: Qt.PointingHandCursor
-                                    function setAt(x) { K4Audio.setVolume(x / Math.max(1, width)) }
+                                    function setAt(x) { K4Audio.setVolume(x / Math.max(1, width) * 100) }
                                     onPressed: function(event) { setAt(event.x) }
                                     onPositionChanged: function(event) {
                                         if (pressed)
