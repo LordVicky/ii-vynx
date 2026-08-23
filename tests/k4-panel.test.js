@@ -81,8 +81,8 @@ test("panel adapters delegate to existing ii service owners", async () => {
     assert.match(bluetooth, /Bluetooth\.defaultAdapter/);
     assert.doesNotMatch(bluetooth, /Process\s*\{/);
 
-    assert.match(audio, /Audio\.outputDevices/);
-    assert.match(audio, /Audio\.inputDevices/);
+    assert.match(audio, /Audio\.outputDeviceCandidates/);
+    assert.match(audio, /Audio\.inputDeviceCandidates/);
     assert.match(audio, /Audio\.setDefaultSink\(/);
     assert.match(audio, /Audio\.setDefaultSource\(/);
     assert.doesNotMatch(audio, /PwObjectTracker\s*\{/);
