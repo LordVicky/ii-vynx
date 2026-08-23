@@ -10,9 +10,10 @@ test('default Super launcher binding bypasses application shortcut inhibition', 
   const source = read('dots/.config/hypr/hyprland/launcher.lua');
   assert.match(source, /hl\.unbind\("SUPER \+ SUPER_L"\)/);
   assert.match(source, /hl\.unbind\("SUPER \+ SUPER_R"\)/);
-  assert.match(source, /hl\.bind\("SUPER \+ SUPER_L",\s*hl\.dsp\.global\("quickshell:searchToggleRelease"\),\s*\{\s*bypass = true/);
-  assert.match(source, /hl\.bind\("SUPER \+ SUPER_R",\s*hl\.dsp\.global\("quickshell:searchToggleRelease"\),\s*\{\s*bypass = true/);
-  assert.equal((source.match(/bypass = true/g) || []).length, 4);
+  assert.match(source, /hl\.bind\("SUPER \+ SUPER_L",\s*hl\.dsp\.global\("quickshell:searchToggleRelease"\),\s*\{\s*dont_inhibit = true/);
+  assert.match(source, /hl\.bind\("SUPER \+ SUPER_R",\s*hl\.dsp\.global\("quickshell:searchToggleRelease"\),\s*\{\s*dont_inhibit = true/);
+  assert.equal((source.match(/dont_inhibit = true/g) || []).length, 4);
+  assert.doesNotMatch(source, /\bbypass\s*=/);
 });
 
 test('launcher rewrite runs after defaults but before user custom keybinds', () => {
