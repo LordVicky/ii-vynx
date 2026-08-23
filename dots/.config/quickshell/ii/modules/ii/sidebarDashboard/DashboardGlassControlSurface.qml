@@ -15,6 +15,10 @@ Item {
     property bool focusVisible: false
     property color focusColor: "transparent"
 
+    // Internal-mask prototype owns the optical boundary. Keep this component as
+    // the plain animated fill so the visual test is not contaminated by the old
+    // QML imitation rim.
+    readonly property bool effectiveOpticalActive: false
     readonly property real rimWidth: 1
     readonly property real artworkOpacity: root.pressed ? 0.74 : (root.hovered ? 1.0 : 0.88)
     readonly property real sheenInset: Math.max(
@@ -31,7 +35,7 @@ Item {
     // Preserve the ordinary control background exactly when Liquid Glass is off.
     Rectangle {
         anchors.fill: parent
-        visible: !root.opticalActive
+        visible: !root.effectiveOpticalActive
         topLeftRadius: root.surfaceLeftRadius
         bottomLeftRadius: root.surfaceLeftRadius
         topRightRadius: root.surfaceRightRadius
@@ -41,7 +45,7 @@ Item {
 
     Item {
         anchors.fill: parent
-        visible: root.opticalActive
+        visible: root.effectiveOpticalActive
 
         // The outer band stays luminous all the way around the control. Avoid a
         // dark underside: that reads as an embossed Material shadow rather than
