@@ -27,6 +27,12 @@ test("panel is a priority-60 explicit island owner with pinned geometry and tabs
         assert.match(panel, new RegExp(`"${tab}"`));
 });
 
+test("panel navigation clears pending Wi-Fi password state", async () => {
+    const panel = await read("modules/ii/k4bar/K4PanelPlugin.qml");
+
+    assert.match(panel, /function\s+openTab\(wanted\)\s*\{[\s\S]*?K4Wifi\.cancelPassword\(\)[\s\S]*?tab = wanted[\s\S]*?open = true/);
+});
+
 test("unhandled island background taps open panel Controls on the clicked screen", async () => {
     const controller = await read("modules/ii/k4bar/K4PluginController.qml");
     const builtins = await read("modules/ii/k4bar/K4BuiltinPlugins.qml");
@@ -90,8 +96,16 @@ test("existing Network owner exposes saved Wi-Fi state and forgetting for k4 par
     assert.match(network, /function\s+forgetWifiNetwork\(accessPoint:\s*WifiAccessPoint\)/);
     assert.match(network, /id:\s*knownWifiProfiles/);
     assert.match(network, /id:\s*forgetWifiProc/);
-    assert.match(network, /known:\s*root\.wifiKnownSsids\.indexOf\(network\.ssid\)\s*>=\s*0/);
+    assert.match(network, /known:\s*root\.wifiKnownSsids\.indexOf\(net\[3\]\)\s*>=\s*0/);
     assert.match(accessPoint, /readonly property bool known:/);
+});
+
+test("Network keeps a concrete retry target through Wi-Fi password replacement", async () => {
+    const network = await read("services/Network.qml");
+
+    assert.match(network, /function\s+changePassword\(network:[\s\S]*?root\.wifiConnectTarget = network[\s\S]*?changePasswordProc\.exec/);
+    assert.match(network, /onExited:\s*\(exitCode, exitStatus\)\s*=>\s*\{[\s\S]*?const target = root\.wifiConnectTarget[\s\S]*?if \(target\)[\s\S]*?target\.askingPassword = \(exitCode !== 0\)[\s\S]*?root\.wifiConnectTarget = null/);
+    assert.match(network, /if \(line\.includes\("Secrets were required"\)\)[\s\S]*?if \(root\.wifiConnectTarget\)[\s\S]*?root\.wifiConnectTarget\.askingPassword = true/);
 });
 
 test("panel controls compose existing K4 media, notification, clock and workspace seams", async () => {
