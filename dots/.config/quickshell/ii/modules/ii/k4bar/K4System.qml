@@ -1,6 +1,7 @@
 pragma Singleton
 
 import QtQuick
+import Quickshell
 import qs.services
 
 // System-monitor adapter over ii-vynx's demand-driven resource owners. The K4

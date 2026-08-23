@@ -1,6 +1,7 @@
 pragma Singleton
 
 import QtQuick
+import Quickshell
 import qs.services
 
 // K4 shortcut presentation adapter. ii-vynx HyprlandKeybinds remains the only
