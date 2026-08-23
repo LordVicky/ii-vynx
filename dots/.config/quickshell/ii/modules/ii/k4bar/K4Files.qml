@@ -10,8 +10,8 @@ import Quickshell.Io
 Singleton {
     id: root
 
-    readonly property string searchScript: Quickshell.shellPath(
-        "modules/ii/k4bar/tools/k4-file-search.py")
+    readonly property string searchScript: Quickshell.shellRoot
+        + "/modules/ii/k4bar/tools/k4-file-search.py"
     property string query: ""
     property string scope: "home"
     property string typeFilter: ""
@@ -76,7 +76,10 @@ Singleton {
                 root.searching = false
             }
         }
-        onExited: if (exitCode !== 0) root.searching = false
+        onExited: function(code) {
+            if (code !== 0)
+                root.searching = false
+        }
     }
 
     Process { id: copyProc }

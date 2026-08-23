@@ -12,6 +12,8 @@ test("files adapter is on-demand and does not add a background index owner", () 
     assert.match(source, /interval:\s*160/);
     assert.match(source, /python3/);
     assert.match(source, /k4-file-search\.py/);
+    assert.match(source, /Quickshell\.shellRoot/);
+    assert.doesNotMatch(source, /Quickshell\.shellPath/);
     assert.doesNotMatch(source, /running:\s*true/);
     assert.doesNotMatch(source, /plocate|updatedb/);
 });
