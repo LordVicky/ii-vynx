@@ -33,6 +33,8 @@ K4Plugin {
         K4Bluetooth.setDiscovering(open && tab === "bluetooth")
         if (open && tab === "wifi" && K4Wifi.enabled)
             K4Wifi.scan()
+        if (open && tab === "sonido")
+            Audio.refreshBaseVolumes()
     }
 
     function toggle(wanted) {
