@@ -100,8 +100,10 @@ Rectangle {
     }
 
     HoverHandler { id: hover }
-    TapHandler {
+    MouseArea {
+        anchors.fill: parent
+        z: -1
         cursorShape: Qt.PointingHandCursor
-        onTapped: root.activated()
+        onClicked: root.activated()
     }
 }
