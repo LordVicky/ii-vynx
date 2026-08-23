@@ -27,16 +27,25 @@ test("sound detail preserves upstream natural-level gain semantics through ii Au
     assert.match(panel, /tab === "sonido"[\s\S]*?Audio\.refreshBaseVolumes\(\)/);
 });
 
-test("sound adapter filters to the same physical ALSA and Bluetooth device classes as pinned k4", async () => {
+test("sound discovers raw device candidates before view-scoped audio tracking", async () => {
+    const audio = await read("services/Audio.qml");
     const adapter = await read("modules/ii/k4bar/K4AudioDevices.qml");
     const view = await read("modules/ii/k4bar/K4PanelAudioView.qml");
+
+    assert.match(audio, /function\s+deviceCandidates\(isSink\)/);
+    assert.match(audio, /node\.isSink === isSink && !node\.isStream/);
+    assert.match(audio, /readonly property list<var> outputDeviceCandidates:\s*root\.deviceCandidates\(true\)/);
+    assert.match(audio, /readonly property list<var> inputDeviceCandidates:\s*root\.deviceCandidates\(false\)/);
+    assert.match(audio, /readonly property list<var> outputDevices:\s*root\.devices\(true\)/);
+    assert.match(audio, /readonly property list<var> inputDevices:\s*root\.devices\(false\)/);
 
     assert.match(adapter, /function\s+isPanelDevice\(node\)/);
     assert.match(adapter, /name\.indexOf\("alsa_"\) === 0/);
     assert.match(adapter, /name\.indexOf\("bluez_"\) === 0/);
     assert.match(adapter, /name\.indexOf\("midi"\) < 0/);
-    assert.match(adapter, /Audio\.outputDevices\.filter\(root\.isPanelDevice\)/);
-    assert.match(adapter, /Audio\.inputDevices\.filter\(root\.isPanelDevice\)/);
+    assert.match(adapter, /Audio\.outputDeviceCandidates\.filter\(root\.isPanelDevice\)/);
+    assert.match(adapter, /Audio\.inputDeviceCandidates\.filter\(root\.isPanelDevice\)/);
+    assert.match(view, /objects:\s*K4AudioDevices\.outputs\.concat\(K4AudioDevices\.inputs\)/);
     assert.match(view, /group\.activeNode && group\.activeNode\.id === modelData\.id/);
 });
 
