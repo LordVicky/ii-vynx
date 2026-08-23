@@ -21,6 +21,7 @@ Singleton {
     property bool wifiScanning: false
     property bool wifiConnecting: connectProc.running
     property WifiAccessPoint wifiConnectTarget
+    property list<string> wifiKnownSsids: []
     readonly property list<WifiAccessPoint> wifiNetworks: []
     readonly property WifiAccessPoint active: wifiNetworks.find(n => n.active) ?? null
     readonly property list<var> friendlyWifiNetworks: [...wifiNetworks].sort((a, b) => {
@@ -80,6 +81,12 @@ Singleton {
         if (active) disconnectProc.exec(["nmcli", "connection", "down", active.ssid]);
     }
 
+    function forgetWifiNetwork(accessPoint: WifiAccessPoint): void {
+        if (!accessPoint || !accessPoint.known)
+            return;
+        forgetWifiProc.exec(["nmcli", "connection", "delete", "id", accessPoint.ssid]);
+    }
+
     function openPublicWifiPortal() {
         Quickshell.execDetached(["xdg-open", "https://nmcheck.gnome.org/"]) // From some StackExchange thread, seems to work
     }
@@ -123,6 +130,7 @@ Singleton {
         onExited: (exitCode, exitStatus) => {
             root.wifiConnectTarget.askingPassword = (exitCode !== 0)
             root.wifiConnectTarget = null
+            knownWifiProfiles.running = true
         }
     }
 
@@ -130,6 +138,14 @@ Singleton {
         id: disconnectProc
         stdout: SplitParser {
             onRead: getNetworks.running = true
+        }
+    }
+
+    Process {
+        id: forgetWifiProc
+        onExited: {
+            knownWifiProfiles.running = true
+            getNetworks.running = true
         }
     }
 
@@ -152,12 +168,45 @@ Singleton {
         }
     }
 
+    // Saved profiles are refreshed on startup and NetworkManager monitor events,
+    // not polled. This lets presentation layers expose the same "known/forget"
+    // behavior as NetworkManager without creating another nmcli owner.
+    Process {
+        id: knownWifiProfiles
+        running: true
+        command: ["nmcli", "-t", "-f", "NAME,TYPE", "connection", "show"]
+        environment: ({
+            LANG: "C",
+            LC_ALL: "C"
+        })
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const names = [];
+                const lines = text.trim().length > 0 ? text.trim().split("\n") : [];
+                for (const line of lines) {
+                    const separator = line.lastIndexOf(":");
+                    if (separator < 0)
+                        continue;
+                    const type = line.slice(separator + 1);
+                    if (type !== "802-11-wireless" && type !== "wifi")
+                        continue;
+                    const name = line.slice(0, separator).replace(/\\:/g, ":");
+                    if (name.length > 0)
+                        names.push(name);
+                }
+                root.wifiKnownSsids = names;
+                getNetworks.running = true;
+            }
+        }
+    }
+
     // Status update
     function update() {
         updateConnectionType.startCheck();
         wifiStatusProcess.running = true
         updateNetworkName.running = true;
         updateNetworkStrength.running = true;
+        knownWifiProfiles.running = true;
     }
 
     Process {
@@ -278,7 +327,8 @@ Singleton {
                         frequency: parseInt(net[2]),
                         ssid: net[3],
                         bssid: net[4]?.replace(rep2, ":") ?? "",
-                        security: net[5] || ""
+                        security: net[5] || "",
+                        known: root.wifiKnownSsids.indexOf(net[3]) >= 0
                     };
                 }).filter(n => n.ssid && n.ssid.length > 0);
 
