@@ -13,9 +13,15 @@ Rectangle {
     Behavior on color { ColorAnimation { duration: 120 } }
 
     HoverHandler { id: hover; enabled: root.interactive }
-    TapHandler {
+
+    // Keep the tile click behind its content. Nested controls such as the
+    // Wi-Fi/Bluetooth radio buttons then win hit-testing and do not also open
+    // the detail page, matching pinned k4's two-action tile behavior.
+    MouseArea {
+        anchors.fill: parent
+        z: -1
         enabled: root.interactive
-        cursorShape: Qt.PointingHandCursor
-        onTapped: root.activated()
+        cursorShape: root.interactive ? Qt.PointingHandCursor : Qt.ArrowCursor
+        onClicked: root.activated()
     }
 }
