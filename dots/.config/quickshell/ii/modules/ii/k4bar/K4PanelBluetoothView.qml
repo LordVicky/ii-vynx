@@ -53,7 +53,7 @@ Item {
                     glyph: K4Theme.ico.bluetooth
                     active: modelData.connected
                     busy: modelData.pairing ?? false
-                    forgettable: modelData.paired || modelData.bonded
+                    forgettable: modelData.paired
                     onActivated: K4Bluetooth.activate(modelData)
                     onForgotten: K4Bluetooth.togglePair(modelData)
                 }
