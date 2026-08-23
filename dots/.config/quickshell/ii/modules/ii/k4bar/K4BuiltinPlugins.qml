@@ -35,10 +35,13 @@ QtObject {
     property QtObject clockPlugin: K4Plugin {
         name: "clock"; title: "Clock"; priority: 50
         active: enabled && IslandState.hovered
-        islandWidth: Persistent.states.screenRecord.active ? 352 : 328
+        readonly property int traySide: K4Tray.count > 0
+            ? Math.min(K4Tray.count, 5) * 24 + 56 : 48
+        islandWidth: Math.max(Persistent.states.screenRecord.active ? 352 : 328,
+            136 + 2 * Math.max(96, traySide))
         readonly property int notificationStripHeight: K4Notifications.stripHeight(3)
         islandHeight: 68 + (notificationStripHeight > 0 ? notificationStripHeight + 18 : 0)
-        view: Component { K4ClockView {} }
+        view: Component { K4ClockView { trayPlugin: root.trayPlugin } }
     }
     property QtObject playerPlugin: K4Plugin {
         name: "player"; title: "Player"; priority: 55
