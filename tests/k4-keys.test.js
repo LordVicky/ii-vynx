@@ -16,6 +16,12 @@ test('K4 keys adapter reuses HyprlandKeybinds without a second bind reader', () 
   assert.doesNotMatch(source, /hyprctl/);
 });
 
+test('K4 keys preserves Hyprland wheel direction names', () => {
+  const source = read(`${base}/K4Keys.qml`);
+  assert.match(source, /"mouse_up":\s*"Scroll Up"/);
+  assert.match(source, /"mouse_down":\s*"Scroll Down"/);
+});
+
 test('K4 keys plugin is a registered utility with pinned dimensions and IPC', () => {
   const plugin = read(`${base}/K4KeysPlugin.qml`);
   const builtins = read(`${base}/K4BuiltinPlugins.qml`);

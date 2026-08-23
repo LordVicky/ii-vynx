@@ -30,8 +30,8 @@ Singleton {
         const map = ({
             "RETURN": "Enter", "Return": "Enter", "SPACE": "Space",
             "ESCAPE": "Esc", "Escape": "Esc", "BACKSPACE": "Backspace",
-            "SUPER_L": "Super", "SUPER_R": "Super", "mouse_up": "Scroll Down",
-            "mouse_down": "Scroll Up", "mouse:272": "LMB", "mouse:273": "RMB"
+            "SUPER_L": "Super", "SUPER_R": "Super", "mouse_up": "Scroll Up",
+            "mouse_down": "Scroll Down", "mouse:272": "LMB", "mouse:273": "RMB"
         })
         return map[raw] || raw
     }
