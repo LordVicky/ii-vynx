@@ -95,13 +95,23 @@ QtObject {
             visible.close()
     }
 
+    // Pinned k4 treats an unhandled island-background click as the global
+    // Control Center affordance. Preserve the clicked monitor as the requested
+    // owner before opening Panel so publishActivePlugin routes it there.
     function backgroundTap(screenName) {
         const visible = visiblePluginFor(screenName)
         if (visible && visible.name !== "idle" && visible.handlesBackgroundTap) {
             visible.backgroundTapped()
             return true
         }
-        return false
+
+        const panel = plugin("panel")
+        if (!panel || !panel.enabled)
+            return false
+
+        IslandState.requestScreen(screenName)
+        panel.openTab("controls")
+        return true
     }
 
     function hoverEntered(screenName) {
