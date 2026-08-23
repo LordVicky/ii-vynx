@@ -58,12 +58,15 @@ Item {
                     title: modelData.ssid.length > 0 ? modelData.ssid : "(hidden network)"
                     subtitle: modelData.active ? "Connected"
                         : modelData.askingPassword ? "Password required"
+                        : modelData.known ? "Saved"
                         : modelData.security.length > 0 ? modelData.security : "Open network"
                     glyph: K4Wifi.strengthGlyph(modelData)
                     active: modelData.active
                     busy: K4Wifi.connecting && K4Wifi.connectTarget === modelData
-                    secure: modelData.isSecure && !modelData.active
+                    secure: modelData.isSecure && !modelData.known
+                    forgettable: modelData.known
                     onActivated: K4Wifi.activate(modelData)
+                    onForgotten: K4Wifi.forget(modelData)
                 }
 
                 Text {
@@ -118,8 +121,24 @@ Item {
                     selectByMouse: true
                     text: K4Wifi.password
                     onTextEdited: K4Wifi.password = text
-                    onAccepted: K4Wifi.submitPassword()
-                    Keys.onEscapePressed: K4Wifi.cancelPassword()
+
+                    Connections {
+                        target: K4Wifi
+                        function onPasswordTargetChanged() {
+                            if (K4Wifi.passwordTarget)
+                                Qt.callLater(function () { passwordInput.forceActiveFocus() })
+                        }
+                    }
+
+                    Keys.onPressed: function (event) {
+                        if (event.key === Qt.Key_Escape) {
+                            K4Wifi.cancelPassword()
+                            event.accepted = true
+                        } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                            K4Wifi.submitPassword()
+                            event.accepted = true
+                        }
+                    }
 
                     Text {
                         anchors.verticalCenter: parent.verticalCenter
