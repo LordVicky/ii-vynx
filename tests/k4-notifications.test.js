@@ -43,8 +43,7 @@ test("k4 notification adapter delegates history and actions to ii Notifications"
     assert.match(source, /function markRead\(\)[\s\S]*?Notifications\.markAllRead\(\)/);
     assert.match(source, /function dismiss\(notification\)[\s\S]*?Notifications\.discardNotification\(notification\.notificationId\)/);
     assert.match(source, /function invokeAction\(notification, action\)[\s\S]*?Notifications\.attemptInvokeAction\(notification\.notificationId, action\.identifier\)/);
-    assert.match(source, /function defaultAction\(notification\)/);
-    assert.match(source, /action\.identifier === "default"/);
+    assert.match(source, /function defaultAction\(notification\)[\s\S]*?actions\[i\]\.identifier === "default"[\s\S]*?return actions\[i\]/);
     assert.match(source, /function activate\(notification\)[\s\S]*?defaultAction\(notification\)/);
     assert.match(source, /function buttons\(notification\)[\s\S]*?action\.identifier !== "default"/);
     assert.match(source, /function stripHeight\(max\)[\s\S]*?18 \+ n \* 34 \+ \(n - 1\) \* 4/);
@@ -82,7 +81,7 @@ test("k4 toast view exposes notification content, actions and dismissal", () => 
     assert.match(source, /notification\?\.appName \?\? ""/);
     assert.match(source, /notification\?\.body \?\? ""/);
     assert.match(source, /model:\s*root\.buttons/);
-    assert.match(source, /K4Notifications\.invokeAction\(root\.notification, modelData\)/);
+    assert.match(source, /onClicked:[\s\S]*?K4Notifications\.invokeAction\(root\.notification, actionChip\.modelData\)/);
     assert.match(source, /K4Notifications\.dismissToast\(\)/);
 });
 
