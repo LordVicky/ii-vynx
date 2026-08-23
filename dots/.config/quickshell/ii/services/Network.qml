@@ -94,6 +94,7 @@ Singleton {
     function changePassword(network: WifiAccessPoint, password: string, username = ""): void {
         // TODO: enterprise wifi with username
         network.askingPassword = false;
+        root.wifiConnectTarget = network;
         changePasswordProc.exec({
             "environment": {
                 "PASSWORD": password,
@@ -123,12 +124,15 @@ Singleton {
             onRead: line => {
                 // print("err:", line)
                 if (line.includes("Secrets were required")) {
-                    root.wifiConnectTarget.askingPassword = true
+                    if (root.wifiConnectTarget)
+                        root.wifiConnectTarget.askingPassword = true
                 }
             }
         }
         onExited: (exitCode, exitStatus) => {
-            root.wifiConnectTarget.askingPassword = (exitCode !== 0)
+            const target = root.wifiConnectTarget
+            if (target)
+                target.askingPassword = (exitCode !== 0)
             root.wifiConnectTarget = null
             knownWifiProfiles.running = true
         }
