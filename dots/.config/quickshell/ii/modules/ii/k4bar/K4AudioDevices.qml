@@ -3,8 +3,8 @@ pragma Singleton
 import QtQuick
 import qs.services
 
-// Presentation adapter only. Audio.qml remains ii-vynx's single PipeWire owner
-// and tracker; this singleton only translates that service for the K4 panel.
+// Presentation adapter only. Audio.qml remains ii-vynx's single PipeWire owner;
+// this singleton translates that service for the K4 panel.
 Singleton {
     id: root
 
@@ -44,5 +44,13 @@ Singleton {
     function toggleMute(node) {
         if (node?.audio)
             node.audio.muted = !node.audio.muted
+    }
+
+    function baseFor(node) {
+        return Audio.baseVolumeFor(node)
+    }
+
+    function dbOverNatural(node) {
+        return Audio.dbOverNatural(node)
     }
 }
