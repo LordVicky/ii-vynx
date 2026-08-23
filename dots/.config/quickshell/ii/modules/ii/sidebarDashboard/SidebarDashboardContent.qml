@@ -30,6 +30,10 @@ Item {
     property bool showWifiDialog: false
     property bool editMode: false
 
+    DashboardGlassPalette {
+        id: glassPalette
+    }
+
     Connections {
         target: GlobalStates
         function onSidebarRightOpenChanged() {
@@ -221,7 +225,7 @@ Item {
                 bottom: parent.bottom
                 left: parent.left
             }
-            color: Appearance.colors.colLayer1
+            color: glassPalette.active ? glassPalette.controlSurface : Appearance.colors.colLayer1
             readonly property int fullRadius: Config.options.appearance.sharpMode ? Appearance.rounding.full : height / 2
             radius: fullRadius
             implicitWidth: uptimeRow.implicitWidth + 24
@@ -238,20 +242,20 @@ Item {
                     height: 25
                     source: SystemInfo.distroIcon
                     colorize: true
-                    color: Appearance.colors.colOnLayer0
+                    color: glassPalette.active ? glassPalette.foregroundPrimary : Appearance.colors.colOnLayer0
                 }
                 ColumnLayout {
                     anchors.verticalCenter: parent.verticalCenter
                     spacing: -4
                     StyledText {
                         font.pixelSize: Appearance.font.pixelSize.small
-                        color: Appearance.colors.colOnLayer0
+                        color: glassPalette.active ? glassPalette.foregroundPrimary : Appearance.colors.colOnLayer0
                         text: Translation.tr("Up")
                         textFormat: Text.MarkdownText
                     }
                     StyledText {
                         font.pixelSize: Appearance.font.pixelSize.smaller
-                        color: Appearance.colors.colSubtext
+                        color: glassPalette.active ? glassPalette.foregroundSecondary : Appearance.colors.colSubtext
                         text: DateTime.uptime
                         textFormat: Text.MarkdownText
                     }
@@ -267,7 +271,7 @@ Item {
                 bottom: parent.bottom
                 right: parent.right
             }
-            color: Appearance.colors.colLayer1
+            color: glassPalette.active ? glassPalette.controlSurface : Appearance.colors.colLayer1
             padding: 4
 
             QuickToggleButton {

@@ -12,13 +12,17 @@ import Quickshell.Services.UPower
 Rectangle {
     id: root
 
+    DashboardGlassPalette {
+        id: glassPalette
+    }
+
     property var screen: root.QsWindow.window?.screen
     property var brightnessMonitor: Brightness.getMonitorForScreen(screen)
 
     implicitWidth: contentItem.implicitWidth + root.horizontalPadding * 2
     implicitHeight: contentItem.implicitHeight + root.verticalPadding * 2
     radius: Appearance.rounding.normal
-    color: Appearance.colors.colLayer1
+    color: glassPalette.active ? glassPalette.controlSurface : Appearance.colors.colLayer1
     property real verticalPadding: 4
     property real horizontalPadding: 12
 
@@ -109,7 +113,9 @@ Rectangle {
                 rightMargin: nearFull ? 14 : 8
             }
             iconSize: 20
-            color: nearFull ? Appearance.colors.colOnPrimary : Appearance.colors.colOnSecondaryContainer
+            color: nearFull
+                ? Appearance.colors.colOnPrimary
+                : (glassPalette.active ? glassPalette.foregroundPrimary : Appearance.colors.colOnSecondaryContainer)
             text: quickSlider.materialSymbol
 
             Behavior on color {
@@ -131,7 +137,9 @@ Rectangle {
                 rightMargin: nearIcon ? 14 : (1 - iconLocation) * quickSlider.effectiveDraggingWidth + quickSlider.rightPadding + 8
             }
             iconSize: 20
-            color: quickSlider.value >= iconLocation - 0.1 ? Appearance.colors.colOnPrimary : Appearance.colors.colOnSecondaryContainer
+            color: quickSlider.value >= iconLocation - 0.1
+                ? Appearance.colors.colOnPrimary
+                : (glassPalette.active ? glassPalette.foregroundPrimary : Appearance.colors.colOnSecondaryContainer)
             text: secondaryMaterialSymbol
 
             Behavior on color {

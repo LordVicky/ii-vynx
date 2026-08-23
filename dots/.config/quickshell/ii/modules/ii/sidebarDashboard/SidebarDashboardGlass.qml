@@ -44,7 +44,7 @@ PanelWindow {
 
     Rectangle {
         anchors.fill: parent
-        color: RuntimeServices.liquidGlass?.surfaceColor ?? "transparent"
+        color: RuntimeServices.liquidGlass?.sidebarSurfaceColor ?? "transparent"
         radius: Appearance.rounding.screenRounding - Appearance.sizes.hyprlandGapsOut + 1
         antialiasing: true
     }

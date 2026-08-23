@@ -55,6 +55,18 @@ Scope {
     readonly property real fresnelStrength: root.clampGlassValue(root.fresnelStrengthBase * root.glassIntensity, 0.0, 1.0, 0.6)
     readonly property real specularStrength: root.clampGlassValue(root.specularStrengthBase * root.glassIntensity, 0.0, 1.0, 0.8)
     readonly property real lensDistortion: root.clampGlassValue(root.lensDistortionBase * root.glassIntensity, 0.0, 1.0, 0.5)
+
+    // Large sidebars need a thicker, calmer Regular-style material than the
+    // compact bar. Preserve the user's master controls, but compress the
+    // theatrical optics that become exaggerated over a tall surface.
+    readonly property real sidebarBlurStrength: root.clampGlassValue(root.blurStrength * 1.55, 0.0, 4.0, 3.1)
+    readonly property real sidebarRefractionStrength: root.clampGlassValue(root.refractionStrength * 0.22, 0.0, 0.3, 0.13)
+    readonly property real sidebarChromaticAberration: root.clampGlassValue(root.chromaticAberration * 0.04, 0.0, 0.08, 0.02)
+    readonly property real sidebarFresnelStrength: root.clampGlassValue(root.fresnelStrength * 0.22, 0.0, 0.28, 0.13)
+    readonly property real sidebarSpecularStrength: root.clampGlassValue(root.specularStrength * 0.20, 0.0, 0.3, 0.16)
+    readonly property real sidebarEdgeThickness: root.clampGlassValue(root.edgeThickness * 0.33, 0.0, 0.05, 0.02)
+    readonly property real sidebarLensDistortion: root.clampGlassValue(root.lensDistortion * 0.06, 0.0, 0.1, 0.03)
+
     readonly property real shellTint: root.clampGlassValue(LiquidGlassSettings.options.shellTint, 0.0, 1.0, 0.0)
     readonly property real surfaceBrightness: root.clampGlassValue(LiquidGlassSettings.options.brightness, -1.0, 1.0, 0.0)
     readonly property color barSurfaceColor: {
@@ -71,6 +83,30 @@ Scope {
         // Match desktop-widget brightness: a cheap black/white scrim over the
         // finished glass instead of reconfiguring the expensive blur effect.
         const scrimAlpha = Math.abs(root.surfaceBrightness) * 0.6;
+        if (scrimAlpha > 0) {
+            const scrim = root.surfaceBrightness < 0 ? 0 : 1;
+            const outAlpha = scrimAlpha + alpha * (1 - scrimAlpha);
+            red = (scrim * scrimAlpha + red * alpha * (1 - scrimAlpha)) / outAlpha;
+            green = (scrim * scrimAlpha + green * alpha * (1 - scrimAlpha)) / outAlpha;
+            blue = (scrim * scrimAlpha + blue * alpha * (1 - scrimAlpha)) / outAlpha;
+            alpha = outAlpha;
+        }
+
+        return Qt.rgba(red, green, blue, alpha);
+    }
+    readonly property color sidebarSurfaceColor: {
+        const tint = root.shellTint;
+        const theme = Appearance.colors.colLayer0Base;
+        const dark = root.glassTheme === "dark";
+        const neutral = dark ? 0.10 : 0.94;
+        let alpha = (dark ? 0.22 : 0.18) + (0.05 * tint);
+        let red = neutral + (theme.r - neutral) * tint;
+        let green = neutral + (theme.g - neutral) * tint;
+        let blue = neutral + (theme.b - neutral) * tint;
+
+        // Keep the existing brightness control meaningful, but make its effect
+        // gentler on the larger Regular sidebar surface.
+        const scrimAlpha = Math.abs(root.surfaceBrightness) * 0.35;
         if (scrimAlpha > 0) {
             const scrim = root.surfaceBrightness < 0 ? 0 : 1;
             const outAlpha = scrimAlpha + alpha * (1 - scrimAlpha);
@@ -195,6 +231,38 @@ if hl.plugin.hyprglass then
         tint_color = 0xffffff00,
     })
 
+    -- Large sidebars use a calmer Regular-style material. The wallpaper still
+    -- informs the surface, but reduced dispersion/lensing and stronger blur
+    -- keep the navigation layer legible instead of turning it into a lens.
+    hg.preset("vynx_sidebar_regular", {
+        blur_strength = ${root.sidebarBlurStrength},
+        blur_iterations = 3,
+        refraction_strength = ${root.sidebarRefractionStrength},
+        chromatic_aberration = ${root.sidebarChromaticAberration},
+        fresnel_strength = ${root.sidebarFresnelStrength},
+        specular_strength = ${root.sidebarSpecularStrength},
+        edge_thickness = ${root.sidebarEdgeThickness},
+        lens_distortion = ${root.sidebarLensDistortion},
+        glass_opacity = 1.0,
+        tint_color = 0xffffff00,
+        dark = {
+            brightness = 0.78,
+            contrast = 0.90,
+            saturation = 0.58,
+            vibrancy = 0.04,
+            adaptive_dim = 0.34,
+            adaptive_boost = 0.0,
+        },
+        light = {
+            brightness = 1.00,
+            contrast = 0.92,
+            saturation = 0.62,
+            vibrancy = 0.04,
+            adaptive_dim = 0.0,
+            adaptive_boost = 0.26,
+        },
+    })
+
     -- HyprGlass owns native blur only on the active horizontal glass surface.
     -- Hug, Float and Plain keep that responsibility on dedicated visual layers,
     -- including while the bar is auto-hidden or revealed.
@@ -211,7 +279,7 @@ if hl.plugin.hyprglass then
     hg.layer("${root.horizontalBarNamespace}", { preset = "vynx", mask_threshold = 0.0025 })
 ${root.dedicatedVerticalBarSurfaceActive ? "" : '    hg.layer("quickshell:verticalBar", { preset = "vynx", mask_threshold = 0.05 })'}
     hg.layer("quickshell:popup", { preset = "vynx", mask_threshold = 0.05 })
-    hg.layer("quickshell:sidebar-dashboard-glass", { preset = "vynx", mask_threshold = 0.0025 })
+    hg.layer("quickshell:sidebar-dashboard-glass", { preset = "vynx_sidebar_regular", mask_threshold = 0.0025 })
 end
 VYNX_LIQUID_GLASS
 hyprctl reload

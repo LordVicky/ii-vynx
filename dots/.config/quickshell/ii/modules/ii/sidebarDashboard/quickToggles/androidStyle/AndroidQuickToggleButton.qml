@@ -5,6 +5,7 @@ import qs.modules.common
 import qs.modules.common.models.quickToggles
 import qs.modules.common.functions
 import qs.modules.common.widgets
+import qs.modules.ii.sidebarDashboard
 
 GroupButton {
     id: root
@@ -17,6 +18,14 @@ GroupButton {
     required property real baseCellHeight
     required property real cellSpacing
     required property int cellSize
+
+    DashboardGlassPalette {
+        id: glassPalette
+    }
+
+    function glassTint(color, alpha) {
+        return Qt.rgba(color.r, color.g, color.b, alpha);
+    }
 
     // Signals
     signal openMenu()
@@ -59,15 +68,44 @@ GroupButton {
     horizontalPadding: padding
     verticalPadding: padding
 
-    colBackground: Appearance.colors.colLayer2
-    colBackgroundToggled: (altAction && expandedSize) ? Appearance.colors.colLayer2 : Appearance.colors.colPrimary
-    colBackgroundToggledHover: (altAction && expandedSize) ? Appearance.colors.colLayer2Hover : Appearance.colors.colPrimaryHover
-    colBackgroundToggledActive: (altAction && expandedSize) ? Appearance.colors.colLayer2Active : Appearance.colors.colPrimaryActive
+    colBackground: glassPalette.active ? glassPalette.controlSurface : Appearance.colors.colLayer2
+    colBackgroundHover: glassPalette.active ? glassPalette.controlSurfaceHover : Appearance.colors.colLayer1Hover
+    colBackgroundActive: glassPalette.active ? glassPalette.controlSurfaceActive : Appearance.colors.colLayer1Active
+    colBackgroundToggled: (altAction && expandedSize)
+        ? (glassPalette.active ? glassPalette.controlSurface : Appearance.colors.colLayer2)
+        : (glassPalette.active ? root.glassTint(Appearance.colors.colPrimary, 0.72) : Appearance.colors.colPrimary)
+    colBackgroundToggledHover: (altAction && expandedSize)
+        ? (glassPalette.active ? glassPalette.controlSurfaceHover : Appearance.colors.colLayer2Hover)
+        : (glassPalette.active ? root.glassTint(Appearance.colors.colPrimary, 0.82) : Appearance.colors.colPrimaryHover)
+    colBackgroundToggledActive: (altAction && expandedSize)
+        ? (glassPalette.active ? glassPalette.controlSurfaceActive : Appearance.colors.colLayer2Active)
+        : (glassPalette.active ? root.glassTint(Appearance.colors.colPrimary, 0.88) : Appearance.colors.colPrimaryActive)
     readonly property int fullRadius: Config.options.appearance.sharpMode ? Appearance.rounding.full : height / 2
     buttonRadius: toggled ? Appearance.rounding.large : fullRadius
     buttonRadiusPressed: Appearance.rounding.normal
-    property color colText: (toggled && !(altAction && expandedSize) && enabled) ? Appearance.colors.colOnPrimary : ColorUtils.transparentize(Appearance.colors.colOnLayer2, enabled ? 0 : 0.7)
-    property color colIcon: expandedSize ? ((root.toggled) ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer3) : colText
+    property color colText: (toggled && !(altAction && expandedSize) && enabled)
+        ? Appearance.colors.colOnPrimary
+        : ColorUtils.transparentize(
+            glassPalette.active ? glassPalette.foregroundPrimary : Appearance.colors.colOnLayer2,
+            enabled ? 0 : 0.7
+        )
+    property color colIcon: expandedSize
+        ? ((root.toggled)
+            ? Appearance.colors.colOnPrimary
+            : (glassPalette.active ? glassPalette.foregroundPrimary : Appearance.colors.colOnLayer3))
+        : colText
+
+    background: DashboardGlassControlSurface {
+        opticalActive: glassPalette.active
+        surfaceColor: root.color
+        surfaceLeftRadius: root.leftRadius
+        surfaceRightRadius: root.rightRadius
+        dark: glassPalette.dark
+        hovered: root.hovered
+        pressed: root.down
+        focusVisible: root.tabbedTo
+        focusColor: Appearance.colors.colSecondary
+    }
 
     onClicked: {
         if (root.expandedSize && root.altAction) root.altAction();
@@ -105,7 +143,9 @@ GroupButton {
                 implicitWidth: height
                 radius: root.radius - root.verticalPadding
                 color: {
-                    const baseColor = root.toggled ? Appearance.colors.colPrimary : Appearance.colors.colLayer3
+                    const baseColor = root.toggled
+                        ? (glassPalette.active ? root.glassTint(Appearance.colors.colPrimary, 0.76) : Appearance.colors.colPrimary)
+                        : (glassPalette.active ? glassPalette.controlSurfaceStrong : Appearance.colors.colLayer3)
                     const transparentizeAmount = (root.altAction && root.expandedSize) ? 0 : 1
                     return ColorUtils.transparentize(baseColor, transparentizeAmount)
                 }

@@ -1,5 +1,6 @@
 import qs.modules.common
 import qs.modules.common.widgets
+import qs.modules.ii.sidebarDashboard
 import QtQuick
 
 GroupButton {
@@ -10,6 +11,13 @@ GroupButton {
     clickedWidth: baseWidth + 20
     toggled: false
 
+    DashboardGlassPalette {
+        id: glassPalette
+    }
+
+    colBackgroundHover: glassPalette.active ? glassPalette.controlSurfaceHover : Appearance.colors.colLayer1Hover
+    colBackgroundActive: glassPalette.active ? glassPalette.controlSurfaceActive : Appearance.colors.colLayer1Active
+
     readonly property bool sharpMode: Config.options.appearance.sharpMode
     buttonRadius: (altAction && toggled) ? Appearance?.rounding.normal : sharpMode ? 0 : Math.min(baseHeight, baseWidth) / 2
     buttonRadiusPressed: Appearance?.rounding?.small
@@ -18,7 +26,9 @@ GroupButton {
         anchors.centerIn: parent
         iconSize: 22
         fill: toggled ? 1 : 0
-        color: toggled ? Appearance.m3colors.m3onPrimary : Appearance.colors.colOnLayer1
+        color: toggled
+            ? Appearance.m3colors.m3onPrimary
+            : (glassPalette.active ? glassPalette.foregroundPrimary : Appearance.colors.colOnLayer1)
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
         text: buttonIcon
