@@ -27,6 +27,19 @@ test("sound detail preserves upstream natural-level gain semantics through ii Au
     assert.match(panel, /tab === "sonido"[\s\S]*?Audio\.refreshBaseVolumes\(\)/);
 });
 
+test("sound adapter filters to the same physical ALSA and Bluetooth device classes as pinned k4", async () => {
+    const adapter = await read("modules/ii/k4bar/K4AudioDevices.qml");
+    const view = await read("modules/ii/k4bar/K4PanelAudioView.qml");
+
+    assert.match(adapter, /function\s+isPanelDevice\(node\)/);
+    assert.match(adapter, /name\.indexOf\("alsa_"\) === 0/);
+    assert.match(adapter, /name\.indexOf\("bluez_"\) === 0/);
+    assert.match(adapter, /name\.indexOf\("midi"\) < 0/);
+    assert.match(adapter, /Audio\.outputDevices\.filter\(root\.isPanelDevice\)/);
+    assert.match(adapter, /Audio\.inputDevices\.filter\(root\.isPanelDevice\)/);
+    assert.match(view, /group\.activeNode && group\.activeNode\.id === modelData\.id/);
+});
+
 test("shortcut persistence uses ii-vynx XDG state directory", async () => {
     const settings = await read("modules/ii/k4bar/K4ShortcutSettings.qml");
 
