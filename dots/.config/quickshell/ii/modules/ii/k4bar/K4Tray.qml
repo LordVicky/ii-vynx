@@ -34,7 +34,9 @@ Singleton {
     }
 
     function primary(item) {
-        if (item && typeof item.activate === "function") item.activate()
+        if (!item || item.onlyMenu) return false
+        if (typeof item.activate === "function") item.activate()
+        return true
     }
 
     function secondary(item) {
