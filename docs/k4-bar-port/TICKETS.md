@@ -115,7 +115,8 @@ Deliver end-to-end as independently reviewable sub-slices:
 - system monitor;
 - session/power;
 - shortcut viewer;
-- weather/tray where not already completed.
+- weather/tray where not already completed;
+- preserve the existing Super launcher binding and make it reach the selected launcher even when the focused client inhibits shortcuts in fullscreen.
 
 Each sub-slice must use existing ii services through adapters where practical and must not broaden unrelated service APIs without evidence.
 
