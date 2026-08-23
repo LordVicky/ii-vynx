@@ -13,7 +13,8 @@ QtObject {
         toastPlugin,
         panelPlugin,
         appsPlugin,
-        launcherPlugin
+        launcherPlugin,
+        clipboardPlugin
     ]
 
     // Pinned k4 dismisses Player as soon as playback pauses, which also removes
@@ -105,4 +106,5 @@ QtObject {
     property QtObject panelPlugin: K4PanelPlugin {}
     property QtObject appsPlugin: K4AppsPlugin {}
     property QtObject launcherPlugin: K4LauncherPlugin {}
+    property QtObject clipboardPlugin: K4ClipboardPlugin {}
 }
