@@ -25,6 +25,13 @@ test('K4 weather uses the live ii GPS coordinate keys', () => {
   assert.doesNotMatch(source, /Weather\.location\.lon\b/);
 });
 
+test('K4 weather uses the Material Design glyph range carried by the shell font', () => {
+  const source = read(`${base}/K4Weather.qml`);
+  for (const code of ['F0599', 'F0595', 'F0590', 'F0591', 'F0598', 'F067E', 'F0597'])
+    assert.match(source, new RegExp(`0x${code}`));
+  assert.doesNotMatch(source, /0xE3[0-9A-F]{2}/i);
+});
+
 test('K4 weather is a registered utility with upstream dimensions and policies', () => {
   const plugin = read(`${base}/K4WeatherPlugin.qml`);
   const builtins = read(`${base}/K4BuiltinPlugins.qml`);
