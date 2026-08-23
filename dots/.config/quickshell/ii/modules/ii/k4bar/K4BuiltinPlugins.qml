@@ -12,6 +12,7 @@ QtObject {
         playerPlugin,
         toastPlugin,
         panelPlugin,
+        appsPlugin,
         launcherPlugin
     ]
 
@@ -102,5 +103,6 @@ QtObject {
     }
 
     property QtObject panelPlugin: K4PanelPlugin {}
+    property QtObject appsPlugin: K4AppsPlugin {}
     property QtObject launcherPlugin: K4LauncherPlugin {}
 }

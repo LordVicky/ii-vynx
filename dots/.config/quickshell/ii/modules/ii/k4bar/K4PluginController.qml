@@ -25,6 +25,27 @@ QtObject {
         return null
     }
 
+    // Apps is a view over this registry, never a second catalog owner. Only
+    // plugins that explicitly opt into the application contract appear.
+    function applicationPlugins() {
+        const result = []
+        for (let i = 0; i < plugins.length; ++i) {
+            const candidate = plugins[i]
+            if (candidate && candidate.name !== "apps" && candidate.application === true)
+                result.push(candidate)
+        }
+        return result
+    }
+
+    function openApplication(name) {
+        const target = plugin(name)
+        if (!target || !target.enabled || target.application !== true
+                || typeof target.openApplication !== "function")
+            return false
+        target.openApplication()
+        return true
+    }
+
     readonly property var idlePlugin: plugin("idle")
 
     // Highest-priority enabled active plugin wins. Idle is a normal priority-0
@@ -80,6 +101,9 @@ QtObject {
         const panel = plugin("panel")
         if (panel)
             panel.controller = root
+        const apps = plugin("apps")
+        if (apps)
+            apps.controller = root
         publishActivePlugin()
     }
 
@@ -160,6 +184,9 @@ QtObject {
         const panel = plugin("panel")
         if (panel?.controller === root)
             panel.controller = null
+        const apps = plugin("apps")
+        if (apps?.controller === root)
+            apps.controller = null
         IslandState.resetHostPublication()
     }
 }

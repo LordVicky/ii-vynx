@@ -19,6 +19,12 @@ QtObject {
     property int priority: 50
     property bool transitorio: false
 
+    // Upstream's Apps catalog is explicit: only plugins marked as applications
+    // belong in the utility grid. Keep that metadata on the plugin contract so
+    // future built-ins can opt in without creating a second registry.
+    property bool application: false
+    property string applicationGlyph: ""
+
     property int islandWidth: 300
     property int islandHeight: 60
     property Component view: null
@@ -37,6 +43,14 @@ QtObject {
     signal hoverTimedOut()
 
     function open() {
+        if (enabled)
+            active = true
+    }
+
+    // Explicit application-entry activation avoids guessing whether a plugin's
+    // user-facing open state is represented by open(), toggle(), or another
+    // internal property. Utility plugins may override this narrow seam.
+    function openApplication() {
         if (enabled)
             active = true
     }
