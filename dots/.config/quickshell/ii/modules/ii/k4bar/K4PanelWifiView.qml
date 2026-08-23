@@ -61,7 +61,7 @@ Item {
                         : modelData.security.length > 0 ? modelData.security : "Open network"
                     glyph: K4Wifi.strengthGlyph(modelData)
                     active: modelData.active
-                    busy: K4Wifi.connecting && K4Wifi.active !== modelData
+                    busy: K4Wifi.connecting && K4Wifi.connectTarget === modelData
                     secure: modelData.isSecure && !modelData.active
                     onActivated: K4Wifi.activate(modelData)
                 }
