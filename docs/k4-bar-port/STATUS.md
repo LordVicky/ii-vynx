@@ -4,15 +4,15 @@ Working branch: `agent/k4-bar-port`
 Source spec: `docs/k4-bar-port/SPEC.md`
 Tickets: `docs/k4-bar-port/TICKETS.md`
 Pinned k4 source: `48993812c88f0af5d0c5345cd273467043b889f1`
-Current Liquid Glass base merge-base: `cf40e91bfdd542b01cf81e060c9c448766080464`
+Liquid Glass snapshot synchronized into this branch: `d79f6ec9a5af38850a79e84406705966bf850de1`
 
 ## Current phase
 
-`K4-05 — Notifications and transient arbitration`: **validated and closed**.
+`K4-06 — k4 control center/panel`: **validated and closed**.
 
-Next ticket: `K4-06 — k4 control center/panel`.
+Next ticket: `K4-07 — Launcher and everyday utility plugins`.
 
-A known K4-04 workspace-animation defect is intentionally deferred: when the three-workspace viewport re-slices during some reverse transitions such as `3 → 2` and `3 → 1`, the active pill can still skip the expected shrink/grow animation. This is no longer a K4-04/K4-05 blocker and will be revisited when workspace support is expanded beyond the current three-slot behavior.
+A known K4-04 workspace-animation defect is intentionally deferred: when the three-workspace viewport re-slices during some reverse transitions such as `3 → 2` and `3 → 1`, the active pill can still skip the expected shrink/grow animation. This is no longer a K4-04/K4-05/K4-06 blocker and will be revisited when workspace support is expanded beyond the current three-slot behavior.
 
 ## K4-01 — validated and closed
 
@@ -52,11 +52,11 @@ The deep host/state/plugin seam is in place:
 
 K4-03 source tests passed 16/16 during its live gate. Multi-monitor compositor validation remains unavailable on the single-monitor test machine; the routing contract is source-covered.
 
-## Liquid Glass base state
+## Liquid Glass synchronization state
 
-The k4 branch is synchronized with the Liquid Glass base through merge-base `cf40e91bfdd542b01cf81e060c9c448766080464` and was 0 commits behind at the K4-05 validation checkpoint.
+Liquid Glass was synchronized into the k4 branch linearly rather than merged. The parity branch is pinned to Liquid Glass snapshot `d79f6ec9a5af38850a79e84406705966bf850de1`; later movement on `agent/liquid-glass-stage1` is not pulled implicitly.
 
-The newer Liquid Glass dashboard exclusion architecture is preserved; the obsolete Standard-only dashboard reserve shim is not carried into k4 mode.
+The synchronized checkpoint includes the dashboard glass control surfaces, the local control-mask prototype tooling, and the `d79f6ec9` dashboard checkpoint where the shader prototype owns control optics. This synchronization does not restyle the k4 island; the spec still requires k4's own dark parity surface.
 
 ## K4-04 — validated and closed with deferred workspace-animation debt
 
@@ -182,6 +182,82 @@ K4-05 satisfies:
 
 K4-05 is closed.
 
+## K4-06 — validated and closed
+
+Review point: `54493ba51ec8ad3f46c3440dbc7338e11a133c75`.
+
+### Panel host and interaction
+
+Implemented:
+- priority-60 `K4PanelPlugin` with pinned 860px width and controls/detail heights;
+- Controls, Notifications, Wi-Fi, Bluetooth and Sound routes inside the island;
+- unconsumed island background taps open the K4 Controls panel on the requested screen;
+- keyboard ownership, Escape/back behavior and hover-exit close semantics remain inside the plugin contract;
+- notifications arriving while the panel is open close the panel and continue through normal K4 notification arbitration;
+- the Player output-device action opens K4 Sound rather than an ii sidebar.
+
+### Existing-service adapters
+
+K4 panel integrations preserve the existing system owners:
+- `K4Wifi.qml` is a presentation adapter over `Network.qml`; it does not create another `nmcli` process owner;
+- `K4Bluetooth.qml` uses `Quickshell.Bluetooth` plus ii's `BluetoothStatus` ordering/status seam;
+- `K4AudioDevices.qml` uses ii `Audio` device candidates and default-device setters instead of owning PipeWire;
+- the Sound view scopes its `PwObjectTracker` to the visible Sound detail only;
+- shortcut state is persisted through ii's XDG state directory and resolves shortcut targets through the live K4 plugin registry.
+
+### Runtime startup regression and guard
+
+The first full deployment exposed a QML type-resolution failure: several k4 singleton adapters used the Quickshell `Singleton` base without explicitly importing the parent `Quickshell` module. The failure first surfaced at `K4AudioDevices.qml` as `Singleton is not a type` and prevented the shell from loading.
+
+The affected singleton files now explicitly import `Quickshell`, and `tests/k4-singleton-imports.test.js` guards the invariant for every k4 QML singleton so another masked instance cannot reappear one file at a time.
+
+### Live validation — 2026-08-23
+
+The complete K4-06 manual matrix passed in the live shell:
+- island background interaction opens K4 Control Center inside the island and does not substitute the ii sidebar;
+- Controls, Wi-Fi, Bluetooth, Sound and Notifications navigation works;
+- existing ii corner-triggered sidebars remain independently usable;
+- Sound shows physical outputs and inputs, supports default-device switching, volume, mute, selected-device markers and natural-level/+dB presentation;
+- Wi-Fi toggle, scan, saved-network connection/forget, password flow and password-prompt Escape handling work;
+- Bluetooth discovery and connect/disconnect behavior work and discovery is scoped to the open Bluetooth detail;
+- media controls, notification actions/Clear All and shortcut-strip behavior work;
+- Standard → k4 → Standard switching preserves the variant boundary;
+- the synchronized Liquid Glass Standard dashboard continues to behave correctly after the K4-06 changes.
+
+### Source coverage and execution status
+
+Source coverage at the review point includes:
+- `tests/k4-panel.test.js` for panel ownership/geometry, background taps, adapter ownership, Wi-Fi lifecycle/password behavior, composition, shortcuts, detail actions, notifications and Player-to-Sound navigation;
+- `tests/k4-panel-parity.test.js` for natural audio levels, raw audio candidate discovery/view-scoped tracking and XDG shortcut persistence;
+- `tests/k4-singleton-imports.test.js` for explicit Quickshell imports on k4 singleton types.
+
+The connected GitHub environment has no CI status checks attached to the review commit and cannot execute the repository's local Node/QML test suite, so no new automated pass count is claimed here. The live shell acceptance matrix above is the runtime gate for closing K4-06.
+
+## K4-06 Standards + Spec review
+
+### Standards
+
+No blocking findings at review point `54493ba51ec8ad3f46c3440dbc7338e11a133c75`:
+- panel state and arbitration stay behind `K4PanelPlugin`/`K4Panel` rather than leaking into unrelated shell surfaces;
+- adapters are narrow and preserve Network, Bluetooth and Audio ownership instead of creating competing service/process owners;
+- expensive audio tracking is scoped to the Sound detail lifecycle;
+- shortcut persistence uses the existing XDG state seam;
+- Wi-Fi and Bluetooth scan/discovery lifetimes follow panel visibility rather than running permanently;
+- ii sidebars remain separate surfaces instead of being embedded or repurposed for K4;
+- the singleton startup regression is covered by a repository-wide k4 invariant test.
+
+### Spec
+
+K4-06 satisfies its ticket and the approved spec:
+- k4's own control-center panel is preserved inside the island;
+- Wi-Fi, Bluetooth, audio/device, media, notification and shortcut surfaces are present;
+- existing ii service owners are reused through adapters where ownership is global;
+- background taps open the K4 panel;
+- existing ii corner sidebars remain independently available;
+- the k4 parity surface remains k4-styled rather than adopting Material/Liquid Glass styling.
+
+K4-06 is closed.
+
 ## Deferred workspace item
 
 Known and explicitly non-blocking:
@@ -191,4 +267,4 @@ Do not spend additional parity-stage effort on this now. Reopen it when the work
 
 ## Next action
 
-Begin `K4-06 — k4 control center/panel` from `TICKETS.md`, preserving k4's own island panel rather than substituting ii sidebars. Existing ii corner-triggered sidebars remain independently available.
+Begin `K4-07 — Launcher and everyday utility plugins` as independently reviewable tracer slices. The ticket order is: launcher/apps, clipboard, files, windows, system monitor, session/power, shortcut viewer, then weather/tray where not already completed. Each slice should reuse existing ii services through adapters where practical and should not broaden unrelated service APIs without evidence.
