@@ -50,6 +50,7 @@ K4Plugin {
     }
 
     function openTab(wanted) {
+        K4Wifi.cancelPassword()
         tab = wanted
         open = true
         K4Notifications.dismissToast()
