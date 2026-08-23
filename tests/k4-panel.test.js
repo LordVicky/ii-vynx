@@ -41,6 +41,13 @@ test("unhandled island background taps open panel Controls on the clicked screen
     assert.match(controller, /panel\.openTab\("controls"\)/);
 });
 
+test("controller injects the live registry into Panel for future shortcut targets", async () => {
+    const controller = await read("modules/ii/k4bar/K4PluginController.qml");
+
+    assert.match(controller, /Component\.onCompleted:\s*\{[\s\S]*?attachBuiltins\(\)[\s\S]*?const panel = plugin\("panel"\)[\s\S]*?panel\.controller = root[\s\S]*?publishActivePlugin\(\)/);
+    assert.match(controller, /function\s+reset\(\)[\s\S]*?panel\?\.controller === root[\s\S]*?panel\.controller = null/);
+});
+
 test("panel scans and discovers only while the matching detail is open", async () => {
     const panel = await read("modules/ii/k4bar/K4PanelPlugin.qml");
 
@@ -60,6 +67,7 @@ test("panel adapters delegate to existing ii service owners", async () => {
     assert.match(wifi, /Network\.toggleWifi\(\)/);
     assert.match(wifi, /Network\.rescanWifi\(\)/);
     assert.match(wifi, /Network\.connectToWifiNetwork\(/);
+    assert.match(wifi, /Network\.forgetWifiNetwork\(/);
     assert.doesNotMatch(wifi, /Process\s*\{/);
     assert.doesNotMatch(wifi, /nmcli/);
 
@@ -72,6 +80,18 @@ test("panel adapters delegate to existing ii service owners", async () => {
     assert.match(audio, /Audio\.setDefaultSink\(/);
     assert.match(audio, /Audio\.setDefaultSource\(/);
     assert.doesNotMatch(audio, /PwObjectTracker\s*\{/);
+});
+
+test("existing Network owner exposes saved Wi-Fi state and forgetting for k4 parity", async () => {
+    const network = await read("services/Network.qml");
+    const accessPoint = await read("services/network/WifiAccessPoint.qml");
+
+    assert.match(network, /property\s+list<string>\s+wifiKnownSsids:\s*\[\]/);
+    assert.match(network, /function\s+forgetWifiNetwork\(accessPoint:\s*WifiAccessPoint\)/);
+    assert.match(network, /id:\s*knownWifiProfiles/);
+    assert.match(network, /id:\s*forgetWifiProc/);
+    assert.match(network, /known:\s*root\.wifiKnownSsids\.indexOf\(network\.ssid\)\s*>=\s*0/);
+    assert.match(accessPoint, /readonly property bool known:/);
 });
 
 test("panel controls compose existing K4 media, notification, clock and workspace seams", async () => {
@@ -118,6 +138,8 @@ test("panel detail views expose Wi-Fi, Bluetooth, audio and full notification ac
     assert.match(wifi, /K4Wifi\.networks/);
     assert.match(wifi, /K4Wifi\.toggle\(\)/);
     assert.match(wifi, /K4Wifi\.activate\(/);
+    assert.match(wifi, /forgettable:\s*modelData\.known/);
+    assert.match(wifi, /onForgotten:\s*K4Wifi\.forget\(modelData\)/);
     assert.match(wifi, /password/i);
 
     assert.match(bluetooth, /K4Bluetooth\.devices/);
@@ -136,6 +158,14 @@ test("panel detail views expose Wi-Fi, Bluetooth, audio and full notification ac
     assert.match(notifications, /K4Notifications\.invokeAction\(/);
     const panel = await read("modules/ii/k4bar/K4PanelView.qml");
     assert.match(panel, /K4Notifications\.clear\(\)/);
+});
+
+test("Wi-Fi password prompt takes focus and consumes Escape or Enter before the panel", async () => {
+    const wifi = await read("modules/ii/k4bar/K4PanelWifiView.qml");
+
+    assert.match(wifi, /Connections\s*\{[\s\S]*?target:\s*K4Wifi[\s\S]*?onPasswordTargetChanged[\s\S]*?passwordInput\.forceActiveFocus\(\)/);
+    assert.match(wifi, /Keys\.onPressed:\s*function\s*\(event\)[\s\S]*?Qt\.Key_Escape[\s\S]*?K4Wifi\.cancelPassword\(\)[\s\S]*?event\.accepted = true/);
+    assert.match(wifi, /Qt\.Key_Return\s*\|\|\s*event\.key === Qt\.Key_Enter[\s\S]*?K4Wifi\.submitPassword\(\)[\s\S]*?event\.accepted = true/);
 });
 
 test("panel notifications close the panel and take the normal toast path", async () => {
