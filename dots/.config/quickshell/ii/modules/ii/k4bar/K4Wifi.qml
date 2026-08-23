@@ -10,6 +10,7 @@ Singleton {
     readonly property bool enabled: Network.wifiEnabled
     readonly property bool scanning: Network.wifiScanning
     readonly property bool connecting: Network.wifiConnecting
+    readonly property var connectTarget: Network.wifiConnectTarget
     readonly property var networks: Network.friendlyWifiNetworks
     readonly property var active: Network.active
     readonly property string name: Network.networkName
