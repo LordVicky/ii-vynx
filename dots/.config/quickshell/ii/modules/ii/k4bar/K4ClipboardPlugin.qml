@@ -76,6 +76,12 @@ K4Plugin {
         if (index >= count) index = Math.max(0, count - 1)
     }
 
+    Component.onCompleted: K4Clipboard.plugin = root
+    Component.onDestruction: {
+        if (K4Clipboard.plugin === root)
+            K4Clipboard.plugin = null
+    }
+
     IpcHandler {
         target: "k4.clipboard"
         function toggle(): void { root.toggle() }

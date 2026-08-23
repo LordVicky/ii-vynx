@@ -18,6 +18,13 @@ test("clipboard adapter reuses ii-vynx Cliphist without a second watcher", () =>
     assert.doesNotMatch(source, /Process\s*\{/);
 });
 
+test("clipboard adapter exposes only the live K4 surface to shell routing", () => {
+    const source = read(k4("K4Clipboard.qml"));
+    assert.match(source, /property var plugin:\s*null/);
+    assert.match(source, /function toggleSurface\(\)[\s\S]*?plugin\.toggle\(\)/);
+    assert.match(source, /function closeSurface\(\)[\s\S]*?plugin\.close\(\)/);
+});
+
 test("clipboard plugin preserves upstream priority, geometry and keyboard contract", () => {
     const source = read(k4("K4ClipboardPlugin.qml"));
     assert.match(source, /name:\s*"clipboard"/);
@@ -26,6 +33,7 @@ test("clipboard plugin preserves upstream priority, geometry and keyboard contra
     assert.match(source, /islandWidth:\s*720/);
     assert.match(source, /islandHeight:\s*470/);
     assert.match(source, /grabKeyboard:\s*open/);
+    assert.match(source, /Component\.onCompleted:\s*K4Clipboard\.plugin = root/);
     assert.match(source, /target:\s*"k4\.clipboard"/);
 });
 

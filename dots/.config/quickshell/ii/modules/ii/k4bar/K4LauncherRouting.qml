@@ -4,15 +4,17 @@ import Quickshell.Io
 import Quickshell.Hyprland
 import qs
 
-// Variant-local compatibility layer for ii-vynx's existing search shortcut and
-// IPC names. This Scope only exists while the k4 bar owns the bar variant, so
-// the same user keybinds dispatch to K4 without registering a competing ii
-// Overview surface.
+// Variant-local compatibility layer for ii-vynx's existing search shortcuts
+// and IPC names. This Scope only exists while the K4 bar owns the bar variant,
+// so the same user bindings dispatch to K4 without a competing ii Overview.
 Scope {
     id: root
 
     Component.onCompleted: GlobalStates.overviewOpen = false
-    Component.onDestruction: K4Launcher.close()
+    Component.onDestruction: {
+        K4Launcher.close()
+        K4Clipboard.closeSurface()
+    }
 
     // Keep stale/external Overview state from reopening when the user later
     // switches back to Standard. The Standard Overview surface is unloaded
@@ -30,12 +32,15 @@ Scope {
 
         function toggle(): void { K4Launcher.toggle() }
         function workspacesToggle(): void {}
-        function close(): void { K4Launcher.close() }
+        function close(): void {
+            K4Launcher.close()
+            K4Clipboard.closeSurface()
+        }
         function open(): void { K4Launcher.openSearch("") }
         function toggleReleaseInterrupt(): void {
             GlobalStates.superReleaseMightTrigger = false
         }
-        function clipboardToggle(): void {}
+        function clipboardToggle(): void { K4Clipboard.toggleSurface() }
     }
 
     GlobalShortcut {
@@ -46,8 +51,11 @@ Scope {
 
     GlobalShortcut {
         name: "overviewWorkspacesClose"
-        description: "Closes the active K4 launcher"
-        onPressed: K4Launcher.close()
+        description: "Closes active K4 keyboard surfaces"
+        onPressed: {
+            K4Launcher.close()
+            K4Clipboard.closeSurface()
+        }
     }
 
     GlobalShortcut {
@@ -68,5 +76,11 @@ Scope {
         name: "searchToggleReleaseInterrupt"
         description: "Interrupts possibility of K4 launcher being toggled on release"
         onPressed: GlobalStates.superReleaseMightTrigger = false
+    }
+
+    GlobalShortcut {
+        name: "overviewClipboardToggle"
+        description: "Toggles the K4 clipboard utility"
+        onPressed: K4Clipboard.toggleSurface()
     }
 }

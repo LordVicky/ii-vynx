@@ -8,8 +8,9 @@ import qs.modules.common.functions
 import qs.services
 
 // K4 clipboard presentation adapter. ii-vynx Cliphist remains the single
-// clipboard-history owner; this layer only normalizes rows and persists K4 pin
-// ordering. It deliberately starts no wl-paste watcher or cliphist process.
+// clipboard-history owner; this layer only normalizes rows, persists K4 pin
+// ordering, and exposes the live K4 clipboard surface to shell-owned shortcuts.
+// It deliberately starts no wl-paste watcher or cliphist process.
 Singleton {
     id: root
 
@@ -17,6 +18,19 @@ Singleton {
         `${Directories.state}/ii-vynx-k4-clipboard.json`)
     property alias pinnedIds: adapter.pinnedIds
     readonly property int count: Cliphist.entries.length
+    property var plugin: null
+
+    readonly property bool surfaceAvailable: plugin !== null && (plugin.enabled ?? false)
+
+    function toggleSurface() {
+        if (surfaceAvailable)
+            plugin.toggle()
+    }
+
+    function closeSurface() {
+        if (plugin)
+            plugin.close()
+    }
 
     function entryId(raw) {
         const text = String(raw || "")
