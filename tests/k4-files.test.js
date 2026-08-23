@@ -28,12 +28,20 @@ test("files plugin preserves upstream utility contract", () => {
     assert.match(source, /target:\s*"k4\.files"/);
 });
 
-test("files view exposes keyboard open, reveal and copy actions", () => {
+test("files view imports Quickshell and exposes keyboard open, reveal and copy actions", () => {
     const source = read("K4FilesView.qml");
+    assert.match(source, /^import Quickshell$/m);
+    assert.match(source, /Quickshell\.env\("HOME"\)/);
     assert.match(source, /Qt\.Key_Return/);
     assert.match(source, /Qt\.ControlModifier/);
     assert.match(source, /root\.plugin\.openContaining\(\)/);
     assert.match(source, /root\.plugin\.copyPath\(\)/);
+});
+
+test("file-search results always expose the containing directory", () => {
+    const source = read("tools/k4-file-search.py");
+    assert.match(source, /"directory":\s*os\.path\.dirname\(path\)/);
+    assert.doesNotMatch(source, /"directory":\s*path if is_dir/);
 });
 
 test("files is registered as a built-in K4 utility", () => {

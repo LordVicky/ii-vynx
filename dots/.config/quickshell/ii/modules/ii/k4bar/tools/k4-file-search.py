@@ -39,7 +39,7 @@ def describe(path, query):
     return {
         "path": path,
         "name": os.path.basename(path) or path,
-        "directory": path if is_dir else os.path.dirname(path),
+        "directory": os.path.dirname(path),
         "isDirectory": is_dir,
         "extension": "" if is_dir else os.path.splitext(path)[1].lstrip(".").lower(),
         "bytes": 0 if is_dir else stat.st_size,
