@@ -10,7 +10,8 @@ QtObject {
         volumePlugin,
         clockPlugin,
         playerPlugin,
-        toastPlugin
+        toastPlugin,
+        panelPlugin
     ]
 
     // Pinned k4 dismisses Player as soon as playback pauses, which also removes
@@ -98,4 +99,6 @@ QtObject {
 
         view: Component { K4ToastView {} }
     }
+
+    property QtObject panelPlugin: K4PanelPlugin {}
 }
