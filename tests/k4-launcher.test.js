@@ -20,12 +20,12 @@ test("k4 desktop-app adapter reuses ii application ownership", () => {
     assert.doesNotMatch(source, /update-desktop-database/);
 });
 
-test("k4 launcher preserves upstream island ownership and keyboard lifecycle", () => {
+test("k4 launcher preserves island ownership and keyboard lifecycle", () => {
     const source = readShell("modules/ii/k4bar/K4LauncherPlugin.qml");
 
     assert.match(source, /name:\s*"launcher"/);
     assert.match(source, /priority:\s*80/);
-    assert.match(source, /active:\s*enabled && \(open \|\| closing\)/);
+    assert.match(source, /active:\s*enabled && open/);
     assert.match(source, /viewLoaded:\s*open/);
     assert.match(source, /grabKeyboard:\s*open/);
     assert.match(source, /islandWidth:\s*720/);
@@ -36,6 +36,14 @@ test("k4 launcher preserves upstream island ownership and keyboard lifecycle", (
     assert.match(source, /K4DesktopApps\.launch\(entry\)/);
     assert.match(source, /function onNotify\(notification\) \{ root\.yieldToNotification\(\) \}/);
     assert.match(source, /target:\s*"k4\.launcher"/);
+});
+
+test("k4 launcher releases ownership immediately on close", () => {
+    const source = readShell("modules/ii/k4bar/K4LauncherPlugin.qml");
+
+    assert.doesNotMatch(source, /\bclosing\b/);
+    assert.doesNotMatch(source, /closeTimer/);
+    assert.match(source, /function close\(\)[\s\S]*?if \(!open\)[\s\S]*?open = false[\s\S]*?query = ""/);
 });
 
 test("k4 launcher view keeps the pinned spotlight interaction model", () => {
