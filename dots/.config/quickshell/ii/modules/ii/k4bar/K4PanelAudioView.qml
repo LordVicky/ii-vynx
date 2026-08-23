@@ -46,7 +46,7 @@ Item {
             delegate: Rectangle {
                 id: row
                 required property var modelData
-                readonly property bool selected: group.activeNode === modelData
+                readonly property bool selected: group.activeNode && group.activeNode.id === modelData.id
                 readonly property int volume: K4AudioDevices.volumeFor(modelData)
                 readonly property bool muted: K4AudioDevices.mutedFor(modelData)
                 readonly property int base: K4AudioDevices.baseFor(modelData)
