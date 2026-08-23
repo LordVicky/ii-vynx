@@ -293,13 +293,14 @@ Item {
 
             Item { Layout.fillWidth: true }
 
-            // The upstream button opens k4's audio panel. K4-06 owns that panel,
-            // so keep the visual affordance but do not route it to an ii sidebar.
+            // Pinned k4 opens the panel's Sound tab from here. K4Panel is the
+            // narrow global navigation seam; the ii sidebar stays independent.
             MediaButton {
                 glyph: K4Theme.ico.output
                 glyphSize: 15
                 glyphColor: K4Theme.muted
-                enabledAction: false
+                enabledAction: true
+                onActivated: K4Panel.openTab("sonido")
                 Layout.alignment: Qt.AlignVCenter
             }
         }
