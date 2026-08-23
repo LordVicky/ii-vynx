@@ -3,8 +3,8 @@ import Quickshell.Io
 import qs.services
 
 // Pinned k4 PanelPlugin ownership/navigation contract adapted to ii-vynx.
-// Presentation services are attached in later K4-06 slices; this object owns
-// only panel state and island arbitration.
+// This object owns panel state/arbitration while narrow adapters retain the
+// existing ii-vynx service owners.
 K4Plugin {
     id: root
 
@@ -16,6 +16,7 @@ K4Plugin {
     // "controls" | "notifications" | "wifi" | "bluetooth" | "sonido"
     property string tab: "controls"
     property bool open: false
+    property var controller: null
 
     islandWidth: 860
     islandHeight: tab === "controls" ? 268 : 400
@@ -25,6 +26,14 @@ K4Plugin {
 
     onBackgroundTapped: toggle()
     onHoverTimedOut: close()
+    onOpenChanged: syncDetailActivity()
+    onTabChanged: syncDetailActivity()
+
+    function syncDetailActivity() {
+        K4Bluetooth.setDiscovering(open && tab === "bluetooth")
+        if (open && tab === "wifi" && K4Wifi.enabled)
+            K4Wifi.scan()
+    }
 
     function toggle(wanted) {
         const wantsTab = wanted !== undefined && String(wanted).length > 0
@@ -57,8 +66,12 @@ K4Plugin {
         function onNotify(notification) { root.open = false }
     }
 
-    Component.onCompleted: K4Panel.plugin = root
+    Component.onCompleted: {
+        K4Panel.plugin = root
+        syncDetailActivity()
+    }
     Component.onDestruction: {
+        K4Bluetooth.setDiscovering(false)
         if (K4Panel.plugin === root)
             K4Panel.plugin = null
     }
