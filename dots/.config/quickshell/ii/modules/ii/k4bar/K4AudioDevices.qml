@@ -8,8 +8,17 @@ import qs.services
 Singleton {
     id: root
 
-    readonly property var outputs: Audio.outputDevices
-    readonly property var inputs: Audio.inputDevices
+    function isPanelDevice(node) {
+        if (!node || node.isStream)
+            return false
+        const name = String(node.name || "")
+        if (name.indexOf("alsa_") === 0)
+            return true
+        return name.indexOf("bluez_") === 0 && name.indexOf("midi") < 0
+    }
+
+    readonly property var outputs: Audio.outputDevices.filter(root.isPanelDevice)
+    readonly property var inputs: Audio.inputDevices.filter(root.isPanelDevice)
     readonly property var activeOutput: Audio.sink
     readonly property var activeInput: Audio.source
 
