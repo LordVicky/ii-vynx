@@ -42,10 +42,20 @@ Singleton {
             return root.correctType(node, isSink) && !node.isStream
         })
     }
+    function deviceCandidates(isSink) {
+        return Pipewire.nodes.values.filter(node => {
+            return node.isSink === isSink && !node.isStream
+        })
+    }
     readonly property list<var> outputAppNodes: root.appNodes(true)
     readonly property list<var> inputAppNodes: root.appNodes(false)
     readonly property list<var> outputDevices: root.devices(true)
     readonly property list<var> inputDevices: root.devices(false)
+    // Raw non-stream candidates intentionally do not require node.audio. A
+    // presentation view can track these candidates first, which materializes
+    // their audio properties without changing the existing device-list contract.
+    readonly property list<var> outputDeviceCandidates: root.deviceCandidates(true)
+    readonly property list<var> inputDeviceCandidates: root.deviceCandidates(false)
 
     // Signals
     signal sinkProtectionTriggered(string reason);
