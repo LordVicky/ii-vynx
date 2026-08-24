@@ -59,6 +59,16 @@ test("k4 launcher view keeps the pinned spotlight interaction model", () => {
     assert.match(source, /onClicked:[\s\S]*?root\.plugin\.launchSelected\(\)/);
 });
 
+test("k4 launcher stays within the approved launcher/apps shell boundary", () => {
+    const plugin = readShell("modules/ii/k4bar/K4LauncherPlugin.qml");
+    const view = readShell("modules/ii/k4bar/K4LauncherView.qml");
+    const packagesPath = path.join(shellRoot, "modules/ii/k4bar/K4Packages.qml");
+
+    assert.equal(fs.existsSync(packagesPath), false);
+    assert.doesNotMatch(plugin, /K4Packages|openPackageSearch|enterPackageMode|uninstallPackage|\bpacman\b|\byay\b/);
+    assert.doesNotMatch(view, /K4Packages|packageResults|Search packages|searching AUR|\buninstall\b/);
+});
+
 test("k4 launcher bridge follows the existing panel-style singleton seam", () => {
     const source = readShell("modules/ii/k4bar/K4Launcher.qml");
 
