@@ -10,6 +10,7 @@ test("K4 plugin settings persist enablement without breaking active bindings", a
     const adapter = await read("modules/ii/k4bar/K4Settings.qml");
     const base = await read("modules/ii/k4bar/K4Plugin.qml");
     const controller = await read("modules/ii/k4bar/K4PluginController.qml");
+    const builtins = await read("modules/ii/k4bar/K4BuiltinPlugins.qml");
     const settingsPlugin = await read("modules/ii/k4bar/K4SettingsPlugin.qml");
     const settingsView = await read("modules/ii/k4bar/K4SettingsView.qml");
     const row = await read("modules/ii/k4bar/K4SettingsPluginRow.qml");
@@ -21,9 +22,11 @@ test("K4 plugin settings persist enablement without breaking active bindings", a
     assert.match(adapter, /function setPluginEnabled\(name, wanted\)[\s\S]*?Config\.options\.bar\.k4\.disabledPlugins = next/);
 
     assert.match(base, /property bool configurable:\s*true/);
+    assert.match(base, /property bool closeOnDisable:\s*true/);
     assert.match(base, /property string loadError:\s*""/);
-    assert.match(base, /onEnabledChanged:[\s\S]*?root\.close\(\)[\s\S]*?releasePlacement\(\)/);
+    assert.match(base, /onEnabledChanged:[\s\S]*?if \(root\.closeOnDisable\)[\s\S]*?root\.close\(\)[\s\S]*?releasePlacement\(\)/);
     assert.doesNotMatch(base, /onEnabledChanged:[\s\S]*?active = false/);
+    assert.match(builtins, /volumePlugin:[\s\S]*?closeOnDisable:\s*false[\s\S]*?clockPlugin:[\s\S]*?closeOnDisable:\s*false[\s\S]*?playerPlugin:[\s\S]*?closeOnDisable:\s*false/);
 
     assert.match(settingsPlugin, /configurable:\s*false/);
     assert.match(settingsPlugin, /property var controller:\s*null/);
