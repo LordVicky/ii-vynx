@@ -119,7 +119,7 @@ test("core views preserve k4 volume, clock and player interaction contracts", ()
     assert.match(player, /onActivated:\s*K4Media\.togglePlaying\(\)/);
     assert.match(player, /onActivated:\s*K4Media\.next\(\)/);
     assert.match(player, /K4RecordingPill\s*\{[\s\S]*?interactive:\s*true/);
-    assert.match(player, /glyph:\s*K4Theme\.ico\.output[\s\S]*?enabledAction:\s*false/);
+    assert.match(player, /glyph:\s*K4Theme\.ico\.output[\s\S]*?enabledAction:\s*true[\s\S]*?onActivated:\s*K4Panel\.openTab\("sonido"\)/);
 
     assert.match(recording, /Persistent\.states\.screenRecord\.active/);
     assert.match(recording, /Persistent\.states\.screenRecord\.seconds/);
