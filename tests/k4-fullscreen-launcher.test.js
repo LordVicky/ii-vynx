@@ -16,6 +16,19 @@ test('default Super launcher binding bypasses application shortcut inhibition', 
   assert.doesNotMatch(source, /\bbypass\s*=/);
 });
 
+test('K4 launcher presentation lifts above fullscreen clients while open', () => {
+  const source = read('dots/.config/quickshell/ii/modules/ii/k4bar/K4Bar.qml');
+  assert.match(
+    source,
+    /readonly property bool notificationOverlay:\s*pluginVisible\?\.name === "toast"\s*\|\|\s*pluginVisible\?\.name === "launcher"/
+  );
+  assert.match(
+    source,
+    /WlrLayershell\.layer:\s*notificationOverlay \? WlrLayer\.Overlay : WlrLayer\.Top/
+  );
+  assert.doesNotMatch(source, /aboveWindows:\s*true/);
+});
+
 test('launcher rewrite runs after defaults but before user custom keybinds', () => {
   const source = read('dots/.config/hypr/hyprland.lua');
   const defaults = source.indexOf('require("hyprland.keybinds")');

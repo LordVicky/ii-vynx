@@ -124,7 +124,7 @@ Scope {
         function dialogClose(): void { IslandState.closeSystemDialog() }
 
         function placePrimary(fraction: real, durationMs: int): void {
-            demoPrimary.requestPlacement(fraction, durationMs)
+            demoPrimary.requestPlacement(fraction, durationMs || 0)
         }
         function releasePrimaryPlacement(): void { demoPrimary.releasePlacement() }
         function gesture(name: string, strength: real): void {
@@ -167,7 +167,11 @@ Scope {
                 controller.visiblePluginFor(panelWindow.screen.name)
             readonly property bool showingIdle:
                 !pluginVisible || pluginVisible.name === "idle"
-            readonly property bool notificationOverlay: pluginVisible?.name === "toast"
+            // Fullscreen clients suppress Top layer surfaces. Toasts and the
+            // explicitly requested launcher must stay visible above them.
+            readonly property bool notificationOverlay:
+                pluginVisible?.name === "toast"
+                || pluginVisible?.name === "launcher"
             readonly property int islandBodyWidth: showingIdle
                 ? idleContent.desiredBodyWidth : pluginVisible.islandWidth
             readonly property int islandBodyHeight: showingIdle
@@ -296,8 +300,7 @@ Scope {
                         x: island.x,
                         y: panelWindow.bottom
                             ? panelWindow.screen.height - island.height : 0,
-                        ancho: island.width,
-                        alto: island.height
+                        ancho: island.width, alto: island.height
                     }, panelWindow.modelData === Quickshell.screens[0])
                 }
 
