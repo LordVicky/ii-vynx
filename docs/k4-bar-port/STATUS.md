@@ -8,11 +8,11 @@ Liquid Glass snapshot synchronized into this branch: `d79f6ec9a5af38850a79e84406
 
 ## Current phase
 
-`K4-06 — k4 control center/panel`: **validated and closed**.
+`K4-07 — Launcher and everyday utility plugins`: **validated and closed**.
 
-Next ticket: `K4-07 — Launcher and everyday utility plugins`.
+Next ticket: `K4-08 — k4 settings inside the island`.
 
-A known K4-04 workspace-animation defect is intentionally deferred: when the three-workspace viewport re-slices during some reverse transitions such as `3 → 2` and `3 → 1`, the active pill can still skip the expected shrink/grow animation. This is no longer a K4-04/K4-05/K4-06 blocker and will be revisited when workspace support is expanded beyond the current three-slot behavior.
+A known K4-04 workspace-animation defect is intentionally deferred: when the three-workspace viewport re-slices during some reverse transitions such as `3 → 2` and `3 → 1`, the active pill can still skip the expected shrink/grow animation. This is no longer a K4-04/K4-05/K4-06/K4-07 blocker and will be revisited when workspace support is expanded beyond the current three-slot behavior.
 
 ## K4-01 — validated and closed
 
@@ -258,6 +258,60 @@ K4-06 satisfies its ticket and the approved spec:
 
 K4-06 is closed.
 
+## K4-07 — validated and closed
+
+Review point: `bae6ffdd52e663091cef642d0973225d45c462b7`.
+Detailed review: `docs/k4-bar-port/K4-07-REVIEW.md`.
+
+### Daily-driver utility surface
+
+Implemented:
+- Spotlight-style K4 Launcher using ii-vynx desktop application discovery/launch ownership;
+- Apps utility grid over the same live plugin registry;
+- Clipboard through ii `Cliphist`;
+- on-demand Files search with open/reveal/copy-directory actions;
+- Windows switcher through `HyprlandData`;
+- demand-driven System metrics;
+- Session/power through ii `Session`;
+- shortcut viewer through existing Hyprland keybind state;
+- Weather through ii weather state plus K4 forecast/search presentation;
+- Tray through existing `TrayService` / SystemTray objects.
+
+### Fullscreen launcher remediation
+
+The first live pass showed that `dont_inhibit` correctly allowed the Super binding to fire, but K4 Launcher still remained invisible over a true fullscreen client because the island host stayed on `WlrLayer.Top`.
+
+The final fix temporarily promotes the launcher-owned island to `WlrLayer.Overlay`, reusing the already validated notification fullscreen presentation seam. Normal idle/clock/player/panel owners remain on Top. The fullscreen application remains fullscreen while the launcher appears above it.
+
+### Source validation — 2026-08-24
+
+Final local source gate:
+- tests: 102
+- pass: 102
+- fail: 0
+- cancelled/skipped/todo: 0
+
+The suite includes explicit coverage for shortcut inhibition bypass and launcher Overlay presentation, plus the full K4 regression suite accumulated through K4-07.
+
+### Live validation — 2026-08-24
+
+The focused K4-07 live matrix is fully passing. The last failing case—opening the K4 Launcher over a true fullscreen client with Super—now passes after the Overlay remediation.
+
+Quickshell loads the deployed configuration successfully. No K4-07 QML load error is present in the supplied startup log.
+
+### Standards + Spec review
+
+No blocking findings at the fixed code review point:
+- global desktop facilities keep one owner and K4 uses narrow adapters;
+- demand-driven utilities do not add unnecessary persistent polling/process owners;
+- Standard Overview and K4 Launcher are mutually exclusive at the family boundary;
+- custom keybinds retain final override ownership;
+- fullscreen visibility uses layer-shell rather than window hacks;
+- no package-manager subsystem or Material/Liquid Glass restyle was introduced;
+- source checks and real-shell compositor evidence satisfy the K4-07 acceptance gate.
+
+K4-07 is closed.
+
 ## Deferred workspace item
 
 Known and explicitly non-blocking:
@@ -267,4 +321,6 @@ Do not spend additional parity-stage effort on this now. Reopen it when the work
 
 ## Next action
 
-Begin `K4-07 — Launcher and everyday utility plugins` as independently reviewable tracer slices. The ticket order is: launcher/apps, clipboard, files, windows, system monitor, session/power, shortcut viewer, then weather/tray where not already completed. Each slice should reuse existing ii services through adapters where practical and should not broaden unrelated service APIs without evidence.
+Begin `K4-08 — k4 settings inside the island`.
+
+The K4-08 boundary is already specified: add the K4 Settings plugin/view, expose plugin enable/disable/error state, keep top/bottom and alignment backed by `Config.options.bar.k4`, and only expose settings that have a live consuming behavior. Preserve the ii Bar Settings variant boundary rather than creating a second independent settings source.
