@@ -84,7 +84,7 @@ test("core built-ins preserve k4 priorities, activation defaults and dimensions"
     assert.match(source, /function onIsPlayingChanged\(\)[\s\S]*?IslandState\.hovered && K4Media\.isPlaying[\s\S]*?playerHoverSession = true/);
     assert.match(source, /function onHasPlayerChanged\(\)[\s\S]*?!K4Media\.hasPlayer[\s\S]*?playerHoverSession = false/);
     assert.match(source, /function onHoveredChanged\(\)[\s\S]*?!IslandState\.hovered[\s\S]*?playerHoverSession = false[\s\S]*?K4Media\.isPlaying[\s\S]*?playerHoverSession = true/);
-    assert.match(source, /name:\s*"player"[\s\S]*?priority:\s*55[\s\S]*?active:\s*enabled && IslandState\.hovered && K4Media\.hasPlayer[\s\S]*?K4Media\.isPlaying \|\| root\.playerHoverSession[\s\S]*?islandWidth:\s*340[\s\S]*?K4Media\.hasTimeline \? 140 : 115/);
+    assert.match(source, /name:\s*"player"[\s\S]*?priority:\s*55[\s\S]*?closeOnDisable:\s*false[\s\S]*?active:\s*enabled && IslandState\.hovered && root\.passiveHoverAllowed[\s\S]*?K4Media\.hasPlayer && \(K4Media\.isPlaying \|\| root\.playerHoverSession\)[\s\S]*?islandWidth:\s*340[\s\S]*?K4Media\.hasTimeline \? 140 : 115/);
 
     assert.match(source, /view:\s*Component \{ K4VolumeView \{\} \}/);
     assert.match(source, /view:\s*Component \{ K4ClockView \{ trayPlugin: root\.trayPlugin \} \}/);
