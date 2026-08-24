@@ -147,6 +147,7 @@ Item {
             id: rows
             Layout.fillWidth: true
             Layout.fillHeight: true
+            Layout.minimumHeight: 300
             clip: true
             spacing: 3
             boundsBehavior: Flickable.StopAtBounds
@@ -172,21 +173,34 @@ Item {
                 color: selected ? K4Theme.surfaceHi : rowMouse.containsMouse ? K4Theme.surface : "transparent"
                 Behavior on color { ColorAnimation { duration: 110 } }
 
+                MouseArea {
+                    id: rowMouse
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onEntered: root.plugin.index = row.index
+                    onClicked: {
+                        root.plugin.index = row.index
+                        root.plugin.choose()
+                    }
+                }
+
                 RowLayout {
                     anchors.fill: parent
                     anchors.leftMargin: 10
                     anchors.rightMargin: 10
                     spacing: 9
+                    z: 1
 
                     Text {
                         Layout.preferredWidth: 30
                         horizontalAlignment: Text.AlignHCenter
-                        text: modelData.type === "image" ? String.fromCodePoint(0xF021F)
-                            : modelData.label === "link" ? String.fromCodePoint(0xF0339)
-                            : modelData.label === "color" ? String.fromCodePoint(0xF0765)
-                            : modelData.label === "command" ? String.fromCodePoint(0xF018D)
-                            : modelData.label === "path" ? String.fromCodePoint(0xF024B)
-                            : modelData.label === "code" ? String.fromCodePoint(0xF0169)
+                        text: row.modelData.type === "image" ? String.fromCodePoint(0xF021F)
+                            : row.modelData.label === "link" ? String.fromCodePoint(0xF0339)
+                            : row.modelData.label === "color" ? String.fromCodePoint(0xF0765)
+                            : row.modelData.label === "command" ? String.fromCodePoint(0xF018D)
+                            : row.modelData.label === "path" ? String.fromCodePoint(0xF024B)
+                            : row.modelData.label === "code" ? String.fromCodePoint(0xF0169)
                             : String.fromCodePoint(0xF0219)
                         color: row.selected ? K4Theme.ink : K4Theme.muted
                         font.family: K4Theme.iconFont
@@ -198,7 +212,7 @@ Item {
                         spacing: 1
                         Text {
                             Layout.fillWidth: true
-                            text: modelData.type === "image" ? "Image clipboard entry" : modelData.summary
+                            text: row.modelData.type === "image" ? "Image clipboard entry" : row.modelData.summary
                             color: K4Theme.ink
                             font.family: K4Theme.uiFont
                             font.pixelSize: 14
@@ -207,15 +221,15 @@ Item {
                         RowLayout {
                             spacing: 6
                             Text {
-                                text: modelData.label
+                                text: row.modelData.label
                                 color: K4Theme.blue
                                 font.family: K4Theme.uiFont
                                 font.pixelSize: 10
                                 font.weight: Font.DemiBold
                             }
                             Text {
-                                visible: modelData.lines > 1
-                                text: modelData.lines + " lines"
+                                visible: row.modelData.lines > 1
+                                text: row.modelData.lines + " lines"
                                 color: K4Theme.dim
                                 font.family: K4Theme.uiFont
                                 font.pixelSize: 10
@@ -224,19 +238,19 @@ Item {
                     }
 
                     Rectangle {
-                        visible: modelData.label === "color"
+                        visible: row.modelData.label === "color"
                         Layout.preferredWidth: 16
                         Layout.preferredHeight: 16
                         radius: 4
-                        color: modelData.label === "color" ? modelData.summary : "transparent"
+                        color: row.modelData.label === "color" ? row.modelData.summary : "transparent"
                         border.width: 1
                         border.color: "#33ffffff"
                     }
 
                     Text {
                         text: String.fromCodePoint(0xF0403)
-                        color: modelData.pinned ? K4Theme.yellow : K4Theme.dim
-                        opacity: modelData.pinned || row.selected || rowMouse.containsMouse ? 1 : 0
+                        color: row.modelData.pinned ? K4Theme.yellow : K4Theme.dim
+                        opacity: row.modelData.pinned || row.selected || rowMouse.containsMouse ? 1 : 0
                         font.family: K4Theme.iconFont
                         font.pixelSize: 13
                         MouseArea {
@@ -259,19 +273,6 @@ Item {
                             cursorShape: Qt.PointingHandCursor
                             onClicked: K4Clipboard.remove(row.modelData)
                         }
-                    }
-                }
-
-                MouseArea {
-                    id: rowMouse
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    z: -1
-                    onEntered: root.plugin.index = row.index
-                    onClicked: {
-                        root.plugin.index = row.index
-                        root.plugin.choose()
                     }
                 }
             }
