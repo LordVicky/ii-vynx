@@ -138,8 +138,26 @@ Singleton {
         return result
     }
 
+    // Quickshell has exposed Hyprland.activeToplevel in two compatible API
+    // shapes across releases: a Wayland Toplevel carrying a HyprlandToplevel
+    // extension, and a HyprlandToplevel directly. Reuse the shared bridge for
+    // the former, then resolve the latter through the same address-indexed
+    // HyprlandData cache.
+    function clientForFocusedToplevel(toplevel) {
+        const bridged = HyprlandData.clientForToplevel(toplevel)
+        if (bridged)
+            return bridged
+
+        const rawAddress = toplevel?.address
+        if (rawAddress === undefined || rawAddress === null)
+            return null
+        const text = String(rawAddress)
+        const address = text.startsWith("0x") ? text : "0x" + text
+        return HyprlandData.windowByAddress[address] ?? null
+    }
+
     function belongsToToplevel(notification, toplevel) {
-        const client = HyprlandData.clientForToplevel(toplevel)
+        const client = clientForFocusedToplevel(toplevel)
         if (!client)
             return false
         const cls = normalizedClass(client.class)
