@@ -38,7 +38,8 @@ test("collapsed pill keeps clock centered with symmetric side reservation", () =
     const source = readShell("modules/ii/k4bar/K4IdlePill.qml");
 
     assert.match(source, /readonly property int leftReserve:\s*isPlaying \? 53 : 0/);
-    assert.match(source, /readonly property int rightMeasured:\s*Math\.ceil\(rightIndicators\.implicitWidth\)/);
+    assert.match(source, /readonly property bool trayReserveActive:\s*K4Settings\.trayInPill[\s\S]*?K4TrayHost\.plugin !== null && K4Tray\.count > 0/);
+    assert.match(source, /readonly property int rightMeasured:[\s\S]*?trayReserveActive \? Math\.ceil\(collapsedTray\.implicitWidth\) : 0[\s\S]*?recording \? Math\.ceil\(recordingRow\.implicitWidth\) : 0[\s\S]*?trayReserveActive && recording \? rightIndicators\.spacing : 0/);
     assert.match(source, /readonly property int sideReserve:\s*Math\.max\(leftReserve, rightMeasured\)/);
     assert.match(source, /readonly property int desiredBodyWidth:\s*46 \+ 2 \* sideReserve \+ 44/);
     assert.match(source, /anchors\.horizontalCenter:\s*parent\.horizontalCenter[\s\S]*?width:\s*46/);
