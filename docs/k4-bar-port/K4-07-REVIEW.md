@@ -6,58 +6,19 @@ Ticket: `K4-07 — Launcher and everyday utility plugins`
 
 Implementation base: `865b0bc0b3e72fe83dc8fce4bcab4ea760548c66` (K4-06 close)
 
-Fixed code-review point: `cd9162d33f89ef7d6f2e3f015392888bf58f0af7`
-
 Pinned k4 source: `48993812c88f0af5d0c5345cd273467043b889f1`
+
+Authoritative plan: `docs/k4-bar-port/SPEC.md` + `docs/k4-bar-port/TICKETS.md`
 
 ## State
 
-**Awaiting live validation. K4-07 is not closed.**
+**Live validation remediation in progress. K4-07 is not closed.**
 
-The fixed review point is 32 commits ahead of the K4-06 close and contains the complete K4-07 implementation surface plus review fixes.
+The first integrated live pass found blocking runtime defects in fullscreen launcher routing, clipboard presentation, weather glyph rendering, and tray discoverability. Those findings are being fixed and revalidated before ticket closure.
 
-## Delivered scope
+## Approved K4-07 scope
 
-- K4 desktop application launcher backed by ii-vynx `AppSearch` / `DesktopEntry` ownership.
-- K4 package-search/install mode with pacman/yay work scoped to package mode.
-- K4 Applications utility grid over the existing K4 plugin registry.
-- Variant-local launcher routing so the existing search/Super shortcut targets Standard Overview in Standard mode and K4 Launcher in K4 mode without requiring user keybind changes.
-- Fullscreen launcher routing for clients that inhibit normal shortcuts.
-- K4 Clipboard over ii-vynx `Cliphist` ownership.
-- K4 Files with on-demand search and no global indexer.
-- K4 Windows over ii-vynx `HyprlandData`.
-- K4 System monitor over ii-vynx resource/network services, sampled only while required by the utility lifecycle.
-- K4 Session/power actions through ii-vynx session ownership.
-- K4 shortcut viewer over ii-vynx Hyprland keybind state.
-- K4 Weather over ii-vynx Weather ownership.
-- K4 Tray over the existing tray/SystemTray ownership.
-
-## Review fixes included
-
-The implementation review found and fixed concrete runtime/fidelity defects before this gate:
-
-- launcher ownership now releases immediately on close so the host can begin its collapse animation without a blank 320 ms ownership tail;
-- Standard Overview and K4 launcher routing are mutually exclusive at the panel-family boundary;
-- the existing search shortcut/IPC names are reused in K4 mode instead of introducing replacement user keybinds;
-- stale Standard Overview state is forced closed while K4 owns the variant;
-- lazy Files view now imports `Quickshell` before using `Quickshell.env(...)`;
-- Files Ctrl+Enter/open-containing-folder metadata now resolves the parent directory consistently for both file and directory hits.
-
-## Standards review
-
-No blocking findings remain at the fixed review point.
-
-- Global service ownership is preserved rather than duplicated: installed applications remain in `AppSearch`, clipboard history in `Cliphist`, windows in `HyprlandData`, weather in `Weather`, tray items in the existing tray/SystemTray seam, and system/session behavior in ii-vynx services.
-- Expensive or external work is lifecycle-scoped: package work is launcher package-mode work; file search is on demand; system sampling follows the utility lifecycle.
-- K4 owns K4 presentation and interaction. Standard Overview is not embedded or invoked as K4 UI.
-- Variant routing is expressed at the family/backend boundary so user shortcut configuration does not need to change when switching bar variants.
-- Everyday utilities participate in the existing K4 plugin/arbitration contract rather than creating independent floating ownership paths.
-- The parity surface remains K4-styled; this ticket does not restyle K4 with Material/Liquid Glass.
-- Upstream-derived plugin surfaces identify the pinned k4 source in source comments, and repository-level MIT attribution remains in `licenses/k4-NOTICE.txt` / `licenses/MIT.txt`.
-
-## Spec review
-
-The fixed review point implements every K4-07 ticket category:
+The ticket explicitly covers:
 
 - launcher/apps;
 - clipboard;
@@ -66,37 +27,75 @@ The fixed review point implements every K4-07 ticket category:
 - system monitor;
 - session/power;
 - shortcut viewer;
-- weather/tray;
-- preservation of the existing launcher shortcut, including the fullscreen shortcut-inhibition path.
+- weather/tray where not already completed;
+- preservation of the existing Super launcher binding, including the fullscreen shortcut-inhibition path.
 
-The remaining acceptance evidence is runtime behavior in the real shell. K4-07 must not be marked closed until that live matrix passes.
+Each sub-slice must reuse existing ii-vynx service ownership where practical and avoid broad unrelated service APIs.
+
+### Scope correction
+
+An Arch-specific pacman/yay package-search/install mode was temporarily carried into the launcher while following upstream launcher internals. That behavior is **not part of the approved K4-07 ticket or implementation sequence** and has been removed.
+
+K4 Launcher now stays inside the Quickshell shell boundary: ii-vynx `AppSearch`/`DesktopEntry` owns application discovery and execution, while K4 owns the Spotlight-style launcher presentation and interaction. Package management is not a core bar responsibility.
+
+## Delivered ownership seams
+
+- Desktop applications: ii-vynx `AppSearch` / `DesktopEntry`.
+- Clipboard history: ii-vynx `Cliphist`.
+- Windows: ii-vynx `HyprlandData`.
+- System metrics: ii-vynx resource/network services, requested only while the utility needs them.
+- Session/power actions: ii-vynx `Session`.
+- Shortcut viewer: ii-vynx Hyprland keybind state.
+- Weather current state/GPS/config: ii-vynx `Weather`; K4 owns its richer forecast/search presentation.
+- Tray: existing `TrayService` / Quickshell SystemTray objects; no competing tray owner.
+
+## Review and live-remediation fixes
+
+- Launcher ownership releases immediately on close so island collapse starts without a blank ownership tail.
+- Standard Overview and K4 launcher routing are mutually exclusive at the family boundary.
+- Existing search/Super shortcut and IPC names are reused rather than replacing user keybinds.
+- Existing Super+V clipboard route targets K4 Clipboard in K4 mode.
+- Fullscreen Super binding uses Hyprland shortcut-inhibition bypass semantics through `dont_inhibit`.
+- Lazy Files view imports the module it uses and Ctrl+Enter consistently resolves the containing directory.
+- K4 Session delegates to the existing ii session owner.
+- K4 Weather uses the live ii GPS longitude key.
+- Weather glyphs use the Material Design Nerd Font range carried by the shell instead of unsupported E3xx weather glyphs.
+- Clock hover restores the upstream tray entrypoint using live `TrayService` items; tray-in-collapsed-pill remains off by the upstream default.
+- Clipboard presentation keeps ii `Cliphist` ownership but stabilizes the list layout/delegate path after live validation showed a valid history count with blank rows.
+- Source regressions were corrected where tests had become stale or matched comments instead of executable ownership behavior.
+
+## Standards review
+
+The target architecture remains the one defined by the spec:
+
+- one owner for each global desktop facility;
+- narrow K4 presentation adapters;
+- K4-specific UI behind the island plugin boundary;
+- no Material/Liquid Glass restyle during parity work;
+- no unrelated distro/package-management subsystem inside the launcher;
+- no broad refactor of unrelated ii services without demonstrated adapter need.
+
+## Outside-click behavior
+
+The live pass reported that clicking outside an opened utility does not close it. This is not being changed speculatively during K4-07. The pinned K4 utility plugins expose explicit close/Escape behavior, while the island input mask is deliberately scoped to island geometry. Any change to desktop-wide outside-click dismissal needs upstream evidence or an explicit post-parity behavior decision; it must not be implemented by adding an invisible fullscreen input catcher.
 
 ## Automated evidence
 
-Repository source-regression tests exist for the K4-07 slices, including launcher, routing, fullscreen launcher, packages, apps, clipboard, files, windows, system, session, keys, weather and tray, plus the existing K4 singleton-import guard.
+Repository source-regression tests cover the K4-07 launcher, routing, fullscreen launcher, apps, clipboard, files, windows, system, session, keys, weather and tray seams, plus the existing singleton-import guard.
 
-The connected GitHub environment reports no CI status checks for the fixed review point, and it cannot execute the repository's local Quickshell runtime. Therefore this review does **not** claim a new automated pass count or QML runtime pass.
+The connected GitHub environment cannot execute the repository's Quickshell runtime or local Node suite, so this document does not claim a fresh automated pass. The next real-shell validation must run the source suite locally.
 
-## Live validation gate
+## Focused live revalidation gate
 
-Validate from the branch head containing this review artifact:
+Before closing K4-07, validate the remediated paths on the real shell:
 
-1. Standard mode: existing Super/search binding opens only the normal ii Overview; no K4 launcher appears.
-2. K4 mode: the same Super/search binding opens only K4 Launcher; no ii Overview/workspace surface appears.
-3. K4 Launcher closes with Escape/Super and the island begins collapsing immediately without a blank delayed ownership state.
-4. `qs -c ii ipc call search toggle` targets the launcher selected by the current bar variant.
-5. In a true fullscreen client, the existing launcher binding still reaches K4 Launcher without taking the client out of fullscreen.
-6. Launcher desktop-app search and launch work; package mode searches and performs its intended pacman/yay flow without running package work during ordinary app search.
-7. Applications grid opens utilities and returns cleanly through K4 arbitration.
-8. Clipboard search/select/copy works and does not open Standard Overview.
-9. Files search opens hits normally; Ctrl+Enter on both a file and a directory opens the containing parent directory.
-10. Windows utility lists current clients and focuses the selected client.
-11. System monitor shows live resource/network values while open and closes normally.
-12. Session/power surface opens and its non-destructive actions can be exercised; do not trigger destructive power actions merely for validation.
-13. Shortcut viewer shows current Hyprland keybindings.
-14. Weather renders current ii-vynx weather state and its normal interaction path.
-15. Tray renders current tray items and at least one item/menu can be interacted with.
-16. Standard → K4 → Standard switching leaves no stale launcher/utility surface resurrected across the variant boundary.
-17. Existing K4 panel, media, notifications and idle-island behavior still work after exercising the utilities.
+1. Standard mode: existing Super/search opens only Standard Overview.
+2. K4 mode: the same Super/search opens only K4 Launcher.
+3. In a true fullscreen client, Super reaches K4 Launcher without taking the client out of fullscreen.
+4. Launcher searches and launches desktop applications only; no package/AUR/install mode is present.
+5. Clipboard displays real history rows, filters them, and Enter copies the selected row; Delete and Ctrl+P remain usable.
+6. Weather condition icons render as real glyphs rather than missing-character boxes.
+7. Hover the K4 Clock: current tray icons appear there when tray applications exist; exercise at least one normal activation or menu path.
+8. Existing K4 panel/media/notifications and Standard → K4 → Standard switching remain intact.
 
-After this matrix passes, update `STATUS.md` with the live evidence, close K4-07, and proceed to K4-08.
+After this focused gate passes, record the runtime evidence in `STATUS.md`, close K4-07, and proceed to K4-08.
