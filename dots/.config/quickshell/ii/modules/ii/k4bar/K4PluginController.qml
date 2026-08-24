@@ -44,11 +44,24 @@ QtObject {
         return result
     }
 
+    function applyPluginEnabled(candidate, wanted) {
+        if (!candidate)
+            return
+        const target = Boolean(wanted)
+        // K4-11 will destroy/recreate disabled plugins. Until then, clear any
+        // stale open state accumulated while a static plugin was disabled before
+        // making it eligible to participate again.
+        if (target && !candidate.enabled && candidate.closeOnDisable
+                && typeof candidate.close === "function")
+            candidate.close()
+        candidate.enabled = target
+    }
+
     function applyPersistedEnablement() {
         const configurable = configurablePlugins()
         for (let i = 0; i < configurable.length; ++i) {
             const candidate = configurable[i]
-            candidate.enabled = K4Settings.pluginEnabled(candidate.name)
+            applyPluginEnabled(candidate, K4Settings.pluginEnabled(candidate.name))
         }
     }
 
@@ -58,7 +71,7 @@ QtObject {
             return false
         const target = Boolean(wanted)
         K4Settings.setPluginEnabled(name, target)
-        candidate.enabled = target
+        applyPluginEnabled(candidate, target)
         return true
     }
 
