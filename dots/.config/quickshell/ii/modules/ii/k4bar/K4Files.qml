@@ -10,7 +10,7 @@ import Quickshell.Io
 Singleton {
     id: root
 
-    readonly property string searchScript: Quickshell.shellRoot
+    readonly property string searchScript: Quickshell.shellDir
         + "/modules/ii/k4bar/tools/k4-file-search.py"
     property string query: ""
     property string scope: "home"
