@@ -498,6 +498,10 @@ Singleton {
                 property JsonObject k4: JsonObject {
                     property string position: "top" // "top" | "bottom"
                     property int alignment: 50 // 15 | 50 | 85
+                    property bool trayInPill: false
+                    property bool notificationsOnHover: true
+                    property bool dismissNotificationsOnFocus: true
+                    property list<string> disabledPlugins: []
                 }
 
                 property JsonObject activeWindow: JsonObject {

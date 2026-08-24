@@ -34,27 +34,32 @@ QtObject {
 
     property QtObject volumePlugin: K4Plugin {
         name: "volume"; title: "Volume"; priority: 40
+        closeOnDisable: false
         active: enabled && K4Audio.overlayOpen
         islandWidth: 240; islandHeight: 40
         view: Component { K4VolumeView {} }
     }
     property QtObject clockPlugin: K4Plugin {
         name: "clock"; title: "Clock"; priority: 50
+        closeOnDisable: false
         active: enabled && IslandState.hovered && root.passiveHoverAllowed
         readonly property int traySide: K4Tray.count > 0
             ? Math.min(K4Tray.count, 5) * 24 + 56 : 48
         islandWidth: Math.max(Persistent.states.screenRecord.active ? 352 : 328,
             136 + 2 * Math.max(96, traySide))
-        readonly property int notificationStripHeight: K4Notifications.stripHeight(3)
+        readonly property int notificationStripHeight: K4Settings.notificationsOnHover
+            ? K4Notifications.stripHeight(3) : 0
         islandHeight: 68 + (notificationStripHeight > 0 ? notificationStripHeight + 18 : 0)
         view: Component { K4ClockView { trayPlugin: root.trayPlugin } }
     }
     property QtObject playerPlugin: K4Plugin {
         name: "player"; title: "Player"; priority: 55
+        closeOnDisable: false
         active: enabled && IslandState.hovered && root.passiveHoverAllowed
             && K4Media.hasPlayer && (K4Media.isPlaying || root.playerHoverSession)
         islandWidth: 340
-        readonly property int notificationStripHeight: K4Notifications.stripHeight(3)
+        readonly property int notificationStripHeight: K4Settings.notificationsOnHover
+            ? K4Notifications.stripHeight(3) : 0
         islandHeight: (K4Media.hasTimeline ? 140 : 115) + (notificationStripHeight > 0 ? notificationStripHeight + 15 : 0)
         view: Component { K4PlayerView {} }
     }

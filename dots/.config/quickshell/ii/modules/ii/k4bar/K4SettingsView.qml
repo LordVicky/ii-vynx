@@ -88,7 +88,7 @@ Item {
             ColumnLayout {
                 id: settingsColumn
                 width: scroller.width
-                spacing: 10
+                spacing: 8
 
                 Text {
                     text: "ISLAND"
@@ -108,43 +108,16 @@ Item {
 
                     ColumnLayout {
                         anchors.fill: parent
-                        anchors.leftMargin: 12
-                        anchors.rightMargin: 12
-                        anchors.topMargin: 9
-                        anchors.bottomMargin: 9
+                        anchors.margins: 10
                         spacing: 7
 
-                        RowLayout {
-                            Layout.fillWidth: true
-                            spacing: 9
-
-                            Text {
-                                text: String.fromCodePoint(0xF10A9)
-                                color: K4Theme.muted
-                                font.family: K4Theme.iconFont
-                                font.pixelSize: 15
-                                renderType: Text.NativeRendering
-                            }
-
-                            ColumnLayout {
-                                Layout.fillWidth: true
-                                spacing: 0
-                                Text {
-                                    text: "Bar position"
-                                    color: K4Theme.ink
-                                    font.family: K4Theme.uiFont
-                                    font.pixelSize: 12
-                                    font.weight: Font.DemiBold
-                                    renderType: Text.NativeRendering
-                                }
-                                Text {
-                                    text: "The island and its wings follow the selected edge"
-                                    color: K4Theme.muted
-                                    font.family: K4Theme.uiFont
-                                    font.pixelSize: 9
-                                    renderType: Text.NativeRendering
-                                }
-                            }
+                        Text {
+                            text: "Bar position"
+                            color: K4Theme.ink
+                            font.family: K4Theme.uiFont
+                            font.pixelSize: 11
+                            font.weight: Font.DemiBold
+                            renderType: Text.NativeRendering
                         }
 
                         RowLayout {
@@ -158,8 +131,8 @@ Item {
                                     required property var modelData
                                     readonly property bool selected: K4Settings.position === modelData.value
                                     Layout.preferredWidth: positionLabel.implicitWidth + 24
-                                    Layout.preferredHeight: 24
-                                    radius: 12
+                                    Layout.preferredHeight: 26
+                                    radius: 13
                                     color: selected ? K4Theme.blue
                                         : positionHover.hovered ? K4Theme.surfaceHi : K4Theme.track
 
@@ -197,43 +170,16 @@ Item {
 
                     ColumnLayout {
                         anchors.fill: parent
-                        anchors.leftMargin: 12
-                        anchors.rightMargin: 12
-                        anchors.topMargin: 9
-                        anchors.bottomMargin: 9
+                        anchors.margins: 10
                         spacing: 7
 
-                        RowLayout {
-                            Layout.fillWidth: true
-                            spacing: 9
-
-                            Text {
-                                text: String.fromCodePoint(0xF11C3)
-                                color: K4Theme.muted
-                                font.family: K4Theme.iconFont
-                                font.pixelSize: 15
-                                renderType: Text.NativeRendering
-                            }
-
-                            ColumnLayout {
-                                Layout.fillWidth: true
-                                spacing: 0
-                                Text {
-                                    text: "Island alignment"
-                                    color: K4Theme.ink
-                                    font.family: K4Theme.uiFont
-                                    font.pixelSize: 12
-                                    font.weight: Font.DemiBold
-                                    renderType: Text.NativeRendering
-                                }
-                                Text {
-                                    text: "Choose where along the screen edge the island rests"
-                                    color: K4Theme.muted
-                                    font.family: K4Theme.uiFont
-                                    font.pixelSize: 9
-                                    renderType: Text.NativeRendering
-                                }
-                            }
+                        Text {
+                            text: "Island alignment"
+                            color: K4Theme.ink
+                            font.family: K4Theme.uiFont
+                            font.pixelSize: 11
+                            font.weight: Font.DemiBold
+                            renderType: Text.NativeRendering
                         }
 
                         RowLayout {
@@ -247,8 +193,8 @@ Item {
                                     required property var modelData
                                     readonly property bool selected: K4Settings.alignment === modelData.value
                                     Layout.preferredWidth: alignmentLabel.implicitWidth + 24
-                                    Layout.preferredHeight: 24
-                                    radius: 12
+                                    Layout.preferredHeight: 26
+                                    radius: 13
                                     color: selected ? K4Theme.blue
                                         : alignmentHover.hovered ? K4Theme.surfaceHi : K4Theme.track
 
@@ -278,9 +224,59 @@ Item {
                     }
                 }
 
+                K4SettingsToggle {
+                    Layout.fillWidth: true
+                    title: "Tray in collapsed pill"
+                    description: "Show up to four system-tray items beside the clock"
+                    glyph: String.fromCodePoint(0xF1296)
+                    checked: K4Settings.trayInPill
+                    onToggled: value => K4Settings.setTrayInPill(value)
+                }
+
+                K4SettingsToggle {
+                    Layout.fillWidth: true
+                    title: "Recent notifications on hover"
+                    description: "Show the recent-notification strip under Clock and Player"
+                    glyph: K4Theme.ico.bellOutline
+                    checked: K4Settings.notificationsOnHover
+                    onToggled: value => K4Settings.setNotificationsOnHover(value)
+                }
+
+                K4SettingsToggle {
+                    Layout.fillWidth: true
+                    title: "Dismiss when application is focused"
+                    description: "Clear matching notifications after their application takes focus"
+                    glyph: K4Theme.ico.check
+                    checked: K4Settings.dismissNotificationsOnFocus
+                    onToggled: value => K4Settings.setDismissNotificationsOnFocus(value)
+                }
+
+                Text {
+                    Layout.topMargin: 8
+                    Layout.leftMargin: 2
+                    text: "PLUGINS"
+                    color: K4Theme.dim
+                    font.family: K4Theme.uiFont
+                    font.pixelSize: 9
+                    font.capitalization: Font.AllUppercase
+                    renderType: Text.NativeRendering
+                }
+
+                Repeater {
+                    model: root.plugin.controller
+                        ? root.plugin.controller.configurablePlugins() : []
+
+                    delegate: K4SettingsPluginRow {
+                        required property var modelData
+                        Layout.fillWidth: true
+                        plugin: modelData
+                        controller: root.plugin.controller
+                    }
+                }
+
                 Text {
                     Layout.fillWidth: true
-                    Layout.topMargin: 2
+                    Layout.topMargin: 3
                     text: "More K4 settings appear here only when their runtime feature is present."
                     color: K4Theme.dim
                     font.family: K4Theme.uiFont

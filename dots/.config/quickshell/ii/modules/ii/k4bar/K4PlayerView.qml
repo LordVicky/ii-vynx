@@ -306,6 +306,7 @@ Item {
         }
 
         K4NotifStrip {
+            visible: K4Settings.notificationsOnHover
             max: 3
             Layout.fillWidth: true
             Layout.topMargin: 2

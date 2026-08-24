@@ -28,6 +28,40 @@ QtObject {
         return null
     }
 
+    function isProtectedPlugin(candidate) {
+        return !candidate || candidate.name === "idle" || candidate.name === "settings"
+            || candidate.name.startsWith("demo-") || candidate.configurable === false
+    }
+
+    function configurablePlugins() {
+        const result = []
+        for (let i = 0; i < plugins.length; ++i) {
+            const candidate = plugins[i]
+            if (isProtectedPlugin(candidate))
+                continue
+            result.push(candidate)
+        }
+        return result
+    }
+
+    function applyPersistedEnablement() {
+        const configurable = configurablePlugins()
+        for (let i = 0; i < configurable.length; ++i) {
+            const candidate = configurable[i]
+            candidate.enabled = K4Settings.pluginEnabled(candidate.name)
+        }
+    }
+
+    function setPluginEnabled(name, wanted) {
+        const candidate = plugin(name)
+        if (isProtectedPlugin(candidate))
+            return false
+        const target = Boolean(wanted)
+        K4Settings.setPluginEnabled(name, target)
+        candidate.enabled = target
+        return true
+    }
+
     // Apps is a view over this registry, never a second catalog owner. Only
     // plugins that explicitly opt into the application contract appear.
     function applicationPlugins() {
@@ -131,13 +165,24 @@ QtObject {
     onActivePluginChanged: publishActivePlugin()
     Component.onCompleted: {
         attachBuiltins()
+        applyPersistedEnablement()
         const panel = plugin("panel")
         if (panel)
             panel.controller = root
         const apps = plugin("apps")
         if (apps)
             apps.controller = root
+        const settings = plugin("settings")
+        if (settings)
+            settings.controller = root
         publishActivePlugin()
+    }
+
+    property var settingsConnections: Connections {
+        target: K4Settings
+        function onDisabledPluginsChanged() {
+            root.applyPersistedEnablement()
+        }
     }
 
     function visiblePluginFor(screenName) {
@@ -229,6 +274,9 @@ QtObject {
         const apps = plugin("apps")
         if (apps?.controller === root)
             apps.controller = null
+        const settings = plugin("settings")
+        if (settings?.controller === root)
+            settings.controller = null
         IslandState.resetHostPublication()
     }
 }

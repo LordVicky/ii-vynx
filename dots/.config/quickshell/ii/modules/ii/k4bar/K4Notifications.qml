@@ -2,6 +2,7 @@ pragma Singleton
 
 import QtQuick
 import Quickshell
+import Quickshell.Hyprland
 import qs.modules.common
 import qs.services
 
@@ -103,6 +104,61 @@ Singleton {
         Notifications.markAllRead()
     }
 
+    // Match focused windows conservatively. Upstream only auto-dismisses on an
+    // exact application-class match; fuzzy/title matching is reserved for an
+    // explicit notification click because a false positive here destroys data.
+    function normalizedClass(value) {
+        return String(value ?? "").toLowerCase().replace(/\.desktop$/, "")
+    }
+
+    function classesFor(notification) {
+        const result = []
+        const add = function(value) {
+            const normalized = root.normalizedClass(value)
+            if (normalized.length > 0 && result.indexOf(normalized) < 0)
+                result.push(normalized)
+        }
+
+        add(notification?.appName)
+        add(notification?.notification?.desktopEntry)
+
+        const appName = root.normalizedClass(notification?.appName)
+        const desktopEntry = root.normalizedClass(notification?.notification?.desktopEntry)
+        const applications = DesktopEntries.applications.values
+        for (let i = 0; i < applications.length; ++i) {
+            const application = applications[i]
+            const id = root.normalizedClass(application?.id)
+            const name = root.normalizedClass(application?.name)
+            if ((desktopEntry.length > 0 && id === desktopEntry)
+                    || (appName.length > 0 && name === appName)) {
+                add(application?.startupClass)
+                add(application?.id)
+            }
+        }
+        return result
+    }
+
+    function belongsToToplevel(notification, toplevel) {
+        const client = HyprlandData.clientForToplevel(toplevel)
+        if (!client)
+            return false
+        const cls = normalizedClass(client.class)
+        const initial = normalizedClass(client.initialClass)
+        const candidates = classesFor(notification)
+        return (cls.length > 0 && candidates.indexOf(cls) >= 0)
+            || (initial.length > 0 && candidates.indexOf(initial) >= 0)
+    }
+
+    function dismissFocused(toplevel) {
+        if (!K4Settings.dismissNotificationsOnFocus || !toplevel)
+            return
+        const candidates = history.slice()
+        for (let i = 0; i < candidates.length; ++i) {
+            if (belongsToToplevel(candidates[i], toplevel))
+                dismiss(candidates[i])
+        }
+    }
+
     function routeToast() {
         const owner = IslandState.occupant === "toast" ? previousOwner : IslandState.occupant
         inBand = passiveToastOwners.indexOf(owner) < 0
@@ -136,6 +192,13 @@ Singleton {
                 root.holdToast()
             else
                 root.resumeToast()
+        }
+    }
+
+    Connections {
+        target: Hyprland
+        function onActiveToplevelChanged() {
+            root.dismissFocused(Hyprland.activeToplevel)
         }
     }
 

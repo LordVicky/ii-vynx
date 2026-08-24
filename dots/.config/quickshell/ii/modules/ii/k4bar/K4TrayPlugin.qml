@@ -59,6 +59,12 @@ K4Plugin {
         }
     }
 
+    Component.onCompleted: K4TrayHost.plugin = root
+    Component.onDestruction: {
+        if (K4TrayHost.plugin === root)
+            K4TrayHost.plugin = null
+    }
+
     IpcHandler {
         target: "k4.tray"
         function toggle(): void { root.toggle() }

@@ -228,6 +228,14 @@ Item {
             anchors.verticalCenter: parent.verticalCenter
             spacing: 8
 
+            K4TrayRow {
+                visible: K4Settings.trayInPill && K4TrayHost.plugin !== null && K4Tray.count > 0
+                trayPlugin: K4TrayHost.plugin
+                max: 4
+                iconSize: 14
+                Layout.alignment: Qt.AlignVCenter
+            }
+
             Item {
                 visible: root.recording
                 implicitWidth: recordingRow.implicitWidth

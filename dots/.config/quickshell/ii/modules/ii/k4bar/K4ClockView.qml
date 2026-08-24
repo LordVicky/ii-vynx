@@ -25,7 +25,7 @@ Item {
         anchors.fill: parent
         anchors.leftMargin: 22
         anchors.rightMargin: 22
-        anchors.bottomMargin: K4Notifications.recent.length > 0 ? 12 : 0
+        anchors.bottomMargin: K4Settings.notificationsOnHover && K4Notifications.recent.length > 0 ? 12 : 0
         spacing: 6
 
         Item {
@@ -86,6 +86,7 @@ Item {
         }
 
         K4NotifStrip {
+            visible: K4Settings.notificationsOnHover
             max: 3
             Layout.fillWidth: true
         }
