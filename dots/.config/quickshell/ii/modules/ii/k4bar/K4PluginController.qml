@@ -6,7 +6,10 @@ QtObject {
     id: root
 
     property list<QtObject> plugins
-    property QtObject builtins: K4BuiltinPlugins {}
+    property bool passiveHoverAllowed: false
+    property QtObject builtins: K4BuiltinPlugins {
+        passiveHoverAllowed: root.passiveHoverAllowed
+    }
 
     function attachBuiltins() {
         const combined = []
@@ -61,6 +64,21 @@ QtObject {
         return best
     }
 
+    function isPassiveHoverPlugin(candidate) {
+        return candidate === builtins.clockPlugin || candidate === builtins.playerPlugin
+    }
+
+    // Idle, passive hover owners, volume and transient notifications may hand
+    // control back to Clock/Player in the same pointer session. Explicitly
+    // opened utilities may not: otherwise closing one while still hovered makes
+    // the island expand to Clock/Player before the next click can open Panel.
+    function isAmbientPlugin(candidate) {
+        return !candidate || candidate === idlePlugin
+            || candidate === builtins.volumePlugin
+            || candidate.transitorio
+            || isPassiveHoverPlugin(candidate)
+    }
+
     function dismissTransients() {
         const winner = activePlugin
         if (!winner || winner.transitorio)
@@ -78,6 +96,12 @@ QtObject {
 
     function publishActivePlugin() {
         dismissTransients()
+
+        // Once an explicit utility owns this pointer session, do not let its
+        // close reveal a passive Clock/Player owner underneath. A real pointer
+        // exit and re-entry rearms passive hover in hoverEntered().
+        if (activePlugin && !isAmbientPlugin(activePlugin))
+            passiveHoverAllowed = false
 
         const previous = IslandState.occupant
         if (activePlugin && activePlugin.name !== "idle") {
@@ -144,9 +168,14 @@ QtObject {
         hoverClearTimer.stop()
         pluginHoverExitTimer.stop()
 
+        const newHoverSession = !IslandState.hovered
         if (!activePlugin || activePlugin.name === "idle")
             IslandState.requestScreen(screenName)
 
+        // A geometry-driven re-entry during the 240ms exit grace is still the
+        // same pointer session. Only a real completed exit rearms Clock/Player.
+        if (newHoverSession)
+            passiveHoverAllowed = isAmbientPlugin(activePlugin)
         IslandState.hovered = true
     }
 
@@ -165,7 +194,10 @@ QtObject {
 
     property var hoverClearTimer: Timer {
         interval: 240
-        onTriggered: IslandState.hovered = false
+        onTriggered: {
+            IslandState.hovered = false
+            root.passiveHoverAllowed = false
+        }
     }
 
     property var pluginHoverExitTimer: Timer {
@@ -180,6 +212,7 @@ QtObject {
     function reset() {
         hoverClearTimer.stop()
         pluginHoverExitTimer.stop()
+        passiveHoverAllowed = false
         const panel = plugin("panel")
         if (panel?.controller === root)
             panel.controller = null

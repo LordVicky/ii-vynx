@@ -6,6 +6,11 @@ import qs.modules.common
 QtObject {
     id: root
 
+    // Passive Clock/Player hover belongs to a pointer session. The controller
+    // can latch it off while an explicitly opened utility owns the island so
+    // closing that utility does not immediately rebound through Clock/Player.
+    property bool passiveHoverAllowed: false
+
     readonly property list<QtObject> plugins: [
         volumePlugin, clockPlugin, playerPlugin, toastPlugin, panelPlugin,
         appsPlugin, launcherPlugin, clipboardPlugin, filesPlugin, windowsPlugin,
@@ -34,7 +39,7 @@ QtObject {
     }
     property QtObject clockPlugin: K4Plugin {
         name: "clock"; title: "Clock"; priority: 50
-        active: enabled && IslandState.hovered
+        active: enabled && IslandState.hovered && root.passiveHoverAllowed
         readonly property int traySide: K4Tray.count > 0
             ? Math.min(K4Tray.count, 5) * 24 + 56 : 48
         islandWidth: Math.max(Persistent.states.screenRecord.active ? 352 : 328,
@@ -45,7 +50,8 @@ QtObject {
     }
     property QtObject playerPlugin: K4Plugin {
         name: "player"; title: "Player"; priority: 55
-        active: enabled && IslandState.hovered && K4Media.hasPlayer && (K4Media.isPlaying || root.playerHoverSession)
+        active: enabled && IslandState.hovered && root.passiveHoverAllowed
+            && K4Media.hasPlayer && (K4Media.isPlaying || root.playerHoverSession)
         islandWidth: 340
         readonly property int notificationStripHeight: K4Notifications.stripHeight(3)
         islandHeight: (K4Media.hasTimeline ? 140 : 115) + (notificationStripHeight > 0 ? notificationStripHeight + 15 : 0)
