@@ -14,6 +14,8 @@ Item {
     readonly property bool isPlaying: K4Media.isPlaying
     readonly property string artSource: K4Media.coverFor(activePlayer)
     readonly property bool recording: Persistent.states.screenRecord.active
+    readonly property bool trayReserveActive: K4Settings.trayInPill
+        && K4TrayHost.plugin !== null && K4Tray.count > 0
 
     readonly property var workspaces: K4Workspaces.list
     readonly property int activeWorkspaceId: K4Workspaces.activeId
@@ -26,7 +28,10 @@ Item {
         workspaces.slice(workspaceStart, workspaceStart + 3)
 
     readonly property int leftReserve: isPlaying ? 53 : 0
-    readonly property int rightMeasured: Math.ceil(rightIndicators.implicitWidth)
+    readonly property int rightMeasured:
+        (trayReserveActive ? Math.ceil(collapsedTray.implicitWidth) : 0)
+        + (recording ? Math.ceil(recordingRow.implicitWidth) : 0)
+        + (trayReserveActive && recording ? rightIndicators.spacing : 0)
     readonly property int sideReserve: Math.max(leftReserve, rightMeasured)
     readonly property int desiredBodyWidth: 46 + 2 * sideReserve + 44
 
@@ -229,7 +234,8 @@ Item {
             spacing: 8
 
             K4TrayRow {
-                visible: K4Settings.trayInPill && K4TrayHost.plugin !== null && K4Tray.count > 0
+                id: collapsedTray
+                visible: root.trayReserveActive
                 trayPlugin: K4TrayHost.plugin
                 max: 4
                 iconSize: 14
