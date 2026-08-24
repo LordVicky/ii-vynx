@@ -63,7 +63,7 @@ test("K4 Island preferences are persisted in Config and consumed by live feature
     assert.match(trayHost, /property var plugin:\s*null/);
     assert.match(trayHost, /function openFor\(item\)[\s\S]*?plugin\?\.openFor\(item\)/);
     assert.match(trayPlugin, /Component\.onCompleted:\s*K4TrayHost\.plugin = root/);
-    assert.match(idle, /K4TrayRow\s*\{[\s\S]*?K4Settings\.trayInPill[\s\S]*?trayPlugin:\s*K4TrayHost\.plugin[\s\S]*?max:\s*4/);
+    assert.match(idle, /K4TrayRow\s*\{[\s\S]*?id:\s*collapsedTray[\s\S]*?visible:\s*root\.trayReserveActive[\s\S]*?trayPlugin:\s*K4TrayHost\.plugin[\s\S]*?max:\s*4/);
     assert.match(idle, /readonly property bool trayReserveActive:\s*K4Settings\.trayInPill[\s\S]*?K4TrayHost\.plugin !== null[\s\S]*?K4Tray\.count > 0/);
     assert.match(idle, /readonly property int rightMeasured:[\s\S]*?trayReserveActive\s*\?\s*Math\.ceil\(collapsedTray\.implicitWidth\)\s*:\s*0/);
     assert.doesNotMatch(idle, /rightMeasured:\s*Math\.ceil\(rightIndicators\.implicitWidth\)/);
