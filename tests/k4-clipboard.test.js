@@ -9,12 +9,13 @@ const read = file => fs.readFileSync(file, "utf8");
 
 test("clipboard adapter reuses ii-vynx Cliphist without a second watcher", () => {
     const source = read(k4("K4Clipboard.qml"));
+    const executable = source.replace(/\/\/.*$/gm, "");
     assert.match(source, /import qs\.services/);
     assert.match(source, /Cliphist\.fuzzyQuery/);
     assert.match(source, /Cliphist\.copy/);
     assert.match(source, /Cliphist\.deleteEntry/);
     assert.match(source, /Cliphist\.wipe/);
-    assert.doesNotMatch(source, /wl-paste/);
+    assert.doesNotMatch(executable, /wl-paste/);
     assert.doesNotMatch(source, /Process\s*\{/);
 });
 
@@ -37,12 +38,15 @@ test("clipboard plugin preserves upstream priority, geometry and keyboard contra
     assert.match(source, /target:\s*"k4\.clipboard"/);
 });
 
-test("clipboard view carries the daily-driver keyboard actions", () => {
+test("clipboard view carries the daily-driver keyboard actions and a stable list surface", () => {
     const source = read(k4("K4ClipboardView.qml"));
     assert.match(source, /Qt\.Key_PageDown/);
     assert.match(source, /Qt\.Key_Delete/);
     assert.match(source, /Qt\.ControlModifier/);
     assert.match(source, /root\.plugin\.choose\(\)/);
+    assert.match(source, /Layout\.minimumHeight:\s*300/);
+    assert.match(source, /row\.modelData\.summary/);
+    assert.doesNotMatch(source, /\bz:\s*-1\b/);
 });
 
 test("clipboard is registered in the built-in utility catalog", () => {
