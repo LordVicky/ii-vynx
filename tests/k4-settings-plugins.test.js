@@ -30,7 +30,8 @@ test("K4 plugin settings persist enablement without breaking active bindings", a
 
     assert.match(settingsPlugin, /configurable:\s*false/);
     assert.match(settingsPlugin, /property var controller:\s*null/);
-    assert.match(controller, /function configurablePlugins\(\)[\s\S]*?candidate\.name === "idle"[\s\S]*?candidate\.name === "settings"[\s\S]*?candidate\.name\.startsWith\("demo-"\)/);
+    assert.match(controller, /function isProtectedPlugin\(candidate\)[\s\S]*?candidate\.name === "idle"[\s\S]*?candidate\.name === "settings"[\s\S]*?candidate\.name\.startsWith\("demo-"\)[\s\S]*?candidate\.configurable === false/);
+    assert.match(controller, /function configurablePlugins\(\)[\s\S]*?if \(isProtectedPlugin\(candidate\)\)[\s\S]*?continue[\s\S]*?result\.push\(candidate\)/);
     assert.match(controller, /function applyPluginEnabled\(candidate, wanted\)[\s\S]*?if \(target && !candidate\.enabled && candidate\.closeOnDisable[\s\S]*?candidate\.close\(\)[\s\S]*?candidate\.enabled = target/);
     assert.match(controller, /function applyPersistedEnablement\(\)[\s\S]*?applyPluginEnabled\(candidate, K4Settings\.pluginEnabled\(candidate\.name\)\)/);
     assert.match(controller, /function setPluginEnabled\(name, wanted\)[\s\S]*?K4Settings\.setPluginEnabled\(name, target\)[\s\S]*?applyPluginEnabled\(candidate, target\)/);
