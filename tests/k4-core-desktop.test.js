@@ -87,7 +87,7 @@ test("core built-ins preserve k4 priorities, activation defaults and dimensions"
     assert.match(source, /name:\s*"player"[\s\S]*?priority:\s*55[\s\S]*?active:\s*enabled && IslandState\.hovered && K4Media\.hasPlayer[\s\S]*?K4Media\.isPlaying \|\| root\.playerHoverSession[\s\S]*?islandWidth:\s*340[\s\S]*?K4Media\.hasTimeline \? 140 : 115/);
 
     assert.match(source, /view:\s*Component \{ K4VolumeView \{\} \}/);
-    assert.match(source, /view:\s*Component \{ K4ClockView \{\} \}/);
+    assert.match(source, /view:\s*Component \{ K4ClockView \{ trayPlugin: root\.trayPlugin \} \}/);
     assert.match(source, /view:\s*Component \{ K4PlayerView \{\} \}/);
 });
 
