@@ -124,7 +124,7 @@ Scope {
         function dialogClose(): void { IslandState.closeSystemDialog() }
 
         function placePrimary(fraction: real, durationMs: int): void {
-            demoPrimary.requestPlacement(fraction, durationMs || 0)
+            demoPrimary.requestPlacement(fraction, durationMs)
         }
         function releasePrimaryPlacement(): void { demoPrimary.releasePlacement() }
         function gesture(name: string, strength: real): void {
@@ -300,7 +300,8 @@ Scope {
                         x: island.x,
                         y: panelWindow.bottom
                             ? panelWindow.screen.height - island.height : 0,
-                        ancho: island.width, alto: island.height
+                        ancho: island.width,
+                        alto: island.height
                     }, panelWindow.modelData === Quickshell.screens[0])
                 }
 
