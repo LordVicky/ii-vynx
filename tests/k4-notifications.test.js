@@ -149,7 +149,7 @@ test("clock and player reserve exactly the notification strip space they render"
 
     assert.match(builtins, /name:\s*"clock"[\s\S]*?notificationStripHeight:\s*K4Settings\.notificationsOnHover[\s\S]*?\? K4Notifications\.stripHeight\(3\) : 0[\s\S]*?islandHeight:\s*68 \+ \(notificationStripHeight > 0 \? notificationStripHeight \+ 18 : 0\)/);
     assert.match(builtins, /name:\s*"player"[\s\S]*?notificationStripHeight:\s*K4Settings\.notificationsOnHover[\s\S]*?\? K4Notifications\.stripHeight\(3\) : 0[\s\S]*?islandHeight:\s*\(K4Media\.hasTimeline \? 140 : 115\)[\s\S]*?notificationStripHeight \+ 15/);
-    assert.match(clock, /anchors\.bottomMargin:\s*K4Notifications\.recent\.length > 0 \? 12 : 0/);
+    assert.match(clock, /anchors\.bottomMargin:\s*K4Settings\.notificationsOnHover && K4Notifications\.recent\.length > 0 \? 12 : 0/);
     assert.match(clock, /K4NotifStrip\s*\{[\s\S]*?max:\s*3[\s\S]*?Layout\.fillWidth:\s*true/);
     assert.match(player, /K4NotifStrip\s*\{[\s\S]*?max:\s*3[\s\S]*?Layout\.fillWidth:\s*true[\s\S]*?Layout\.topMargin:\s*2/);
 });
