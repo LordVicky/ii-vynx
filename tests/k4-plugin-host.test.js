@@ -38,6 +38,7 @@ test("base plugin contract separates enabled state from active island requests",
     assert.match(source, /required property string name/);
     assert.match(source, /property bool enabled:\s*true/);
     assert.match(source, /property bool active:\s*false/);
+    assert.match(source, /property bool closeOnDisable:\s*true/);
     assert.match(source, /property int priority:\s*50/);
     assert.match(source, /property bool transitorio:\s*false/);
     assert.doesNotMatch(source, /property bool transient\b/);
@@ -56,7 +57,8 @@ test("base plugin contract separates enabled state from active island requests",
     assert.match(source, /function open\(\)[\s\S]*?if \(enabled\)[\s\S]*?active = true/);
     assert.match(source, /function requestPlacement\(fraction, durationMs\)[\s\S]*?if \(enabled\)[\s\S]*?IslandState\.requestPlacement/);
     assert.match(source, /function requestGesture\(gestureName, strength\)[\s\S]*?if \(enabled\)[\s\S]*?IslandState\.requestGesture/);
-    assert.match(source, /onEnabledChanged:[\s\S]*?active = false[\s\S]*?releasePlacement\(\)/);
+    assert.match(source, /onEnabledChanged:[\s\S]*?if \(root\.closeOnDisable\)[\s\S]*?root\.close\(\)[\s\S]*?releasePlacement\(\)/);
+    assert.doesNotMatch(source, /onEnabledChanged:[\s\S]*?active = false/);
     assert.match(source, /Component\.onDestruction:\s*releasePlacement\(\)/);
 });
 
@@ -75,7 +77,7 @@ test("plugin controller owns priority arbitration, transient preemption and moni
     assert.match(source, /activePlugin\.islandHeight > K4Theme\.baseHeight/);
     assert.match(source, /onActivePluginChanged:\s*publishActivePlugin\(\)/);
 
-    assert.match(source, /property QtObject builtins:\s*K4BuiltinPlugins \{\}/);
+    assert.match(source, /property QtObject builtins:\s*K4BuiltinPlugins \{[\s\S]*?passiveHoverAllowed:\s*root\.passiveHoverAllowed[\s\S]*?\}/);
     assert.match(source, /function attachBuiltins\(\)[\s\S]*?builtins\.plugins[\s\S]*?plugins = combined/);
     assert.match(source, /Component\.onCompleted:\s*\{[\s\S]*?attachBuiltins\(\)[\s\S]*?publishActivePlugin\(\)[\s\S]*?\}/);
 
