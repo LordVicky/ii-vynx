@@ -210,9 +210,15 @@ Scope {
             mask: Region { item: IslandState.suppressed ? null : island }
 
             onTargetHeightChanged: {
+                // A pending shrink belongs to the previous owner. If another
+                // explicit view opens during the 520ms collapse grace, cancel
+                // that stale callback before it can resize the layer surface
+                // underneath the new view.
+                surfaceShrinkTimer.stop()
+
                 if (targetHeight > surfaceHeight)
                     surfaceHeight = targetHeight
-                else
+                else if (showingIdle)
                     surfaceShrinkTimer.restart()
             }
 
@@ -221,7 +227,13 @@ Scope {
             Timer {
                 id: surfaceShrinkTimer
                 interval: 520
-                onTriggered: panelWindow.surfaceHeight = panelWindow.targetHeight
+                onTriggered: {
+                    // Explicit views may reuse a larger surface left by the
+                    // previous owner. Only reclaim that capacity once the
+                    // island is still idle at timer expiry.
+                    if (panelWindow.showingIdle)
+                        panelWindow.surfaceHeight = panelWindow.targetHeight
+                }
             }
 
             Item {
