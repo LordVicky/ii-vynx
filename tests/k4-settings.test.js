@@ -45,7 +45,8 @@ test("K4 Island preferences are persisted in Config and consumed by live feature
     const adapter = await read("modules/ii/k4bar/K4Settings.qml");
     const view = await read("modules/ii/k4bar/K4SettingsView.qml");
     const idle = await read("modules/ii/k4bar/K4IdlePill.qml");
-    const host = await read("modules/ii/k4bar/K4Bar.qml");
+    const trayHost = await read("modules/ii/k4bar/K4TrayHost.qml");
+    const trayPlugin = await read("modules/ii/k4bar/K4TrayPlugin.qml");
     const builtins = await read("modules/ii/k4bar/K4BuiltinPlugins.qml");
     const clock = await read("modules/ii/k4bar/K4ClockView.qml");
     const player = await read("modules/ii/k4bar/K4PlayerView.qml");
@@ -59,9 +60,10 @@ test("K4 Island preferences are persisted in Config and consumed by live feature
     assert.match(adapter, /function setNotificationsOnHover\(wanted\)/);
     assert.match(adapter, /function setDismissNotificationsOnFocus\(wanted\)/);
 
-    assert.match(host, /K4IdlePill\s*\{[\s\S]*?trayPlugin:\s*controller\.builtins\.trayPlugin/);
-    assert.match(idle, /property var trayPlugin:\s*null/);
-    assert.match(idle, /K4TrayRow\s*\{[\s\S]*?K4Settings\.trayInPill[\s\S]*?max:\s*4/);
+    assert.match(trayHost, /property var plugin:\s*null/);
+    assert.match(trayHost, /function openFor\(item\)[\s\S]*?plugin\?\.openFor\(item\)/);
+    assert.match(trayPlugin, /Component\.onCompleted:\s*K4TrayHost\.plugin = root/);
+    assert.match(idle, /K4TrayRow\s*\{[\s\S]*?K4Settings\.trayInPill[\s\S]*?trayPlugin:\s*K4TrayHost\.plugin[\s\S]*?max:\s*4/);
 
     assert.match(builtins, /notificationStripHeight:\s*K4Settings\.notificationsOnHover\s*\?\s*K4Notifications\.stripHeight\(3\)\s*:\s*0/g);
     assert.match(clock, /K4NotifStrip\s*\{[\s\S]*?visible:\s*K4Settings\.notificationsOnHover/);
