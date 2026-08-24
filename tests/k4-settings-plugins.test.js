@@ -1,0 +1,43 @@
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import test from "node:test";
+
+const root = new URL("../dots/.config/quickshell/ii/", import.meta.url);
+const read = async path => readFile(new URL(path, root), "utf8");
+
+test("K4 plugin settings persist enablement without breaking active bindings", async () => {
+    const config = await read("modules/common/Config.qml");
+    const adapter = await read("modules/ii/k4bar/K4Settings.qml");
+    const base = await read("modules/ii/k4bar/K4Plugin.qml");
+    const controller = await read("modules/ii/k4bar/K4PluginController.qml");
+    const settingsPlugin = await read("modules/ii/k4bar/K4SettingsPlugin.qml");
+    const settingsView = await read("modules/ii/k4bar/K4SettingsView.qml");
+    const row = await read("modules/ii/k4bar/K4SettingsPluginRow.qml");
+    const host = await read("modules/ii/k4bar/K4Bar.qml");
+
+    assert.match(config, /property JsonObject k4: JsonObject \{[\s\S]*?property list<string> disabledPlugins:\s*\[\]/);
+    assert.match(adapter, /readonly property var disabledPlugins:\s*Config\.options\.bar\.k4\.disabledPlugins/);
+    assert.match(adapter, /function pluginEnabled\(name\)/);
+    assert.match(adapter, /function setPluginEnabled\(name, wanted\)[\s\S]*?Config\.options\.bar\.k4\.disabledPlugins = next/);
+
+    assert.match(base, /property bool configurable:\s*true/);
+    assert.match(base, /property string loadError:\s*""/);
+    assert.match(base, /onEnabledChanged:[\s\S]*?root\.close\(\)[\s\S]*?releasePlacement\(\)/);
+    assert.doesNotMatch(base, /onEnabledChanged:[\s\S]*?active = false/);
+
+    assert.match(settingsPlugin, /configurable:\s*false/);
+    assert.match(settingsPlugin, /property var controller:\s*null/);
+    assert.match(controller, /function configurablePlugins\(\)[\s\S]*?candidate\.name === "idle"[\s\S]*?candidate\.name === "settings"[\s\S]*?candidate\.name\.startsWith\("demo-"\)/);
+    assert.match(controller, /function applyPersistedEnablement\(\)[\s\S]*?candidate\.enabled = K4Settings\.pluginEnabled\(candidate\.name\)/);
+    assert.match(controller, /function setPluginEnabled\(name, wanted\)[\s\S]*?K4Settings\.setPluginEnabled\(name, target\)[\s\S]*?candidate\.enabled = target/);
+    assert.match(controller, /const settings = plugin\("settings"\)[\s\S]*?settings\.controller = root/);
+
+    assert.match(settingsView, /root\.plugin\.controller\.configurablePlugins\(\)/);
+    assert.match(settingsView, /K4SettingsPluginRow/);
+    assert.match(row, /plugin\.loadError\.length > 0/);
+    assert.match(row, /plugin\.enabled \? "Loaded" : "Disabled"/);
+    assert.match(row, /controller\.setPluginEnabled\(plugin\.name, value\)/);
+
+    assert.match(host, /Loader\.Error[\s\S]*?modelData\.loadError = "View failed to load"/);
+    assert.match(host, /Loader\.Ready[\s\S]*?modelData\.loadError = ""/);
+});
