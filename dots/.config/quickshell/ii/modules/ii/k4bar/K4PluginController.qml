@@ -79,6 +79,21 @@ QtObject {
             || isPassiveHoverPlugin(candidate)
     }
 
+    // activePlugin depends on Clock/Player.active, which in turn depends on the
+    // passive-hover latch. Writing that latch synchronously from
+    // onActivePluginChanged creates a QML binding loop. Defer the write until
+    // the current binding evaluation has settled, then confirm the explicit
+    // owner is still current before consuming the hover session.
+    function schedulePassiveHoverSuppression() {
+        if (!activePlugin || isAmbientPlugin(activePlugin))
+            return
+        Qt.callLater(function() {
+            const winner = root.activePlugin
+            if (winner && !root.isAmbientPlugin(winner))
+                root.passiveHoverAllowed = false
+        })
+    }
+
     function dismissTransients() {
         const winner = activePlugin
         if (!winner || winner.transitorio)
@@ -96,12 +111,7 @@ QtObject {
 
     function publishActivePlugin() {
         dismissTransients()
-
-        // Once an explicit utility owns this pointer session, do not let its
-        // close reveal a passive Clock/Player owner underneath. A real pointer
-        // exit and re-entry rearms passive hover in hoverEntered().
-        if (activePlugin && !isAmbientPlugin(activePlugin))
-            passiveHoverAllowed = false
+        schedulePassiveHoverSuppression()
 
         const previous = IslandState.occupant
         if (activePlugin && activePlugin.name !== "idle") {

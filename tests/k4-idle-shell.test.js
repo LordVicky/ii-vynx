@@ -71,14 +71,16 @@ test("idle media lifecycle and workspace behavior follows k4 defaults", () => {
     assert.match(source, /opacity:\s*root\.showingWorkspaces \? 0 : 1/);
 });
 
-test("explicit island owners do not rebound through passive hover in the same pointer session", () => {
+test("explicit island owners consume passive hover without an activePlugin binding loop", () => {
     const controller = executableSource(readShell("modules/ii/k4bar/K4PluginController.qml"));
     const builtins = executableSource(readShell("modules/ii/k4bar/K4BuiltinPlugins.qml"));
 
     assert.match(controller, /property bool passiveHoverAllowed:\s*false/);
     assert.match(controller, /K4BuiltinPlugins\s*\{[\s\S]*?passiveHoverAllowed:\s*root\.passiveHoverAllowed/);
     assert.match(controller, /function isAmbientPlugin\(candidate\)[\s\S]*?candidate\.transitorio[\s\S]*?isPassiveHoverPlugin\(candidate\)/);
-    assert.match(controller, /if \(activePlugin && !isAmbientPlugin\(activePlugin\)\)\s*passiveHoverAllowed = false/);
+    assert.match(controller, /function schedulePassiveHoverSuppression\(\)[\s\S]*?Qt\.callLater\(function\(\)[\s\S]*?root\.passiveHoverAllowed = false/);
+    assert.match(controller, /function publishActivePlugin\(\)[\s\S]*?dismissTransients\(\)[\s\S]*?schedulePassiveHoverSuppression\(\)/);
+    assert.doesNotMatch(controller, /if \(activePlugin && !isAmbientPlugin\(activePlugin\)\)\s*passiveHoverAllowed = false/);
     assert.match(controller, /const newHoverSession = !IslandState\.hovered[\s\S]*?if \(newHoverSession\)\s*passiveHoverAllowed = isAmbientPlugin\(activePlugin\)/);
     assert.match(controller, /onTriggered:\s*\{[\s\S]*?IslandState\.hovered = false[\s\S]*?root\.passiveHoverAllowed = false/);
 
