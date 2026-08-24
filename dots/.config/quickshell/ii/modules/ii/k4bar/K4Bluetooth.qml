@@ -22,8 +22,13 @@ Singleton {
     }
 
     function setDiscovering(wanted) {
-        if (Bluetooth.defaultAdapter && Bluetooth.defaultAdapter.enabled)
-            Bluetooth.defaultAdapter.discovering = wanted
+        const current = Bluetooth.defaultAdapter
+        if (!current || !current.enabled)
+            return
+        const target = Boolean(wanted)
+        if (current.discovering === target)
+            return
+        current.discovering = target
     }
 
     function activate(device) {
