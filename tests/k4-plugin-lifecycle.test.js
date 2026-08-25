@@ -40,20 +40,33 @@ test("K4 manages Displays as an independently loadable built-in", async () => {
 
 test("K4 lifecycle keeps metadata stable while the live instance changes", async () => {
     const controller = await read("modules/ii/k4bar/K4PluginController.qml");
+    const settingsView = await read("modules/ii/k4bar/K4SettingsView.qml");
+    const appsPlugin = await read("modules/ii/k4bar/K4AppsPlugin.qml");
     const settingsRow = await read("modules/ii/k4bar/K4SettingsPluginRow.qml");
     const host = await read("modules/ii/k4bar/K4Bar.qml");
 
+    // Persistent metadata is copied into host-owned arrays once the controller
+    // is initialized. UI models bind to those arrays directly; they do not call
+    // helper functions whose dependency timing can omit a managed descriptor.
+    assert.match(controller, /property var configurablePluginModel:\s*\[\]/);
+    assert.match(controller, /property var applicationPluginModel:\s*\[\]/);
+    assert.match(controller, /function rebuildMetadataModels\(\)/);
+    assert.match(controller, /configurablePluginModel\s*=\s*configurable/);
+    assert.match(controller, /applicationPluginModel\s*=\s*applications/);
+    assert.match(controller, /Component\.onCompleted:[\s\S]*?rebuildMetadataModels\(\)/);
+    assert.match(settingsView, /model:\s*root\.plugin\.controller\s*\?\s*root\.plugin\.controller\.configurablePluginModel\s*:\s*\[\]/);
+    assert.doesNotMatch(settingsView, /configurablePlugins\(\)/);
+    assert.match(appsPlugin, /controller\s*\?\s*controller\.applicationPluginModel\s*:\s*\[\]/);
+    assert.doesNotMatch(appsPlugin, /controller\.applicationPlugins\(\)/);
+
     // Settings/Apps metadata must not be derived from the mutable live-plugin
-    // array. Destroying a managed instance while a Repeater delegate handles
-    // the disable click previously nulled modelData and could crash QtQmlModels.
+    // array. Destroying a managed instance while a delegate handles the disable
+    // click previously nulled modelData and could crash QtQmlModels.
     assert.match(controller, /function metadataPlugins\(\)/);
     assert.match(controller, /for \(let i = 0; i < seedPlugins\.length; \+\+i\)/);
     assert.match(controller, /for \(let i = 0; i < builtins\.plugins\.length; \+\+i\)/);
     assert.match(controller, /for \(let i = 0; i < pluginManager\.descriptors\.length; \+\+i\)/);
-    assert.match(controller, /function configurablePlugins\(\)[\s\S]*?metadataPlugins\(\)/);
-    assert.match(controller, /function applicationPlugins\(\)[\s\S]*?metadataPlugins\(\)/);
-    assert.doesNotMatch(controller, /function configurablePlugins\(\)[\s\S]*?for \(let i = 0; i < plugins\.length; \+\+i\)/);
-    assert.doesNotMatch(controller, /function applicationPlugins\(\)[\s\S]*?for \(let i = 0; i < plugins\.length; \+\+i\)/);
+    assert.doesNotMatch(controller, /function rebuildMetadataModels\(\)[\s\S]*?plugins\.length/);
 
     // The island renderer only needs the current winner. Do not feed a mutable
     // QObject array into another Repeater during instance destruction.
@@ -72,8 +85,8 @@ test("K4 lifecycle keeps metadata visible while the live instance is absent", as
     const controller = await read("modules/ii/k4bar/K4PluginController.qml");
     const settingsRow = await read("modules/ii/k4bar/K4SettingsPluginRow.qml");
 
-    assert.match(controller, /function configurablePlugins\(\)/);
-    assert.match(controller, /function applicationPlugins\(\)/);
+    assert.match(controller, /function configurablePlugins\(\)[\s\S]*?return configurablePluginModel/);
+    assert.match(controller, /function applicationPlugins\(\)[\s\S]*?return applicationPluginModel/);
     assert.match(controller, /pluginManager\.owns\(/);
     assert.match(controller, /pluginManager\.descriptor\(/);
     assert.match(controller, /candidate\.application\s*===\s*true/);
