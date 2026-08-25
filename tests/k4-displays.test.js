@@ -8,7 +8,7 @@ const read = async path => readFile(new URL(path, root), "utf8");
 test("K4 Displays reuses HyprlandData and applies session-only monitor drafts", async () => {
     const plugin = await read("modules/ii/k4bar/K4DisplaysPlugin.qml");
     const view = await read("modules/ii/k4bar/K4DisplaysView.qml");
-    const manager = await read("modules/ii/k4bar/K4PluginManager.qml");
+    const builtins = await read("modules/ii/k4bar/K4BuiltinPlugins.qml");
     const hyprlandData = await read("services/HyprlandData.qml");
 
     assert.match(plugin, /name:\s*"displays"/);
@@ -45,8 +45,8 @@ test("K4 Displays reuses HyprlandData and applies session-only monitor drafts", 
     assert.match(view, /Apply/);
     assert.match(view, /Refresh/);
 
-    assert.match(manager, /name:\s*"displays"/);
-    assert.match(manager, /entry:\s*"K4DisplaysPlugin\.qml"/);
+    assert.match(builtins, /displaysPlugin/);
+    assert.match(builtins, /property QtObject displaysPlugin:\s*K4DisplaysPlugin\s*\{\}/);
 
     assert.match(hyprlandData, /property var monitors:\s*\[\]/);
     assert.match(hyprlandData, /function updateMonitors\(\)/);
