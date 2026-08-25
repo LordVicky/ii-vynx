@@ -38,6 +38,36 @@ test("K4 manages Displays as an independently loadable built-in", async () => {
     assert.match(controller, /function onInstancesChanged\(\)/);
 });
 
+test("K4 lifecycle keeps metadata stable while the live instance changes", async () => {
+    const controller = await read("modules/ii/k4bar/K4PluginController.qml");
+    const settingsRow = await read("modules/ii/k4bar/K4SettingsPluginRow.qml");
+    const host = await read("modules/ii/k4bar/K4Bar.qml");
+
+    // Settings/Apps metadata must not be derived from the mutable live-plugin
+    // array. Destroying a managed instance while a Repeater delegate handles
+    // the disable click previously nulled modelData and could crash QtQmlModels.
+    assert.match(controller, /function metadataPlugins\(\)/);
+    assert.match(controller, /for \(let i = 0; i < seedPlugins\.length; \+\+i\)/);
+    assert.match(controller, /for \(let i = 0; i < builtins\.plugins\.length; \+\+i\)/);
+    assert.match(controller, /for \(let i = 0; i < pluginManager\.descriptors\.length; \+\+i\)/);
+    assert.match(controller, /function configurablePlugins\(\)[\s\S]*?metadataPlugins\(\)/);
+    assert.match(controller, /function applicationPlugins\(\)[\s\S]*?metadataPlugins\(\)/);
+    assert.doesNotMatch(controller, /function configurablePlugins\(\)[\s\S]*?for \(let i = 0; i < plugins\.length; \+\+i\)/);
+    assert.doesNotMatch(controller, /function applicationPlugins\(\)[\s\S]*?for \(let i = 0; i < plugins\.length; \+\+i\)/);
+
+    // The island renderer only needs the current winner. Do not feed a mutable
+    // QObject array into another Repeater during instance destruction.
+    assert.doesNotMatch(host, /Repeater\s*\{\s*model:\s*controller\.plugins/);
+    assert.match(host, /Loader\s*\{[\s\S]*?sourceComponent:\s*panelWindow\.pluginVisible\?\.view\s*\?\?\s*null/);
+
+    // Teardown is allowed to null QObject references. Bindings and click
+    // handlers must tolerate that rather than dereferencing a dying delegate.
+    assert.match(settingsRow, /readonly property var safePlugin:\s*plugin\s*\?\?\s*null/);
+    assert.match(settingsRow, /safePlugin\?\.loadError/);
+    assert.match(settingsRow, /const candidate = root\.safePlugin/);
+    assert.match(controller, /if \(!pluginManager\)/);
+});
+
 test("K4 lifecycle keeps metadata visible while the live instance is absent", async () => {
     const controller = await read("modules/ii/k4bar/K4PluginController.qml");
     const settingsRow = await read("modules/ii/k4bar/K4SettingsPluginRow.qml");
@@ -46,7 +76,7 @@ test("K4 lifecycle keeps metadata visible while the live instance is absent", as
     assert.match(controller, /function applicationPlugins\(\)/);
     assert.match(controller, /pluginManager\.owns\(/);
     assert.match(controller, /pluginManager\.descriptor\(/);
-    assert.match(controller, /descriptor\.application\s*===\s*true/);
+    assert.match(controller, /candidate\.application\s*===\s*true/);
     assert.match(settingsRow, /retryPlugin/);
     assert.match(settingsRow, /click to retry/);
 });
