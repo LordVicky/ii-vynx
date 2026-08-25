@@ -135,7 +135,13 @@ QtObject {
     property QtObject windowsPlugin: K4WindowsPlugin {}
     property QtObject systemPlugin: K4SystemPlugin {}
     property QtObject sessionPlugin: K4SessionPlugin {}
-    property QtObject keysPlugin: K4KeysPlugin {}
+    property QtObject keysPlugin: K4ManagedPlugin {
+        name: "keys"
+        title: "Shortcuts"
+        application: true
+        applicationGlyph: String.fromCodePoint(0xF030C)
+        source: Qt.resolvedUrl("K4KeysPlugin.qml")
+    }
     property QtObject weatherPlugin: K4WeatherPlugin {}
     property QtObject capturePlugin: K4CapturePlugin {}
     property QtObject displaysPlugin: K4ManagedPlugin {
