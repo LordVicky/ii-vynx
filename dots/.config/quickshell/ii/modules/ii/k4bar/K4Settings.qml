@@ -31,11 +31,11 @@ Singleton {
         { label: "Center", value: 50 },
         { label: "Right", value: 85 }
     ]
-    // Keep Settings live-backed: Hidden and Away-when-fullscreen join this list
-    // only when K4-V1-02 lands their host behavior.
     readonly property var spaceModes: [
         { label: "Reserve space", value: "reserve" },
-        { label: "On top", value: "overlay" }
+        { label: "Away when fullscreen", value: "fullscreen" },
+        { label: "On top", value: "overlay" },
+        { label: "Hidden", value: "hidden" }
     ]
 
     function isProtectedPlugin(name) {
@@ -57,7 +57,7 @@ Singleton {
 
     function setSpaceMode(wanted) {
         const value = String(wanted)
-        if (value === "reserve" || value === "overlay")
+        if (["reserve", "fullscreen", "overlay", "hidden"].indexOf(value) >= 0)
             Config.options.bar.k4.spaceMode = value
     }
 
