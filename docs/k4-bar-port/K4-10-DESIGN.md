@@ -1,6 +1,6 @@
 # K4-10 — Remaining bundled feature disposition
 
-Status: approved for implementation
+Status: validated and closed
 
 ## Decision
 
