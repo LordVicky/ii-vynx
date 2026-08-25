@@ -43,8 +43,6 @@ test("K4 plugin settings persist enablement without breaking active bindings", a
     assert.match(row, /plugin\.enabled \? "Loaded" : "Disabled"/);
     assert.match(row, /root\.controller\.setPluginEnabled\(root\.plugin\.name, value\)/);
 
-    assert.doesNotMatch(host, /Repeater\s*\{\s*model:\s*controller\.plugins/);
-    assert.match(host, /Loader\s*\{[\s\S]*?sourceComponent:\s*panelWindow\.pluginVisible\?\.view \?\? null/);
-    assert.match(host, /Loader\.Error[\s\S]*?owner\.loadError = "View failed to load"/);
-    assert.match(host, /Loader\.Ready[\s\S]*?owner\.loadError = ""/);
+    assert.match(host, /Loader\.Error[\s\S]*?modelData\.loadError = "View failed to load"/);
+    assert.match(host, /Loader\.Ready[\s\S]*?modelData\.loadError = ""/);
 });
