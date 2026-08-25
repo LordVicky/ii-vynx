@@ -3,8 +3,9 @@ import Quickshell
 import Quickshell.Io
 import qs.services
 
-// Lean K4 monitor arrangement utility. HyprlandData remains the monitor-state
-// owner; this plugin only keeps an in-memory edit draft and applies it live.
+// Lean K4 monitor/workspace arrangement utility. HyprlandData remains the
+// shell-owned live state source; this plugin keeps only in-memory session drafts
+// and applies them through one-shot hyprctl eval calls.
 K4Plugin {
     id: root
 
@@ -18,12 +19,26 @@ K4Plugin {
     grabKeyboard: open
 
     property bool open: false
+    property string tab: "displays"
+
     property var drafts: []
     property int selectedIndex: 0
-    property bool dirty: false
+    property bool monitorDirty: false
+
+    property var workspaceRules: []
+    property var workspaceAssignments: ({})
+    property var baselineWorkspaceAssignments: ({})
+    property var changedWorkspaceAssignments: ({})
+    readonly property var workspaceNumbers: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    readonly property bool workspaceDirty: Object.keys(changedWorkspaceAssignments).length > 0
+    readonly property bool dirty: monitorDirty || workspaceDirty
+
     property bool busy: false
     property bool awaitingRefresh: false
     property bool refreshAfterApply: false
+    property bool pendingMonitors: false
+    property bool pendingWorkspaces: false
+    property bool pendingWorkspaceRules: false
     property string message: ""
     property bool messageError: false
     property string applyStdout: ""
@@ -33,7 +48,7 @@ K4Plugin {
         ? drafts[selectedIndex] : null
 
     islandWidth: 820
-    islandHeight: 500
+    islandHeight: 520
 
     function luaString(value) {
         return JSON.stringify(String(value))
@@ -80,9 +95,71 @@ K4Plugin {
         drafts = next
         selectedIndex = next.length === 0 ? 0
             : Math.max(0, Math.min(selectedIndex, next.length - 1))
-        dirty = false
+        monitorDirty = false
         if (next.length === 0 && !messageError)
             message = "No active displays"
+    }
+
+    function monitorKnown(name) {
+        const wanted = String(name || "")
+        for (let i = 0; i < drafts.length; ++i)
+            if (drafts[i].name === wanted)
+                return true
+        return false
+    }
+
+    function rebuildWorkspaceAssignments() {
+        const next = ({})
+
+        for (let i = 0; i < workspaceRules.length; ++i) {
+            const rule = workspaceRules[i]
+            const key = String(rule?.workspaceString ?? rule?.workspace ?? "")
+            const number = Number(key)
+            const monitor = String(rule?.monitor ?? "")
+            if (number >= 1 && number <= 10 && monitorKnown(monitor))
+                next[String(number)] = monitor
+        }
+
+        const live = HyprlandData.workspaces || []
+        for (let i = 0; i < live.length; ++i) {
+            const workspace = live[i]
+            const number = Number(workspace?.id ?? workspace?.name ?? 0)
+            const monitor = String(workspace?.monitor ?? "")
+            if (number >= 1 && number <= 10 && monitorKnown(monitor))
+                next[String(number)] = monitor
+        }
+
+        workspaceAssignments = Object.assign({}, next)
+        baselineWorkspaceAssignments = Object.assign({}, next)
+        changedWorkspaceAssignments = ({})
+    }
+
+    function workspaceMonitor(number) {
+        return String(workspaceAssignments[String(number)] ?? "")
+    }
+
+    function setWorkspaceAssignment(number, monitorName) {
+        if (busy || number < 1 || number > 10 || !monitorKnown(monitorName))
+            return
+
+        const key = String(number)
+        const monitor = String(monitorName)
+        if (workspaceAssignments[key] === monitor)
+            return
+
+        const assignments = Object.assign({}, workspaceAssignments)
+        assignments[key] = monitor
+        workspaceAssignments = assignments
+
+        const changed = Object.assign({}, changedWorkspaceAssignments)
+        if (String(baselineWorkspaceAssignments[key] ?? "") === monitor)
+            delete changed[key]
+        else
+            changed[key] = monitor
+        changedWorkspaceAssignments = changed
+
+        message = workspaceDirty || monitorDirty ? "Unsaved session changes" : ""
+        messageError = false
     }
 
     function updateSelected(key, value) {
@@ -93,7 +170,7 @@ K4Plugin {
         changed[key] = value
         next[selectedIndex] = changed
         drafts = next
-        dirty = true
+        monitorDirty = true
         message = "Unsaved session changes"
         messageError = false
     }
@@ -138,7 +215,7 @@ K4Plugin {
     function placeSelected(where) {
         if (!selectedDraft || drafts.length < 2 || busy)
             return
-        let referenceIndex = selectedIndex === 0 ? 1 : 0
+        const referenceIndex = selectedIndex === 0 ? 1 : 0
         const mine = logicalSize(selectedDraft)
         const reference = drafts[referenceIndex]
         const theirs = logicalSize(reference)
@@ -166,7 +243,7 @@ K4Plugin {
 
         next[selectedIndex] = changed
         drafts = normalizePositions(next)
-        dirty = true
+        monitorDirty = true
         message = "Unsaved session changes"
         messageError = false
     }
@@ -179,22 +256,64 @@ K4Plugin {
             + ", transform = " + Math.round(draft.transform) + " })"
     }
 
+    function workspaceStatement(number, monitorName) {
+        return "hl.workspace_rule({ workspace = " + luaString(number)
+            + ", monitor = " + luaString(monitorName)
+            + ", default = true, persistent = true })"
+    }
+
+    function workspaceMoveStatement(number, monitorName) {
+        return "hl.dispatch(hl.dsp.workspace.move({ workspace = " + luaString(number)
+            + ", monitor = " + luaString(monitorName) + " }))"
+    }
+
+    function receiveWorkspaceRules(text) {
+        try {
+            const parsed = JSON.parse(text || "[]")
+            workspaceRules = Array.isArray(parsed) ? parsed : []
+        } catch (error) {
+            workspaceRules = []
+        }
+    }
+
     function refresh(afterApply) {
+        if (busy && afterApply !== true)
+            return
+
         refreshAfterApply = afterApply === true
         awaitingRefresh = true
+        pendingMonitors = true
+        pendingWorkspaces = true
+        pendingWorkspaceRules = true
         messageError = false
         if (!refreshAfterApply)
             message = "Refreshing displays…"
+
         HyprlandData.updateMonitors()
+        HyprlandData.updateWorkspaces()
+        if (!workspaceRulesProcess.running)
+            workspaceRulesProcess.running = true
+        else
+            pendingWorkspaceRules = false
         refreshFallback.restart()
+    }
+
+    function maybeFinishRefresh() {
+        if (!awaitingRefresh || pendingMonitors || pendingWorkspaces || pendingWorkspaceRules)
+            return
+        finishRefresh()
     }
 
     function finishRefresh() {
         if (!awaitingRefresh)
             return
         awaitingRefresh = false
+        pendingMonitors = false
+        pendingWorkspaces = false
+        pendingWorkspaceRules = false
         refreshFallback.stop()
         rebuildDrafts()
+        rebuildWorkspaceAssignments()
         if (refreshAfterApply)
             message = "Applied for this session"
         else if (drafts.length > 0)
@@ -212,12 +331,28 @@ K4Plugin {
         }
 
         const statements = []
-        for (let i = 0; i < drafts.length; ++i)
-            statements.push(monitorStatement(drafts[i]))
+        if (monitorDirty)
+            for (let i = 0; i < drafts.length; ++i)
+                statements.push(monitorStatement(drafts[i]))
+
+        const workspaceKeys = Object.keys(changedWorkspaceAssignments)
+            .sort(function(a, b) { return Number(a) - Number(b) })
+        for (let i = 0; i < workspaceKeys.length; ++i) {
+            const key = workspaceKeys[i]
+            const monitor = changedWorkspaceAssignments[key]
+            statements.push(workspaceStatement(key, monitor))
+            statements.push(workspaceMoveStatement(key, monitor))
+        }
+
+        if (statements.length === 0) {
+            message = "No changes to apply"
+            messageError = false
+            return
+        }
 
         applyStdout = ""
         applyStderr = ""
-        message = "Applying display layout…"
+        message = "Applying session layout…"
         messageError = false
         busy = true
         applyProcess.command = ["hyprctl", "eval", statements.join("\n")]
@@ -227,6 +362,7 @@ K4Plugin {
     function openDisplays() {
         K4Panel.close()
         K4Notifications.dismissToast()
+        tab = "displays"
         selectedIndex = 0
         rebuildDrafts()
         open = true
@@ -244,7 +380,11 @@ K4Plugin {
         if (!open)
             return
         open = false
+        tab = "displays"
         awaitingRefresh = false
+        pendingMonitors = false
+        pendingWorkspaces = false
+        pendingWorkspaceRules = false
         refreshFallback.stop()
         message = ""
         messageError = false
@@ -256,15 +396,43 @@ K4Plugin {
 
     Connections {
         target: HyprlandData
+
         function onMonitorsChanged() {
-            root.finishRefresh()
+            root.pendingMonitors = false
+            root.maybeFinishRefresh()
+        }
+
+        function onWorkspacesChanged() {
+            root.pendingWorkspaces = false
+            root.maybeFinishRefresh()
         }
     }
 
     Timer {
         id: refreshFallback
-        interval: 1400
-        onTriggered: root.finishRefresh()
+        interval: 1600
+        onTriggered: {
+            root.pendingMonitors = false
+            root.pendingWorkspaces = false
+            root.pendingWorkspaceRules = false
+            root.finishRefresh()
+        }
+    }
+
+    Process {
+        id: workspaceRulesProcess
+        command: ["hyprctl", "workspacerules", "-j"]
+
+        stdout: StdioCollector {
+            onStreamFinished: root.receiveWorkspaceRules(text)
+        }
+
+        onExited: function(exitCode, exitStatus) {
+            if (exitCode !== 0)
+                root.workspaceRules = []
+            root.pendingWorkspaceRules = false
+            root.maybeFinishRefresh()
+        }
     }
 
     Process {
@@ -281,7 +449,7 @@ K4Plugin {
             root.busy = false
             const combined = (root.applyStdout + "\n" + root.applyStderr).trim()
             if (exitCode !== 0 || combined.toLowerCase().indexOf("error:") >= 0) {
-                root.message = combined.length > 0 ? combined : "Hyprland rejected the display layout"
+                root.message = combined.length > 0 ? combined : "Hyprland rejected the session layout"
                 root.messageError = true
                 return
             }
@@ -297,6 +465,14 @@ K4Plugin {
         function refresh(): void { root.refresh(false) }
         function apply(): void { root.apply() }
         function place(where: string): void { root.placeSelected(where) }
+        function tab(name: string): void {
+            root.open = true
+            root.tab = name === "workspaces" ? "workspaces" : "displays"
+            root.refresh(false)
+        }
+        function assign(workspace: int, monitor: string): void {
+            root.setWorkspaceAssignment(workspace, monitor)
+        }
     }
 
     view: Component { K4DisplaysView { plugin: root } }
