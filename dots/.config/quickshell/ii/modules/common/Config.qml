@@ -498,6 +498,7 @@ Singleton {
                 property JsonObject k4: JsonObject {
                     property string position: "top" // "top" | "bottom"
                     property int alignment: 50 // 15 | 50 | 85
+                    property string spaceMode: "reserve" // "reserve" | "overlay"; v1 Hidden/fullscreen land in the next tracer
                     property bool trayInPill: false
                     property bool notificationsOnHover: true
                     property bool dismissNotificationsOnFocus: true
