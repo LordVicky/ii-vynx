@@ -264,7 +264,7 @@ Item {
 
                 Repeater {
                     model: root.plugin.controller
-                        ? root.plugin.controller.configurablePlugins() : []
+                        ? root.plugin.controller.configurablePluginModel : []
 
                     delegate: K4SettingsPluginRow {
                         required property var modelData
