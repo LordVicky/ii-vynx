@@ -17,8 +17,9 @@ test("K4 managed plugins keep a stable proxy while Loader owns the implementatio
 
     assert.match(managed, /K4Plugin\s*\{/);
     assert.match(managed, /required property url source/);
+    assert.match(managed, /readonly property bool requestedEnabled:\s*K4Settings\.pluginEnabled\(name\)/);
     assert.match(managed, /property var implementationLoader:\s*Loader\s*\{/);
-    assert.match(managed, /active:\s*root\.enabled/);
+    assert.match(managed, /active:\s*root\.enabled && root\.requestedEnabled/);
     assert.match(managed, /source:\s*root\.source/);
     assert.match(managed, /asynchronous:\s*false/);
     assert.match(managed, /readonly property var instance:\s*implementationLoader\.item/);
