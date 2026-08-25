@@ -7,6 +7,7 @@ import Quickshell.Io
 import Quickshell.Wayland
 import qs
 import qs.modules.common
+import qs.services
 
 // Island host geometry and arbitration adapted from k4ditano/k4 at the pinned
 // source commit. Copyright (c) 2026 k4ditano — MIT,
@@ -163,27 +164,67 @@ Scope {
             screen: modelData
 
             readonly property bool bottom: Config.options.bar.k4.position === "bottom"
-            // K4-V1-01 has two live modes. Keeping this as a named per-screen
-            // resolution seam lets K4-V1-02 add fullscreen->Hidden resolution
-            // without moving compositor policy out of the host.
-            readonly property string effectiveSpaceMode: K4Settings.spaceMode
+            // Away-when-fullscreen is a per-monitor rule rather than a fourth
+            // rendering mechanism: it resolves to Reserve normally and Hidden
+            // only while this monitor's active workspace reports fullscreen.
+            readonly property string effectiveSpaceMode: K4Settings.spaceMode === "fullscreen"
+                ? (HyprlandData.monitorHasFullscreen(panelWindow.screen.name)
+                    ? "hidden" : "reserve")
+                : K4Settings.spaceMode
+            readonly property bool hideMode: effectiveSpaceMode === "hidden"
             readonly property var pluginVisible:
                 controller.visiblePluginFor(panelWindow.screen.name)
             readonly property bool showingIdle:
                 !pluginVisible || pluginVisible.name === "idle"
             // Fullscreen clients suppress Top layer surfaces. Toasts, Volume HUD,
-            // and the explicitly requested launcher must stay visible above them.
+            // launcher, and Hidden-mode reveal must stay visible above them.
             readonly property bool notificationOverlay:
                 pluginVisible?.name === "toast"
                 || pluginVisible?.name === "launcher"
                 || pluginVisible?.name === "volume"
+                || effectiveSpaceMode === "hidden"
             readonly property int islandBodyWidth: showingIdle
                 ? idleContent.desiredBodyWidth : pluginVisible.islandWidth
             readonly property int islandBodyHeight: showingIdle
                 ? K4Theme.baseHeight : pluginVisible.islandHeight
+            readonly property bool pointerOver:
+                islandHover.hovered || edgeHover.hovered
+            readonly property bool shouldShow:
+                pointerOver || (!!pluginVisible && pluginVisible.name !== "idle")
+            property bool withdrawn: false
             readonly property int targetHeight: Math.min(K4Theme.maxIslandHeight,
                 islandBodyHeight + 2 + (island.gestureInProgress ? 44 : 0))
             property int surfaceHeight: targetHeight
+
+            function reconsiderWithdrawal() {
+                if (!hideMode) {
+                    withdrawTimer.stop()
+                    hoverDwellTimer.stop()
+                    withdrawn = false
+                } else if (shouldShow) {
+                    withdrawTimer.stop()
+                    withdrawn = false
+                } else {
+                    withdrawTimer.restart()
+                }
+            }
+
+            onPointerOverChanged: {
+                if (!hideMode)
+                    return
+                if (pointerOver) {
+                    withdrawTimer.stop()
+                    withdrawn = false
+                    hoverDwellTimer.restart()
+                } else {
+                    hoverDwellTimer.stop()
+                    controller.hoverExited()
+                    reconsiderWithdrawal()
+                }
+            }
+            onShouldShowChanged: reconsiderWithdrawal()
+            onHideModeChanged: reconsiderWithdrawal()
+            Component.onCompleted: reconsiderWithdrawal()
 
             anchors.top: !bottom
             anchors.bottom: bottom
@@ -213,7 +254,15 @@ Scope {
             exclusiveZone: panelWindow.effectiveSpaceMode === "reserve"
                 ? K4Theme.baseHeight : 0
             implicitHeight: surfaceHeight
-            mask: Region { item: IslandState.suppressed ? null : island }
+            mask: Region {
+                item: IslandState.suppressed ? null : island
+
+                Region {
+                    item: (IslandState.suppressed || !panelWindow.hideMode)
+                        ? null : revealEdge
+                    intersection: Intersection.Combine
+                }
+            }
 
             onTargetHeightChanged: {
                 // A pending shrink belongs to the previous owner. If another
@@ -231,6 +280,22 @@ Scope {
             onBottomChanged: island.publishRect()
 
             Timer {
+                id: withdrawTimer
+                interval: 1600
+                onTriggered: panelWindow.withdrawn = panelWindow.hideMode
+                    && !panelWindow.shouldShow
+            }
+
+            Timer {
+                id: hoverDwellTimer
+                interval: 500
+                onTriggered: {
+                    if (panelWindow.hideMode && panelWindow.pointerOver)
+                        controller.hoverEntered(panelWindow.screen.name)
+                }
+            }
+
+            Timer {
                 id: surfaceShrinkTimer
                 interval: 520
                 onTriggered: {
@@ -240,6 +305,21 @@ Scope {
                     if (panelWindow.showingIdle)
                         panelWindow.surfaceHeight = panelWindow.targetHeight
                 }
+            }
+
+            // Hidden mode keeps only a 4 px target at the same horizontal span
+            // as the island. It remains in the input mask during the return
+            // animation so the pointer cannot fall through to the client below.
+            Item {
+                id: revealEdge
+                x: island.x
+                width: island.width
+                height: 4
+                anchors.top: panelWindow.bottom ? undefined : parent.top
+                anchors.bottom: panelWindow.bottom ? parent.bottom : undefined
+                opacity: 0
+
+                HoverHandler { id: edgeHover }
             }
 
             Item {
@@ -323,7 +403,23 @@ Scope {
                     }, panelWindow.modelData === Quickshell.screens[0])
                 }
 
-                transform: Translate { id: gestureTranslate }
+                transform: [
+                    Translate { id: gestureTranslate },
+                    Translate {
+                        id: withdrawTranslate
+                        y: panelWindow.withdrawn
+                            ? (panelWindow.bottom ? island.height + 6
+                                : -(island.height + 6))
+                            : 0
+
+                        Behavior on y {
+                            NumberAnimation {
+                                duration: 360
+                                easing.type: Easing.OutCubic
+                            }
+                        }
+                    }
+                ]
 
                 readonly property bool gestureInProgress:
                     shakeAnimation.running || pushAnimation.running
@@ -392,7 +488,13 @@ Scope {
                 }
 
                 HoverHandler {
+                    id: islandHover
                     onHoveredChanged: {
+                        if (panelWindow.hideMode) {
+                            if (!hovered && !edgeHover.hovered)
+                                controller.hoverExited()
+                            return
+                        }
                         if (hovered)
                             controller.hoverEntered(panelWindow.screen.name)
                         else
