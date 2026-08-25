@@ -52,7 +52,7 @@ test("K4 Hidden withdraws only the island drawing and keeps a narrow reveal stri
     assert.match(source, /id:\s*withdrawTimer[\s\S]*?interval:\s*1600[\s\S]*?panelWindow\.withdrawn = panelWindow\.hideMode[\s\S]*?!panelWindow\.shouldShow/);
 
     assert.match(source, /id:\s*revealEdge[\s\S]*?x:\s*island\.x[\s\S]*?width:\s*island\.width[\s\S]*?height:\s*4[\s\S]*?opacity:\s*0/);
-    assert.match(source, /mask:\s*Region\s*\{[\s\S]*?item:\s*IslandState\.suppressed \? null : island[\s\S]*?item:\s*\(IslandState\.suppressed \|\| !panelWindow\.hideMode\) \? null : revealEdge[\s\S]*?Intersection\.Combine/);
+    assert.match(source, /mask:\s*Region\s*\{[\s\S]*?item:\s*IslandState\.suppressed \? null : island[\s\S]*?item:\s*\(IslandState\.suppressed \|\| !panelWindow\.hideMode\)\s*\?\s*null\s*:\s*revealEdge[\s\S]*?Intersection\.Combine/);
 
     assert.match(source, /id:\s*withdrawTranslate[\s\S]*?panelWindow\.withdrawn[\s\S]*?panelWindow\.bottom \? island\.height \+ 6[\s\S]*?: -\(island\.height \+ 6\)[\s\S]*?duration:\s*360[\s\S]*?Easing\.OutCubic/);
     assert.match(source, /id:\s*hoverDwellTimer[\s\S]*?interval:\s*500[\s\S]*?controller\.hoverEntered\(panelWindow\.screen\.name\)/);
