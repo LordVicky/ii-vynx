@@ -1,9 +1,8 @@
 import QtQuick
 import qs.modules.common
 
-// Static built-ins remain here while K4-11 migrates them incrementally to the
-// lifecycle manager. Displays is the first managed tracer and is intentionally
-// absent from this object.
+// Static built-in registry for the parity slices before K4-11 replaces this
+// with k4-style dynamic plugin discovery/loading.
 QtObject {
     id: root
 
@@ -16,7 +15,7 @@ QtObject {
         volumePlugin, clockPlugin, playerPlugin, toastPlugin, panelPlugin,
         appsPlugin, settingsPlugin, launcherPlugin, clipboardPlugin, filesPlugin,
         windowsPlugin, systemPlugin, sessionPlugin, keysPlugin, weatherPlugin,
-        capturePlugin, trayPlugin
+        capturePlugin, displaysPlugin, trayPlugin
     ]
 
     property bool playerHoverSession: false
@@ -87,5 +86,6 @@ QtObject {
     property QtObject keysPlugin: K4KeysPlugin {}
     property QtObject weatherPlugin: K4WeatherPlugin {}
     property QtObject capturePlugin: K4CapturePlugin {}
+    property QtObject displaysPlugin: K4DisplaysPlugin {}
     property QtObject trayPlugin: K4TrayPlugin {}
 }
