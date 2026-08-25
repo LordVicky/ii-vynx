@@ -9,11 +9,13 @@ Selected K4 v1.0 reference: `adcf4216038f7881c4a589baafaaaec841377ad5`
 
 ## Current phase
 
-**K4-V1 selected upstream sync — ready for implementation.**
+**K4-V1 selected upstream sync — implementation and live validation in progress.**
 
-Next ticket: **K4-V1-01 — Space-mode seam: Reserve + On top.**
+Current ticket: **K4-V1-03 — Player track-change peek.**
 
-K4-11 built-in lifecycle work is deliberately paused while the approved v1.0 sync changes host reservation, Hidden behavior, Player ambient activation and Idle/Clock geometry.
+K4-V1-01 and K4-V1-02 are live-validated. K4-V1-03 is implemented and pending source/live validation before moving to K4-V1-04.
+
+K4-11 built-in lifecycle work remains deliberately paused while the approved v1.0 sync changes Player ambient activation and Idle/Clock geometry.
 
 ## Closed milestones
 
@@ -27,6 +29,8 @@ K4-11 built-in lifecycle work is deliberately paused while the approved v1.0 syn
 - K4-08 in-island K4 Settings — closed.
 - K4-09 thin capture/record utility — closed; editor/transcription explicitly excluded.
 - K4-10 selected remaining bundled features — closed; lean Displays only.
+- K4-V1-01 Reserve-space + On-top space modes — closed and live-validated.
+- K4-V1-02 Hidden + Away-when-fullscreen — closed and live-validated.
 
 Detailed historical review documents remain under `docs/k4-bar-port/`.
 
@@ -106,21 +110,61 @@ The applicable upstream v1 capture delta is structured/localized failure-reason 
 
 **Result: no U19 runtime port is required.**
 
-The editor/transcription stack remains excluded. K4-V1 Hidden validation must still prove that capture confirmation reveals a hidden island through ordinary plugin activation.
+The editor/transcription stack remains excluded.
 
-## K4-V1 implementation plan
+## K4-V1 implementation evidence
 
-### K4-V1-01
+### K4-V1-01 — closed
 
-Add persisted `spaceMode`, narrow `HyprlandData.monitorHasFullscreen()` query, K4 Settings choice and host effective-mode/exclusive-zone seam. Live gate Reserve versus On top before implementing Hidden animation.
+Implemented persisted `spaceMode`, a narrow `HyprlandData.monitorHasFullscreen()` query, K4 Settings controls and mode-aware host `exclusiveZone` behavior.
 
-### K4-V1-02
+Live validation passed:
 
-Add Hidden withdrawal/reveal edge/input-mask behavior and Away-when-fullscreen per-monitor rule.
+- Reserve space reflows windows correctly at top and bottom;
+- On top releases the exclusive zone and floats above windows at top and bottom;
+- selection persists across Quickshell restart.
 
-### K4-V1-03
+A fullscreen regression discovered during this slice was also fixed: Volume now promotes the K4 surface to Overlay while its HUD is active, so volume feedback remains visible above fullscreen clients.
 
-Add configured Player track-change peek using existing `K4Media`, with metadata settling and initial-discovery guard.
+### K4-V1-02 — closed
+
+Implemented all four approved space modes:
+
+```text
+Reserve space
+Away when fullscreen
+On top
+Hidden
+```
+
+Hidden/Away-fullscreen behavior now:
+
+- resolves Away-when-fullscreen per monitor using the existing `HyprlandData` owner;
+- keeps the layer surface stable and translates only the island drawing through the edge;
+- leaves only a 4 px island-width reveal target, not a full-width edge catcher;
+- delays normal Clock/Player hover opening by 500 ms while immediately holding existing hover/notification expiry;
+- reveals automatically for ordinary plugin ownership such as Volume;
+- keeps fullscreen-capable reveal/HUD presentation on Overlay;
+- adds no new polling process or `hyprctl` service owner.
+
+User source validation reached 127/127 at the completed Hidden tracer. Hidden runtime behavior passed, including the follow-up Volume rule: while withdrawn, a volume change reveals the HUD, repeated changes extend its existing HUD lifetime, and after the HUD ends the island returns directly to the edge unless the pointer or another plugin keeps it open.
+
+### K4-V1-03 — implementation complete, validation pending
+
+Player track-change peek follows the selected upstream v1.0 behavior while retaining ii-vynx ownership:
+
+- MPRIS ownership remains in existing `K4Media`; no second watcher/service was added;
+- track identity uses title + artist;
+- metadata changes settle for 350 ms before comparison;
+- first discovery, empty state and unchanged metadata do not trigger a peek;
+- a genuine track change activates Player independently of transient `isPlaying` state;
+- peek lasts 3200 ms and restarts on another genuine track change;
+- `Peek Player on track change` is persisted in `Config.options.bar.k4`, defaults on, and is exposed in K4 Settings;
+- disabling the Player plugin clears any transient peek state so re-enable cannot resurrect an old track card.
+
+This slice must pass source and live-shell validation before K4-V1-04 begins.
+
+## Remaining K4-V1 plan
 
 ### K4-V1-04
 
@@ -149,11 +193,12 @@ After K4-V1-05, resume K4-11 lifecycle migration and then finish with K4-12.
 
 ## Next action
 
-Implement **K4-V1-01** with the smallest vertical slice:
+Validate **K4-V1-03**:
 
-1. red source contract for `spaceMode`, fullscreen query and host reservation semantics;
-2. Config/K4Settings/Settings UI;
-3. existing-owner fullscreen query in `HyprlandData`;
-4. K4 host Reserve/On top effective mode;
-5. source review;
-6. user live validation before K4-V1-02.
+1. run the focused Player/config source contracts, then the full `tests/k4-*.test.js` suite;
+2. deploy to the live shell;
+3. prove initial MPRIS discovery does not peek;
+4. prove a genuine next-track change reveals Player while Hidden and withdraws after the timed peek;
+5. prove the setting disables/re-enables autonomous peek without breaking normal hover Player;
+6. verify fullscreen Away-when-fullscreen presentation and clean logs;
+7. only then start K4-V1-04.
