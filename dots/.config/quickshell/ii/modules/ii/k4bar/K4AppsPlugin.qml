@@ -22,7 +22,7 @@ K4Plugin {
 
     readonly property int columns: 5
     readonly property var applications: {
-        const source = controller ? controller.applicationPlugins() : []
+        const source = controller ? controller.applicationPluginModel : []
         const normalized = query.trim().toLowerCase()
         if (normalized.length === 0)
             return source
