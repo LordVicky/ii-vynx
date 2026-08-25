@@ -11,8 +11,8 @@ Rectangle {
     required property var controller
 
     readonly property bool failed: plugin.loadError.length > 0
-    readonly property string statusText: failed ? "Error"
-        : !plugin.enabled ? "Disabled"
+    readonly property string statusText: !plugin.enabled ? "Disabled"
+        : failed ? "Error"
         : plugin.instantiated ? "Loaded" : "Loading"
 
     implicitHeight: failed ? 66 : 54
@@ -48,7 +48,7 @@ Rectangle {
 
                 Text {
                     text: root.statusText
-                    color: root.failed ? K4Theme.red
+                    color: root.failed && root.plugin.enabled ? K4Theme.red
                         : root.plugin.enabled && root.plugin.instantiated
                             ? K4Theme.green : K4Theme.muted
                     font.family: K4Theme.uiFont
@@ -60,8 +60,10 @@ Rectangle {
 
             Text {
                 Layout.fillWidth: true
-                text: root.failed ? root.plugin.loadError : root.plugin.name
-                color: root.failed ? K4Theme.red : K4Theme.dim
+                text: root.failed && root.plugin.enabled
+                    ? root.plugin.loadError + " · click to retry"
+                    : root.plugin.name
+                color: root.failed && root.plugin.enabled ? K4Theme.red : K4Theme.dim
                 font.family: K4Theme.uiFont
                 font.pixelSize: 9
                 elide: Text.ElideRight
@@ -97,6 +99,11 @@ Rectangle {
     TapHandler {
         cursorShape: Qt.PointingHandCursor
         onTapped: {
+            if (root.failed && root.plugin.enabled
+                    && typeof root.plugin.retryLoad === "function") {
+                root.plugin.retryLoad()
+                return
+            }
             const value = !root.plugin.enabled
             root.controller.setPluginEnabled(root.plugin.name, value)
         }
