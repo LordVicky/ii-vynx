@@ -147,6 +147,16 @@ QtObject {
             onTriggered: playerPluginObject.trackPeekOpen = false
         }
 
+        Connections {
+            target: playerPluginObject
+            function onEnabledChanged() {
+                if (playerPluginObject.enabled)
+                    return
+                trackPeekTimer.stop()
+                playerPluginObject.trackPeekOpen = false
+            }
+        }
+
         active: enabled && (
             (IslandState.hovered && root.passiveHoverAllowed
                 && K4Media.hasPlayer
