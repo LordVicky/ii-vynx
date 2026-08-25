@@ -9,6 +9,8 @@ QtObject {
     property var seedPlugins: []
     property bool initialized: false
     property bool passiveHoverAllowed: false
+    property var configurablePluginModel: []
+    property var applicationPluginModel: []
     property QtObject builtins: K4BuiltinPlugins {
         passiveHoverAllowed: root.passiveHoverAllowed
     }
@@ -61,9 +63,9 @@ QtObject {
             || candidate.name.startsWith("demo-") || candidate.configurable === false
     }
 
-    // Settings and Apps consume stable metadata, not the mutable live-instance
-    // array. A managed plugin may be destroyed/recreated without invalidating
-    // their Repeater/GridView models while a delegate event handler is running.
+    // Stable metadata is independent of the mutable live-instance array. The
+    // returned objects are either long-lived static plugins or persistent
+    // manager descriptors that survive instance disable/failure/recreation.
     function metadataPlugins() {
         const result = []
         const seen = ({})
@@ -89,16 +91,28 @@ QtObject {
         return result
     }
 
-    function configurablePlugins() {
-        const result = []
+    // Build the UI-facing arrays only from persistent metadata. They are not
+    // rebuilt when managed live instances come and go, so Settings/GridView
+    // delegates keep stable model objects throughout lifecycle transitions.
+    function rebuildMetadataModels() {
+        const configurable = []
+        const applications = []
         const metadata = metadataPlugins()
+
         for (let i = 0; i < metadata.length; ++i) {
             const candidate = metadata[i]
-            if (isProtectedPlugin(candidate))
-                continue
-            result.push(candidate)
+            if (!isProtectedPlugin(candidate))
+                configurable.push(candidate)
+            if (candidate.name !== "apps" && candidate.application === true)
+                applications.push(candidate)
         }
-        return result
+
+        configurablePluginModel = configurable
+        applicationPluginModel = applications
+    }
+
+    function configurablePlugins() {
+        return configurablePluginModel
     }
 
     function applyPluginEnabled(candidate, wanted) {
@@ -149,17 +163,11 @@ QtObject {
         return false
     }
 
-    // Apps is a view over host-owned plugin metadata, never a second catalog.
-    // Managed descriptors remain visible while their live instance is absent.
+    // Compatibility helper for callers outside the UI. The actual Apps model
+    // binds directly to applicationPluginModel so descriptor visibility does
+    // not depend on function-binding evaluation order.
     function applicationPlugins() {
-        const result = []
-        const metadata = metadataPlugins()
-        for (let i = 0; i < metadata.length; ++i) {
-            const candidate = metadata[i]
-            if (candidate.name !== "apps" && candidate.application === true)
-                result.push(candidate)
-        }
-        return result
+        return applicationPluginModel
     }
 
     function openApplication(name) {
@@ -258,6 +266,7 @@ QtObject {
         seedPlugins = initial
         initialized = true
         rebuildPlugins()
+        rebuildMetadataModels()
         applyPersistedEnablement()
         publishActivePlugin()
     }
