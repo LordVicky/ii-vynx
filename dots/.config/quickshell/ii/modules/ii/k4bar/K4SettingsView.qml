@@ -320,6 +320,15 @@ Item {
 
                 K4SettingsToggle {
                     Layout.fillWidth: true
+                    title: "Peek Player on track change"
+                    description: "Show the new track for a few seconds, even while the bar is hidden"
+                    glyph: K4Theme.ico.music
+                    checked: K4Settings.playerPeekOnTrackChange
+                    onToggled: value => K4Settings.setPlayerPeekOnTrackChange(value)
+                }
+
+                K4SettingsToggle {
+                    Layout.fillWidth: true
                     title: "Dismiss when application is focused"
                     description: "Clear matching notifications after their application takes focus"
                     glyph: K4Theme.ico.check
