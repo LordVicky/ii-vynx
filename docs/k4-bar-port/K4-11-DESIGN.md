@@ -1,6 +1,6 @@
 # K4-11 — Built-in plugin lifecycle
 
-Status: design reopened after failed lifecycle tracer
+Status: revised loader-owned Displays tracer ready for live validation
 
 ## Decision
 
@@ -37,25 +37,55 @@ The first `displays` tracer used `Qt.createComponent()`, `Component.createObject
 
 The later crash report reached `libQt6QmlModels`, `QQmlIncubatorPrivate::incubate()` and `QQmlEnginePrivate::incubate()`. The same implementation also called its shutdown path from `Component.onDestruction`, which could manually destroy a dynamically-created plugin while the QML engine itself was tearing down.
 
-That manual QObject-lifetime design is rejected. K4 QML code must not use `Qt.createComponent()`, `.createObject()` or `.destroy()` to own plugin lifetime. A source regression test now guards that boundary.
+That manual QObject-lifetime design is rejected. K4 QML code must not use `Qt.createComponent()`, `.createObject()` or `.destroy()` to own plugin lifetime. A source regression test guards that boundary.
 
-Runtime code has been restored exactly to the validated K4-10 static-plugin baseline while the replacement lifecycle design is investigated. This rollback is diagnostic: it does not remove the approved K4-11 outcome.
+The rollback restored the validated K4-10 runtime. Live validation confirmed the shell and the original static Displays toggle were stable again, isolating the regression to the K4-11 manual QObject lifecycle.
 
-## Replacement architecture requirements
+## Loader prototype evidence
 
-The next tracer must make lifetime declarative and Qt/QML-owned rather than manually destroying QObjects from JavaScript. A `Loader`/slot-style owner is the primary design candidate, but it must be prototyped through a narrow runnable seam before production migration.
+A throwaway probe then tested one question independently of the registry, Settings, Apps, arbitration and persisted enablement: can Qt-owned `Loader.active` repeatedly create and release a non-visual `K4Plugin` safely on the target Quickshell/Qt runtime?
 
-The replacement must preserve stable descriptor metadata independently from the live item/plugin instance without feeding dying QObject references through `Repeater`, `GridView`, or another mutable QML model. Disable, retry, application launch, arbitration publication and shell teardown must each have an explicit state transition.
+The live stress run completed 21 create/release cycles in one Quickshell process:
 
-No production plugin is migrated again until the tracer demonstrates all of these without warnings or native crashes:
+- final probe state: `enabled=false`, `loaded=false`, `generation=21`;
+- 21 `Component.onCompleted` observations;
+- 21 `Component.onDestruction` observations;
+- no `Segmentation fault`, `QEventLoop`, `TypeError`, `QtQmlModels` or `QQmlIncubator` matches.
 
-1. fresh boot with the tracer enabled;
-2. fresh boot with the tracer disabled;
-3. repeated enable/disable in one Quickshell PID;
-4. application open/close before and after recreation;
-5. isolated load failure and retry;
-6. clean Quickshell shutdown while the plugin is enabled and while disabled.
+That is sufficient runnable evidence to proceed with a Loader-owned production tracer.
 
-## Tracer candidate
+## Revised production tracer architecture
 
-`displays` remains the preferred tracer because it is a self-contained application plugin and does not own a global service. Existing static plugins remain unchanged until the replacement tracer passes live validation.
+The revised tracer does **not** recreate the registry object.
+
+A stable `K4ManagedPlugin` proxy permanently occupies the normal built-in registry slot. Settings, Apps, arbitration and the island host always reference that durable proxy. Only the plugin implementation behind it is ephemeral:
+
+`stable K4ManagedPlugin proxy -> Loader.active -> K4DisplaysPlugin implementation`
+
+The proxy carries stable catalog metadata (`name`, `title`, application metadata, enablement and load error) and projects the implementation's runtime properties (`active`, geometry, view and keyboard/hover policy) while it is loaded.
+
+Important invariants:
+
+- `K4PluginController.plugins` is not rebuilt when Displays is enabled/disabled;
+- Settings/App delegates never receive a dying plugin QObject;
+- persisted-disabled state gates Loader activation directly, so a disabled plugin does not briefly instantiate during startup;
+- Loader owns implementation creation and release; no K4 code manually destroys the implementation;
+- the existing controller, Apps model, K4 host and Displays implementation remain unchanged for this tracer.
+
+`K4Plugin.instantiated` is `true` for ordinary static plugins. The managed proxy overrides it from `Loader.item`, allowing Settings to show `Loaded`, `Loading`, `Disabled` or `Error` without dereferencing the ephemeral implementation.
+
+## Live acceptance for the revised Displays tracer
+
+Before any other plugin migrates, Displays must demonstrate all of these in one stable Quickshell PID:
+
+1. fresh boot enabled: Displays row is `Loaded`, Applications can open it, and monitor controls work;
+2. disable: row remains present and becomes `Disabled`; the `k4.displays` IPC handler disappears because the implementation is actually unloaded;
+3. enable: row returns to `Loaded`; the `k4.displays` IPC handler returns and Displays opens normally;
+4. repeated enable/disable does not produce Settings/controller null warnings or a native crash;
+5. fresh boot while Displays is persisted disabled stays `Disabled` without instantiating the implementation;
+6. fresh boot after re-enabling returns to `Loaded`;
+7. clean Quickshell shutdown works with Displays both enabled and disabled.
+
+Load-failure/retry is the next slice after this lifecycle tracer is stable; it will use Loader error state rather than manual component creation/destruction.
+
+Existing static plugins remain unchanged until this revised tracer passes live validation.
