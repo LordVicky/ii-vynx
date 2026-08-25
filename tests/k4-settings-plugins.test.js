@@ -24,6 +24,7 @@ test("K4 plugin settings persist enablement without breaking active bindings", a
     assert.match(base, /property bool configurable:\s*true/);
     assert.match(base, /property bool closeOnDisable:\s*true/);
     assert.match(base, /property string loadError:\s*""/);
+    assert.match(base, /property bool instantiated:\s*true/);
     assert.match(base, /onEnabledChanged:[\s\S]*?if \(root\.closeOnDisable\)[\s\S]*?root\.close\(\)[\s\S]*?releasePlacement\(\)/);
     assert.doesNotMatch(base, /onEnabledChanged:[\s\S]*?active = false/);
     assert.match(builtins, /volumePlugin:[\s\S]*?closeOnDisable:\s*false[\s\S]*?clockPlugin:[\s\S]*?closeOnDisable:\s*false[\s\S]*?playerPlugin:[\s\S]*?closeOnDisable:\s*false/);
@@ -40,7 +41,8 @@ test("K4 plugin settings persist enablement without breaking active bindings", a
     assert.match(settingsView, /root\.plugin\.controller\.configurablePlugins\(\)/);
     assert.match(settingsView, /K4SettingsPluginRow/);
     assert.match(row, /plugin\.loadError\.length > 0/);
-    assert.match(row, /plugin\.enabled \? "Loaded" : "Disabled"/);
+    assert.match(row, /!plugin\.enabled \? "Disabled"/);
+    assert.match(row, /plugin\.instantiated \? "Loaded" : "Loading"/);
     assert.match(row, /root\.controller\.setPluginEnabled\(root\.plugin\.name, value\)/);
 
     assert.match(host, /Loader\.Error[\s\S]*?modelData\.loadError = "View failed to load"/);
