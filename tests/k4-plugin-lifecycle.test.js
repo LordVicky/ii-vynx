@@ -41,14 +41,14 @@ test("K4 manages Displays as an independently loadable built-in", async () => {
 test("K4 lifecycle keeps metadata visible while the live instance is absent", async () => {
     const controller = await read("modules/ii/k4bar/K4PluginController.qml");
     const settingsRow = await read("modules/ii/k4bar/K4SettingsPluginRow.qml");
-    const appsView = await read("modules/ii/k4bar/K4AppsView.qml");
 
     assert.match(controller, /function configurablePlugins\(\)/);
     assert.match(controller, /function applicationPlugins\(\)/);
     assert.match(controller, /pluginManager\.owns\(/);
     assert.match(controller, /pluginManager\.descriptor\(/);
+    assert.match(controller, /descriptor\.application\s*===\s*true/);
     assert.match(settingsRow, /retryPlugin/);
-    assert.match(appsView, /loadError/);
+    assert.match(settingsRow, /click to retry/);
 });
 
 test("K4 lifecycle exposes a bounded failure-isolation debug seam", async () => {
