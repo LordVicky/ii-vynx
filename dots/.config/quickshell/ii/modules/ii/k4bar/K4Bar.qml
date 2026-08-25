@@ -214,10 +214,13 @@ Scope {
                     return
                 if (pointerOver) {
                     withdrawTimer.stop()
+                    controller.holdHoverExit()
+                    K4Notifications.holdToast()
                     withdrawn = false
                     hoverDwellTimer.restart()
                 } else {
                     hoverDwellTimer.stop()
+                    K4Notifications.resumeToast()
                     controller.hoverExited()
                     reconsiderWithdrawal()
                 }
