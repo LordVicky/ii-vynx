@@ -100,7 +100,8 @@ test("host renders the winner on one monitor and keeps idle fallback elsewhere",
     assert.match(source, /controller\.visiblePluginFor\(panelWindow\.screen\.name\)/);
     assert.match(source, /showingIdle[\s\S]*?idleContent\.desiredBodyWidth[\s\S]*?pluginVisible\.islandWidth/);
 
-    assert.match(source, /exclusiveZone:\s*K4Theme\.baseHeight/);
+    assert.match(source, /readonly property string effectiveSpaceMode:\s*K4Settings\.spaceMode/);
+    assert.match(source, /exclusiveZone:\s*panelWindow\.effectiveSpaceMode === "reserve"[\s\S]*?\? K4Theme\.baseHeight : 0/);
     assert.match(source, /mask:\s*Region \{ item: IslandState\.suppressed \? null : island \}/);
     assert.match(source, /opacity:\s*IslandState\.suppressed \? 0 : 1/);
     assert.match(source, /WlrLayershell\.keyboardFocus:[\s\S]*?plugin\.grabKeyboard[\s\S]*?plugin\.keyboardOnHover[\s\S]*?plugin\.optionalKeyboard/);
