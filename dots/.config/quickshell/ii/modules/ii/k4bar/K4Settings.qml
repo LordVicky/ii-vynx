@@ -20,6 +20,7 @@ Singleton {
     readonly property bool trayInPill: Config.options.bar.k4.trayInPill
     readonly property bool notificationsOnHover: Config.options.bar.k4.notificationsOnHover
     readonly property bool dismissNotificationsOnFocus: Config.options.bar.k4.dismissNotificationsOnFocus
+    readonly property bool playerPeekOnTrackChange: Config.options.bar.k4.playerPeekOnTrackChange
     readonly property var disabledPlugins: Config.options.bar.k4.disabledPlugins
 
     readonly property var positions: [
@@ -71,6 +72,10 @@ Singleton {
 
     function setDismissNotificationsOnFocus(wanted) {
         Config.options.bar.k4.dismissNotificationsOnFocus = Boolean(wanted)
+    }
+
+    function setPlayerPeekOnTrackChange(wanted) {
+        Config.options.bar.k4.playerPeekOnTrackChange = Boolean(wanted)
     }
 
     function pluginEnabled(name) {
