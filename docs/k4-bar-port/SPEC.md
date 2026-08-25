@@ -1,4 +1,4 @@
-# k4 Dynamic Island Bar Port — Specification
+# k4 Dynamic Island Bar Port — Selected-Scope Specification
 
 Status: approved for implementation
 
@@ -7,51 +7,59 @@ Status: approved for implementation
 - Target repository: `LordVicky/ii-vynx`
 - Working branch: `agent/k4-bar-port`
 - Base branch: `agent/liquid-glass-stage1`
-- Upstream source: `k4ditano/k4`
-- Upstream snapshot inspected for this spec: `48993812c88f0af5d0c5345cd273467043b889f1` (2026-08-22)
-- k4 license: MIT. Adapted/copied source must carry attribution and the repository license copy convention must be followed.
+- Upstream project: `k4ditano/k4`
+- Original implementation reference: `48993812c88f0af5d0c5345cd273467043b889f1` (2026-08-22)
+- Selected v1.0 reference: `adcf4216038f7881c4a589baafaaaec841377ad5` (`v1.0.0`, 2026-08-24)
+- Selected-v1 design: `docs/k4-bar-port/K4-V1-SYNC-DESIGN.md`
+- k4 license: MIT. Substantially adapted/copied source must retain attribution under the repository convention.
+
+The v1.0 tag is **not** a new full-parity target. Only explicitly approved v1.0 behaviors are part of this port.
 
 ## Goal
 
-Add the k4 Dynamic Island bar to the Illogical Impulse panel family as a second, mutually exclusive bar implementation. The current ii-vynx bar remains intact and is the default. A user can select the k4 bar in Settings; selecting it unloads the standard horizontal/vertical bar surfaces and loads the k4 island implementation instead.
+Provide the useful K4 Dynamic Island experience as a second, mutually exclusive ii-vynx bar implementation while preserving ii-vynx ownership of desktop services and rejecting upstream features that duplicate shell responsibilities or create unnecessary application/service bloat.
 
-The port is intentionally fidelity-first. Initial behavior should match k4 at the pinned upstream snapshot before ii-vynx-specific customization is introduced.
+The existing Standard bar remains intact and is the default. Selecting K4 unloads Standard bar surfaces and loads the K4 island host instead. Switching variants preserves each variant's independent settings.
 
-## Product decisions
+## Product boundary
 
-1. **Scope:** full k4 bar experience, not only the collapsed pill. The target includes the island host and k4's built-in island views/features, progressively brought to parity.
-2. **Coexistence:** the existing ii-vynx bar is not rewritten. Standard and k4 bars coexist in the codebase but only one owns the bar surface at runtime.
-3. **Collapsed state:** reproduce k4 faithfully, including clock/workspace transition, media artwork/visualizer, indicators, symmetric side allocation, and k4 defaults.
-4. **Interaction defaults:** preserve k4 defaults. Behavior customization is deferred until parity is established.
-5. **k4 panel/control center:** preserve the k4 panel experience. Do not redirect island-background interactions to ii-vynx sidebars.
-6. **Existing ii sidebars/control center:** remain available outside the k4 island through existing shell mechanisms such as screen-corner interactions. They are not embedded into the island.
-7. **Notifications:** support k4's notification-to-island behavior, including transient arbitration/preemption semantics.
-8. **Placement:** k4 mode supports top and bottom only. No vertical/left/right island variant in the parity phase.
-9. **Settings ownership:** k4 position/alignment settings are independent from the standard bar so switching variants preserves each bar's configuration.
-10. **Visual surface:** use k4's existing dark surface/colors for parity. Do not integrate Material or Liquid Glass surfaces yet.
-11. **Geometry:** preserve k4's inverse wings and edge-attached silhouette pixel-faithfully.
-12. **Exclusive zone:** preserve k4 behavior: reserve only the collapsed island height while expanded content overlays windows.
-13. **Auto-hide:** do not port or adapt ii-vynx standard-bar auto-hide into k4 mode during parity work.
-14. **Multi-monitor:** preserve k4 behavior: idle pill on each eligible screen; one expanded global action on the selected/active screen.
-15. **Settings UX:** Bar Settings starts with a bar-variant selector. Standard-only controls are hidden when k4 mode is selected; k4-only controls are shown instead.
+### Included K4 experience
 
-## Terminology
+The selected K4 scope includes:
 
-Use these names consistently in code and documentation:
+- edge-attached inverse-wing island host;
+- top/bottom placement and left/center/right alignment presets;
+- idle pill, workspace transition, media, Clock and Volume behavior;
+- notifications/transient arbitration and recent history;
+- K4 Control Center;
+- Launcher, Apps, Clipboard, Files, Windows, System, Session, Shortcuts, Weather and Tray utilities;
+- in-island K4 Settings;
+- thin capture/record presentation over existing ii-vynx capture owners;
+- lean monitor arrangement through existing Hyprland state and a narrow apply adapter;
+- built-in plugin enablement, load isolation and Loader-owned lifecycle;
+- selected K4 v1.0 bar-space behavior, Player track-change peek, compact Idle/Clock sizing and active-monitor API.
 
-- **bar variant** — mutually exclusive top-level bar implementation: `standard` or `k4`.
-- **island host** — the `PanelWindow`/state-controller boundary that owns silhouette, geometry, keyboard policy, active-screen behavior, and plugin view loading.
-- **island state** — shell-wide state analogous to upstream `services/Island.qml`: occupant, open state, active/requested screen, placement override, gestures, published geometry, and temporary hiding.
-- **island plugin** — a k4-style view/controller unit with activation state, priority, dimensions, and optional keyboard/hover/transient semantics.
-- **idle pill** — the always-available collapsed island plugin.
-- **transient** — an island plugin such as a notification/toast that may activate spontaneously and must yield to an explicit user-opened view.
-- **adapter** — a narrow boundary exposing ii-vynx shell services to ported k4 code where duplicate system ownership would be unsafe.
+### Explicit exclusions
 
-Do not call the existing `barGroupStyle === 1` feature the k4 island; that setting only changes group backgrounds in the standard bar.
+The following are product decisions, not deferred parity debt:
 
-## Architecture
+- Ask/embedded AI assistant;
+- HyprTheme, wallpaper manager, animated wallpaper and wallpaper-derived palette ownership;
+- Terminal, SSH and Agents applications;
+- Game/Mazmorra and Digivice;
+- K4's non-linear video editor, transcription and editor toolchain;
+- Dual mode / transforming bottom dock;
+- external/user plugin directories, plugin store/registry, publishing workflow, install/update/remove tooling and permission-manifest ecosystem;
+- K4 standalone self-updater/version checker;
+- live window-thumbnail API;
+- generalized K4 auxiliary-window API expansion not required by an approved feature;
+- upstream translation subsystem replacement;
+- K4 agent-skill installer;
+- duplicated workspace-to-monitor routing in Displays.
 
-### 1. Variant boundary
+## Architecture principles
+
+### 1. Variant ownership
 
 `Config.options.bar.variant` is the sole top-level selector:
 
@@ -61,266 +69,243 @@ property string variant: "standard" // "standard" | "k4"
 
 `IllogicalImpulseFamily.qml` owns mutual exclusion:
 
-- standard horizontal/vertical bar loaders and their Liquid Glass helper surfaces load only when `variant === "standard"`;
-- the k4 island host loads only when `variant === "k4"`;
-- unrelated ii modules (background, sidebars, dock, OSD, lock, overview, screen corners, etc.) remain unchanged unless a concrete conflict is demonstrated.
+- Standard horizontal/vertical bar surfaces and Standard-only helper glass surfaces load only for `variant === "standard"`;
+- the K4 island host loads only for `variant === "k4"`;
+- unrelated ii-vynx modules remain available unless a demonstrated ownership conflict requires gating.
 
-The standard bar's existing config is left intact.
+### 2. K4 persistence
 
-### 2. k4-specific config
+K4 settings remain under `Config.options.bar.k4`; no second K4 settings file is introduced.
 
-Create a dedicated nested object under `Config.options.bar`, initially containing parity-critical host settings only:
+Current/approved host settings include:
 
 ```qml
-property JsonObject k4: JsonObject {
-    property string position: "top"      // "top" | "bottom"
-    property int alignment: 50           // upstream defaults/options: 15 | 50 | 85
-}
+property string position: "top"       // "top" | "bottom"
+property int alignment: 50             // 15 | 50 | 85
+property string spaceMode: "reserve"  // reserve | fullscreen | overlay | hidden
+property bool playerPeekOnTrackChange: true
+property bool trayInPill: false
+property bool notificationsOnHover: true
+property bool dismissNotificationsOnFocus: true
+property list<string> disabledPlugins: []
 ```
 
-Additional k4 settings should be ported with the feature that consumes them, rather than creating disconnected switches in advance.
+Add settings only with the behavior that consumes them.
 
-### 3. Island host as a deep module
+### 3. Island host is the deep module
 
-Create a dedicated module under the ii family, expected root:
+`modules/ii/k4bar/K4Bar.qml` owns:
 
-`modules/ii/k4bar/`
-
-The island host must own:
-
-- one `PanelWindow` per eligible screen;
+- one layer-shell `PanelWindow` per eligible screen;
 - top/bottom anchoring;
-- collapsed exclusive zone;
+- per-screen reservation/overlay/hidden policy;
+- inverse-wing silhouette and internal geometry animation;
 - surface growth/shrink policy;
-- pixel-faithful body + inverse wings;
-- per-screen input mask;
-- active-screen selection;
+- per-screen input mask and Hidden reveal edge;
 - keyboard focus policy;
-- active-plugin arbitration;
-- transient dismissal when an explicit non-transient view wins;
-- hover-exit coordination;
-- island geometry publication;
-- k4 physical gestures;
-- temporary hiding for capture/system-dialog cases.
+- active-screen selection;
+- active-plugin arbitration presentation;
+- geometry publication;
+- temporary suppression for capture/system dialogs;
+- physical island gestures.
 
-These responsibilities must not be distributed into individual plugin views.
+Individual plugins must not independently manipulate compositor reservation or reproduce host-level hiding behavior.
 
-### 4. Island state service
+### 4. Island state
 
-Port the semantics of upstream `services/Island.qml` into an ii-owned singleton in the k4bar module. Preserve the public concepts while using English/project-consistent names where practical.
+`IslandState.qml` is the shell-wide K4 host state and plugin-facing contract. It owns/publishes:
 
-Required state/behavior:
+- hover state;
+- current occupant/open state;
+- requested and active screen;
+- focused-screen fallback;
+- base and temporary placement;
+- island rectangles per screen;
+- gesture requests/cooldown;
+- temporary suppression/system-dialog state.
 
-- `hovered`
-- current `occupant`
-- expanded/open state
-- requested and active screen
-- focused-screen fallback
-- base placement and temporary owned placement override
-- published island rectangles per screen
-- gesture arbitration and cooldown
-- temporary hidden state
-- system-dialog counter / interaction suppression
+`IslandState.activeScreen` is the stable active-monitor API corresponding to approved v1.0 U17 behavior.
 
-The host writes authoritative occupant/open/geometry state. Plugins request behavior through the service.
+### 5. Plugin arbitration and lifecycle
 
-### 5. Plugin boundary
+K4 keeps a plugin interface for activation, priority, dimensions, view, focus, hover/background policy, transient behavior and open/close actions.
 
-Preserve k4's plugin arbitration model rather than converting every k4 view into a standard ii bar component.
+Built-in lifecycle uses the target-runtime-validated architecture:
 
-A plugin interface should expose the equivalent of:
+```text
+stable K4ManagedPlugin registry proxy
+        -> declarative Loader
+        -> ephemeral built-in implementation
+```
 
-- id/name
-- enabled/lifecycle state
-- `active`
-- `priority`
-- `islandWidth`
-- `islandHeight`
-- view component
-- keyboard policy
-- background-tap policy
-- hover-exit policy
-- `transient`
-- `open`/`close` behavior where applicable
+Required invariants:
 
-The implementation may simplify upstream dynamic plugin discovery during the first tracer bullets, but the final parity target includes k4's built-in/plugin-host behavior. Broken/disabled plugins must not be able to prevent the island host from loading.
+- Settings, Apps, the host and arbitration retain stable proxy objects;
+- disabled managed plugins are not instantiated;
+- Loader owns implementation creation/release;
+- a component failure stays behind the stable proxy and exposes Error/Retry state;
+- retry can recreate a corrected implementation without changing registry membership;
+- no K4 plugin-lifetime path uses `Qt.createComponent()`, `createObject()` or manual `.destroy()`.
 
-### 6. Service ownership and adapters
+Upstream v1.0 lifecycle ideas may inform semantics, but its manual QObject ownership implementation is explicitly rejected because it crashed the target Qt/Quickshell runtime.
 
-Do **not** blindly duplicate services that own a global desktop facility. k4 and ii-vynx both implement audio, media, networking/Bluetooth, notifications, clipboard, workspaces, app search, session actions, and related system integration.
+### 6. One owner per desktop facility
 
-For each ported plugin, classify its dependencies:
+K4 presentation must reuse existing ii-vynx/Quickshell owners for global facilities wherever they already exist.
 
-1. **Reuse/adapt ii service** when ii-vynx already owns the same global facility or duplicate ownership risks conflict.
-2. **Port k4 service locally** when behavior is k4-specific and has no conflicting ii owner.
-3. **Bridge narrowly** when k4's view requires a richer model than ii currently exposes.
+Examples:
 
-Adapters should be thin and stable. Ported views should depend on the adapter contract rather than scattered direct references to unrelated ii modules.
+- Media -> existing live MPRIS state;
+- Audio -> ii Audio/PipeWire owner;
+- Notifications -> ii notification server/state;
+- Clipboard -> ii Cliphist owner;
+- networking/Bluetooth -> existing ii/Quickshell ownership;
+- applications -> existing desktop-app discovery;
+- session/power -> existing ii Session;
+- monitor/workspace snapshots -> `HyprlandData` / Quickshell Hyprland state;
+- capture/record -> existing ii-vynx capture/record scripts and state.
 
-Notification serving is a mandatory conflict check: only one notification server/owner may be active. The k4 toast/history UI must consume the chosen shared notification state rather than starting a competing server.
+No new daemon, persistent helper process, external dependency or competing service owner may be added without explicit approval.
 
-### 7. Existing ii surfaces
+## Selected v1.0 behavior
 
-The k4 variant replaces only the bar surface. Existing ii-vynx modules remain available unless a demonstrated runtime ownership conflict requires gating.
+### Space modes
 
-In particular:
+K4 exposes four host modes:
 
-- screen corners remain active and may open ii sidebars/control surfaces;
-- k4's own control center remains faithful inside the island;
-- standard-bar-specific helper glass layers are disabled in k4 mode;
-- standard bar auto-hide machinery is not reused in k4 mode;
-- Liquid Glass integration is explicitly deferred.
+1. **Reserve space** (`reserve`) — current/default behavior; reserve collapsed K4 height.
+2. **Away when fullscreen** (`fullscreen`) — reserve normally, but resolve to Hidden only on a monitor whose active workspace has fullscreen content.
+3. **On top** (`overlay`) — reserve zero compositor space while keeping the island visible.
+4. **Hidden** (`hidden`) — reserve zero space and withdraw the idle island beyond its configured top/bottom edge until it is needed.
 
-## Fidelity requirements
+Fullscreen detection must be a narrow query over existing `HyprlandData` state. Do not create a second workspace/monitor service or polling loop.
 
-### Silhouette
+Hidden behavior belongs to the host:
 
-Match upstream k4 geometry:
+- withdraw only after an idle delay;
+- animate by translating island drawing, not by resizing the layer surface per frame;
+- use a non-overshooting return/withdraw curve;
+- keep a 4 px invisible reveal strip aligned to the island width, not the full monitor edge;
+- keep the strip in the input mask while the island returns so transformed-input lag cannot leak pointer ownership to the underlying window;
+- temporary capture/system-dialog suppression is stronger than Hidden and removes both island and reveal-strip input.
 
-- inverse edge wings;
-- body radius behavior;
-- top/bottom reflection semantics;
-- antialiasing approach sufficient to preserve the wing shape;
-- expanded geometry stays attached to the configured screen edge.
+A non-idle plugin becoming active is already the signal that there is something to show, so notifications, Volume, capture confirmation and explicitly opened utilities automatically bring a Hidden island back.
 
-### Collapsed pill
+When idle and Hidden, brushing the reveal edge brings back the collapsed pill first; dwelling around 500 ms may then enter normal hover expansion.
 
-Match upstream defaults:
+### Player track-change peek
 
-- center clock when idle;
-- temporary workspace indicator after workspace changes;
-- media artwork + visualizer on the left while playing;
-- right-side contextual indicators;
-- symmetric left/right reservation so center content remains truly centered;
-- default tray-in-pill behavior remains off unless the corresponding k4 setting is later ported/enabled.
+The Player may briefly activate when a real track changes, controlled by `playerPeekOnTrackChange`.
 
-### Expansion and arbitration
+Requirements:
 
-Match upstream behavior:
+- use the existing `K4Media` MPRIS adapter;
+- compare settled user-visible track identity (title + artist);
+- allow about 350 ms for split metadata updates to settle;
+- do not peek on initial player discovery, empty identity or unchanged identity;
+- on a real change, keep Player active for about 3200 ms;
+- Escape/close ends the peek;
+- ambient peek from idle routes to the focused screen through existing controller behavior;
+- Hidden mode must return automatically for a Player peek.
+
+### Compact asymmetric Idle/Clock sizing
+
+The old symmetric rule that mirrors the wider side around the clock is no longer the selected target.
+
+Idle becomes three sequential measured zones:
+
+```text
+left media | center clock/workspaces | right indicators
+```
+
+Clock hover becomes:
+
+```text
+date | gap | time | gap | tray/recording/context
+```
+
+Each side consumes its own measured width. Conservative first-frame estimates are allowed; once views are laid out, measured widths are authoritative. The accepted tradeoff is a small center shift when contextual content appears in exchange for avoiding doubled empty reservation and overlap pressure.
+
+Notification-strip height behavior remains unchanged.
+
+## Capture scope
+
+K4 Capture remains a thin presentation/adapter over existing ii-vynx capture and recording owners.
+
+The v1.0 capture-only audit found upstream changes for structured/localized failure reason plumbing in K4's Python capture/editor stack. They do not apply to this ownership model and require no runtime port.
+
+The editor, transcription, camera/editor timeline and upstream Python capture stack remain out of scope.
+
+## Displays scope
+
+K4 Displays is monitor-layout only:
+
+```text
+K4 Displays UI
+  -> existing HyprlandData monitor snapshot
+  -> in-memory draft
+  -> one-shot hyprctl eval apply
+```
+
+No workspace-to-monitor assignment, workspace rules, workspace moves, generated Hyprland config or persistent helper process may be added. ii-vynx's existing dynamic workspace system remains the sole workspace behavior owner.
+
+## Visual requirements
+
+- retain K4's dark surface and visual language for this port;
+- preserve edge-attached inverse wings and reflected bottom geometry;
+- do not restyle K4 with Material or Liquid Glass during selected-scope completion;
+- Standard Liquid Glass work remains independent.
+
+## Focus/input/arbitration requirements
 
 - highest-priority enabled active plugin wins;
-- idle is fallback;
-- explicitly opened non-transient view dismisses lower-priority transient views;
-- expanded action is shown only on the active/requested screen;
-- other eligible screens retain idle pills;
-- active-screen selection uses the interaction origin when available and focused monitor otherwise;
-- expanding does not increase the compositor exclusive zone beyond the collapsed bar height.
-
-### Focus/input
-
-Match upstream intent:
-
+- idle remains fallback;
+- explicit non-transient views dismiss/preempt lower transient presentation as already defined;
+- expanded global action appears on the requested/focused active screen while other monitors retain idle behavior;
 - idle does not grab keyboard focus;
-- text-entry views can request exclusive focus;
-- optional/on-hover keyboard policies are supported where required;
-- Escape closes the active plugin after nested controls have had a chance to consume it;
-- when the island is temporarily hidden/apart, its input mask is removed so invisible UI cannot eat clicks.
-
-## Settings behavior
-
-Update Bar Settings with a top-level selector:
-
-- **Standard**
-- **k4 Dynamic Island**
-
-When Standard is selected, preserve the current Bar Settings UI.
-
-When k4 is selected:
-
-- hide standard layout arrays;
-- hide standard size controls;
-- hide vertical left/right placement;
-- hide standard corner/group/background styles;
-- hide standard auto-hide controls;
-- show k4 top/bottom position;
-- show k4 alignment controls;
-- add later k4 settings only when their consuming feature is implemented.
-
-Switching variants must not overwrite either variant's saved settings.
-
-## Licensing and attribution
-
-k4 is MIT licensed. Before copied/adapted k4 implementation code lands:
-
-- add a dedicated k4 MIT license copy/attribution entry under `licenses/` following the existing ii-vynx convention;
-- files substantially copied from k4 must include an appropriate source/license notice;
-- adapted source comments may be translated/cleaned up, but attribution must remain clear.
-
-## Non-goals for parity phase
-
-- no vertical/left/right Dynamic Island;
-- no Liquid Glass or Material recoloring of the island;
-- no ii standard-bar auto-hide integration;
-- no custom hover/click behavior editor;
-- no attempt to make standard `BarComponent` arrays arbitrarily embeddable in the island;
-- no replacement of k4 control-center/panel views with ii sidebars;
-- no broad refactor of unrelated ii-vynx services without a demonstrated adapter need.
-
-## Implementation strategy
-
-This feature is too large for one implementation unit. Use tracer bullets. Each ticket must deliver a runnable end-to-end behavior through the real shell boundary and preserve standard-bar behavior.
-
-The initial sequence is:
-
-1. variant/config/settings loader boundary + inert island host;
-2. faithful silhouette + idle pill + multi-monitor ownership;
-3. island state and active-plugin arbitration;
-4. media/clock/volume views through adapters;
-5. notifications/transients through the shared notification owner;
-6. k4 panel/control center and core system views;
-7. launcher/clipboard/files/windows/session/system/settings views;
-8. capture/editor and other k4-specific tools that require their own services;
-9. plugin lifecycle/extensibility parity and remaining bundled plugins;
-10. parity review, performance review, and cleanup.
-
-Tickets may be split further when a slice cannot be implemented/reviewed independently.
+- text-entry/exclusive/on-demand/on-hover focus policies remain host-controlled;
+- Escape closes the active plugin after nested controls get first chance to consume it;
+- invisible/suppressed UI must not eat clicks.
 
 ## Acceptance criteria
 
-The parity effort is complete when all of the following are true:
+The selected K4 port is complete when:
 
-1. `standard` remains the default and behaves as it did on `agent/liquid-glass-stage1`.
-2. Settings can switch between Standard and k4 variants without restarting the shell beyond normal config-driven loader behavior.
-3. Only the selected bar implementation owns a bar surface.
-4. k4 supports top and bottom placement and independent alignment settings.
-5. The island silhouette and inverse wings visually match upstream k4 at the pinned snapshot.
-6. The collapsed idle pill matches upstream default content and interaction behavior.
-7. Multi-monitor idle/expanded ownership matches upstream.
-8. Expanded island content overlays windows while only the collapsed height is reserved.
-9. k4 plugin priority/transient semantics work, including notification preemption.
-10. k4's own panel/control center remains an island view; ii sidebars are not substituted for it.
-11. Notification integration does not run a competing notification server.
-12. All ported global facilities have an explicit ownership/adaptation decision.
-13. Disabling or breaking one optional island plugin cannot remove the entire bar.
-14. k4-derived source is attributed under the repository's license convention.
-15. Available lint/tests/checks pass; hardware/compositor behaviors not testable automatically have an explicit manual validation checklist.
-16. A final code review is performed against both repository standards and this specification.
+1. Standard remains default and regression-equivalent to the base branch at the variant boundary.
+2. Standard and K4 never simultaneously own the bar surface.
+3. K4 top/bottom placement and 15/50/85 alignment persist independently.
+4. K4 silhouette/animations match the selected K4 visual language.
+5. Idle/media/workspace/notification/control-center and approved daily-driver utilities work through existing service owners.
+6. Reserve/On top/Hidden/Away-when-fullscreen behave as specified, including per-monitor fullscreen resolution.
+7. Hidden edge reveal does not capture the whole monitor edge and does not leak clicks during return animation.
+8. Player track changes create at most one configured peek and initial discovery does not peek.
+9. Idle and Clock use asymmetric measured zones without content overlap.
+10. `IslandState.activeScreen` correctly identifies the expanded host monitor.
+11. Capture remains a thin adapter; no editor/transcription stack is introduced.
+12. Displays remains monitor-only and does not duplicate dynamic workspace routing.
+13. Managed built-ins use stable proxies + declarative Loader lifetime; one failed plugin cannot remove the bar.
+14. No rejected v1.0 feature appears implicitly through infrastructure work.
+15. No duplicate desktop service owner or unapproved external dependency is introduced.
+16. K4-derived code remains attributed under repository convention.
+17. Relevant source checks pass and compositor/hardware behavior has explicit real-shell validation.
+18. Final review is performed independently against repository standards and this specification.
 
 ## Manual validation matrix
 
-At minimum validate on the real shell:
+At minimum cover:
 
-- Standard variant top and bottom (regression smoke test).
-- k4 top/center and bottom/center.
-- k4 left/center/right alignment presets along the top/bottom edge.
-- one monitor and multiple monitors.
-- no media / paused media / playing media.
-- workspace change idle transition.
-- notification arrival while idle.
-- notification arrival while another island plugin is open.
-- explicit plugin open while a transient is visible.
-- keyboard-entry plugin + Escape behavior.
-- screen capture/system dialog while island is visible.
-- switching Standard → k4 → Standard while preserving both configurations.
-- existing ii screen-corner sidebar interactions while k4 variant is active.
+- Standard -> K4 -> Standard ownership/config preservation;
+- K4 top and bottom, each alignment preset;
+- Reserve and On top with tiled/maximized windows;
+- Hidden withdraw, edge brush, dwell expansion and explicit-plugin reveal;
+- Away when fullscreen on real fullscreen content; multi-monitor behavior when hardware is available;
+- notification, Volume and capture confirmation while Hidden;
+- Player initial discovery vs real track change, including split MPRIS metadata;
+- Idle/Clock with media, tray, recording and notification history combinations;
+- active/requested screen routing;
+- managed plugin disable/re-enable, failure, Retry and clean shutdown;
+- Displays Refresh/Apply and absence of workspace-routing UI.
 
-## Deferred customization frontier
+## Delivery strategy
 
-After parity is accepted, start a new design phase before changing k4 behavior. Likely topics include:
-
-- Material/Liquid Glass island surfaces;
-- custom hover/click activation behavior;
-- auto-hide;
-- configurable collapsed-pill contents;
-- deeper integration with ii sidebars or other shell modules;
-- new island-only plugins built from ii-vynx features.
+Continue using tracer bullets. Historical K4-01 through K4-10 remain completed milestones. The selected v1.0 sync is implemented as its own ticket sequence before K4-11 lifecycle migration resumes; K4-12 remains the final selected-scope/performance/review gate.
