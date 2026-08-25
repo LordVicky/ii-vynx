@@ -11,19 +11,13 @@ test("K4 low-coupling utilities use the accepted stable proxy lifecycle", () => 
     const builtins = read("K4BuiltinPlugins.qml");
     const managed = read("K4ManagedPlugin.qml");
 
-    const expected = [
-        ["system", "System", "K4SystemPlugin.qml"],
-        ["windows", "Windows", "K4WindowsPlugin.qml"],
-        ["session", "Session", "K4SessionPlugin.qml"]
-    ];
+    assert.match(builtins, /property QtObject systemPlugin:\s*K4ManagedPlugin\s*\{[\s\S]*?name:\s*"system"[\s\S]*?title:\s*"System"[\s\S]*?application:\s*true[\s\S]*?source:\s*Qt\.resolvedUrl\("K4SystemPlugin\.qml"\)/);
+    assert.match(builtins, /property QtObject windowsPlugin:\s*K4ManagedPlugin\s*\{[\s\S]*?name:\s*"windows"[\s\S]*?title:\s*"Windows"[\s\S]*?application:\s*true[\s\S]*?source:\s*Qt\.resolvedUrl\("K4WindowsPlugin\.qml"\)/);
+    assert.match(builtins, /property QtObject sessionPlugin:\s*K4ManagedPlugin\s*\{[\s\S]*?name:\s*"session"[\s\S]*?title:\s*"Session"[\s\S]*?application:\s*true[\s\S]*?source:\s*Qt\.resolvedUrl\("K4SessionPlugin\.qml"\)/);
 
-    for (const [name, title, source] of expected) {
-        const proxy = new RegExp(
-            `property QtObject ${name}Plugin:\\s*K4ManagedPlugin\\s*\\{[\\s\\S]*?name:\\s*"${name}"[\\s\\S]*?title:\\s*"${title}"[\\s\\S]*?application:\\s*true[\\s\\S]*?source:\\s*Qt\\.resolvedUrl\\("${source.replace(".", "\\.")}\"\\)`
-        );
-        assert.match(builtins, proxy);
-        assert.doesNotMatch(builtins, new RegExp(`property QtObject ${name}Plugin:\\s*K4[A-Za-z]+Plugin\\s*\\{\\}`));
-    }
+    assert.doesNotMatch(builtins, /property QtObject systemPlugin:\s*K4SystemPlugin\s*\{\}/);
+    assert.doesNotMatch(builtins, /property QtObject windowsPlugin:\s*K4WindowsPlugin\s*\{\}/);
+    assert.doesNotMatch(builtins, /property QtObject sessionPlugin:\s*K4SessionPlugin\s*\{\}/);
 
     assert.match(managed, /property var implementationLoader:\s*Loader\s*\{/);
     assert.doesNotMatch(managed, /Qt\.createComponent|createObject\s*\(|\.destroy\s*\(/);
