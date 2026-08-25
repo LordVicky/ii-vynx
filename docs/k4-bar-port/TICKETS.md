@@ -59,7 +59,7 @@ These tickets implement only the user-approved v1.0 delta from `48993812...` to 
 Deliver end-to-end:
 
 - add `Config.options.bar.k4.spaceMode`, default `reserve`;
-- expose the four approved choices in `K4Settings` and the in-island Settings UI, but this tracer must make at least Reserve and On top operational;
+- expose only **Reserve space** and **On top** in `K4Settings` and the in-island Settings UI during this tracer, so every visible choice already has live behavior;
 - add a narrow `HyprlandData.monitorHasFullscreen(screenName)` query using existing monitor/workspace snapshots; no new polling/service owner;
 - derive per-screen effective mode in `K4Bar.qml`;
 - Reserve keeps the existing collapsed exclusive zone;
@@ -68,7 +68,7 @@ Deliver end-to-end:
 
 **Acceptance:** Reserve is a no-regression default; On top releases the 34 px strip and the island floats over windows at both top and bottom placement; Standard variant remains unchanged.
 
-**Non-goal:** do not implement Hidden withdrawal/reveal in this ticket.
+**Non-goal:** do not expose or implement Hidden/Away-when-fullscreen until K4-V1-02.
 
 ### K4-V1-02 — Hidden reveal + Away when fullscreen
 
@@ -76,6 +76,7 @@ Deliver end-to-end:
 
 Deliver end-to-end:
 
+- add **Away when fullscreen** and **Hidden** to the live Settings choices only when this runtime behavior lands;
 - Hidden uses zero exclusive zone;
 - idle withdrawal after about 1600 ms;
 - top/bottom translation beyond the edge using a non-overshooting ~360 ms animation;
