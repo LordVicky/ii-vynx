@@ -19,6 +19,9 @@ QtObject {
     property bool configurable: true
     property bool closeOnDisable: true
     property string loadError: ""
+    // Static plugins are always instantiated. Declaratively managed proxies
+    // override this with their Loader-owned implementation state.
+    property bool instantiated: true
     property int priority: 50
     property bool transitorio: false
 
