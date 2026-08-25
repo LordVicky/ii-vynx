@@ -6,42 +6,18 @@ QtObject {
     id: root
 
     property list<QtObject> plugins
-    property var seedPlugins: []
-    property bool initialized: false
     property bool passiveHoverAllowed: false
-    property var configurablePluginModel: []
-    property var applicationPluginModel: []
     property QtObject builtins: K4BuiltinPlugins {
         passiveHoverAllowed: root.passiveHoverAllowed
     }
-    property QtObject pluginManager: K4PluginManager {
-        controller: root
-    }
 
-    function rebuildPlugins() {
+    function attachBuiltins() {
         const combined = []
-        for (let i = 0; i < seedPlugins.length; ++i)
-            combined.push(seedPlugins[i])
+        for (let i = 0; i < plugins.length; ++i)
+            combined.push(plugins[i])
         for (let i = 0; i < builtins.plugins.length; ++i)
             combined.push(builtins.plugins[i])
-        if (pluginManager) {
-            for (let i = 0; i < pluginManager.instances.length; ++i)
-                combined.push(pluginManager.instances[i])
-        }
         plugins = combined
-        wireControllerReferences()
-    }
-
-    function wireControllerReferences() {
-        const panel = plugin("panel")
-        if (panel)
-            panel.controller = root
-        const apps = plugin("apps")
-        if (apps)
-            apps.controller = root
-        const settings = plugin("settings")
-        if (settings)
-            settings.controller = root
     }
 
     function plugin(name) {
@@ -52,74 +28,29 @@ QtObject {
         return null
     }
 
-    function pluginDescriptor(name) {
-        if (!pluginManager)
-            return plugin(name)
-        return pluginManager.descriptor(name) ?? plugin(name)
-    }
-
     function isProtectedPlugin(candidate) {
         return !candidate || candidate.name === "idle" || candidate.name === "settings"
             || candidate.name.startsWith("demo-") || candidate.configurable === false
     }
 
-    // Stable metadata is independent of the mutable live-instance array. The
-    // returned objects are either long-lived static plugins or persistent
-    // manager descriptors that survive instance disable/failure/recreation.
-    function metadataPlugins() {
+    function configurablePlugins() {
         const result = []
-        const seen = ({})
-
-        function append(candidate) {
-            if (!candidate)
-                return
-            const id = String(candidate.name ?? "")
-            if (id.length === 0 || seen[id])
-                return
-            seen[id] = true
+        for (let i = 0; i < plugins.length; ++i) {
+            const candidate = plugins[i]
+            if (isProtectedPlugin(candidate))
+                continue
             result.push(candidate)
         }
-
-        for (let i = 0; i < seedPlugins.length; ++i)
-            append(seedPlugins[i])
-        for (let i = 0; i < builtins.plugins.length; ++i)
-            append(builtins.plugins[i])
-        if (pluginManager) {
-            for (let i = 0; i < pluginManager.descriptors.length; ++i)
-                append(pluginManager.descriptors[i])
-        }
         return result
-    }
-
-    // Build the UI-facing arrays only from persistent metadata. They are not
-    // rebuilt when managed live instances come and go, so Settings/GridView
-    // delegates keep stable model objects throughout lifecycle transitions.
-    function rebuildMetadataModels() {
-        const configurable = []
-        const applications = []
-        const metadata = metadataPlugins()
-
-        for (let i = 0; i < metadata.length; ++i) {
-            const candidate = metadata[i]
-            if (!isProtectedPlugin(candidate))
-                configurable.push(candidate)
-            if (candidate.name !== "apps" && candidate.application === true)
-                applications.push(candidate)
-        }
-
-        configurablePluginModel = configurable
-        applicationPluginModel = applications
-    }
-
-    function configurablePlugins() {
-        return configurablePluginModel
     }
 
     function applyPluginEnabled(candidate, wanted) {
         if (!candidate)
             return
         const target = Boolean(wanted)
-        // Static plugins retain the K4-08 lifecycle until each is migrated.
+        // K4-11 will destroy/recreate disabled plugins. Until then, clear any
+        // stale open state accumulated while a static plugin was disabled before
+        // making it eligible to participate again.
         if (target && !candidate.enabled && candidate.closeOnDisable
                 && typeof candidate.close === "function")
             candidate.close()
@@ -127,25 +58,14 @@ QtObject {
     }
 
     function applyPersistedEnablement() {
-        const metadata = metadataPlugins()
-        for (let i = 0; i < metadata.length; ++i) {
-            const candidate = metadata[i]
-            if (!candidate || isProtectedPlugin(candidate))
-                continue
-            if (pluginManager && pluginManager.owns(candidate.name))
-                continue
+        const configurable = configurablePlugins()
+        for (let i = 0; i < configurable.length; ++i) {
+            const candidate = configurable[i]
             applyPluginEnabled(candidate, K4Settings.pluginEnabled(candidate.name))
         }
     }
 
     function setPluginEnabled(name, wanted) {
-        const managed = pluginManager ? pluginManager.descriptor(name) : null
-        if (managed) {
-            if (isProtectedPlugin(managed))
-                return false
-            return pluginManager.setEnabled(name, wanted)
-        }
-
         const candidate = plugin(name)
         if (isProtectedPlugin(candidate))
             return false
@@ -155,19 +75,16 @@ QtObject {
         return true
     }
 
-    function retryPlugin(name) {
-        if (!pluginManager)
-            return false
-        if (pluginManager.owns(name))
-            return pluginManager.retry(name)
-        return false
-    }
-
-    // Compatibility helper for callers outside the UI. The actual Apps model
-    // binds directly to applicationPluginModel so descriptor visibility does
-    // not depend on function-binding evaluation order.
+    // Apps is a view over this registry, never a second catalog owner. Only
+    // plugins that explicitly opt into the application contract appear.
     function applicationPlugins() {
-        return applicationPluginModel
+        const result = []
+        for (let i = 0; i < plugins.length; ++i) {
+            const candidate = plugins[i]
+            if (candidate && candidate.name !== "apps" && candidate.application === true)
+                result.push(candidate)
+        }
+        return result
     }
 
     function openApplication(name) {
@@ -260,25 +177,18 @@ QtObject {
 
     onActivePluginChanged: publishActivePlugin()
     Component.onCompleted: {
-        const initial = []
-        for (let i = 0; i < plugins.length; ++i)
-            initial.push(plugins[i])
-        seedPlugins = initial
-        initialized = true
-        rebuildPlugins()
-        rebuildMetadataModels()
+        attachBuiltins()
         applyPersistedEnablement()
+        const panel = plugin("panel")
+        if (panel)
+            panel.controller = root
+        const apps = plugin("apps")
+        if (apps)
+            apps.controller = root
+        const settings = plugin("settings")
+        if (settings)
+            settings.controller = root
         publishActivePlugin()
-    }
-
-    property var managerConnections: Connections {
-        target: root.pluginManager
-        function onInstancesChanged() {
-            if (!root.initialized)
-                return
-            root.rebuildPlugins()
-            root.publishActivePlugin()
-        }
     }
 
     property var settingsConnections: Connections {
@@ -380,9 +290,6 @@ QtObject {
         const settings = plugin("settings")
         if (settings?.controller === root)
             settings.controller = null
-        initialized = false
-        if (pluginManager)
-            pluginManager.shutdown()
         IslandState.resetHostPublication()
     }
 }
