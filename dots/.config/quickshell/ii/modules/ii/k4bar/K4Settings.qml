@@ -9,6 +9,11 @@ import qs.modules.common
 Singleton {
     id: root
 
+    // Temporary K4-11 prototype harness. It is intentionally isolated from
+    // plugin metadata, arbitration and persisted enablement; the only purpose
+    // is to validate Qt-owned Loader lifetime for a non-visual K4Plugin.
+    property var lifecycleProbeHost: K4PluginLifecycleProbeHost {}
+
     readonly property string position: Config.options.bar.k4.position
     readonly property int alignment: Config.options.bar.k4.alignment
     readonly property bool trayInPill: Config.options.bar.k4.trayInPill
