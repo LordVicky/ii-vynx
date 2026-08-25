@@ -32,11 +32,12 @@ test("K4 plugin settings persist enablement across static and managed lifecycles
     assert.match(settingsPlugin, /configurable:\s*false/);
     assert.match(settingsPlugin, /property var controller:\s*null/);
     assert.match(controller, /function isProtectedPlugin\(candidate\)[\s\S]*?candidate\.name === "idle"[\s\S]*?candidate\.name === "settings"[\s\S]*?candidate\.name\.startsWith\("demo-"\)[\s\S]*?candidate\.configurable === false/);
-    assert.match(controller, /function configurablePlugins\(\)[\s\S]*?pluginManager\.descriptors[\s\S]*?result\.push\(descriptor\)/);
+    assert.match(controller, /function metadataPlugins\(\)/);
+    assert.match(controller, /function configurablePlugins\(\)[\s\S]*?const metadata = metadataPlugins\(\)[\s\S]*?result\.push\(candidate\)/);
     assert.match(controller, /function applyPluginEnabled\(candidate, wanted\)[\s\S]*?candidate\.enabled = target/);
-    assert.match(controller, /function applyPersistedEnablement\(\)[\s\S]*?pluginManager\.owns\(candidate\.name\)[\s\S]*?K4Settings\.pluginEnabled\(candidate\.name\)/);
-    assert.match(controller, /function setPluginEnabled\(name, wanted\)[\s\S]*?pluginManager\.descriptor\(name\)[\s\S]*?pluginManager\.setEnabled\(name, wanted\)[\s\S]*?K4Settings\.setPluginEnabled\(name, target\)/);
-    assert.match(controller, /function retryPlugin\(name\)[\s\S]*?pluginManager\.retry\(name\)/);
+    assert.match(controller, /function applyPersistedEnablement\(\)[\s\S]*?pluginManager && pluginManager\.owns\(candidate\.name\)[\s\S]*?K4Settings\.pluginEnabled\(candidate\.name\)/);
+    assert.match(controller, /function setPluginEnabled\(name, wanted\)[\s\S]*?pluginManager \? pluginManager\.descriptor\(name\) : null[\s\S]*?pluginManager\.setEnabled\(name, wanted\)[\s\S]*?K4Settings\.setPluginEnabled\(name, target\)/);
+    assert.match(controller, /function retryPlugin\(name\)[\s\S]*?if \(!pluginManager\)[\s\S]*?pluginManager\.retry\(name\)/);
     assert.match(controller, /const settings = plugin\("settings"\)[\s\S]*?settings\.controller = root/);
 
     assert.match(manager, /K4Settings\.setPluginEnabled\(slot\.name, target\)/);
@@ -44,11 +45,13 @@ test("K4 plugin settings persist enablement across static and managed lifecycles
 
     assert.match(settingsView, /root\.plugin\.controller\.configurablePlugins\(\)/);
     assert.match(settingsView, /K4SettingsPluginRow/);
-    assert.match(row, /plugin\.loadError\.length > 0/);
-    assert.match(row, /plugin\.enabled \? "Loaded" : "Disabled"/);
-    assert.match(row, /root\.controller\.retryPlugin\(root\.plugin\.name\)/);
-    assert.match(row, /root\.controller\.setPluginEnabled\(root\.plugin\.name, value\)/);
+    assert.match(row, /readonly property var safePlugin:\s*plugin \?\? null/);
+    assert.match(row, /safePlugin\?\.loadError/);
+    assert.match(row, /host\.retryPlugin\(id\)/);
+    assert.match(row, /host\.setPluginEnabled\(id, !enabled\)/);
 
-    assert.match(host, /Loader\.Error[\s\S]*?modelData\.loadError = "View failed to load"/);
-    assert.match(host, /Loader\.Ready[\s\S]*?modelData\.loadError = ""/);
+    assert.doesNotMatch(host, /Repeater\s*\{\s*model:\s*controller\.plugins/);
+    assert.match(host, /Loader\s*\{[\s\S]*?sourceComponent:\s*panelWindow\.pluginVisible\?\.view \?\? null/);
+    assert.match(host, /Loader\.Error[\s\S]*?owner\.loadError = "View failed to load"/);
+    assert.match(host, /Loader\.Ready[\s\S]*?owner\.loadError = ""/);
 });
