@@ -24,10 +24,10 @@ test("K4 managed plugin load failures stay behind the stable proxy and can retry
     assert.match(managed, /function debugRestoreLoad\(\)/);
     assert.doesNotMatch(managed, /Qt\.createComponent|createObject\s*\(|\.destroy\s*\(/);
 
-    assert.match(row, /root\.failed && root\.plugin\.enabled/);
-    assert.match(row, /typeof root\.plugin\.retryLoad === "function"/);
-    assert.match(row, /root\.plugin\.retryLoad\(\)/);
-    assert.match(row, /click to retry/);
+    assert.match(row, /function retryLoad\(\)[\s\S]*?plugin\.retryLoad\(\)/);
+    assert.match(row, /text:\s*"Retry"/);
+    assert.match(row, /enabled:\s*!root\.failed/);
+    assert.match(row, /TapHandler\s*\{[\s\S]*?enabled:\s*root\.failed[\s\S]*?root\.toggleEnabled\(\)/);
 
     assert.match(builtins, /target:\s*"k4\.pluginLifecycleDebug"/);
     assert.match(builtins, /function fail\(name: string\)/);
