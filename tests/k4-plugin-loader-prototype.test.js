@@ -10,7 +10,7 @@ const readShell = relative => fs.readFileSync(path.join(shellRoot, relative), "u
 test("K4 lifecycle probe uses Qt-owned Loader lifetime only", () => {
     const probe = readShell("modules/ii/k4bar/K4PluginLifecycleProbe.qml");
     const host = readShell("modules/ii/k4bar/K4PluginLifecycleProbeHost.qml");
-    const bar = readShell("modules/ii/k4bar/K4Bar.qml");
+    const settings = readShell("modules/ii/k4bar/K4Settings.qml");
 
     assert.match(probe, /K4Plugin\s*\{/);
     assert.match(probe, /name:\s*"lifecycle-probe"/);
@@ -27,5 +27,5 @@ test("K4 lifecycle probe uses Qt-owned Loader lifetime only", () => {
     assert.match(host, /function status\(\):\s*string/);
     assert.doesNotMatch(host, /Qt\.createComponent|createObject\s*\(|\.destroy\s*\(/);
 
-    assert.match(bar, /K4PluginLifecycleProbeHost\s*\{\}/);
+    assert.match(settings, /property var lifecycleProbeHost:\s*K4PluginLifecycleProbeHost\s*\{\}/);
 });
