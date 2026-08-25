@@ -9,6 +9,7 @@ K4Plugin {
 
     required property url source
 
+    readonly property bool requestedEnabled: K4Settings.pluginEnabled(name)
     readonly property var instance: implementationLoader.item
 
     instantiated: instance !== null
@@ -30,7 +31,7 @@ K4Plugin {
     hoverExitDelay: instance ? Number(instance.hoverExitDelay) : 700
 
     property var implementationLoader: Loader {
-        active: root.enabled
+        active: root.enabled && root.requestedEnabled
         asynchronous: false
         source: root.source
 
