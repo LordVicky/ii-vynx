@@ -28,7 +28,7 @@ K4Plugin {
             return source
         return source.filter(candidate => {
             const name = String(candidate?.title ?? candidate?.name ?? "").toLowerCase()
-            const id = String(candidate?.name ?? candidate?.name ?? "").toLowerCase()
+            const id = String(candidate?.name ?? "").toLowerCase()
             return name.indexOf(normalized) >= 0 || id.indexOf(normalized) >= 0
         })
     }
