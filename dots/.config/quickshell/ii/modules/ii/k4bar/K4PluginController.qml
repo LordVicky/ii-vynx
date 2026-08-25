@@ -6,18 +6,38 @@ QtObject {
     id: root
 
     property list<QtObject> plugins
+    property var seedPlugins: []
+    property bool initialized: false
     property bool passiveHoverAllowed: false
     property QtObject builtins: K4BuiltinPlugins {
         passiveHoverAllowed: root.passiveHoverAllowed
     }
+    property QtObject pluginManager: K4PluginManager {
+        controller: root
+    }
 
-    function attachBuiltins() {
+    function rebuildPlugins() {
         const combined = []
-        for (let i = 0; i < plugins.length; ++i)
-            combined.push(plugins[i])
+        for (let i = 0; i < seedPlugins.length; ++i)
+            combined.push(seedPlugins[i])
         for (let i = 0; i < builtins.plugins.length; ++i)
             combined.push(builtins.plugins[i])
+        for (let i = 0; i < pluginManager.instances.length; ++i)
+            combined.push(pluginManager.instances[i])
         plugins = combined
+        wireControllerReferences()
+    }
+
+    function wireControllerReferences() {
+        const panel = plugin("panel")
+        if (panel)
+            panel.controller = root
+        const apps = plugin("apps")
+        if (apps)
+            apps.controller = root
+        const settings = plugin("settings")
+        if (settings)
+            settings.controller = root
     }
 
     function plugin(name) {
@@ -26,6 +46,10 @@ QtObject {
                 return plugins[i]
         }
         return null
+    }
+
+    function pluginDescriptor(name) {
+        return pluginManager.descriptor(name) ?? plugin(name)
     }
 
     function isProtectedPlugin(candidate) {
@@ -37,9 +61,15 @@ QtObject {
         const result = []
         for (let i = 0; i < plugins.length; ++i) {
             const candidate = plugins[i]
-            if (isProtectedPlugin(candidate))
+            if (!candidate || pluginManager.owns(candidate.name)
+                    || isProtectedPlugin(candidate))
                 continue
             result.push(candidate)
+        }
+        for (let i = 0; i < pluginManager.descriptors.length; ++i) {
+            const descriptor = pluginManager.descriptors[i]
+            if (!isProtectedPlugin(descriptor))
+                result.push(descriptor)
         }
         return result
     }
@@ -48,9 +78,7 @@ QtObject {
         if (!candidate)
             return
         const target = Boolean(wanted)
-        // K4-11 will destroy/recreate disabled plugins. Until then, clear any
-        // stale open state accumulated while a static plugin was disabled before
-        // making it eligible to participate again.
+        // Static plugins retain the K4-08 lifecycle until each is migrated.
         if (target && !candidate.enabled && candidate.closeOnDisable
                 && typeof candidate.close === "function")
             candidate.close()
@@ -58,14 +86,23 @@ QtObject {
     }
 
     function applyPersistedEnablement() {
-        const configurable = configurablePlugins()
-        for (let i = 0; i < configurable.length; ++i) {
-            const candidate = configurable[i]
+        for (let i = 0; i < plugins.length; ++i) {
+            const candidate = plugins[i]
+            if (!candidate || pluginManager.owns(candidate.name)
+                    || isProtectedPlugin(candidate))
+                continue
             applyPluginEnabled(candidate, K4Settings.pluginEnabled(candidate.name))
         }
     }
 
     function setPluginEnabled(name, wanted) {
+        const managed = pluginManager.descriptor(name)
+        if (managed) {
+            if (isProtectedPlugin(managed))
+                return false
+            return pluginManager.setEnabled(name, wanted)
+        }
+
         const candidate = plugin(name)
         if (isProtectedPlugin(candidate))
             return false
@@ -75,14 +112,27 @@ QtObject {
         return true
     }
 
-    // Apps is a view over this registry, never a second catalog owner. Only
-    // plugins that explicitly opt into the application contract appear.
+    function retryPlugin(name) {
+        if (pluginManager.owns(name))
+            return pluginManager.retry(name)
+        return false
+    }
+
+    // Apps is a view over host-owned plugin metadata, never a second catalog.
+    // Managed descriptors remain visible while their live instance is absent.
     function applicationPlugins() {
         const result = []
         for (let i = 0; i < plugins.length; ++i) {
             const candidate = plugins[i]
-            if (candidate && candidate.name !== "apps" && candidate.application === true)
+            if (!candidate || pluginManager.owns(candidate.name))
+                continue
+            if (candidate.name !== "apps" && candidate.application === true)
                 result.push(candidate)
+        }
+        for (let i = 0; i < pluginManager.descriptors.length; ++i) {
+            const descriptor = pluginManager.descriptors[i]
+            if (descriptor.name !== "apps" && descriptor.application === true)
+                result.push(descriptor)
         }
         return result
     }
@@ -177,18 +227,24 @@ QtObject {
 
     onActivePluginChanged: publishActivePlugin()
     Component.onCompleted: {
-        attachBuiltins()
+        const initial = []
+        for (let i = 0; i < plugins.length; ++i)
+            initial.push(plugins[i])
+        seedPlugins = initial
+        initialized = true
+        rebuildPlugins()
         applyPersistedEnablement()
-        const panel = plugin("panel")
-        if (panel)
-            panel.controller = root
-        const apps = plugin("apps")
-        if (apps)
-            apps.controller = root
-        const settings = plugin("settings")
-        if (settings)
-            settings.controller = root
         publishActivePlugin()
+    }
+
+    property var managerConnections: Connections {
+        target: root.pluginManager
+        function onInstancesChanged() {
+            if (!root.initialized)
+                return
+            root.rebuildPlugins()
+            root.publishActivePlugin()
+        }
     }
 
     property var settingsConnections: Connections {
@@ -290,6 +346,8 @@ QtObject {
         const settings = plugin("settings")
         if (settings?.controller === root)
             settings.controller = null
+        initialized = false
+        pluginManager.shutdown()
         IslandState.resetHostPublication()
     }
 }
