@@ -1,8 +1,9 @@
 import QtQuick
 import QtQuick.Layouts
 
-// Static-registry plugin status row for K4-08. K4-11 later upgrades the same
-// contract to dynamic instantiation/retry without changing this settings seam.
+// Plugin status row. Static plugins remain instantiated; K4-11 managed proxies
+// keep this same stable object while their Loader-owned implementation comes
+// and goes behind it.
 Rectangle {
     id: root
 
@@ -11,7 +12,8 @@ Rectangle {
 
     readonly property bool failed: plugin.loadError.length > 0
     readonly property string statusText: failed ? "Error"
-        : plugin.enabled ? "Loaded" : "Disabled"
+        : !plugin.enabled ? "Disabled"
+        : plugin.instantiated ? "Loaded" : "Loading"
 
     implicitHeight: failed ? 66 : 54
     radius: 12
@@ -47,7 +49,8 @@ Rectangle {
                 Text {
                     text: root.statusText
                     color: root.failed ? K4Theme.red
-                        : root.plugin.enabled ? K4Theme.green : K4Theme.muted
+                        : root.plugin.enabled && root.plugin.instantiated
+                            ? K4Theme.green : K4Theme.muted
                     font.family: K4Theme.uiFont
                     font.pixelSize: 9
                     font.weight: Font.DemiBold
