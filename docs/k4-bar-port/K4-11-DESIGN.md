@@ -1,6 +1,6 @@
 # K4-11 — Built-in plugin lifecycle
 
-Status: revised loader-owned Displays tracer ready for live validation
+Status: loader-owned Displays lifecycle validated; failure/retry slice pending
 
 ## Decision
 
@@ -43,7 +43,7 @@ The rollback restored the validated K4-10 runtime. Live validation confirmed the
 
 ## Loader prototype evidence
 
-A throwaway probe then tested one question independently of the registry, Settings, Apps, arbitration and persisted enablement: can Qt-owned `Loader.active` repeatedly create and release a non-visual `K4Plugin` safely on the target Quickshell/Qt runtime?
+A throwaway probe tested one question independently of the registry, Settings, Apps, arbitration and persisted enablement: can Qt-owned `Loader.active` repeatedly create and release a non-visual `K4Plugin` safely on the target Quickshell/Qt runtime?
 
 The live stress run completed 21 create/release cycles in one Quickshell process:
 
@@ -52,11 +52,11 @@ The live stress run completed 21 create/release cycles in one Quickshell process
 - 21 `Component.onDestruction` observations;
 - no `Segmentation fault`, `QEventLoop`, `TypeError`, `QtQmlModels` or `QQmlIncubator` matches.
 
-That is sufficient runnable evidence to proceed with a Loader-owned production tracer.
+That is sufficient runnable evidence for Loader-owned implementation lifetime.
 
-## Revised production tracer architecture
+## Accepted production lifecycle architecture
 
-The revised tracer does **not** recreate the registry object.
+The production tracer does **not** recreate the registry object.
 
 A stable `K4ManagedPlugin` proxy permanently occupies the normal built-in registry slot. Settings, Apps, arbitration and the island host always reference that durable proxy. Only the plugin implementation behind it is ephemeral:
 
@@ -74,18 +74,33 @@ Important invariants:
 
 `K4Plugin.instantiated` is `true` for ordinary static plugins. The managed proxy overrides it from `Loader.item`, allowing Settings to show `Loaded`, `Loading`, `Disabled` or `Error` without dereferencing the ephemeral implementation.
 
-## Live acceptance for the revised Displays tracer
+## Displays lifecycle validation
 
-Before any other plugin migrates, Displays must demonstrate all of these in one stable Quickshell PID:
+The real Displays tracer passed the lifecycle gate:
 
-1. fresh boot enabled: Displays row is `Loaded`, Applications can open it, and monitor controls work;
-2. disable: row remains present and becomes `Disabled`; the `k4.displays` IPC handler disappears because the implementation is actually unloaded;
-3. enable: row returns to `Loaded`; the `k4.displays` IPC handler returns and Displays opens normally;
-4. repeated enable/disable does not produce Settings/controller null warnings or a native crash;
-5. fresh boot while Displays is persisted disabled stays `Disabled` without instantiating the implementation;
-6. fresh boot after re-enabling returns to `Loaded`;
-7. clean Quickshell shutdown works with Displays both enabled and disabled.
+1. fresh boot enabled — pass;
+2. disable — pass, with `k4.displays` returning `Target not found`, proving the implementation and its IPC handler were unloaded;
+3. re-enable — pass, IPC and Displays functionality returned;
+4. 20-cycle enable/disable stress — pass without the previous native crash;
+5. fresh boot persisted disabled — pass;
+6. fresh boot re-enabled — pass;
+7. clean shutdown enabled and disabled — pass;
+8. no new managed-lifecycle crash signatures were reported.
 
-Load-failure/retry is the next slice after this lifecycle tracer is stable; it will use Loader error state rather than manual component creation/destruction.
+This validates the stable-proxy + Loader-owned implementation seam for K4-11. The failed manager/descriptor-array architecture remains permanently rejected.
 
-Existing static plugins remain unchanged until this revised tracer passes live validation.
+## Failure/retry slice
+
+The next slice adds load-failure isolation without changing the accepted ownership model.
+
+Requirements:
+
+- a forced bad source unloads only the implementation; the stable proxy remains in Settings, Apps and arbitration metadata;
+- Loader failure sets the proxy `loadError` while the plugin remains logically enabled;
+- Settings shows `Error` and clicking the failed row retries the managed implementation rather than toggling enablement;
+- restoring the real source leaves the implementation gated off until Retry, so the Settings retry path is actually exercised;
+- the fault harness changes only Loader source/gate state and never registry membership or QObject ownership;
+- successful retry restores `Loaded`, the `k4.displays` IPC target and normal Displays behavior;
+- no `K4PluginManager`, registry rebuild, `createObject()` or `.destroy()` path is reintroduced.
+
+No other built-in migrates until this failure/retry slice is live-validated.
