@@ -61,3 +61,13 @@ test("K4 Hidden withdraws only the island drawing and keeps a narrow reveal stri
     assert.doesNotMatch(source, /revealEdge[\s\S]*?width:\s*parent\.width/);
     assert.doesNotMatch(source, /onWithdrawnChanged:[\s\S]*?surfaceHeight\s*=/);
 });
+
+test("K4 Hidden edge peek holds existing owners without opening hover early", async () => {
+    const source = await read("modules/ii/k4bar/K4Bar.qml");
+    const controller = await read("modules/ii/k4bar/K4PluginController.qml");
+
+    assert.match(controller, /function holdHoverExit\(\)[\s\S]*?hoverClearTimer\.stop\(\)[\s\S]*?pluginHoverExitTimer\.stop\(\)/);
+    assert.match(controller, /function hoverEntered\(screenName\)[\s\S]*?holdHoverExit\(\)/);
+    assert.match(source, /onPointerOverChanged:[\s\S]*?controller\.holdHoverExit\(\)[\s\S]*?K4Notifications\.holdToast\(\)[\s\S]*?hoverDwellTimer\.restart\(\)/);
+    assert.match(source, /onPointerOverChanged:[\s\S]*?K4Notifications\.resumeToast\(\)[\s\S]*?controller\.hoverExited\(\)/);
+});
