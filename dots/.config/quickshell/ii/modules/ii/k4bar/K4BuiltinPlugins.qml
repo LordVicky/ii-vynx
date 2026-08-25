@@ -15,7 +15,7 @@ QtObject {
         volumePlugin, clockPlugin, playerPlugin, toastPlugin, panelPlugin,
         appsPlugin, settingsPlugin, launcherPlugin, clipboardPlugin, filesPlugin,
         windowsPlugin, systemPlugin, sessionPlugin, keysPlugin, weatherPlugin,
-        capturePlugin, trayPlugin
+        capturePlugin, displaysPlugin, trayPlugin
     ]
 
     property bool playerHoverSession: false
@@ -86,5 +86,6 @@ QtObject {
     property QtObject keysPlugin: K4KeysPlugin {}
     property QtObject weatherPlugin: K4WeatherPlugin {}
     property QtObject capturePlugin: K4CapturePlugin {}
+    property QtObject displaysPlugin: K4DisplaysPlugin {}
     property QtObject trayPlugin: K4TrayPlugin {}
 }
