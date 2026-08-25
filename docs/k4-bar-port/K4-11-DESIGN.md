@@ -97,7 +97,7 @@ Requirements:
 
 - a forced bad source unloads only the implementation; the stable proxy remains in Settings, Apps and arbitration metadata;
 - Loader failure sets the proxy `loadError` while the plugin remains logically enabled;
-- Settings shows `Error` and clicking the failed row retries the managed implementation rather than toggling enablement;
+- Settings shows `Error` with an explicit Retry control while the enable/disable switch remains independently usable;
 - restoring the real source leaves the implementation gated off until Retry, so the Settings retry path is actually exercised;
 - the fault harness changes only Loader source/gate state and never registry membership or QObject ownership;
 - successful retry restores `Loaded`, the `k4.displays` IPC target and normal Displays behavior;
