@@ -52,3 +52,28 @@ test("K4 Displays reuses HyprlandData and applies session-only monitor drafts", 
     assert.match(hyprlandData, /function updateMonitors\(\)/);
     assert.match(hyprlandData, /command:\s*\["hyprctl",\s*"monitors",\s*"-j"\]/);
 });
+
+test("K4 Displays routes workspaces without a second Hyprland service", async () => {
+    const plugin = await read("modules/ii/k4bar/K4DisplaysPlugin.qml");
+    const view = await read("modules/ii/k4bar/K4DisplaysView.qml");
+    const hyprlandData = await read("services/HyprlandData.qml");
+
+    assert.match(plugin, /HyprlandData\.workspaces/);
+    assert.match(plugin, /HyprlandData\.updateWorkspaces\(\)/);
+    assert.match(plugin, /changedWorkspaceAssignments/);
+    assert.match(plugin, /function rebuildWorkspaceAssignments\(\)/);
+    assert.match(plugin, /function setWorkspaceAssignment\(number, monitorName\)/);
+    assert.match(plugin, /function workspaceStatement\(number, monitorName\)/);
+    assert.match(plugin, /hl\.workspace_rule\(\{/);
+    assert.match(plugin, /hl\.dispatch\(hl\.dsp\.workspace\.move\(\{/);
+    assert.match(plugin, /command:\s*\["hyprctl",\s*"workspacerules",\s*"-j"\]/);
+
+    assert.match(view, /Workspaces/);
+    assert.match(view, /Workspace routing/);
+    assert.match(view, /setWorkspaceAssignment/);
+    assert.match(view, /Session only/);
+
+    assert.match(hyprlandData, /property var workspaces:\s*\[\]/);
+    assert.match(hyprlandData, /function updateWorkspaces\(\)/);
+    assert.doesNotMatch(plugin, /python3|pantallas\.py|hyprland\.lua|FileView|setText\(/i);
+});
