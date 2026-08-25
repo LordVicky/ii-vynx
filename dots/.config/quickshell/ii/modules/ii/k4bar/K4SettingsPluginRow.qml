@@ -1,8 +1,8 @@
 import QtQuick
 import QtQuick.Layouts
 
-// Static-registry plugin status row for K4-08. K4-11 later upgrades the same
-// contract to dynamic instantiation/retry without changing this settings seam.
+// Plugin lifecycle row. Managed descriptors survive while their live instance
+// is disabled or failed, so this surface never holds a dangling plugin object.
 Rectangle {
     id: root
 
@@ -57,7 +57,9 @@ Rectangle {
 
             Text {
                 Layout.fillWidth: true
-                text: root.failed ? root.plugin.loadError : root.plugin.name
+                text: root.failed
+                    ? root.plugin.loadError + " · click to retry"
+                    : root.plugin.name
                 color: root.failed ? K4Theme.red : K4Theme.dim
                 font.family: K4Theme.uiFont
                 font.pixelSize: 9
@@ -94,6 +96,10 @@ Rectangle {
     TapHandler {
         cursorShape: Qt.PointingHandCursor
         onTapped: {
+            if (root.failed && root.plugin.enabled) {
+                root.controller.retryPlugin(root.plugin.name)
+                return
+            }
             const value = !root.plugin.enabled
             root.controller.setPluginEnabled(root.plugin.name, value)
         }
