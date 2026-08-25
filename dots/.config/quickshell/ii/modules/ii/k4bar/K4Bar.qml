@@ -484,28 +484,29 @@ Scope {
                             visible: panelWindow.showingIdle
                         }
 
-                        Repeater {
-                            model: controller.plugins
+                        // There is only one visible island owner per screen. A
+                        // single Loader avoids feeding a mutable QObject array
+                        // through QtQmlModels while managed plugins are destroyed.
+                        Loader {
+                            id: pluginViewLoader
+                            anchors.fill: parent
+                            readonly property var plugin: panelWindow.pluginVisible
+                            active: plugin?.name !== "idle"
+                                && plugin !== null
+                                && plugin.enabled
+                                && plugin.viewLoaded
+                                && plugin.view !== null
+                            sourceComponent: panelWindow.pluginVisible?.view ?? null
 
-                            delegate: Loader {
-                                required property var modelData
-                                anchors.fill: parent
-                                active: modelData?.name !== "idle"
-                                    && modelData === panelWindow.pluginVisible
-                                    && modelData.enabled
-                                    && modelData.viewLoaded
-                                    && modelData.view !== null
-                                sourceComponent: modelData?.view ?? null
-
-                                onStatusChanged: {
-                                    if (!modelData)
-                                        return
-                                    if (status === Loader.Error) {
-                                        modelData.loadError = "View failed to load"
-                                        console.warn("[k4] view load failed:", modelData.name)
-                                    } else if (status === Loader.Ready) {
-                                        modelData.loadError = ""
-                                    }
+                            onStatusChanged: {
+                                const owner = pluginViewLoader.plugin
+                                if (!owner)
+                                    return
+                                if (status === Loader.Error) {
+                                    owner.loadError = "View failed to load"
+                                    console.warn("[k4] view load failed:", owner.name)
+                                } else if (status === Loader.Ready) {
+                                    owner.loadError = ""
                                 }
                             }
                         }
