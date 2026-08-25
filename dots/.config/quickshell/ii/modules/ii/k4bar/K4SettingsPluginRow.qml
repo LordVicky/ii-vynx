@@ -21,6 +21,16 @@ Rectangle {
 
     Behavior on color { ColorAnimation { duration: 120 } }
 
+    function toggleEnabled() {
+        const value = !plugin.enabled
+        controller.setPluginEnabled(plugin.name, value)
+    }
+
+    function retryLoad() {
+        if (plugin.enabled && typeof plugin.retryLoad === "function")
+            plugin.retryLoad()
+    }
+
     RowLayout {
         anchors.fill: parent
         anchors.leftMargin: 12
@@ -61,13 +71,38 @@ Rectangle {
             Text {
                 Layout.fillWidth: true
                 text: root.failed && root.plugin.enabled
-                    ? root.plugin.loadError + " · click to retry"
+                    ? root.plugin.loadError
                     : root.plugin.name
                 color: root.failed && root.plugin.enabled ? K4Theme.red : K4Theme.dim
                 font.family: K4Theme.uiFont
                 font.pixelSize: 9
                 elide: Text.ElideRight
                 renderType: Text.NativeRendering
+            }
+        }
+
+        Rectangle {
+            visible: root.failed && root.plugin.enabled
+            Layout.preferredWidth: visible ? 46 : 0
+            Layout.preferredHeight: 24
+            Layout.alignment: Qt.AlignVCenter
+            radius: 12
+            color: retryHover.hovered ? K4Theme.surfaceHi : K4Theme.track
+
+            Text {
+                anchors.centerIn: parent
+                text: "Retry"
+                color: K4Theme.ink
+                font.family: K4Theme.uiFont
+                font.pixelSize: 9
+                font.weight: Font.DemiBold
+                renderType: Text.NativeRendering
+            }
+
+            HoverHandler { id: retryHover }
+            TapHandler {
+                cursorShape: Qt.PointingHandCursor
+                onTapped: root.retryLoad()
             }
         }
 
@@ -92,20 +127,19 @@ Rectangle {
                     NumberAnimation { duration: 160; easing.type: Easing.OutCubic }
                 }
             }
+
+            TapHandler {
+                enabled: root.failed
+                cursorShape: Qt.PointingHandCursor
+                onTapped: root.toggleEnabled()
+            }
         }
     }
 
     HoverHandler { id: rowHover }
     TapHandler {
+        enabled: !root.failed
         cursorShape: Qt.PointingHandCursor
-        onTapped: {
-            if (root.failed && root.plugin.enabled
-                    && typeof root.plugin.retryLoad === "function") {
-                root.plugin.retryLoad()
-                return
-            }
-            const value = !root.plugin.enabled
-            root.controller.setPluginEnabled(root.plugin.name, value)
-        }
+        onTapped: root.toggleEnabled()
     }
 }
