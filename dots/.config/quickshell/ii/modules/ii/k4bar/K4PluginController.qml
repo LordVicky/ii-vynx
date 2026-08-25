@@ -22,8 +22,10 @@ QtObject {
             combined.push(seedPlugins[i])
         for (let i = 0; i < builtins.plugins.length; ++i)
             combined.push(builtins.plugins[i])
-        for (let i = 0; i < pluginManager.instances.length; ++i)
-            combined.push(pluginManager.instances[i])
+        if (pluginManager) {
+            for (let i = 0; i < pluginManager.instances.length; ++i)
+                combined.push(pluginManager.instances[i])
+        }
         plugins = combined
         wireControllerReferences()
     }
@@ -49,6 +51,8 @@ QtObject {
     }
 
     function pluginDescriptor(name) {
+        if (!pluginManager)
+            return plugin(name)
         return pluginManager.descriptor(name) ?? plugin(name)
     }
 
@@ -57,19 +61,42 @@ QtObject {
             || candidate.name.startsWith("demo-") || candidate.configurable === false
     }
 
-    function configurablePlugins() {
+    // Settings and Apps consume stable metadata, not the mutable live-instance
+    // array. A managed plugin may be destroyed/recreated without invalidating
+    // their Repeater/GridView models while a delegate event handler is running.
+    function metadataPlugins() {
         const result = []
-        for (let i = 0; i < plugins.length; ++i) {
-            const candidate = plugins[i]
-            if (!candidate || pluginManager.owns(candidate.name)
-                    || isProtectedPlugin(candidate))
-                continue
+        const seen = ({})
+
+        function append(candidate) {
+            if (!candidate)
+                return
+            const id = String(candidate.name ?? "")
+            if (id.length === 0 || seen[id])
+                return
+            seen[id] = true
             result.push(candidate)
         }
-        for (let i = 0; i < pluginManager.descriptors.length; ++i) {
-            const descriptor = pluginManager.descriptors[i]
-            if (!isProtectedPlugin(descriptor))
-                result.push(descriptor)
+
+        for (let i = 0; i < seedPlugins.length; ++i)
+            append(seedPlugins[i])
+        for (let i = 0; i < builtins.plugins.length; ++i)
+            append(builtins.plugins[i])
+        if (pluginManager) {
+            for (let i = 0; i < pluginManager.descriptors.length; ++i)
+                append(pluginManager.descriptors[i])
+        }
+        return result
+    }
+
+    function configurablePlugins() {
+        const result = []
+        const metadata = metadataPlugins()
+        for (let i = 0; i < metadata.length; ++i) {
+            const candidate = metadata[i]
+            if (isProtectedPlugin(candidate))
+                continue
+            result.push(candidate)
         }
         return result
     }
@@ -86,17 +113,19 @@ QtObject {
     }
 
     function applyPersistedEnablement() {
-        for (let i = 0; i < plugins.length; ++i) {
-            const candidate = plugins[i]
-            if (!candidate || pluginManager.owns(candidate.name)
-                    || isProtectedPlugin(candidate))
+        const metadata = metadataPlugins()
+        for (let i = 0; i < metadata.length; ++i) {
+            const candidate = metadata[i]
+            if (!candidate || isProtectedPlugin(candidate))
+                continue
+            if (pluginManager && pluginManager.owns(candidate.name))
                 continue
             applyPluginEnabled(candidate, K4Settings.pluginEnabled(candidate.name))
         }
     }
 
     function setPluginEnabled(name, wanted) {
-        const managed = pluginManager.descriptor(name)
+        const managed = pluginManager ? pluginManager.descriptor(name) : null
         if (managed) {
             if (isProtectedPlugin(managed))
                 return false
@@ -113,6 +142,8 @@ QtObject {
     }
 
     function retryPlugin(name) {
+        if (!pluginManager)
+            return false
         if (pluginManager.owns(name))
             return pluginManager.retry(name)
         return false
@@ -122,17 +153,11 @@ QtObject {
     // Managed descriptors remain visible while their live instance is absent.
     function applicationPlugins() {
         const result = []
-        for (let i = 0; i < plugins.length; ++i) {
-            const candidate = plugins[i]
-            if (!candidate || pluginManager.owns(candidate.name))
-                continue
+        const metadata = metadataPlugins()
+        for (let i = 0; i < metadata.length; ++i) {
+            const candidate = metadata[i]
             if (candidate.name !== "apps" && candidate.application === true)
                 result.push(candidate)
-        }
-        for (let i = 0; i < pluginManager.descriptors.length; ++i) {
-            const descriptor = pluginManager.descriptors[i]
-            if (descriptor.name !== "apps" && descriptor.application === true)
-                result.push(descriptor)
         }
         return result
     }
@@ -347,7 +372,8 @@ QtObject {
         if (settings?.controller === root)
             settings.controller = null
         initialized = false
-        pluginManager.shutdown()
+        if (pluginManager)
+            pluginManager.shutdown()
         IslandState.resetHostPublication()
     }
 }
