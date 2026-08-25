@@ -232,9 +232,16 @@ QtObject {
         return true
     }
 
-    function hoverEntered(screenName) {
+    // Stop pending hover teardown without opening a new hover session. Hidden
+    // mode uses this while its edge peek is returning; Clock/Player still wait
+    // for the host's deliberate dwell before IslandState.hovered becomes true.
+    function holdHoverExit() {
         hoverClearTimer.stop()
         pluginHoverExitTimer.stop()
+    }
+
+    function hoverEntered(screenName) {
+        holdHoverExit()
 
         const newHoverSession = !IslandState.hovered
         if (!activePlugin || activePlugin.name === "idle")
