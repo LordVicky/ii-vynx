@@ -1,19 +1,17 @@
 import QtQuick
 import QtQuick.Layouts
 
-// Plugin lifecycle row. Managed descriptors survive while their live instance
-// is disabled or failed. Teardown can still transiently clear a delegate's
-// modelData, so every binding treats the model object as nullable.
+// Static-registry plugin status row for K4-08. K4-11 later upgrades the same
+// contract to dynamic instantiation/retry without changing this settings seam.
 Rectangle {
     id: root
 
     required property var plugin
     required property var controller
 
-    readonly property var safePlugin: plugin ?? null
-    readonly property bool failed: (safePlugin?.loadError ?? "").length > 0
-    readonly property string statusText: !safePlugin ? ""
-        : failed ? "Error" : safePlugin.enabled ? "Loaded" : "Disabled"
+    readonly property bool failed: plugin.loadError.length > 0
+    readonly property string statusText: failed ? "Error"
+        : plugin.enabled ? "Loaded" : "Disabled"
 
     implicitHeight: failed ? 66 : 54
     radius: 12
@@ -37,7 +35,7 @@ Rectangle {
 
                 Text {
                     Layout.fillWidth: true
-                    text: root.safePlugin?.title ?? root.safePlugin?.name ?? ""
+                    text: root.plugin.title ?? root.plugin.name
                     color: K4Theme.ink
                     font.family: K4Theme.uiFont
                     font.pixelSize: 11
@@ -49,7 +47,7 @@ Rectangle {
                 Text {
                     text: root.statusText
                     color: root.failed ? K4Theme.red
-                        : root.safePlugin?.enabled ? K4Theme.green : K4Theme.muted
+                        : root.plugin.enabled ? K4Theme.green : K4Theme.muted
                     font.family: K4Theme.uiFont
                     font.pixelSize: 9
                     font.weight: Font.DemiBold
@@ -59,10 +57,7 @@ Rectangle {
 
             Text {
                 Layout.fillWidth: true
-                text: !root.safePlugin ? ""
-                    : root.failed
-                        ? root.safePlugin.loadError + " · click to retry"
-                        : root.safePlugin.name
+                text: root.failed ? root.plugin.loadError : root.plugin.name
                 color: root.failed ? K4Theme.red : K4Theme.dim
                 font.family: K4Theme.uiFont
                 font.pixelSize: 9
@@ -76,7 +71,7 @@ Rectangle {
             Layout.preferredHeight: 20
             Layout.alignment: Qt.AlignVCenter
             radius: 10
-            color: root.safePlugin?.enabled ? K4Theme.blue : K4Theme.track
+            color: root.plugin.enabled ? K4Theme.blue : K4Theme.track
 
             Behavior on color { ColorAnimation { duration: 140 } }
 
@@ -85,7 +80,7 @@ Rectangle {
                 height: 16
                 radius: 8
                 anchors.verticalCenter: parent.verticalCenter
-                x: root.safePlugin?.enabled ? parent.width - width - 2 : 2
+                x: root.plugin.enabled ? parent.width - width - 2 : 2
                 color: K4Theme.ink
 
                 Behavior on x {
@@ -97,21 +92,10 @@ Rectangle {
 
     HoverHandler { id: rowHover }
     TapHandler {
-        cursorShape: root.safePlugin ? Qt.PointingHandCursor : Qt.ArrowCursor
+        cursorShape: Qt.PointingHandCursor
         onTapped: {
-            const candidate = root.safePlugin
-            const host = root.controller
-            if (!candidate || !host)
-                return
-
-            const id = String(candidate.name)
-            const enabled = Boolean(candidate.enabled)
-            const failed = (candidate.loadError ?? "").length > 0
-            if (failed && enabled) {
-                host.retryPlugin(id)
-                return
-            }
-            host.setPluginEnabled(id, !enabled)
+            const value = !root.plugin.enabled
+            root.controller.setPluginEnabled(root.plugin.name, value)
         }
     }
 }
