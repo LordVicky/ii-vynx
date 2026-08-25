@@ -229,6 +229,24 @@ Scope {
             onHideModeChanged: reconsiderWithdrawal()
             Component.onCompleted: reconsiderWithdrawal()
 
+            // Volume is a timed ambient owner. Hidden should reveal for the HUD
+            // itself, then return directly to the edge when that HUD lifetime
+            // ends instead of adding the generic 1.6 s idle-withdraw grace.
+            Connections {
+                target: K4Audio
+                function onOverlayOpenChanged() {
+                    if (K4Audio.overlayOpen)
+                        return
+                    Qt.callLater(function() {
+                        if (!panelWindow.hideMode || panelWindow.pointerOver
+                                || !panelWindow.showingIdle)
+                            return
+                        withdrawTimer.stop()
+                        panelWindow.withdrawn = true
+                    })
+                }
+            }
+
             anchors.top: !bottom
             anchors.bottom: bottom
             anchors.left: true
