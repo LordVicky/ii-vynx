@@ -16,12 +16,15 @@ test("k4 plugin contract carries explicit utility metadata", () => {
     assert.doesNotMatch(source, /function openApplication\(\)[\s\S]*?active = true/);
 });
 
-test("k4 controller exposes applications from the existing plugin registry", () => {
+test("k4 controller exposes applications from stable plugin metadata", () => {
     const source = readShell("modules/ii/k4bar/K4PluginController.qml");
 
-    assert.match(source, /function applicationPlugins\(\)/);
+    assert.match(source, /property var applicationPluginModel:\s*\[\]/);
+    assert.match(source, /function rebuildMetadataModels\(\)/);
     assert.match(source, /candidate\.name !== "apps" && candidate\.application === true/);
-    assert.match(source, /result\.push\(candidate\)/);
+    assert.match(source, /applications\.push\(candidate\)/);
+    assert.match(source, /applicationPluginModel\s*=\s*applications/);
+    assert.match(source, /function applicationPlugins\(\)[\s\S]*?return applicationPluginModel/);
     assert.match(source, /function openApplication\(name\)/);
     assert.match(source, /!target\.enabled \|\| target\.application !== true/);
     assert.match(source, /return target\.openApplication\(\) !== false/);
@@ -39,7 +42,8 @@ test("k4 apps plugin preserves pinned utility-grid arbitration and geometry", ()
     assert.match(source, /islandWidth:\s*700/);
     assert.match(source, /islandHeight:\s*520/);
     assert.match(source, /readonly property int columns:\s*5/);
-    assert.match(source, /controller \? controller\.applicationPlugins\(\) : \[\]/);
+    assert.match(source, /controller \? controller\.applicationPluginModel : \[\]/);
+    assert.doesNotMatch(source, /controller\.applicationPlugins\(\)/);
     assert.match(source, /function launch\(id\)[\s\S]*?close\(\)[\s\S]*?controller\.openApplication\(id\)/);
     assert.match(source, /target:\s*"k4\.apps"/);
 });
