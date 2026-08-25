@@ -40,7 +40,7 @@ test("K4 Capture is a thin application over existing ii capture owners", async (
     assert.match(view, /Stop recording/);
     assert.match(view, /plugin\.recording/);
 
-    assert.match(builtins, /weatherPlugin,\s*capturePlugin,\s*trayPlugin/);
+    assert.match(builtins, /plugins:\s*\[[\s\S]*?\bcapturePlugin\b[\s\S]*?\]/);
     assert.match(builtins, /property QtObject capturePlugin:\s*K4CapturePlugin\s*\{\}/);
 
     assert.match(region, /target:\s*"region"/);
