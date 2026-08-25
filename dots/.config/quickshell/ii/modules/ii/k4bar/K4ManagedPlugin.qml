@@ -11,6 +11,10 @@ K4Plugin {
 
     readonly property bool requestedEnabled: K4Settings.pluginEnabled(name)
     readonly property var instance: implementationLoader.item
+    property bool retryGate: true
+    property bool debugLoadFailure: false
+    readonly property url effectiveSource: debugLoadFailure
+        ? Qt.resolvedUrl("__K4MissingManagedPlugin.qml") : source
 
     instantiated: instance !== null
     active: enabled && instance ? Boolean(instance.active) : false
@@ -31,9 +35,9 @@ K4Plugin {
     hoverExitDelay: instance ? Number(instance.hoverExitDelay) : 700
 
     property var implementationLoader: Loader {
-        active: root.enabled && root.requestedEnabled
+        active: root.enabled && root.requestedEnabled && root.retryGate
         asynchronous: false
-        source: root.source
+        source: root.effectiveSource
 
         onStatusChanged: {
             if (status === Loader.Error)
@@ -41,6 +45,45 @@ K4Plugin {
             else if (status === Loader.Ready)
                 root.loadError = ""
         }
+    }
+
+    function scheduleLoad() {
+        Qt.callLater(function() {
+            if (root.enabled && root.requestedEnabled)
+                root.retryGate = true
+        })
+    }
+
+    function retryLoad() {
+        if (!enabled || !requestedEnabled)
+            return false
+        loadError = ""
+        retryGate = false
+        scheduleLoad()
+        return true
+    }
+
+    // Test-only fault injection for K4-11 lifecycle validation. The stable
+    // proxy remains in the registry while Loader attempts a missing built-in.
+    function debugFailLoad() {
+        if (!enabled || !requestedEnabled)
+            return false
+        retryGate = false
+        debugLoadFailure = true
+        loadError = ""
+        scheduleLoad()
+        return true
+    }
+
+    // Restore the real source but deliberately leave Loader gated off so the
+    // Settings Retry path is what recreates the implementation.
+    function debugRestoreLoad() {
+        const wasFaulted = debugLoadFailure
+        retryGate = false
+        debugLoadFailure = false
+        if (wasFaulted && loadError.length === 0)
+            loadError = "Component failed to load"
+        return wasFaulted
     }
 
     function open() {
