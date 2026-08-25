@@ -245,9 +245,13 @@ Item {
                         }
 
                         Text {
-                            text: K4Settings.spaceMode === "overlay"
-                                ? "Windows can use the full screen; the island floats above them"
-                                : "Keeps the collapsed island strip clear of windows"
+                            text: K4Settings.spaceMode === "fullscreen"
+                                ? "Away when fullscreen: reserves normally, then hides on that monitor"
+                                : K4Settings.spaceMode === "overlay"
+                                    ? "Windows can use the full screen; the island floats above them"
+                                    : K4Settings.spaceMode === "hidden"
+                                        ? "Hidden: withdraws to a narrow edge target until needed"
+                                        : "Keeps the collapsed island strip clear of windows"
                             color: K4Theme.dim
                             font.family: K4Theme.uiFont
                             font.pixelSize: 9
