@@ -1,8 +1,10 @@
 import QtQuick
+import Quickshell.Io
 import qs.modules.common
 
 // Static built-in registry for the parity slices before K4-11 replaces this
-// with k4-style dynamic plugin discovery/loading.
+// with declaratively managed built-ins. Managed proxies stay in this stable
+// registry while Loader owns only their private implementation lifetime.
 QtObject {
     id: root
 
@@ -29,6 +31,56 @@ QtObject {
         function onHoveredChanged() {
             if (!IslandState.hovered) root.playerHoverSession = false
             else if (K4Media.isPlaying) root.playerHoverSession = true
+        }
+    }
+
+    function managedPlugin(name) {
+        const id = String(name)
+        for (let i = 0; i < plugins.length; ++i) {
+            const candidate = plugins[i]
+            if (candidate?.name === id && typeof candidate.retryLoad === "function")
+                return candidate
+        }
+        return null
+    }
+
+    // Temporary K4-11 fault harness. It changes only a managed proxy's Loader
+    // source/gate and never changes registry membership or QObject ownership.
+    property var lifecycleDebugIpc: IpcHandler {
+        target: "k4.pluginLifecycleDebug"
+
+        function fail(name: string): void {
+            const candidate = root.managedPlugin(name)
+            if (candidate && typeof candidate.debugFailLoad === "function")
+                candidate.debugFailLoad()
+        }
+
+        function restore(name: string): void {
+            const candidate = root.managedPlugin(name)
+            if (candidate && typeof candidate.debugRestoreLoad === "function")
+                candidate.debugRestoreLoad()
+        }
+
+        function retry(name: string): void {
+            const candidate = root.managedPlugin(name)
+            if (candidate)
+                candidate.retryLoad()
+        }
+
+        function status(name: string): string {
+            const candidate = root.managedPlugin(name)
+            if (!candidate)
+                return JSON.stringify({ id: String(name), found: false })
+            return JSON.stringify({
+                id: candidate.name,
+                found: true,
+                enabled: candidate.enabled,
+                requestedEnabled: candidate.requestedEnabled,
+                loaded: candidate.instantiated,
+                error: candidate.loadError,
+                faulted: candidate.debugLoadFailure,
+                retryGate: candidate.retryGate
+            })
         }
     }
 
