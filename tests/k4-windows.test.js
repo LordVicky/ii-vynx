@@ -34,8 +34,8 @@ test("windows view supports alt-tab style cycling and dwell activation", () => {
     assert.match(source, /Qt\.Key_Alt/);
 });
 
-test("windows utility is built in", () => {
+test("windows utility is built in through the managed lifecycle proxy", () => {
     const source = read("K4BuiltinPlugins.qml");
     assert.match(source, /windowsPlugin/);
-    assert.match(source, /K4WindowsPlugin\s*\{/);
+    assert.match(source, /property QtObject windowsPlugin:\s*K4ManagedPlugin\s*\{[\s\S]*?name:\s*"windows"[\s\S]*?source:\s*Qt\.resolvedUrl\("K4WindowsPlugin\.qml"\)/);
 });
