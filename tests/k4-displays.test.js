@@ -45,8 +45,9 @@ test("K4 Displays reuses HyprlandData and applies session-only monitor drafts", 
     assert.match(view, /Apply/);
     assert.match(view, /Refresh/);
 
-    assert.match(builtins, /displaysPlugin/);
-    assert.match(builtins, /property QtObject displaysPlugin:\s*K4DisplaysPlugin\s*\{\}/);
+    assert.match(builtins, /property QtObject displaysPlugin:\s*K4ManagedPlugin\s*\{/);
+    assert.match(builtins, /name:\s*"displays"[\s\S]*?source:\s*Qt\.resolvedUrl\("K4DisplaysPlugin\.qml"\)/);
+    assert.doesNotMatch(builtins, /property QtObject displaysPlugin:\s*K4DisplaysPlugin\s*\{/);
 
     assert.match(hyprlandData, /property var monitors:\s*\[\]/);
     assert.match(hyprlandData, /function updateMonitors\(\)/);
