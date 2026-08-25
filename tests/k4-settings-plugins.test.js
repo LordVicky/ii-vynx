@@ -43,7 +43,8 @@ test("K4 plugin settings persist enablement without breaking active bindings", a
     assert.match(row, /plugin\.loadError\.length > 0/);
     assert.match(row, /!plugin\.enabled \? "Disabled"/);
     assert.match(row, /plugin\.instantiated \? "Loaded" : "Loading"/);
-    assert.match(row, /root\.controller\.setPluginEnabled\(root\.plugin\.name, value\)/);
+    assert.match(row, /function toggleEnabled\(\)[\s\S]*?controller\.setPluginEnabled\(plugin\.name, value\)/);
+    assert.match(row, /onTapped:\s*root\.toggleEnabled\(\)/);
 
     assert.match(host, /Loader\.Error[\s\S]*?modelData\.loadError = "View failed to load"/);
     assert.match(host, /Loader\.Ready[\s\S]*?modelData\.loadError = ""/);
