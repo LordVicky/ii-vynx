@@ -20,5 +20,5 @@ test("K4 hidden mode returns directly to the edge when the volume HUD ends", () 
     const audio = read("modules/ii/k4bar/K4Audio.qml");
 
     assert.match(audio, /id:\s*overlayTimer[\s\S]*?interval:\s*1600[\s\S]*?root\.overlayOpen = false/);
-    assert.match(bar, /target:\s*K4Audio[\s\S]*?function onOverlayOpenChanged\(\)[\s\S]*?if \(K4Audio\.overlayOpen\)[\s\S]*?return[\s\S]*?Qt\.callLater\(function\(\)[\s\S]*?panelWindow\.hideMode[\s\S]*?!panelWindow\.pointerOver[\s\S]*?panelWindow\.showingIdle[\s\S]*?withdrawTimer\.stop\(\)[\s\S]*?panelWindow\.withdrawn = true/);
+    assert.match(bar, /target:\s*K4Audio[\s\S]*?function onOverlayOpenChanged\(\)[\s\S]*?if \(K4Audio\.overlayOpen\)[\s\S]*?return[\s\S]*?Qt\.callLater\(function\(\)[\s\S]*?!panelWindow\.hideMode[\s\S]*?\|\| panelWindow\.pointerOver[\s\S]*?\|\| !panelWindow\.showingIdle[\s\S]*?withdrawTimer\.stop\(\)[\s\S]*?panelWindow\.withdrawn = true/);
 });
