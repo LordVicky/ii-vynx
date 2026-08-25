@@ -124,7 +124,7 @@ Scope {
         function dialogClose(): void { IslandState.closeSystemDialog() }
 
         function placePrimary(fraction: real, durationMs: int): void {
-            demoPrimary.requestPlacement(fraction, durationMs || 0)
+            demoPrimary.requestPlacement(fraction, durationMs)
         }
         function releasePrimaryPlacement(): void { demoPrimary.releasePlacement() }
         function gesture(name: string, strength: real): void {
