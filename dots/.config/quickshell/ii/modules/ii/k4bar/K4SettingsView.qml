@@ -224,6 +224,78 @@ Item {
                     }
                 }
 
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 96
+                    radius: 12
+                    color: K4Theme.surface
+
+                    ColumnLayout {
+                        anchors.fill: parent
+                        anchors.margins: 10
+                        spacing: 5
+
+                        Text {
+                            text: "How it uses screen space"
+                            color: K4Theme.ink
+                            font.family: K4Theme.uiFont
+                            font.pixelSize: 11
+                            font.weight: Font.DemiBold
+                            renderType: Text.NativeRendering
+                        }
+
+                        Text {
+                            text: K4Settings.spaceMode === "overlay"
+                                ? "Windows can use the full screen; the island floats above them"
+                                : "Keeps the collapsed island strip clear of windows"
+                            color: K4Theme.dim
+                            font.family: K4Theme.uiFont
+                            font.pixelSize: 9
+                            renderType: Text.NativeRendering
+                        }
+
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: 5
+
+                            Repeater {
+                                model: K4Settings.spaceModes
+                                delegate: Rectangle {
+                                    id: spaceChoice
+                                    required property var modelData
+                                    readonly property bool selected: K4Settings.spaceMode === modelData.value
+                                    Layout.preferredWidth: spaceLabel.implicitWidth + 24
+                                    Layout.preferredHeight: 26
+                                    radius: 13
+                                    color: selected ? K4Theme.blue
+                                        : spaceHover.hovered ? K4Theme.surfaceHi : K4Theme.track
+
+                                    Behavior on color { ColorAnimation { duration: 120 } }
+
+                                    Text {
+                                        id: spaceLabel
+                                        anchors.centerIn: parent
+                                        text: spaceChoice.modelData.label
+                                        color: spaceChoice.selected ? K4Theme.ink : K4Theme.muted
+                                        font.family: K4Theme.uiFont
+                                        font.pixelSize: 10
+                                        font.weight: spaceChoice.selected ? Font.DemiBold : Font.Normal
+                                        renderType: Text.NativeRendering
+                                    }
+
+                                    HoverHandler { id: spaceHover }
+                                    TapHandler {
+                                        cursorShape: Qt.PointingHandCursor
+                                        onTapped: K4Settings.setSpaceMode(spaceChoice.modelData.value)
+                                    }
+                                }
+                            }
+
+                            Item { Layout.fillWidth: true }
+                        }
+                    }
+                }
+
                 K4SettingsToggle {
                     Layout.fillWidth: true
                     title: "Tray in collapsed pill"
