@@ -19,7 +19,8 @@ test("K4 managed plugin load failures stay behind the stable proxy and can retry
     assert.match(managed, /active:\s*root\.enabled && root\.requestedEnabled && root\.retryGate/);
     assert.match(managed, /source:\s*root\.effectiveSource/);
     assert.match(managed, /Loader\.Error[\s\S]*?root\.loadError = "Component failed to load"/);
-    assert.match(managed, /function retryLoad\(\)[\s\S]*?retryGate = false[\s\S]*?Qt\.callLater[\s\S]*?retryGate = true/);
+    assert.match(managed, /function scheduleLoad\(\)[\s\S]*?Qt\.callLater[\s\S]*?root\.retryGate = true/);
+    assert.match(managed, /function retryLoad\(\)[\s\S]*?retryGate = false[\s\S]*?scheduleLoad\(\)/);
     assert.match(managed, /function debugFailLoad\(\)/);
     assert.match(managed, /function debugRestoreLoad\(\)/);
     assert.doesNotMatch(managed, /Qt\.createComponent|createObject\s*\(|\.destroy\s*\(/);
