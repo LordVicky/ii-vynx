@@ -105,14 +105,61 @@ QtObject {
         view: Component { K4ClockView { trayPlugin: root.trayPlugin } }
     }
     property QtObject playerPlugin: K4Plugin {
+        id: playerPluginObject
         name: "player"; title: "Player"; priority: 55
         closeOnDisable: false
-        active: enabled && IslandState.hovered && root.passiveHoverAllowed
-            && K4Media.hasPlayer && (K4Media.isPlaying || root.playerHoverSession)
+
+        // Track-change peek follows upstream v1.0.0's proven MPRIS settling
+        // behavior: title/artist may arrive separately, so compare only after
+        // 350 ms and never treat initial discovery or player shutdown as a new
+        // track. Peek remains independent of isPlaying because some players
+        // transiently report stopped while switching tracks.
+        property bool trackPeekOpen: false
+        property string previousTrackKey: ""
+        readonly property string trackKey: K4Media.hasPlayer
+                && String(K4Media.activePlayer?.trackTitle ?? "").length > 0
+            ? String(K4Media.activePlayer.trackTitle) + " · "
+                + String(K4Media.activePlayer?.trackArtist ?? "")
+            : ""
+
+        onTrackKeyChanged: trackSettleTimer.restart()
+
+        Timer {
+            id: trackSettleTimer
+            interval: 350
+            onTriggered: {
+                const previous = playerPluginObject.previousTrackKey
+                playerPluginObject.previousTrackKey = playerPluginObject.trackKey
+                if (!K4Settings.playerPeekOnTrackChange || !playerPluginObject.enabled)
+                    return
+                if (playerPluginObject.trackKey.length === 0
+                        || previous.length === 0
+                        || previous === playerPluginObject.trackKey)
+                    return
+                playerPluginObject.trackPeekOpen = true
+                trackPeekTimer.restart()
+            }
+        }
+
+        Timer {
+            id: trackPeekTimer
+            interval: 3200
+            onTriggered: playerPluginObject.trackPeekOpen = false
+        }
+
+        active: enabled && (
+            (IslandState.hovered && root.passiveHoverAllowed
+                && K4Media.hasPlayer
+                && (K4Media.isPlaying || root.playerHoverSession))
+            || trackPeekOpen
+        )
         islandWidth: 340
         readonly property int notificationStripHeight: K4Settings.notificationsOnHover
             ? K4Notifications.stripHeight(3) : 0
         islandHeight: (K4Media.hasTimeline ? 140 : 115) + (notificationStripHeight > 0 ? notificationStripHeight + 15 : 0)
+
+        function close() { trackPeekOpen = false }
+
         view: Component { K4PlayerView {} }
     }
     property QtObject toastPlugin: K4Plugin {
