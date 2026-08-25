@@ -1,8 +1,8 @@
 import QtQuick
 import Quickshell.Io
 
-// Utility-grid ownership adapted from k4ditano/k4 Apps at the pinned source
-// commit. The grid consumes the existing K4 plugin registry instead of owning
+// Utility-grid ownership adapted from k4ditano/k4 Apps at the pinned
+// source commit. The grid consumes the existing K4 plugin registry instead of owning
 // a second catalog; future utility plugins opt in through K4Plugin.application.
 K4Plugin {
     id: root
@@ -22,7 +22,7 @@ K4Plugin {
 
     readonly property int columns: 5
     readonly property var applications: {
-        const source = controller ? controller.applicationPluginModel : []
+        const source = controller ? controller.applicationPlugins() : []
         const normalized = query.trim().toLowerCase()
         if (normalized.length === 0)
             return source
