@@ -44,6 +44,29 @@ Singleton {
         return root.windowByAddress[address];
     }
 
+    // Whether the active workspace shown on one monitor currently reports a
+    // fullscreen client. Keep this query on the existing Hyprland snapshot
+    // owner so K4 does not introduce another monitor/workspace poller.
+    function monitorHasFullscreen(screenName) {
+        const name = String(screenName || "");
+        if (name.length === 0) return false;
+
+        let monitor = null;
+        for (let i = 0; i < root.monitors.length; ++i) {
+            const candidate = root.monitors[i];
+            if (String(candidate?.name || "") === name) {
+                monitor = candidate;
+                break;
+            }
+        }
+        if (!monitor) return false;
+
+        const workspaceId = Number(monitor.activeWorkspace?.id);
+        if (!isFinite(workspaceId)) return false;
+        const workspace = root.workspaceById[workspaceId];
+        return workspace?.hasfullscreen === true;
+    }
+
     // Internals
 
     function updateWindowList() {
@@ -87,6 +110,13 @@ Singleton {
         target: Hyprland
 
         function onRawEvent(event) {
+            // Fullscreen is stored on the workspace snapshot. Refresh just that
+            // owner immediately instead of waiting for an unrelated event; the
+            // monitor->active-workspace mapping itself has not changed.
+            if (["fullscreen", "closewindow"].includes(event.name)) {
+                updateWorkspaces();
+                return;
+            }
             // console.log("Hyprland raw event:", event.name);
             if (["openlayer", "closelayer", "screencast"].includes(event.name)) return;
             updateAll()
