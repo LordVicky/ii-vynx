@@ -132,9 +132,27 @@ QtObject {
     property QtObject launcherPlugin: K4LauncherPlugin {}
     property QtObject clipboardPlugin: K4ClipboardPlugin {}
     property QtObject filesPlugin: K4FilesPlugin {}
-    property QtObject windowsPlugin: K4WindowsPlugin {}
-    property QtObject systemPlugin: K4SystemPlugin {}
-    property QtObject sessionPlugin: K4SessionPlugin {}
+    property QtObject windowsPlugin: K4ManagedPlugin {
+        name: "windows"
+        title: "Windows"
+        application: true
+        applicationGlyph: String.fromCodePoint(0xF05B2)
+        source: Qt.resolvedUrl("K4WindowsPlugin.qml")
+    }
+    property QtObject systemPlugin: K4ManagedPlugin {
+        name: "system"
+        title: "System"
+        application: true
+        applicationGlyph: String.fromCodePoint(0xF04BC)
+        source: Qt.resolvedUrl("K4SystemPlugin.qml")
+    }
+    property QtObject sessionPlugin: K4ManagedPlugin {
+        name: "session"
+        title: "Session"
+        application: true
+        applicationGlyph: String.fromCodePoint(0xF0425)
+        source: Qt.resolvedUrl("K4SessionPlugin.qml")
+    }
     property QtObject keysPlugin: K4ManagedPlugin {
         name: "keys"
         title: "Shortcuts"
