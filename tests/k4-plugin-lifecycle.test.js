@@ -66,7 +66,8 @@ test("K4 lifecycle keeps metadata stable while the live instance changes", async
     assert.match(controller, /for \(let i = 0; i < seedPlugins\.length; \+\+i\)/);
     assert.match(controller, /for \(let i = 0; i < builtins\.plugins\.length; \+\+i\)/);
     assert.match(controller, /for \(let i = 0; i < pluginManager\.descriptors\.length; \+\+i\)/);
-    assert.doesNotMatch(controller, /function rebuildMetadataModels\(\)[\s\S]*?plugins\.length/);
+    assert.doesNotMatch(controller, /configurablePluginModel\s*=\s*plugins/);
+    assert.doesNotMatch(controller, /applicationPluginModel\s*=\s*plugins/);
 
     // The island renderer only needs the current winner. Do not feed a mutable
     // QObject array into another Repeater during instance destruction.
