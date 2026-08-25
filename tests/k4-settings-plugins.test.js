@@ -33,7 +33,9 @@ test("K4 plugin settings persist enablement across static and managed lifecycles
     assert.match(settingsPlugin, /property var controller:\s*null/);
     assert.match(controller, /function isProtectedPlugin\(candidate\)[\s\S]*?candidate\.name === "idle"[\s\S]*?candidate\.name === "settings"[\s\S]*?candidate\.name\.startsWith\("demo-"\)[\s\S]*?candidate\.configurable === false/);
     assert.match(controller, /function metadataPlugins\(\)/);
-    assert.match(controller, /function configurablePlugins\(\)[\s\S]*?const metadata = metadataPlugins\(\)[\s\S]*?result\.push\(candidate\)/);
+    assert.match(controller, /property var configurablePluginModel:\s*\[\]/);
+    assert.match(controller, /function rebuildMetadataModels\(\)[\s\S]*?configurablePluginModel = configurable/);
+    assert.match(controller, /function configurablePlugins\(\)[\s\S]*?return configurablePluginModel/);
     assert.match(controller, /function applyPluginEnabled\(candidate, wanted\)[\s\S]*?candidate\.enabled = target/);
     assert.match(controller, /function applyPersistedEnablement\(\)[\s\S]*?pluginManager && pluginManager\.owns\(candidate\.name\)[\s\S]*?K4Settings\.pluginEnabled\(candidate\.name\)/);
     assert.match(controller, /function setPluginEnabled\(name, wanted\)[\s\S]*?pluginManager \? pluginManager\.descriptor\(name\) : null[\s\S]*?pluginManager\.setEnabled\(name, wanted\)[\s\S]*?K4Settings\.setPluginEnabled\(name, target\)/);
@@ -43,7 +45,8 @@ test("K4 plugin settings persist enablement across static and managed lifecycles
     assert.match(manager, /K4Settings\.setPluginEnabled\(slot\.name, target\)/);
     assert.match(manager, /slot\.instance = null[\s\S]*?obj\.destroy\(\)/);
 
-    assert.match(settingsView, /root\.plugin\.controller\.configurablePlugins\(\)/);
+    assert.match(settingsView, /root\.plugin\.controller\.configurablePluginModel/);
+    assert.doesNotMatch(settingsView, /configurablePlugins\(\)/);
     assert.match(settingsView, /K4SettingsPluginRow/);
     assert.match(row, /readonly property var safePlugin:\s*plugin \?\? null/);
     assert.match(row, /safePlugin\?\.loadError/);
