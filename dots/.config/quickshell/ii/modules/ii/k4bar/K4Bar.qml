@@ -171,11 +171,12 @@ Scope {
                 controller.visiblePluginFor(panelWindow.screen.name)
             readonly property bool showingIdle:
                 !pluginVisible || pluginVisible.name === "idle"
-            // Fullscreen clients suppress Top layer surfaces. Toasts and the
-            // explicitly requested launcher must stay visible above them.
+            // Fullscreen clients suppress Top layer surfaces. Toasts, Volume HUD,
+            // and the explicitly requested launcher must stay visible above them.
             readonly property bool notificationOverlay:
                 pluginVisible?.name === "toast"
                 || pluginVisible?.name === "launcher"
+                || pluginVisible?.name === "volume"
             readonly property int islandBodyWidth: showingIdle
                 ? idleContent.desiredBodyWidth : pluginVisible.islandWidth
             readonly property int islandBodyHeight: showingIdle
