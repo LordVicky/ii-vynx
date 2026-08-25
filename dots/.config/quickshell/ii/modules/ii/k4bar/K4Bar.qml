@@ -163,6 +163,10 @@ Scope {
             screen: modelData
 
             readonly property bool bottom: Config.options.bar.k4.position === "bottom"
+            // K4-V1-01 has two live modes. Keeping this as a named per-screen
+            // resolution seam lets K4-V1-02 add fullscreen->Hidden resolution
+            // without moving compositor policy out of the host.
+            readonly property string effectiveSpaceMode: K4Settings.spaceMode
             readonly property var pluginVisible:
                 controller.visiblePluginFor(panelWindow.screen.name)
             readonly property bool showingIdle:
@@ -205,7 +209,8 @@ Scope {
                 return WlrKeyboardFocus.None
             }
 
-            exclusiveZone: K4Theme.baseHeight
+            exclusiveZone: panelWindow.effectiveSpaceMode === "reserve"
+                ? K4Theme.baseHeight : 0
             implicitHeight: surfaceHeight
             mask: Region { item: IslandState.suppressed ? null : island }
 
