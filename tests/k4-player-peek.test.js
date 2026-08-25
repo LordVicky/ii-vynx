@@ -26,6 +26,7 @@ test("K4 player track changes can temporarily claim a hidden island", () => {
     assert.match(builtins, /playerPluginObject\.trackKey\.length === 0[\s\S]*?previous\.length === 0[\s\S]*?previous === playerPluginObject\.trackKey/);
     assert.match(builtins, /playerPluginObject\.trackPeekOpen = true[\s\S]*?trackPeekTimer\.restart\(\)/);
     assert.match(builtins, /id:\s*trackPeekTimer[\s\S]*?interval:\s*3200[\s\S]*?playerPluginObject\.trackPeekOpen = false/);
+    assert.match(builtins, /target:\s*playerPluginObject[\s\S]*?function onEnabledChanged\(\)[\s\S]*?if \(playerPluginObject\.enabled\)[\s\S]*?return[\s\S]*?trackPeekTimer\.stop\(\)[\s\S]*?playerPluginObject\.trackPeekOpen = false/);
     assert.match(builtins, /active:\s*enabled[\s\S]*?trackPeekOpen/);
     assert.match(builtins, /function close\(\) \{ trackPeekOpen = false \}/);
 });
