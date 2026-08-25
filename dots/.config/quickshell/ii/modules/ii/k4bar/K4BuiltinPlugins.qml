@@ -86,6 +86,12 @@ QtObject {
     property QtObject keysPlugin: K4KeysPlugin {}
     property QtObject weatherPlugin: K4WeatherPlugin {}
     property QtObject capturePlugin: K4CapturePlugin {}
-    property QtObject displaysPlugin: K4DisplaysPlugin {}
+    property QtObject displaysPlugin: K4ManagedPlugin {
+        name: "displays"
+        title: "Displays"
+        application: true
+        applicationGlyph: String.fromCodePoint(0xF037A)
+        source: Qt.resolvedUrl("K4DisplaysPlugin.qml")
+    }
     property QtObject trayPlugin: K4TrayPlugin {}
 }
