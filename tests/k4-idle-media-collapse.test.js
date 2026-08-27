@@ -14,10 +14,10 @@ test("paused media contributes zero width to the collapsed pill", () => {
 
     assert.match(
         source,
-        /readonly property int leftMeasured:\s*isPlaying\s*\?\s*Math\.ceil\(leftMedia\.implicitWidth\)\s*:\s*0/
+        /readonly property int leftMeasured:\s*isPlaying\s*\?\s*\(leftMedia\.implicitWidth > 0\s*\?\s*Math\.ceil\(leftMedia\.implicitWidth\)\s*:\s*53\)\s*:\s*0/
     );
     assert.doesNotMatch(
         source,
-        /readonly property int leftMeasured:[\s\S]*?leftMedia\.implicitWidth > 0[\s\S]*?isPlaying \? 53 : 0/
+        /readonly property int leftMeasured:\s*leftMedia\.implicitWidth > 0[\s\S]*?isPlaying \? 53 : 0/
     );
 });
