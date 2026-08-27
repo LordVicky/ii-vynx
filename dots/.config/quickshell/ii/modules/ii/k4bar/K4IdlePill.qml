@@ -178,8 +178,8 @@ Item {
 
         Item {
             id: centerZone
-            anchors.left: leftMedia.right
-            anchors.leftMargin: 11
+            anchors.left: parent.left
+            anchors.leftMargin: root.leftMeasured + 11
             anchors.verticalCenter: parent.verticalCenter
             width: 46
             height: parent.height
