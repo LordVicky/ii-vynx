@@ -13,7 +13,7 @@ Selected K4 v1.0 reference: `adcf4216038f7881c4a589baafaaaec841377ad5`
 
 Current ticket: **K4-V1-04 — asymmetric Idle/Clock sizing + active-monitor API.**
 
-K4-V1-01 through K4-V1-03 are live-validated. V1-04 is split into two vertical slices: collapsed Idle + active-monitor contract first, expanded Clock second after the first slice is green.
+K4-V1-01 through K4-V1-03 are live-validated. V1-04 slice 1 (collapsed Idle + active-monitor contract) has completed live-shell validation; slice 2 (expanded Clock measured sizing) is implemented and awaiting source/live validation.
 
 K4-11 built-in lifecycle work remains deliberately paused while the approved v1.0 sync changes Player ambient activation and Idle/Clock geometry.
 
@@ -165,24 +165,50 @@ Player track-change peek follows the selected upstream v1.0 behavior while retai
 
 Live validation passed the complete matrix: initial discovery stayed quiet, genuine track changes peeked while Hidden, repeated changes restarted the lifetime, the preference disabled/re-enabled autonomous peek without breaking hover, Away-when-fullscreen worked over fullscreen clients, and disable/re-enable did not resurrect stale state. The source suite reached 129/129 and the crash/error grep returned no output.
 
-### K4-V1-04 — implementation in progress
+### K4-V1-04 — implementation and validation in progress
 
-Slice 1 implements the approved collapsed Idle sizing and formalizes the existing active-monitor seam:
+#### Slice 1 — collapsed Idle + active-monitor contract
 
-- collapsed Idle now measures media and right-side indicators independently instead of mirroring the larger side around the clock;
+Implemented the approved collapsed Idle sizing and formalized the existing active-monitor seam:
+
+- collapsed Idle measures media and right-side indicators independently instead of mirroring the larger side around the clock;
 - the layout is a chained `left media -> center clock/workspaces -> right tray/recording` sequence;
 - the center zone remains a fixed 46 px while total body width is the sum of actual left/right widths plus existing padding/gaps;
 - existing workspace animation, media visualizer, tray and recording behavior remain owned by the same components;
 - `IslandState.activeScreen` is explicitly documented and regression-tested as the stable plugin-facing active-island-monitor state;
 - no duplicate monitor property, process or `hyprctl` owner is introduced.
 
-Slice 1 is pending source/live validation. Expanded Clock asymmetric sizing is intentionally held until this tracer is green.
+Live validation is green. The supplied recording showed independent media-left and recording-right growth with no overlap, workspace/clock presentation remained intact, and the follow-up Hidden reveal/withdraw check passed. The broad runtime grep only surfaced pre-existing shared-widget, portal and MPRIS warnings; no warning pointed at the K4-V1-04 geometry path.
+
+Focused/full source-suite confirmation for the current V1-04 branch still needs to be captured together with slice 2 rather than inferred from repository inspection.
+
+#### Slice 2 — expanded Clock measured sizing
+
+Source contract committed at `1dcad6529fc3a030836abb8e449428c00e1f59e9` and implementation committed at `6f0c2ad091eef2eeae57b8a368ac9634302031c6`.
+
+The expanded Clock now follows the selected v1.0 sequential layout:
+
+```text
+date -> 24 px gap -> clock -> 24 px gap -> tray/recording
+```
+
+Implementation details:
+
+- `K4ClockView` publishes measured left/date, center/time and right/contextual implicit widths;
+- the stable Clock plugin receives those widths through declarative `Binding` objects;
+- 96 px date and 92 px clock estimates remain first-frame fallbacks;
+- the contextual right estimate accounts only for ii-vynx-owned tray/recording content and is capped at 480 px as the safety bound;
+- the old symmetric `2 * max(left, right)` width reservation is removed;
+- no upstream agent/game/plugin-store indicator ownership was imported;
+- notification-strip height calculation remains unchanged.
+
+Repository-side Standards + Spec review found no ownership/lifecycle expansion and no selected-v1 scope leak. Executable source checks and live-shell Clock validation remain pending on the target machine.
 
 ## Remaining K4-V1 plan
 
 ### K4-V1-04
 
-Finish collapsed Idle/active-monitor validation, then restructure expanded Clock to asymmetric measured zones.
+Validate expanded Clock sizing and the complete V1-04 source suite. If green, close K4-V1-04.
 
 ### K4-V1-05
 
@@ -207,12 +233,13 @@ After K4-V1-05, resume K4-11 lifecycle migration and then finish with K4-12.
 
 ## Next action
 
-Validate **K4-V1-04 slice 1**:
+Validate **K4-V1-04 slice 2**:
 
-1. run the focused Idle + active-screen source contracts, then the full `tests/k4-*.test.js` suite;
-2. deploy to the live shell;
-3. verify play/pause grows only the media/left side instead of mirroring empty space on the right;
-4. verify tray/recording growth affects only the right side;
-5. verify clock/workspace transitions remain intact and the pill stays inside the screen at configured alignments;
-6. verify Hidden reveal/withdraw remains correct;
-7. only then implement expanded Clock asymmetric sizing.
+1. run `tests/k4-clock-sizing.test.js` plus the related core/tray/notification source contracts, then the full `tests/k4-*.test.js` suite;
+2. deploy the branch to the live shell;
+3. hover Clock with no tray/recording and verify the compact date/time layout has no overlap or excessive mirrored empty space;
+4. add/remove tray items and verify only the contextual right side grows/shrinks;
+5. start/stop recording, both with and without tray items, and verify the right zone remains chained after the clock without overlap;
+6. show recent notifications and verify the notification strip still receives its existing vertical space;
+7. verify supported screen alignments plus top/bottom placement keep the expanded Clock inside the screen;
+8. repeat the runtime warning/crash grep and distinguish unrelated pre-existing shared-shell warnings from K4-specific regressions.
