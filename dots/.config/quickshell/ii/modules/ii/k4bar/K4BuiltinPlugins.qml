@@ -92,17 +92,58 @@ QtObject {
         view: Component { K4VolumeView {} }
     }
     property QtObject clockPlugin: K4Plugin {
+        id: clockPluginObject
         name: "clock"; title: "Clock"; priority: 50
         closeOnDisable: false
         active: enabled && IslandState.hovered && root.passiveHoverAllowed
-        readonly property int traySide: K4Tray.count > 0
-            ? Math.min(K4Tray.count, 5) * 24 + 56 : 48
-        islandWidth: Math.max(Persistent.states.screenRecord.active ? 352 : 328,
-            136 + 2 * Math.max(96, traySide))
+
+        // K4 v1.0 measures the three Clock zones in the view and feeds them
+        // back into this stable plugin object. Estimates are only first-frame
+        // fallbacks while the view has not published real implicit widths yet.
+        property int leftMeasured: 0
+        property int centerMeasured: 0
+        property int rightMeasured: 0
+
+        readonly property int trayEstimate: K4Tray.count > 0
+            ? Math.min(K4Tray.count, 5) * 28 + (K4Tray.count > 5 ? 28 : 0)
+            : 0
+        readonly property bool recordingActive: Persistent.states.screenRecord.active
+        readonly property int rightEstimate: trayEstimate
+            + (recordingActive ? 60 : 0)
+            + (trayEstimate > 0 && recordingActive ? 6 : 0)
+
+        readonly property int leftWidth: leftMeasured > 0 ? leftMeasured : 96
+        readonly property int centerWidth: centerMeasured > 0
+            ? centerMeasured : 92
+        readonly property int rightRaw: rightMeasured > 0
+            ? rightMeasured : rightEstimate
+        readonly property int rightWidth: Math.min(rightRaw, 480)
+        readonly property int zoneGap: 24
+
+        islandWidth: 44 + leftWidth + zoneGap + centerWidth + zoneGap + rightWidth
         readonly property int notificationStripHeight: K4Settings.notificationsOnHover
             ? K4Notifications.stripHeight(3) : 0
         islandHeight: 68 + (notificationStripHeight > 0 ? notificationStripHeight + 18 : 0)
-        view: Component { K4ClockView { trayPlugin: root.trayPlugin } }
+        view: Component {
+            K4ClockView {
+                trayPlugin: root.trayPlugin
+                Binding {
+                    target: clockPluginObject
+                    property: "leftMeasured"
+                    value: measuredLeft
+                }
+                Binding {
+                    target: clockPluginObject
+                    property: "centerMeasured"
+                    value: measuredCenter
+                }
+                Binding {
+                    target: clockPluginObject
+                    property: "rightMeasured"
+                    value: measuredRight
+                }
+            }
+        }
     }
     property QtObject playerPlugin: K4Plugin {
         id: playerPluginObject

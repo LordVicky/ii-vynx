@@ -44,8 +44,8 @@ test('K4 tray is visible and interactive from the hover clock', () => {
   assert.match(row, /K4Tray\.scroll\(cell\.modelData/);
   assert.match(clock, /K4TrayRow\s*\{/);
   assert.match(clock, /trayPlugin:\s*root\.trayPlugin/);
-  assert.match(builtins, /K4ClockView\s*\{\s*trayPlugin:\s*root\.trayPlugin\s*\}/);
-  assert.match(builtins, /Math\.min\(K4Tray\.count, 5\) \* 24/);
+  assert.match(builtins, /K4ClockView\s*\{[\s\S]*?trayPlugin:\s*root\.trayPlugin/);
+  assert.match(builtins, /readonly property int trayEstimate:[\s\S]*?Math\.min\(K4Tray\.count, 5\) \* 28/);
 });
 
 test('K4 tray view uses the selected live item DBus menu and upstream interactions', () => {

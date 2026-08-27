@@ -87,7 +87,7 @@ test("core built-ins preserve k4 priorities, activation defaults and dimensions"
     assert.match(source, /name:\s*"player"[\s\S]*?priority:\s*55[\s\S]*?closeOnDisable:\s*false[\s\S]*?active:\s*enabled[\s\S]*?IslandState\.hovered && root\.passiveHoverAllowed[\s\S]*?K4Media\.hasPlayer[\s\S]*?K4Media\.isPlaying \|\| root\.playerHoverSession[\s\S]*?trackPeekOpen[\s\S]*?islandWidth:\s*340[\s\S]*?K4Media\.hasTimeline \? 140 : 115/);
 
     assert.match(source, /view:\s*Component \{ K4VolumeView \{\} \}/);
-    assert.match(source, /view:\s*Component \{ K4ClockView \{ trayPlugin: root\.trayPlugin \} \}/);
+    assert.match(source, /view:\s*Component \{\s*K4ClockView \{[\s\S]*?trayPlugin:\s*root\.trayPlugin/);
     assert.match(source, /view:\s*Component \{ K4PlayerView \{\} \}/);
 });
 
@@ -107,8 +107,7 @@ test("core views preserve k4 volume, clock and player interaction contracts", ()
     assert.match(volume, /K4Audio\.volume \/ 100/);
     assert.match(volume, /NumberAnimation \{ duration:\s*140/);
 
-    assert.match(clock, /anchors\.leftMargin:\s*22[\s\S]*?anchors\.rightMargin:\s*22/);
-    assert.match(clock, /anchors\.horizontalCenter:\s*parent\.horizontalCenter[\s\S]*?Qt\.formatDateTime\(K4Clock\.date, "HH:mm"\)[\s\S]*?font\.pixelSize:\s*30/);
+    assert.match(clock, /Qt\.formatDateTime\(K4Clock\.date, "HH:mm"\)[\s\S]*?font\.pixelSize:\s*30/);
     assert.match(clock, /K4RecordingPill\s*\{[\s\S]*?interactive:\s*true/);
 
     assert.match(player, /Component\.onCompleted:[\s\S]*?K4Media\.watchPosition\(\)/);

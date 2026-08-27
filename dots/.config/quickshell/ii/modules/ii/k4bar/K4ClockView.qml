@@ -8,6 +8,14 @@ Item {
 
     property var trayPlugin: null
 
+    // Publish the real width of each sequential zone back to the stable Clock
+    // plugin. These values are authoritative once the view has been laid out;
+    // the plugin keeps conservative fallbacks for the first expansion frame.
+    readonly property int measuredLeft: leftDate.implicitWidth
+    readonly property int measuredCenter: clockText.implicitWidth
+    readonly property int measuredRight: rightIndicators.implicitWidth
+    readonly property int zoneGap: 24
+
     opacity: 0
     Component.onCompleted: fadeIn.start()
 
@@ -33,6 +41,7 @@ Item {
             Layout.preferredHeight: 68
 
             Column {
+                id: leftDate
                 anchors.left: parent.left
                 anchors.verticalCenter: parent.verticalCenter
                 spacing: 0
@@ -57,7 +66,9 @@ Item {
             }
 
             Text {
-                anchors.horizontalCenter: parent.horizontalCenter
+                id: clockText
+                anchors.left: leftDate.right
+                anchors.leftMargin: root.zoneGap
                 anchors.verticalCenter: parent.verticalCenter
                 text: Qt.formatDateTime(K4Clock.date, "HH:mm")
                 color: K4Theme.ink
@@ -68,7 +79,9 @@ Item {
             }
 
             RowLayout {
-                anchors.right: parent.right
+                id: rightIndicators
+                anchors.left: clockText.right
+                anchors.leftMargin: root.zoneGap
                 anchors.verticalCenter: parent.verticalCenter
                 spacing: 6
 
@@ -77,10 +90,12 @@ Item {
                     trayPlugin: root.trayPlugin
                     max: 5
                     iconSize: 16
+                    Layout.alignment: Qt.AlignVCenter
                 }
 
                 K4RecordingPill {
                     interactive: true
+                    Layout.alignment: Qt.AlignVCenter
                 }
             }
         }
