@@ -44,7 +44,7 @@ test("collapsed pill uses asymmetric chained side widths", () => {
     assert.doesNotMatch(source, /readonly property int sideReserve:/);
     assert.match(source, /readonly property int desiredBodyWidth:\s*leftMeasured \+ 46 \+ rightMeasured \+ 44/);
     assert.match(source, /RowLayout\s*\{[\s\S]*?id:\s*leftMedia[\s\S]*?anchors\.left:\s*parent\.left/);
-    assert.match(source, /Item\s*\{[\s\S]*?id:\s*centerZone[\s\S]*?anchors\.left:\s*leftMedia\.right[\s\S]*?anchors\.leftMargin:\s*11[\s\S]*?width:\s*46/);
+    assert.match(source, /Item\s*\{[\s\S]*?id:\s*centerZone[\s\S]*?anchors\.left:\s*parent\.left[\s\S]*?anchors\.leftMargin:\s*root\.leftMeasured \+ 11[\s\S]*?width:\s*46/);
     assert.match(source, /id:\s*rightIndicators[\s\S]*?anchors\.left:\s*centerZone\.right[\s\S]*?anchors\.leftMargin:\s*11/);
 });
 
