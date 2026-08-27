@@ -11,9 +11,9 @@ Selected K4 v1.0 reference: `adcf4216038f7881c4a589baafaaaec841377ad5`
 
 **K4-V1 selected upstream sync — implementation and live validation in progress.**
 
-Current ticket: **K4-V1-03 — Player track-change peek.**
+Current ticket: **K4-V1-04 — asymmetric Idle/Clock sizing + active-monitor API.**
 
-K4-V1-01 and K4-V1-02 are live-validated. K4-V1-03 is implemented and pending source/live validation before moving to K4-V1-04.
+K4-V1-01 through K4-V1-03 are live-validated. V1-04 is split into two vertical slices: collapsed Idle + active-monitor contract first, expanded Clock second after the first slice is green.
 
 K4-11 built-in lifecycle work remains deliberately paused while the approved v1.0 sync changes Player ambient activation and Idle/Clock geometry.
 
@@ -31,6 +31,7 @@ K4-11 built-in lifecycle work remains deliberately paused while the approved v1.
 - K4-10 selected remaining bundled features — closed; lean Displays only.
 - K4-V1-01 Reserve-space + On-top space modes — closed and live-validated.
 - K4-V1-02 Hidden + Away-when-fullscreen — closed and live-validated.
+- K4-V1-03 Player track-change peek — closed and live-validated.
 
 Detailed historical review documents remain under `docs/k4-bar-port/`.
 
@@ -149,7 +150,7 @@ Hidden/Away-fullscreen behavior now:
 
 User source validation reached 127/127 at the completed Hidden tracer. Hidden runtime behavior passed, including the follow-up Volume rule: while withdrawn, a volume change reveals the HUD, repeated changes extend its existing HUD lifetime, and after the HUD ends the island returns directly to the edge unless the pointer or another plugin keeps it open.
 
-### K4-V1-03 — implementation complete, validation pending
+### K4-V1-03 — closed
 
 Player track-change peek follows the selected upstream v1.0 behavior while retaining ii-vynx ownership:
 
@@ -162,13 +163,26 @@ Player track-change peek follows the selected upstream v1.0 behavior while retai
 - `Peek Player on track change` is persisted in `Config.options.bar.k4`, defaults on, and is exposed in K4 Settings;
 - disabling the Player plugin clears any transient peek state so re-enable cannot resurrect an old track card.
 
-This slice must pass source and live-shell validation before K4-V1-04 begins.
+Live validation passed the complete matrix: initial discovery stayed quiet, genuine track changes peeked while Hidden, repeated changes restarted the lifetime, the preference disabled/re-enabled autonomous peek without breaking hover, Away-when-fullscreen worked over fullscreen clients, and disable/re-enable did not resurrect stale state. The source suite reached 129/129 and the crash/error grep returned no output.
+
+### K4-V1-04 — implementation in progress
+
+Slice 1 implements the approved collapsed Idle sizing and formalizes the existing active-monitor seam:
+
+- collapsed Idle now measures media and right-side indicators independently instead of mirroring the larger side around the clock;
+- the layout is a chained `left media -> center clock/workspaces -> right tray/recording` sequence;
+- the center zone remains a fixed 46 px while total body width is the sum of actual left/right widths plus existing padding/gaps;
+- existing workspace animation, media visualizer, tray and recording behavior remain owned by the same components;
+- `IslandState.activeScreen` is explicitly documented and regression-tested as the stable plugin-facing active-island-monitor state;
+- no duplicate monitor property, process or `hyprctl` owner is introduced.
+
+Slice 1 is pending source/live validation. Expanded Clock asymmetric sizing is intentionally held until this tracer is green.
 
 ## Remaining K4-V1 plan
 
 ### K4-V1-04
 
-Restructure Idle/Clock to asymmetric measured zones and formalize `IslandState.activeScreen` as stable plugin-facing active-monitor state.
+Finish collapsed Idle/active-monitor validation, then restructure expanded Clock to asymmetric measured zones.
 
 ### K4-V1-05
 
@@ -193,12 +207,12 @@ After K4-V1-05, resume K4-11 lifecycle migration and then finish with K4-12.
 
 ## Next action
 
-Validate **K4-V1-03**:
+Validate **K4-V1-04 slice 1**:
 
-1. run the focused Player/config source contracts, then the full `tests/k4-*.test.js` suite;
+1. run the focused Idle + active-screen source contracts, then the full `tests/k4-*.test.js` suite;
 2. deploy to the live shell;
-3. prove initial MPRIS discovery does not peek;
-4. prove a genuine next-track change reveals Player while Hidden and withdraws after the timed peek;
-5. prove the setting disables/re-enables autonomous peek without breaking normal hover Player;
-6. verify fullscreen Away-when-fullscreen presentation and clean logs;
-7. only then start K4-V1-04.
+3. verify play/pause grows only the media/left side instead of mirroring empty space on the right;
+4. verify tray/recording growth affects only the right side;
+5. verify clock/workspace transitions remain intact and the pill stays inside the screen at configured alignments;
+6. verify Hidden reveal/withdraw remains correct;
+7. only then implement expanded Clock asymmetric sizing.
