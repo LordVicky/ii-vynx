@@ -27,13 +27,15 @@ Item {
     readonly property var visibleWorkspaces:
         workspaces.slice(workspaceStart, workspaceStart + 3)
 
-    readonly property int leftReserve: isPlaying ? 53 : 0
+    // K4 v1.0 stopped mirroring the larger side around the clock. Measure each
+    // flank independently so media grows only left and tray/recording only right.
+    readonly property int leftMeasured: leftMedia.implicitWidth > 0
+        ? Math.ceil(leftMedia.implicitWidth) : (isPlaying ? 53 : 0)
     readonly property int rightMeasured:
         (trayReserveActive ? Math.ceil(collapsedTray.implicitWidth) : 0)
         + (recording ? Math.ceil(recordingRow.implicitWidth) : 0)
         + (trayReserveActive && recording ? rightIndicators.spacing : 0)
-    readonly property int sideReserve: Math.max(leftReserve, rightMeasured)
-    readonly property int desiredBodyWidth: 46 + 2 * sideReserve + 44
+    readonly property int desiredBodyWidth: leftMeasured + 46 + rightMeasured + 44
 
     function adjustWorkspaceWindow() {
         const list = workspaces
@@ -103,6 +105,7 @@ Item {
         anchors.rightMargin: 11
 
         RowLayout {
+            id: leftMedia
             anchors.left: parent.left
             anchors.verticalCenter: parent.verticalCenter
             spacing: 8
@@ -173,7 +176,9 @@ Item {
         }
 
         Item {
-            anchors.horizontalCenter: parent.horizontalCenter
+            id: centerZone
+            anchors.left: leftMedia.right
+            anchors.leftMargin: 11
             anchors.verticalCenter: parent.verticalCenter
             width: 46
             height: parent.height
@@ -229,7 +234,8 @@ Item {
 
         RowLayout {
             id: rightIndicators
-            anchors.right: parent.right
+            anchors.left: centerZone.right
+            anchors.leftMargin: 11
             anchors.verticalCenter: parent.verticalCenter
             spacing: 8
 
