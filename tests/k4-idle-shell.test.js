@@ -35,15 +35,17 @@ test("island shell uses inverse wings, bottom reflection and stable surface sizi
     assert.match(source, /mask:\s*Region\s*\{[\s\S]*?item:\s*IslandState\.suppressed \? null : island/);
 });
 
-test("collapsed pill keeps clock centered with symmetric side reservation", () => {
+test("collapsed pill uses asymmetric chained side widths", () => {
     const source = readShell("modules/ii/k4bar/K4IdlePill.qml");
 
-    assert.match(source, /readonly property int leftReserve:\s*isPlaying \? 53 : 0/);
     assert.match(source, /readonly property bool trayReserveActive:\s*K4Settings\.trayInPill[\s\S]*?K4TrayHost\.plugin !== null && K4Tray\.count > 0/);
+    assert.match(source, /readonly property int leftMeasured:[\s\S]*?leftMedia\.implicitWidth > 0[\s\S]*?Math\.ceil\(leftMedia\.implicitWidth\)[\s\S]*?isPlaying \? 53 : 0/);
     assert.match(source, /readonly property int rightMeasured:[\s\S]*?trayReserveActive \? Math\.ceil\(collapsedTray\.implicitWidth\) : 0[\s\S]*?recording \? Math\.ceil\(recordingRow\.implicitWidth\) : 0[\s\S]*?trayReserveActive && recording \? rightIndicators\.spacing : 0/);
-    assert.match(source, /readonly property int sideReserve:\s*Math\.max\(leftReserve, rightMeasured\)/);
-    assert.match(source, /readonly property int desiredBodyWidth:\s*46 \+ 2 \* sideReserve \+ 44/);
-    assert.match(source, /anchors\.horizontalCenter:\s*parent\.horizontalCenter[\s\S]*?width:\s*46/);
+    assert.doesNotMatch(source, /readonly property int sideReserve:/);
+    assert.match(source, /readonly property int desiredBodyWidth:\s*leftMeasured \+ 46 \+ rightMeasured \+ 44/);
+    assert.match(source, /RowLayout\s*\{[\s\S]*?id:\s*leftMedia[\s\S]*?anchors\.left:\s*parent\.left/);
+    assert.match(source, /Item\s*\{[\s\S]*?id:\s*centerZone[\s\S]*?anchors\.left:\s*leftMedia\.right[\s\S]*?anchors\.leftMargin:\s*11[\s\S]*?width:\s*46/);
+    assert.match(source, /id:\s*rightIndicators[\s\S]*?anchors\.left:\s*centerZone\.right[\s\S]*?anchors\.leftMargin:\s*11/);
 });
 
 test("idle media lifecycle and workspace behavior follows k4 defaults", () => {
