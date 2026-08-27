@@ -35,5 +35,8 @@ test("bottom hover continuity uses a stable collapsed footprint instead of a lon
         controller,
         /function hoverExited\(\)[\s\S]*?hoverClearTimer\.restart\(\)[\s\S]*?armPluginHoverExit\(\)/
     );
-    assert.match(controller, /id:\s*hoverClearTimer[\s\S]*?interval:\s*240/);
+    assert.match(
+        controller,
+        /property var hoverClearTimer:\s*Timer\s*\{[\s\S]*?interval:\s*240/
+    );
 });
