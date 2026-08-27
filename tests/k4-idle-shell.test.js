@@ -88,7 +88,7 @@ test("explicit island owners consume passive hover without an activePlugin bindi
 
     assert.match(builtins, /property bool passiveHoverAllowed:\s*false/);
     assert.match(builtins, /name:\s*"clock"[\s\S]*?active:\s*enabled && IslandState\.hovered && root\.passiveHoverAllowed/);
-    assert.match(builtins, /name:\s*"player"[\s\S]*?active:\s*enabled && IslandState\.hovered && root\.passiveHoverAllowed/);
+    assert.match(builtins, /name:\s*"player"[\s\S]*?active:\s*enabled && \([\s\S]*?IslandState\.hovered && root\.passiveHoverAllowed[\s\S]*?\|\| trackPeekOpen/);
 });
 
 test("recording indicator stays inline with the idle pill", () => {
