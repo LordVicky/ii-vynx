@@ -189,6 +189,7 @@ Scope {
                 ? K4Theme.baseHeight : pluginVisible.islandHeight
             readonly property bool pointerOver:
                 islandHover.hovered || edgeHover.hovered
+                || (bottom && !hideMode && bottomBridgeHover.hovered)
             readonly property bool shouldShow:
                 pointerOver || (!!pluginVisible && pluginVisible.name !== "idle")
             property bool withdrawn: false
@@ -210,8 +211,14 @@ Scope {
             }
 
             onPointerOverChanged: {
-                if (!hideMode)
+                if (!hideMode) {
+                    if (pointerOver)
+                        controller.hoverEntered(panelWindow.screen.name)
+                    else
+                        controller.hoverExited()
                     return
+                }
+
                 if (pointerOver) {
                     withdrawTimer.stop()
                     controller.holdHoverExit()
@@ -283,6 +290,13 @@ Scope {
                         ? null : revealEdge
                     intersection: Intersection.Combine
                 }
+
+                Region {
+                    item: (IslandState.suppressed || !panelWindow.bottom
+                            || panelWindow.hideMode)
+                        ? null : bottomHoverBridge
+                    intersection: Intersection.Combine
+                }
             }
 
             onTargetHeightChanged: {
@@ -341,6 +355,24 @@ Scope {
                 opacity: 0
 
                 HoverHandler { id: edgeHover }
+            }
+
+            // Growing a bottom-anchored layer surface moves its window origin.
+            // Qt may then drop the island hover even though a stationary pointer
+            // is still inside the original collapsed pill. Keep a second hover
+            // target on that stable screen-space footprint so the same pointer
+            // session survives the configure/ack and island height animation.
+            Item {
+                id: bottomHoverBridge
+                visible: panelWindow.bottom && !panelWindow.hideMode
+                width: Math.min(parent.width,
+                    idleContent.desiredBodyWidth + K4Theme.wing * 2)
+                height: K4Theme.baseHeight
+                x: (parent.width - width) * IslandState.placement
+                anchors.bottom: parent.bottom
+                opacity: 0
+
+                HoverHandler { id: bottomBridgeHover }
             }
 
             Item {
@@ -508,20 +540,7 @@ Scope {
                     }
                 }
 
-                HoverHandler {
-                    id: islandHover
-                    onHoveredChanged: {
-                        if (panelWindow.hideMode) {
-                            if (!hovered && !edgeHover.hovered)
-                                controller.hoverExited()
-                            return
-                        }
-                        if (hovered)
-                            controller.hoverEntered(panelWindow.screen.name)
-                        else
-                            controller.hoverExited()
-                    }
-                }
+                HoverHandler { id: islandHover }
 
                 Shape {
                     id: silhouette
