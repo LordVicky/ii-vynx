@@ -29,8 +29,9 @@ Item {
 
     // K4 v1.0 stopped mirroring the larger side around the clock. Measure each
     // flank independently so media grows only left and tray/recording only right.
-    readonly property int leftMeasured: leftMedia.implicitWidth > 0
-        ? Math.ceil(leftMedia.implicitWidth) : (isPlaying ? 53 : 0)
+    readonly property int leftMeasured: isPlaying
+        ? (leftMedia.implicitWidth > 0 ? Math.ceil(leftMedia.implicitWidth) : 53)
+        : 0
     readonly property int rightMeasured:
         (trayReserveActive ? Math.ceil(collapsedTray.implicitWidth) : 0)
         + (recording ? Math.ceil(recordingRow.implicitWidth) : 0)
