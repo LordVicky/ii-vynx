@@ -247,25 +247,14 @@ QtObject {
         if (!activePlugin || activePlugin.name === "idle")
             IslandState.requestScreen(screenName)
 
-        // A geometry-driven re-entry during the current exit grace is still the
+        // A geometry-driven re-entry during the 240 ms exit grace is still the
         // same pointer session. Only a real completed exit rearms Clock/Player.
         if (newHoverSession)
             passiveHoverAllowed = isAmbientPlugin(activePlugin)
         IslandState.hovered = true
     }
 
-    // Bottom layer-surface growth can briefly move the Wayland surface origin
-    // while a passive Player/Clock view expands. Preserve the same pointer
-    // session through the full geometry animation so a synthetic leave/re-entry
-    // cannot reset Player and then reopen Clock underneath it. Top placement and
-    // non-passive owners retain the established 240 ms exit grace.
-    function hoverExitGraceMs() {
-        return K4Settings.position === "bottom" && isPassiveHoverPlugin(activePlugin)
-            ? 520 : 240
-    }
-
     function hoverExited() {
-        hoverClearTimer.interval = hoverExitGraceMs()
         hoverClearTimer.restart()
         armPluginHoverExit()
     }
