@@ -9,7 +9,7 @@ const idlePath = path.join(
     "dots/.config/quickshell/ii/modules/ii/k4bar/K4IdlePill.qml"
 );
 
-test("paused media contributes zero width to the collapsed pill", () => {
+test("paused media contributes zero width and recenters the collapsed clock", () => {
     const source = fs.readFileSync(idlePath, "utf8");
 
     assert.match(
@@ -19,5 +19,13 @@ test("paused media contributes zero width to the collapsed pill", () => {
     assert.doesNotMatch(
         source,
         /readonly property int leftMeasured:\s*leftMedia\.implicitWidth > 0[\s\S]*?isPlaying \? 53 : 0/
+    );
+    assert.match(
+        source,
+        /id:\s*centerZone[\s\S]*?anchors\.left:\s*parent\.left[\s\S]*?anchors\.leftMargin:\s*root\.leftMeasured \+ 11/
+    );
+    assert.doesNotMatch(
+        source,
+        /id:\s*centerZone[\s\S]*?anchors\.left:\s*leftMedia\.right/
     );
 });
