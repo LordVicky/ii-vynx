@@ -294,19 +294,11 @@ Scope {
 
                 if (targetHeight > surfaceHeight)
                     surfaceHeight = targetHeight
-                else if (showingIdle && !bottom)
+                else if (showingIdle)
                     surfaceShrinkTimer.restart()
             }
 
-            onBottomChanged: {
-                // Shrinking a bottom-anchored Wayland layer surface moves the
-                // window origin and produces a one-frame black island ghost on
-                // the target compositor. Keep the already allocated transparent
-                // capacity while bottom-aligned; reclaim it when returning top.
-                if (!bottom && showingIdle)
-                    surfaceHeight = targetHeight
-                island.publishRect()
-            }
+            onBottomChanged: island.publishRect()
 
             Timer {
                 id: withdrawTimer
@@ -328,10 +320,10 @@ Scope {
                 id: surfaceShrinkTimer
                 interval: 520
                 onTriggered: {
-                    // Top placement can safely reclaim transparent capacity.
-                    // Bottom retains its high-water surface to avoid a resize
-                    // ghost; the input mask still exposes only the live island.
-                    if (panelWindow.showingIdle && !panelWindow.bottom)
+                    // Explicit views may reuse a larger surface left by the
+                    // previous owner. Only reclaim that capacity once the
+                    // island is still idle at timer expiry.
+                    if (panelWindow.showingIdle)
                         panelWindow.surfaceHeight = panelWindow.targetHeight
                 }
             }
