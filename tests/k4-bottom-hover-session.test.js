@@ -26,7 +26,7 @@ test("bottom hover continuity uses a stable collapsed footprint instead of a lon
     );
     assert.match(
         bar,
-        /Region\s*\{[\s\S]*?item:\s*\(IslandState\.suppressed \|\| !panelWindow\.bottom \|\| panelWindow\.hideMode\)[\s\S]*?\? null : bottomHoverBridge[\s\S]*?Intersection\.Combine/
+        /Region\s*\{[\s\S]*?item:\s*\(IslandState\.suppressed\s*\|\|\s*!panelWindow\.bottom\s*\|\|\s*panelWindow\.hideMode\)[\s\S]*?\?\s*null\s*:\s*bottomHoverBridge[\s\S]*?Intersection\.Combine/
     );
 
     assert.doesNotMatch(controller, /function hoverExitGraceMs\(/);
