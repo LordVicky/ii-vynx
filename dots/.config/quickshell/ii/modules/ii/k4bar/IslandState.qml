@@ -18,7 +18,8 @@ Singleton {
     property bool open: false
 
     // The collapsed pill exists on every screen. An expanded global action
-    // belongs to exactly one screen.
+    // belongs to exactly one screen. activeScreen is the stable plugin-facing
+    // monitor API: plugins may read it, while host arbitration remains its owner.
     property string activeScreen: ""
     property string requestedScreen: ""
 
