@@ -39,7 +39,7 @@ test("collapsed pill uses asymmetric chained side widths", () => {
     const source = readShell("modules/ii/k4bar/K4IdlePill.qml");
 
     assert.match(source, /readonly property bool trayReserveActive:\s*K4Settings\.trayInPill[\s\S]*?K4TrayHost\.plugin !== null && K4Tray\.count > 0/);
-    assert.match(source, /readonly property int leftMeasured:[\s\S]*?leftMedia\.implicitWidth > 0[\s\S]*?Math\.ceil\(leftMedia\.implicitWidth\)[\s\S]*?isPlaying \? 53 : 0/);
+    assert.match(source, /readonly property int leftMeasured:\s*isPlaying[\s\S]*?leftMedia\.implicitWidth > 0[\s\S]*?Math\.ceil\(leftMedia\.implicitWidth\)[\s\S]*?: 53[\s\S]*?: 0/);
     assert.match(source, /readonly property int rightMeasured:[\s\S]*?trayReserveActive \? Math\.ceil\(collapsedTray\.implicitWidth\) : 0[\s\S]*?recording \? Math\.ceil\(recordingRow\.implicitWidth\) : 0[\s\S]*?trayReserveActive && recording \? rightIndicators\.spacing : 0/);
     assert.doesNotMatch(source, /readonly property int sideReserve:/);
     assert.match(source, /readonly property int desiredBodyWidth:\s*leftMeasured \+ 46 \+ rightMeasured \+ 44/);
