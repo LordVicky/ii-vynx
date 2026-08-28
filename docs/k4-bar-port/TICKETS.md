@@ -4,7 +4,7 @@ Source spec: `docs/k4-bar-port/SPEC.md`
 Selected v1 sync design: `docs/k4-bar-port/K4-V1-SYNC-DESIGN.md`
 Working branch: `agent/k4-bar-port`
 
-Each ticket must deliver an end-to-end behavior that can be source-checked, live-validated and reviewed independently. Preserve one-owner service boundaries and the stable-proxy/Loader lifecycle invariant.
+Each ticket must deliver an end-to-end behavior that can be source-checked, live-validated and reviewed independently. Preserve one-owner service boundaries and direct declarative ownership of built-in K4 plugins.
 
 ## Historical milestones
 
@@ -38,7 +38,7 @@ Launcher/Apps, Clipboard, Files, Windows, System, Session, Shortcuts, Weather an
 
 ### K4-08 — In-island Settings — CLOSED
 
-K4 Settings using `Config.options.bar.k4`, plugin status/enablement and only live-backed options.
+K4 Settings using `Config.options.bar.k4` and only live-backed options.
 
 ### K4-09 — Thin capture/record utility — CLOSED
 
@@ -145,30 +145,15 @@ Checks:
 - no rejected Dual/HyprTheme/Tienda/window-thumbnail/API-expansion code;
 - no new desktop service owner/dependency.
 
-## K4-11 — Built-in plugin lifecycle/extensibility
+## K4-11 — Built-in plugin lifecycle/extensibility — WITHDRAWN
 
-**Status:** in progress, temporarily paused for K4-V1 selected sync.
+The managed built-in lifecycle experiment was reverted. It is not part of the selected K4 port.
 
-Accepted architecture:
+Current architecture keeps ordinary built-ins directly/declaratively owned by `K4BuiltinPlugins.qml`. The port does not provide persisted per-plugin disabling, Loader-backed `K4ManagedPlugin` proxies, lifecycle Error/Retry UI, fault-injection IPC or lifecycle probe infrastructure.
 
-```text
-stable K4ManagedPlugin proxy -> declarative Loader -> implementation
-```
+The earlier manual `Qt.createComponent()` / `createObject()` / `.destroy()` approach also remains rejected because it caused native Qt/QML lifetime failures. Withdrawal means **static declarative ownership**, not a return to manual QObject lifetime.
 
-Already live-validated:
-
-- Loader probe stress;
-- Displays disable/re-enable/persisted boot/stress/shutdown;
-- Displays load-failure isolation and Retry;
-- Keys/Shortcuts managed lifecycle and failure/recovery.
-
-Committed but not yet live-validated:
-
-- low-coupling System/Windows/Session proxy batch.
-
-Resume after K4-V1-05. Continue migrating built-ins in small risk-ordered slices. Keep Volume, Clock, Player, Toast and other ambient/cross-plugin owners static until ordinary utilities demonstrate the seam sufficiently.
-
-K4-11 explicitly excludes external/user plugin directories, plugin store/registry, manifests/permissions, publishing/install/update/remove tooling and upstream manual QObject lifetime.
+Historical rationale and evidence are retained in `K4-11-DESIGN.md` as a withdrawn decision record.
 
 ## K4-12 — Final selected-scope, performance, Standards + Spec review
 
@@ -192,6 +177,6 @@ Historical K4-01 -> ... -> K4-10 are closed.
 
 Current path:
 
-`K4-11 accepted lifecycle foundation -> K4-V1-01 -> K4-V1-02 -> K4-V1-03 -> K4-V1-04 -> K4-V1-05 -> resume K4-11 -> K4-12`
+`K4-V1-01 -> K4-V1-02 -> K4-V1-03 -> K4-V1-04 -> K4-V1-05 -> K4-12`
 
-The K4-V1 tickets may reuse the already accepted lifecycle foundation, but they must not depend on unfinished low-coupling proxy migrations.
+K4-11 is withdrawn and is no longer a dependency or completion gate.
