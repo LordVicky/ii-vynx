@@ -10,8 +10,8 @@ const readShell = relative => fs.readFileSync(path.join(shellRoot, relative), "u
 test("standard Overview and K4 launcher routing are mutually exclusive at the family boundary", () => {
     const source = readShell("panelFamilies/IllogicalImpulseFamily.qml");
 
-    assert.match(source, /PanelLoader \{ extraCondition: usingK4Bar; component: K4Bar \{\} \}/);
-    assert.match(source, /PanelLoader \{ extraCondition: usingK4Bar; component: K4LauncherRouting \{\} \}/);
+    assert.match(source, /PanelLoader \{ extraCondition: barEnabled && usingK4Bar; component: K4Bar \{\} \}/);
+    assert.match(source, /PanelLoader \{ extraCondition: barEnabled && usingK4Bar; component: K4LauncherRouting \{\} \}/);
     assert.match(source, /PanelLoader \{ extraCondition: usingStandardBar; component: Overview \{\} \}/);
     assert.doesNotMatch(source, /PanelLoader \{ component: Overview \{\} \}/);
 });
