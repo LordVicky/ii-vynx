@@ -16,7 +16,6 @@ QtObject {
     // requests the island. The host still decides whether it wins.
     property bool enabled: true
     property bool active: false
-    property string loadError: "" // Generic view-loader diagnostic.
     property int priority: 50
     property bool transitorio: false
 
