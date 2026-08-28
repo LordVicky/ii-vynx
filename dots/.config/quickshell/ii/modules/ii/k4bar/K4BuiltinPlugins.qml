@@ -258,7 +258,13 @@ QtObject {
         applicationGlyph: String.fromCodePoint(0xF030C)
         source: Qt.resolvedUrl("K4KeysPlugin.qml")
     }
-    property QtObject weatherPlugin: K4WeatherPlugin {}
+    property QtObject weatherPlugin: K4ManagedPlugin {
+        name: "weather"
+        title: "Weather"
+        application: true
+        applicationGlyph: String.fromCodePoint(0xF0595)
+        source: Qt.resolvedUrl("K4WeatherPlugin.qml")
+    }
     property QtObject capturePlugin: K4CapturePlugin {}
     property QtObject displaysPlugin: K4ManagedPlugin {
         name: "displays"
