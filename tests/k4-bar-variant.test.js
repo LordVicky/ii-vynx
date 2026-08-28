@@ -6,19 +6,21 @@ const test = require("node:test");
 const root = path.join(__dirname, "../dots/.config/quickshell/ii");
 const read = relative => fs.readFileSync(path.join(root, relative), "utf8");
 
-test("standard is the default bar variant and k4 settings are independent", () => {
+test("bar enablement defaults on while Standard remains the default variant", () => {
     const config = read("modules/common/Config.qml");
 
-    assert.match(config, /property JsonObject bar:\s*JsonObject\s*\{[\s\S]*?property string variant:\s*"standard"/);
+    assert.match(config, /property JsonObject bar:\s*JsonObject\s*\{[\s\S]*?property bool enable:\s*true[\s\S]*?property string variant:\s*"standard"/);
     assert.match(config, /property JsonObject k4:\s*JsonObject\s*\{[\s\S]*?property string position:\s*"top"[\s\S]*?property int alignment:\s*50/);
 });
 
-test("ii family gives bar ownership to exactly the selected variant", () => {
+test("ii family gives bar ownership to exactly the selected enabled variant", () => {
     const family = read("panelFamilies/IllogicalImpulseFamily.qml");
 
+    assert.match(family, /readonly property bool barEnabled:\s*Config\.options\.bar\.enable/);
     assert.match(family, /readonly property bool usingStandardBar:\s*Config\.options\.bar\.variant === "standard"/);
     assert.match(family, /readonly property bool usingK4Bar:\s*Config\.options\.bar\.variant === "k4"/);
-    assert.match(family, /PanelLoader \{ extraCondition: usingK4Bar; component: K4Bar \{\} \}/);
+    assert.match(family, /PanelLoader \{ extraCondition: barEnabled && usingK4Bar; component: K4Bar \{\} \}/);
+    assert.match(family, /PanelLoader \{ extraCondition: barEnabled && usingK4Bar; component: K4LauncherRouting \{\} \}/);
 
     for (const component of [
         "BarHugGlassLayer",
@@ -28,9 +30,14 @@ test("ii family gives bar ownership to exactly the selected variant", () => {
         "VerticalBarGlassLayer",
         "VerticalBar",
     ]) {
-        const expression = new RegExp(`PanelLoader \\{ extraCondition: usingStandardBar[^\\n]*component: ${component} \\{\\} \\}`);
-        assert.match(family, expression, `${component} must stay Standard-only`);
+        const expression = new RegExp(`PanelLoader \\{ extraCondition: barEnabled && usingStandardBar[^\\n]*component: ${component} \\{\\} \\}`);
+        assert.match(family, expression, `${component} must stay enabled-and-Standard-only`);
     }
+});
+
+test("waffle bar follows the same shell-wide bar enablement", () => {
+    const family = read("panelFamilies/WaffleFamily.qml");
+    assert.match(family, /PanelLoader \{ extraCondition: Config\.options\.bar\.enable; component: WaffleBar \{\} \}/);
 });
 
 test("k4 host follows upstream all-screen top-bottom ownership seam", () => {
@@ -47,10 +54,11 @@ test("k4 host follows upstream all-screen top-bottom ownership seam", () => {
     assert.match(source, /WlrLayershell\.namespace:\s*"quickshell:k4bar"/);
 });
 
-test("bar settings switch mode and hide Standard-only sections", () => {
+test("bar settings expose shell-wide enablement and variant selection", () => {
     const settings = read("modules/settings/BarConfig.qml");
 
     assert.match(settings, /readonly property bool standardBar:\s*Config\.options\.bar\.variant === "standard"/);
+    assert.match(settings, /ConfigSwitch\s*\{[\s\S]*?text:\s*Translation\.tr\("Enable bar"\)[\s\S]*?checked:\s*Config\.options\.bar\.enable[\s\S]*?Config\.options\.bar\.enable = checked/);
     assert.match(settings, /title:\s*Translation\.tr\("Bar variant"\)/);
     assert.match(settings, /displayName:\s*Translation\.tr\("k4 Dynamic Island"\)[\s\S]*?value:\s*"k4"/);
     assert.match(settings, /visible:\s*!page\.standardBar[\s\S]*?Config\.options\.bar\.k4\.position[\s\S]*?Config\.options\.bar\.k4\.alignment/);
