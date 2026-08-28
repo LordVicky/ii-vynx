@@ -45,8 +45,7 @@ test("file-search results always expose the containing directory", () => {
     assert.doesNotMatch(source, /"directory":\s*path if is_dir/);
 });
 
-test("files is registered as a built-in K4 utility", () => {
+test("files uses the managed lifecycle proxy while preserving utility behavior", () => {
     const source = read("K4BuiltinPlugins.qml");
-    assert.match(source, /filesPlugin/);
-    assert.match(source, /K4FilesPlugin\s*\{/);
+    assert.match(source, /property QtObject filesPlugin:\s*K4ManagedPlugin\s*\{[\s\S]*?name:\s*"files"[\s\S]*?source:\s*Qt\.resolvedUrl\("K4FilesPlugin\.qml"\)/);
 });
