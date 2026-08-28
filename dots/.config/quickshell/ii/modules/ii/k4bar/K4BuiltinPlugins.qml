@@ -229,7 +229,13 @@ QtObject {
     property QtObject settingsPlugin: K4SettingsPlugin {}
     property QtObject launcherPlugin: K4LauncherPlugin {}
     property QtObject clipboardPlugin: K4ClipboardPlugin {}
-    property QtObject filesPlugin: K4FilesPlugin {}
+    property QtObject filesPlugin: K4ManagedPlugin {
+        name: "files"
+        title: "Files"
+        application: true
+        applicationGlyph: String.fromCodePoint(0xF024B)
+        source: Qt.resolvedUrl("K4FilesPlugin.qml")
+    }
     property QtObject windowsPlugin: K4ManagedPlugin {
         name: "windows"
         title: "Windows"
