@@ -60,6 +60,28 @@ test("base plugin contract separates enabled state from active island requests",
     assert.match(source, /Component\.onDestruction:\s*releasePlacement\(\)/);
 });
 
+test("built-in plugins use direct declarative ownership without the withdrawn managed lifecycle", () => {
+    const plugin = readShell("modules/ii/k4bar/K4Plugin.qml");
+    const builtins = readShell("modules/ii/k4bar/K4BuiltinPlugins.qml");
+    const settings = readShell("modules/ii/k4bar/K4Settings.qml");
+    const controller = readShell("modules/ii/k4bar/K4PluginController.qml");
+    const config = readShell("modules/common/Config.qml");
+    const k4Root = path.join(shellRoot, "modules/ii/k4bar");
+
+    for (const type of ["Files", "Windows", "System", "Session", "Keys", "Weather", "Displays"])
+        assert.match(builtins, new RegExp(`property QtObject ${type.toLowerCase()}Plugin:\\s*K4${type}Plugin\\s*\\{\\}`));
+
+    assert.equal(fs.existsSync(path.join(k4Root, "K4ManagedPlugin.qml")), false);
+    assert.equal(fs.existsSync(path.join(k4Root, "K4PluginLifecycleProbe.qml")), false);
+    assert.equal(fs.existsSync(path.join(k4Root, "K4PluginLifecycleProbeHost.qml")), false);
+
+    assert.doesNotMatch(plugin, /\b(configurable|closeOnDisable|loadError|instantiated)\b/);
+    assert.doesNotMatch(config, /\bdisabledPlugins\b/);
+    assert.doesNotMatch(settings, /\b(disabledPlugins|pluginEnabled|setPluginEnabled)\b/);
+    assert.doesNotMatch(controller, /\b(applyPersistedEnablement|setPluginEnabled|disabledPlugins)\b/);
+    assert.doesNotMatch(builtins, /K4ManagedPlugin|pluginLifecycleDebug|managedPlugin\s*\(/);
+});
+
 test("plugin controller owns priority arbitration, transient preemption and monitor routing", () => {
     const source = readShell("modules/ii/k4bar/K4PluginController.qml");
 
