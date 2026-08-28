@@ -504,7 +504,6 @@ Singleton {
                     property bool notificationsOnHover: true
                     property bool dismissNotificationsOnFocus: true
                     property bool playerPeekOnTrackChange: true
-                    property list<string> disabledPlugins: []
                 }
 
                 property JsonObject activeWindow: JsonObject {
