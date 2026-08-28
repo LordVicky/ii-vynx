@@ -28,6 +28,7 @@ import qs.modules.ii.wrappedFrame
 
 Scope {
     property bool barExtraCondition: true
+    readonly property bool barEnabled: Config.options.bar.enable
     readonly property bool usingStandardBar: Config.options.bar.variant === "standard"
     readonly property bool usingK4Bar: Config.options.bar.variant === "k4"
     readonly property bool usingWrappedFrame: Config.options.appearance.fakeScreenRounding === 3
@@ -58,12 +59,12 @@ Scope {
         Qt.callLater(() => barExtraCondition = true)
     }
 
-    PanelLoader { extraCondition: usingStandardBar && !Config.options.bar.vertical && barExtraCondition && dedicatedHugGlass; component: BarHugGlassLayer {} }
-    PanelLoader { extraCondition: usingStandardBar && !Config.options.bar.vertical && barExtraCondition && dedicatedBarGlass; component: BarGlassLayer {} }
-    PanelLoader { extraCondition: usingStandardBar && !Config.options.bar.vertical && barExtraCondition && dedicatedPlainGlass; component: BarPlainGlassLayer {} }
-    PanelLoader { extraCondition: usingStandardBar && !Config.options.bar.vertical && barExtraCondition; component: Bar {} }
-    PanelLoader { extraCondition: usingK4Bar; component: K4Bar {} }
-    PanelLoader { extraCondition: usingK4Bar; component: K4LauncherRouting {} }
+    PanelLoader { extraCondition: barEnabled && usingStandardBar && !Config.options.bar.vertical && barExtraCondition && dedicatedHugGlass; component: BarHugGlassLayer {} }
+    PanelLoader { extraCondition: barEnabled && usingStandardBar && !Config.options.bar.vertical && barExtraCondition && dedicatedBarGlass; component: BarGlassLayer {} }
+    PanelLoader { extraCondition: barEnabled && usingStandardBar && !Config.options.bar.vertical && barExtraCondition && dedicatedPlainGlass; component: BarPlainGlassLayer {} }
+    PanelLoader { extraCondition: barEnabled && usingStandardBar && !Config.options.bar.vertical && barExtraCondition; component: Bar {} }
+    PanelLoader { extraCondition: barEnabled && usingK4Bar; component: K4Bar {} }
+    PanelLoader { extraCondition: barEnabled && usingK4Bar; component: K4LauncherRouting {} }
     PanelLoader { extraCondition: Config.options.background.enable; component: Background {} }
     PanelLoader { component: Cheatsheet {} }
     PanelLoader { extraCondition: Config.options.dock.enable; component: Dock {} }
@@ -81,8 +82,8 @@ Scope {
     PanelLoader { component: SessionScreen {} }
     PanelLoader { component: SidebarPolicies {} }
     PanelLoader { component: SidebarDashboard {} }
-    PanelLoader { extraCondition: usingStandardBar && Config.options.bar.vertical && barExtraCondition && dedicatedVerticalGlass; component: VerticalBarGlassLayer {} }
-    PanelLoader { extraCondition: usingStandardBar && Config.options.bar.vertical && barExtraCondition; component: VerticalBar {} }
+    PanelLoader { extraCondition: barEnabled && usingStandardBar && Config.options.bar.vertical && barExtraCondition && dedicatedVerticalGlass; component: VerticalBarGlassLayer {} }
+    PanelLoader { extraCondition: barEnabled && usingStandardBar && Config.options.bar.vertical && barExtraCondition; component: VerticalBar {} }
     PanelLoader { component: WallpaperSelector {} }
     PanelLoader { component: WrappedFrame {} }
 }

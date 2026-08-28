@@ -493,6 +493,7 @@ Singleton {
             }
 
             property JsonObject bar: JsonObject {
+                property bool enable: true
                 property string variant: "standard" // "standard" | "k4"
 
                 property JsonObject k4: JsonObject {

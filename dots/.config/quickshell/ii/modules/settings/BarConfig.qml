@@ -33,6 +33,15 @@ ContentPage {
         icon: "view_cozy"
         title: Translation.tr("Bar variant")
 
+        ConfigSwitch {
+            buttonIcon: "toolbar"
+            text: Translation.tr("Enable bar")
+            checked: Config.options.bar.enable
+            onCheckedChanged: {
+                Config.options.bar.enable = checked
+            }
+        }
+
         ConfigSelectionArray {
             currentValue: Config.options.bar.variant
             onSelected: newValue => Config.options.bar.variant = newValue
