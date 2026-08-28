@@ -36,7 +36,7 @@ The selected K4 scope includes:
 - in-island K4 Settings;
 - thin capture/record presentation over existing ii-vynx capture owners;
 - lean monitor arrangement through existing Hyprland state and a narrow apply adapter;
-- built-in plugin enablement, load isolation and Loader-owned lifecycle;
+- direct declarative built-in plugin registration and priority arbitration;
 - selected K4 v1.0 bar-space behavior, Player track-change peek, compact Idle/Clock sizing and active-monitor API.
 
 ### Explicit exclusions
@@ -50,6 +50,7 @@ The following are product decisions, not deferred parity debt:
 - K4's non-linear video editor, transcription and editor toolchain;
 - Dual mode / transforming bottom dock;
 - external/user plugin directories, plugin store/registry, publishing workflow, install/update/remove tooling and permission-manifest ecosystem;
+- persisted per-plugin enable/disable UI and managed Loader lifecycle infrastructure;
 - K4 standalone self-updater/version checker;
 - live window-thumbnail API;
 - generalized K4 auxiliary-window API expansion not required by an approved feature;
@@ -87,7 +88,6 @@ property bool playerPeekOnTrackChange: true
 property bool trayInPill: false
 property bool notificationsOnHover: true
 property bool dismissNotificationsOnFocus: true
-property list<string> disabledPlugins: []
 ```
 
 Add settings only with the behavior that consumes them.
@@ -126,28 +126,25 @@ Individual plugins must not independently manipulate compositor reservation or r
 
 `IslandState.activeScreen` is the stable active-monitor API corresponding to approved v1.0 U17 behavior.
 
-### 5. Plugin arbitration and lifecycle
+### 5. Plugin arbitration and ownership
 
 K4 keeps a plugin interface for activation, priority, dimensions, view, focus, hover/background policy, transient behavior and open/close actions.
 
-Built-in lifecycle uses the target-runtime-validated architecture:
+Built-ins are ordinary declaratively owned QML objects registered by `K4BuiltinPlugins.qml`:
 
 ```text
-stable K4ManagedPlugin registry proxy
-        -> declarative Loader
-        -> ephemeral built-in implementation
+K4BuiltinPlugins -> K4FooPlugin {}
 ```
 
 Required invariants:
 
-- Settings, Apps, the host and arbitration retain stable proxy objects;
-- disabled managed plugins are not instantiated;
-- Loader owns implementation creation/release;
-- a component failure stays behind the stable proxy and exposes Error/Retry state;
-- retry can recreate a corrected implementation without changing registry membership;
-- no K4 plugin-lifetime path uses `Qt.createComponent()`, `createObject()` or manual `.destroy()`.
+- the controller arbitrates the stable directly owned built-in objects;
+- `enabled` remains an internal arbitration field, not a persisted per-plugin user setting;
+- the port does not add a dynamic Loader/proxy lifecycle for built-ins;
+- no K4 plugin-lifetime path uses `Qt.createComponent()`, `createObject()` or manual `.destroy()`;
+- no external plugin ecosystem is introduced implicitly through internal plugin infrastructure.
 
-Upstream v1.0 lifecycle ideas may inform semantics, but its manual QObject ownership implementation is explicitly rejected because it crashed the target Qt/Quickshell runtime.
+The previously explored managed Loader lifecycle was withdrawn after proving the mechanism because it was not required for the requested port and added maintenance cost without meaningful user-facing benefit. The earlier manual QObject ownership experiment remains rejected because it crashed the target Qt/Quickshell runtime.
 
 ### 6. One owner per desktop facility
 
@@ -283,7 +280,7 @@ The selected K4 port is complete when:
 10. `IslandState.activeScreen` correctly identifies the expanded host monitor.
 11. Capture remains a thin adapter; no editor/transcription stack is introduced.
 12. Displays remains monitor-only and does not duplicate dynamic workspace routing.
-13. Managed built-ins use stable proxies + declarative Loader lifetime; one failed plugin cannot remove the bar.
+13. Built-ins remain directly/declaratively owned; no manual or managed dynamic plugin lifetime system is required for completion.
 14. No rejected v1.0 feature appears implicitly through infrastructure work.
 15. No duplicate desktop service owner or unapproved external dependency is introduced.
 16. K4-derived code remains attributed under repository convention.
@@ -303,9 +300,9 @@ At minimum cover:
 - Player initial discovery vs real track change, including split MPRIS metadata;
 - Idle/Clock with media, tray, recording and notification history combinations;
 - active/requested screen routing;
-- managed plugin disable/re-enable, failure, Retry and clean shutdown;
+- representative utility open/close behavior after direct plugin ownership restoration;
 - Displays Refresh/Apply and absence of workspace-routing UI.
 
 ## Delivery strategy
 
-Continue using tracer bullets. Historical K4-01 through K4-10 remain completed milestones. The selected v1.0 sync is implemented as its own ticket sequence before K4-11 lifecycle migration resumes; K4-12 remains the final selected-scope/performance/review gate.
+Continue using tracer bullets. Historical K4-01 through K4-10 remain completed milestones. The selected v1.0 sync is implemented as its own ticket sequence; K4-11 is withdrawn and K4-12 remains the final selected-scope/performance/review gate.
