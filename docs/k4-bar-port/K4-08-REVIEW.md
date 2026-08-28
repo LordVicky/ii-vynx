@@ -16,6 +16,8 @@ Authoritative plan: `docs/k4-bar-port/SPEC.md` + `docs/k4-bar-port/TICKETS.md`
 
 **Validated and closed on 2026-08-24.**
 
+> Current-architecture note: the plugin enable/status portion documented below was later withdrawn together with K4-11 managed lifecycle work. The in-island Settings surface, tray/notification behavior, Files fallback, and other unrelated K4-08 fixes remain. See `K4-11-DESIGN.md` and current `SPEC.md`.
+
 K4-08 now has a complete in-island Settings application, persisted K4 runtime preferences, static-registry plugin enable/status controls, focused-notification dismissal, tray-in-pill behavior, and the final Files fallback remediation discovered during live validation.
 
 The final local K4 regression gate passes **110/110** tests with zero failures. Node emits `MODULE_TYPELESS_PACKAGE_JSON` reparsing warnings for the ESM-style source-regression tests; those warnings do not fail the suite and do not affect Quickshell runtime behavior.
@@ -115,17 +117,17 @@ No blocking findings at final code review point `025bde275a61c8c432dfe7090dcf708
 
 ## Spec review
 
-K4-08 satisfies its approved ticket/spec boundary:
+K4-08 satisfies its approved ticket/spec boundary at its historical review point:
 
 - K4 Settings exists inside the island;
 - top/bottom and alignment share the existing `Config.options.bar.k4` persistence path;
 - K4-specific settings were added only with consuming behavior;
-- plugin enable/disable/error status is visible;
-- disabled state persists and participates correctly in arbitration;
-- the external ii Bar Settings variant boundary remains intact;
+- plugin enable/disable/error status was visible at that review point;
+- disabled state persisted and participated correctly in arbitration at that review point;
+- the external ii Bar Settings variant boundary remained intact;
 - no disconnected capture/editor/game/plugin-store settings were introduced ahead of their consuming tickets.
 
-The full parity target for disabled-plugin uninstantiation and external plugin lifecycle remains explicitly assigned to K4-11.
+The plugin enable/status and K4-11 lifecycle portions were later withdrawn; this review remains historical evidence for the other K4-08 behavior.
 
 ## Closure
 
