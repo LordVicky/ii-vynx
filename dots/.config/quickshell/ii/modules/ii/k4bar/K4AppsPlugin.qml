@@ -10,7 +10,6 @@ K4Plugin {
     name: "apps"
     title: "Applications"
     priority: 72
-    configurable: false
     active: enabled && open
     viewLoaded: open
     grabKeyboard: open

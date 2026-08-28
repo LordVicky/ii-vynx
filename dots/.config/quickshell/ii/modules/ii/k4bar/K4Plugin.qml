@@ -16,12 +16,7 @@ QtObject {
     // requests the island. The host still decides whether it wins.
     property bool enabled: true
     property bool active: false
-    property bool configurable: true
-    property bool closeOnDisable: true
-    property string loadError: ""
-    // Static plugins are always instantiated. Declaratively managed proxies
-    // override this with their Loader-owned implementation state.
-    property bool instantiated: true
+    property string loadError: "" // Generic view-loader diagnostic.
     property int priority: 50
     property bool transitorio: false
 
@@ -80,11 +75,7 @@ QtObject {
 
     onEnabledChanged: {
         if (!enabled) {
-            // Stateful plugins clear their owning open state through close().
-            // Passive plugins with a bound active expression opt out so the
-            // base close assignment cannot sever that binding.
-            if (root.closeOnDisable)
-                root.close()
+            active = false
             releasePlacement()
         }
     }

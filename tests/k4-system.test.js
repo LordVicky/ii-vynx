@@ -27,8 +27,7 @@ test("system plugin preserves pinned k4 priority and geometry", () => {
     assert.match(source, /target:\s*"k4\.system"/);
 });
 
-test("system utility is registered through the managed lifecycle proxy", () => {
+test("system utility is registered directly as a built-in", () => {
     const source = read("K4BuiltinPlugins.qml");
-    assert.match(source, /systemPlugin/);
-    assert.match(source, /property QtObject systemPlugin:\s*K4ManagedPlugin\s*\{[\s\S]*?name:\s*"system"[\s\S]*?source:\s*Qt\.resolvedUrl\("K4SystemPlugin\.qml"\)/);
+    assert.match(source, /property QtObject systemPlugin:\s*K4SystemPlugin\s*\{\}/);
 });

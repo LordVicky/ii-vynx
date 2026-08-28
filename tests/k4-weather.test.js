@@ -32,7 +32,7 @@ test('K4 weather uses the Material Design glyph range carried by the shell font'
   assert.doesNotMatch(source, /0xE3[0-9A-F]{2}/i);
 });
 
-test('K4 weather uses the managed lifecycle proxy while preserving utility behavior', () => {
+test('K4 weather is directly registered while preserving utility behavior', () => {
   const plugin = read(`${base}/K4WeatherPlugin.qml`);
   const builtins = read(`${base}/K4BuiltinPlugins.qml`);
   assert.match(plugin, /name:\s*"weather"/);
@@ -44,10 +44,7 @@ test('K4 weather uses the managed lifecycle proxy while preserving utility behav
   assert.match(plugin, /closeOnHoverExit:\s*true/);
   assert.match(plugin, /hoverExitDelay:\s*1000/);
   assert.match(plugin, /target:\s*"k4\.weather"/);
-  assert.match(
-    builtins,
-    /property QtObject weatherPlugin:\s*K4ManagedPlugin\s*\{[\s\S]*?name:\s*"weather"[\s\S]*?source:\s*Qt\.resolvedUrl\("K4WeatherPlugin\.qml"\)/
-  );
+  assert.match(builtins, /property QtObject weatherPlugin:\s*K4WeatherPlugin\s*\{\}/);
 });
 
 test('K4 weather view exposes current, hourly, daily, search and refresh surfaces', () => {

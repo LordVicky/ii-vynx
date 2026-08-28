@@ -31,8 +31,7 @@ test("session plugin preserves upstream priority, dynamic width and confirmation
     assert.match(source, /target:\s*"k4\.session"/);
 });
 
-test("session utility is registered through the managed lifecycle proxy", () => {
+test("session utility is registered directly as a built-in", () => {
     const source = read("K4BuiltinPlugins.qml");
-    assert.match(source, /sessionPlugin/);
-    assert.match(source, /property QtObject sessionPlugin:\s*K4ManagedPlugin\s*\{[\s\S]*?name:\s*"session"[\s\S]*?source:\s*Qt\.resolvedUrl\("K4SessionPlugin\.qml"\)/);
+    assert.match(source, /property QtObject sessionPlugin:\s*K4SessionPlugin\s*\{\}/);
 });

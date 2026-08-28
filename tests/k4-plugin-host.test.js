@@ -38,7 +38,6 @@ test("base plugin contract separates enabled state from active island requests",
     assert.match(source, /required property string name/);
     assert.match(source, /property bool enabled:\s*true/);
     assert.match(source, /property bool active:\s*false/);
-    assert.match(source, /property bool closeOnDisable:\s*true/);
     assert.match(source, /property int priority:\s*50/);
     assert.match(source, /property bool transitorio:\s*false/);
     assert.doesNotMatch(source, /property bool transient\b/);
@@ -57,8 +56,7 @@ test("base plugin contract separates enabled state from active island requests",
     assert.match(source, /function open\(\)[\s\S]*?if \(enabled\)[\s\S]*?active = true/);
     assert.match(source, /function requestPlacement\(fraction, durationMs\)[\s\S]*?if \(enabled\)[\s\S]*?IslandState\.requestPlacement/);
     assert.match(source, /function requestGesture\(gestureName, strength\)[\s\S]*?if \(enabled\)[\s\S]*?IslandState\.requestGesture/);
-    assert.match(source, /onEnabledChanged:[\s\S]*?if \(root\.closeOnDisable\)[\s\S]*?root\.close\(\)[\s\S]*?releasePlacement\(\)/);
-    assert.doesNotMatch(source, /onEnabledChanged:[\s\S]*?active = false/);
+    assert.match(source, /onEnabledChanged:[\s\S]*?if \(!enabled\)[\s\S]*?active = false[\s\S]*?releasePlacement\(\)/);
     assert.match(source, /Component\.onDestruction:\s*releasePlacement\(\)/);
 });
 

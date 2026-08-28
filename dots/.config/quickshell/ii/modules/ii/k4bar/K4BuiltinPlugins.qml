@@ -1,10 +1,8 @@
 import QtQuick
-import Quickshell.Io
 import qs.modules.common
 
-// Static built-in registry for the parity slices before K4-11 replaces this
-// with declaratively managed built-ins. Managed proxies stay in this stable
-// registry while Loader owns only their private implementation lifetime.
+// Static built-in registry. Concrete plugin objects stay declaratively owned
+// by this registry while the controller arbitrates which one is visible.
 QtObject {
     id: root
 
@@ -34,59 +32,8 @@ QtObject {
         }
     }
 
-    function managedPlugin(name) {
-        const id = String(name)
-        for (let i = 0; i < plugins.length; ++i) {
-            const candidate = plugins[i]
-            if (candidate?.name === id && typeof candidate.retryLoad === "function")
-                return candidate
-        }
-        return null
-    }
-
-    // Temporary K4-11 fault harness. It changes only a managed proxy's Loader
-    // source/gate and never changes registry membership or QObject ownership.
-    property var lifecycleDebugIpc: IpcHandler {
-        target: "k4.pluginLifecycleDebug"
-
-        function fail(name: string): void {
-            const candidate = root.managedPlugin(name)
-            if (candidate && typeof candidate.debugFailLoad === "function")
-                candidate.debugFailLoad()
-        }
-
-        function restore(name: string): void {
-            const candidate = root.managedPlugin(name)
-            if (candidate && typeof candidate.debugRestoreLoad === "function")
-                candidate.debugRestoreLoad()
-        }
-
-        function retry(name: string): void {
-            const candidate = root.managedPlugin(name)
-            if (candidate)
-                candidate.retryLoad()
-        }
-
-        function status(name: string): string {
-            const candidate = root.managedPlugin(name)
-            if (!candidate)
-                return JSON.stringify({ id: String(name), found: false })
-            return JSON.stringify({
-                id: candidate.name,
-                found: true,
-                enabled: candidate.enabled,
-                requestedEnabled: candidate.requestedEnabled,
-                loaded: candidate.instantiated,
-                error: candidate.loadError,
-                faulted: candidate.debugLoadFailure,
-                retryGate: candidate.retryGate
-            })
-        }
-    }
-
     property QtObject volumePlugin: K4Plugin {
         name: "volume"; title: "Volume"; priority: 40
-        closeOnDisable: false
         active: enabled && K4Audio.overlayOpen
         islandWidth: 240; islandHeight: 40
         view: Component { K4VolumeView {} }
@@ -94,7 +41,6 @@ QtObject {
     property QtObject clockPlugin: K4Plugin {
         id: clockPluginObject
         name: "clock"; title: "Clock"; priority: 50
-        closeOnDisable: false
         active: enabled && IslandState.hovered && root.passiveHoverAllowed
 
         // K4 v1.0 measures the three Clock zones in the view and feeds them
@@ -148,7 +94,6 @@ QtObject {
     property QtObject playerPlugin: K4Plugin {
         id: playerPluginObject
         name: "player"; title: "Player"; priority: 55
-        closeOnDisable: false
 
         // Track-change peek follows upstream v1.0.0's proven MPRIS settling
         // behavior: title/artist may arrive separately, so compare only after
@@ -229,55 +174,13 @@ QtObject {
     property QtObject settingsPlugin: K4SettingsPlugin {}
     property QtObject launcherPlugin: K4LauncherPlugin {}
     property QtObject clipboardPlugin: K4ClipboardPlugin {}
-    property QtObject filesPlugin: K4ManagedPlugin {
-        name: "files"
-        title: "Files"
-        application: true
-        applicationGlyph: String.fromCodePoint(0xF024B)
-        source: Qt.resolvedUrl("K4FilesPlugin.qml")
-    }
-    property QtObject windowsPlugin: K4ManagedPlugin {
-        name: "windows"
-        title: "Windows"
-        application: true
-        applicationGlyph: String.fromCodePoint(0xF05B2)
-        source: Qt.resolvedUrl("K4WindowsPlugin.qml")
-    }
-    property QtObject systemPlugin: K4ManagedPlugin {
-        name: "system"
-        title: "System"
-        application: true
-        applicationGlyph: String.fromCodePoint(0xF04BC)
-        source: Qt.resolvedUrl("K4SystemPlugin.qml")
-    }
-    property QtObject sessionPlugin: K4ManagedPlugin {
-        name: "session"
-        title: "Session"
-        application: true
-        applicationGlyph: String.fromCodePoint(0xF0425)
-        source: Qt.resolvedUrl("K4SessionPlugin.qml")
-    }
-    property QtObject keysPlugin: K4ManagedPlugin {
-        name: "keys"
-        title: "Shortcuts"
-        application: true
-        applicationGlyph: String.fromCodePoint(0xF030C)
-        source: Qt.resolvedUrl("K4KeysPlugin.qml")
-    }
-    property QtObject weatherPlugin: K4ManagedPlugin {
-        name: "weather"
-        title: "Weather"
-        application: true
-        applicationGlyph: String.fromCodePoint(0xF0595)
-        source: Qt.resolvedUrl("K4WeatherPlugin.qml")
-    }
+    property QtObject filesPlugin: K4FilesPlugin {}
+    property QtObject windowsPlugin: K4WindowsPlugin {}
+    property QtObject systemPlugin: K4SystemPlugin {}
+    property QtObject sessionPlugin: K4SessionPlugin {}
+    property QtObject keysPlugin: K4KeysPlugin {}
+    property QtObject weatherPlugin: K4WeatherPlugin {}
     property QtObject capturePlugin: K4CapturePlugin {}
-    property QtObject displaysPlugin: K4ManagedPlugin {
-        name: "displays"
-        title: "Displays"
-        application: true
-        applicationGlyph: String.fromCodePoint(0xF037A)
-        source: Qt.resolvedUrl("K4DisplaysPlugin.qml")
-    }
+    property QtObject displaysPlugin: K4DisplaysPlugin {}
     property QtObject trayPlugin: K4TrayPlugin {}
 }

@@ -337,29 +337,6 @@ Item {
                 }
 
                 Text {
-                    Layout.topMargin: 8
-                    Layout.leftMargin: 2
-                    text: "PLUGINS"
-                    color: K4Theme.dim
-                    font.family: K4Theme.uiFont
-                    font.pixelSize: 9
-                    font.capitalization: Font.AllUppercase
-                    renderType: Text.NativeRendering
-                }
-
-                Repeater {
-                    model: root.plugin.controller
-                        ? root.plugin.controller.configurablePlugins() : []
-
-                    delegate: K4SettingsPluginRow {
-                        required property var modelData
-                        Layout.fillWidth: true
-                        plugin: modelData
-                        controller: root.plugin.controller
-                    }
-                }
-
-                Text {
                     Layout.fillWidth: true
                     Layout.topMargin: 3
                     text: "More K4 settings appear here only when their runtime feature is present."

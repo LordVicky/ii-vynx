@@ -10,14 +10,12 @@ K4Plugin {
     name: "settings"
     title: "Settings"
     priority: 66
-    configurable: false
     application: true
     applicationGlyph: String.fromCodePoint(0xF0493)
     active: enabled && open
     grabKeyboard: open
 
     property bool open: false
-    property var controller: null
 
     islandWidth: 600
     islandHeight: 640

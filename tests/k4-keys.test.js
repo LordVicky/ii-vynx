@@ -32,9 +32,7 @@ test('K4 keys plugin is a registered utility with pinned dimensions and IPC', ()
   assert.match(plugin, /islandHeight:\s*440/);
   assert.match(plugin, /target:\s*"k4\.keys"/);
   assert.match(plugin, /function\s+openApplication\(\)/);
-  assert.match(builtins, /property QtObject keysPlugin:\s*K4ManagedPlugin\s*\{/);
-  assert.match(builtins, /name:\s*"keys"/);
-  assert.match(builtins, /source:\s*Qt\.resolvedUrl\("K4KeysPlugin\.qml"\)/);
+  assert.match(builtins, /property QtObject keysPlugin:\s*K4KeysPlugin\s*\{\}/);
   assert.match(builtins, /sessionPlugin,\s*keysPlugin/);
 });
 

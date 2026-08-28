@@ -11,7 +11,6 @@ K4Plugin {
     name: "panel"
     title: "Control Center"
     priority: 60
-    configurable: false
     active: enabled && open
 
     // "controls" | "notifications" | "wifi" | "bluetooth" | "sonido"
