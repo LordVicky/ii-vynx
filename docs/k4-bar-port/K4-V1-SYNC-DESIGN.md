@@ -18,9 +18,12 @@ Approved:
 - **U3** hidden-edge reveal interaction.
 - **U4** Player track-change peek.
 - **U6** compact asymmetric Idle/Clock sizing.
-- **U12** borrow upstream lifecycle/extensibility ideas only when they are useful; do not import its QObject lifetime implementation.
 - **U17** active-island-monitor plugin API.
 - **U19** review capture-only fixes and port only if they apply to the ii-vynx adapter.
+
+Reviewed then withdrawn:
+
+- **U12** lifecycle/extensibility ideas. The managed Loader/proxy experiment was subsequently reverted and is not part of the selected port. Upstream manual QObject lifetime remains rejected.
 
 Rejected:
 
@@ -34,13 +37,11 @@ Rejected:
 - **U18** upstream translation-system changes.
 - **U20** upstream installer/docs polish as runtime scope.
 
-These are explicit product decisions. Rejected items are not deferred parity debt.
+These are explicit product decisions. Rejected/withdrawn items are not deferred parity debt.
 
 ## Sequencing
 
-Pause further K4-11 lifecycle migration while this selected v1.0 sync changes the host, Idle/Clock layout and Player arbitration. Resume K4-11 after the selected sync is live-validated.
-
-The already committed K4-11 low-coupling proxy batch (`system`, `windows`, `session`) remains in the branch but is not considered live-validated yet.
+The selected v1.0 behavior is independent of the withdrawn K4-11 lifecycle experiment. Built-ins remain directly/declaratively owned while the v1 host, Player and layout changes proceed.
 
 ## V1-A — bar space management (U1, U2, U3)
 
@@ -196,19 +197,19 @@ The port already has the needed behavior as `IslandState.activeScreen`, populate
 
 Treat `IslandState.activeScreen` as a stable plugin-facing contract and add explicit regression coverage. Do not add a second monitor-routing service merely to copy upstream's Spanish `K4.Isla.pantalla` name.
 
-## U12 lifecycle ideas-only boundary
+## U12 lifecycle review — withdrawn
 
-Upstream v1.0's goals are useful: disabled plugins should not consume runtime resources, failures should be isolated, and Settings should expose retry/error state.
+Upstream v1.0's lifecycle/extensibility work was reviewed, and both manual dynamic ownership and a port-specific managed Loader/proxy layer were explored.
 
-Its implementation is **not** an acceptable source for QObject ownership in ii-vynx: upstream uses `Qt.createComponent()`, `createObject()` and manual `destroy()`, while that architecture produced native QtQmlModels/QQmlIncubator crashes in the target Quickshell runtime.
-
-Continue using the validated ii-vynx K4 architecture:
+The current decision is simpler:
 
 ```text
-stable K4ManagedPlugin proxy -> declarative Loader -> ephemeral implementation
+K4BuiltinPlugins -> directly owned K4FooPlugin {}
 ```
 
-Borrow semantics, not the rejected lifetime mechanism.
+There is no persisted per-plugin disablement, lifecycle Error/Retry UI or `K4ManagedPlugin` Loader seam in the selected port.
+
+Upstream's `Qt.createComponent()`, `createObject()` and manual `destroy()` implementation remains explicitly rejected because that ownership approach produced native QtQmlModels/QQmlIncubator failures on the target Quickshell runtime.
 
 ## U19 capture audit
 
@@ -223,6 +224,7 @@ Our `K4CapturePlugin` deliberately delegates capture/recording to existing ii-vy
 - no Dual/dock implementation;
 - no wallpaper/video/palette ownership;
 - no plugin store, external plugin registry or user plugin directories;
+- no managed per-plugin Loader lifecycle or persisted plugin disabling;
 - no live window thumbnails;
 - no generalized `K4.Ventana` API expansion;
 - no K4 self-updater;
@@ -271,5 +273,5 @@ Review this selected sync against:
 
 - original port behavior at the branch commit immediately before its first runtime slice;
 - upstream `v1.0.0` only for U1-U4/U6/U17 semantics;
-- this document's explicit reject list;
-- existing ii-vynx ownership rules and K4-11 Loader-lifecycle invariants.
+- this document's explicit reject/withdraw list;
+- existing ii-vynx ownership rules and direct declarative built-in plugin ownership.
