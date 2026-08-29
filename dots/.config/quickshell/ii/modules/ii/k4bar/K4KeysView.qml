@@ -128,6 +128,11 @@ Item {
                 background: Item {}
             }
 
+            K4ViewportPointer {
+                id: keysPointer
+                surface: list
+            }
+
             delegate: Column {
                 id: row
                 required property var modelData
@@ -152,11 +157,12 @@ Item {
                 }
 
                 Rectangle {
+                    id: keySurface
+                    readonly property bool hovered: keysPointer.contains(keySurface)
                     width: parent.width
                     height: 34
                     radius: 8
-                    color: hover.containsMouse ? K4Theme.surface : "transparent"
-                    Behavior on color { ColorAnimation { duration: 110 } }
+                    color: hovered ? K4Theme.surfaceHi : "transparent"
 
                     RowLayout {
                         anchors.fill: parent
@@ -202,8 +208,6 @@ Item {
                             elide: Text.ElideRight
                         }
                     }
-
-                    MouseArea { id: hover; anchors.fill: parent; hoverEnabled: true }
                 }
             }
 
