@@ -11,13 +11,14 @@ Rectangle {
     property bool busy: false
     property bool secure: false
     property bool forgettable: false
+    property bool hovered: false
     signal activated()
     signal forgotten()
 
     implicitHeight: 42
     radius: 10
     color: root.active ? K4Theme.surfaceHi
-        : rowMouse.containsMouse ? K4Theme.surface : "transparent"
+        : root.hovered ? K4Theme.surface : "transparent"
 
     RowLayout {
         anchors.fill: parent
@@ -98,10 +99,8 @@ Rectangle {
     }
 
     MouseArea {
-        id: rowMouse
         anchors.fill: parent
         z: -1
-        hoverEnabled: true
         cursorShape: Qt.PointingHandCursor
         onClicked: root.activated()
     }

@@ -44,18 +44,21 @@ Item {
             radius: 12
             color: K4Theme.surface
 
-            ListView {
+            K4CursorTrackedListView {
                 id: networksList
                 anchors.fill: parent
                 anchors.margins: 10
                 clip: true
                 spacing: 2
+                rowHeight: 42
                 model: K4Wifi.networks
                 boundsBehavior: Flickable.StopAtBounds
 
                 delegate: K4PanelConnectionRow {
                     required property var modelData
+                    required property int index
                     width: ListView.view.width
+                    height: ListView.view.rowHeight
                     title: modelData.ssid.length > 0 ? modelData.ssid : "(hidden network)"
                     subtitle: modelData.active ? "Connected"
                         : modelData.askingPassword ? "Password required"
@@ -66,6 +69,7 @@ Item {
                     busy: K4Wifi.connecting && K4Wifi.connectTarget === modelData
                     secure: modelData.isSecure && !modelData.known
                     forgettable: modelData.known
+                    hovered: index === networksList.hoveredIndex
                     onActivated: K4Wifi.activate(modelData)
                     onForgotten: K4Wifi.forget(modelData)
                 }

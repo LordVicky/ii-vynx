@@ -37,24 +37,28 @@ Item {
             radius: 12
             color: K4Theme.surface
 
-            ListView {
+            K4CursorTrackedListView {
                 id: devicesList
                 anchors.fill: parent
                 anchors.margins: 10
                 clip: true
                 spacing: 2
+                rowHeight: 42
                 model: K4Bluetooth.devices
                 boundsBehavior: Flickable.StopAtBounds
 
                 delegate: K4PanelConnectionRow {
                     required property var modelData
+                    required property int index
                     width: ListView.view.width
+                    height: ListView.view.rowHeight
                     title: modelData.name?.length > 0 ? modelData.name : modelData.address
                     subtitle: K4Bluetooth.status(modelData)
                     glyph: K4Theme.ico.bluetooth
                     active: modelData.connected
                     busy: modelData.pairing ?? false
                     forgettable: modelData.paired
+                    hovered: index === devicesList.hoveredIndex
                     onActivated: K4Bluetooth.activate(modelData)
                     onForgotten: K4Bluetooth.togglePair(modelData)
                 }
