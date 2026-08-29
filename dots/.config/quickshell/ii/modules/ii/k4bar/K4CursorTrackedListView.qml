@@ -26,6 +26,28 @@ ListView {
         return offsetInRow >= 0 && offsetInRow < rowHeight ? candidate : -1
     }
 
+    function trace(event, y) {
+        console.warn(
+            "[K4Hover][list]", event,
+            "y=", y,
+            "tracked=", trackedPointerY,
+            "contentY=", contentY,
+            "originY=", originY,
+            "index=", hoveredIndex,
+            "contains=", viewportMouse.containsMouse,
+            "size=", width + "x" + height,
+            "count=", count
+        )
+    }
+
+    Component.onCompleted: trace("ready", -1)
+    onTrackedPointerYChanged: trace("tracked", trackedPointerY)
+    onHoveredIndexChanged: trace("index", trackedPointerY)
+    onContentYChanged: {
+        if (moving)
+            trace("content", trackedPointerY)
+    }
+
     MouseArea {
         id: viewportMouse
         parent: root
@@ -35,9 +57,21 @@ ListView {
         acceptedButtons: Qt.NoButton
         scrollGestureEnabled: false
 
-        onEntered: root.trackedPointerY = mouseY
-        onPositionChanged: mouse => root.trackedPointerY = mouse.y
-        onExited: root.trackedPointerY = -1
-        onWheel: wheel => wheel.accepted = false
+        onEntered: {
+            root.trackedPointerY = mouseY
+            root.trace("enter", mouseY)
+        }
+        onPositionChanged: mouse => {
+            root.trackedPointerY = mouse.y
+            root.trace("move", mouse.y)
+        }
+        onExited: {
+            root.trace("exit", mouseY)
+            root.trackedPointerY = -1
+        }
+        onWheel: wheel => {
+            root.trace("wheel", wheel.y)
+            wheel.accepted = false
+        }
     }
 }
