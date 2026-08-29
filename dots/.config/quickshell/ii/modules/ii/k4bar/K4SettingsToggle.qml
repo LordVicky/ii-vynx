@@ -10,13 +10,12 @@ Rectangle {
     property string description: ""
     property string glyph: ""
     property bool checked: false
+    property bool externalHovered: false
     signal toggled(bool value)
 
     implicitHeight: 58
     radius: 12
-    color: rowHover.hovered ? K4Theme.surfaceHi : K4Theme.surface
-
-    Behavior on color { ColorAnimation { duration: 120 } }
+    color: externalHovered || rowHover.hovered ? K4Theme.surfaceHi : K4Theme.surface
 
     RowLayout {
         anchors.fill: parent
