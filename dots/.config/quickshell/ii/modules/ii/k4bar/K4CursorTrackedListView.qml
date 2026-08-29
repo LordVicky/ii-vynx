@@ -1,8 +1,8 @@
 import QtQuick
 
-// ListView hover that stays tied to the stationary viewport while delegates
-// move underneath it. Delegate hover events update the pointer during normal
-// cursor motion; wheel events update it during stationary-pointer scrolling.
+// Track hover from a MouseArea pinned to the ListView viewport rather than from
+// delegates that move underneath a stationary cursor. The overlay accepts no
+// buttons, so row/button interaction remains owned by the delegates.
 ListView {
     id: root
 
@@ -11,7 +11,7 @@ ListView {
 
     readonly property real rowStride: Math.max(1, rowHeight + spacing)
     readonly property int hoveredIndex: {
-        if (!viewportHover.hovered || trackedPointerY < 0 || count <= 0)
+        if (trackedPointerY < 0 || count <= 0)
             return -1
 
         const relativeY = trackedPointerY + contentY - originY
@@ -19,34 +19,25 @@ ListView {
             return -1
 
         const candidate = Math.floor(relativeY / rowStride)
-        return candidate >= 0 && candidate < count ? candidate : -1
+        if (candidate < 0 || candidate >= count)
+            return -1
+
+        const offsetInRow = relativeY - candidate * rowStride
+        return offsetInRow >= 0 && offsetInRow < rowHeight ? candidate : -1
     }
 
-    function rememberPointer(y) {
-        if (Number.isFinite(y))
-            trackedPointerY = y
-    }
+    MouseArea {
+        id: viewportMouse
+        parent: root
+        anchors.fill: root
+        z: 1000
+        hoverEnabled: true
+        acceptedButtons: Qt.NoButton
+        scrollGestureEnabled: false
 
-    HoverHandler {
-        id: viewportHover
-        blocking: false
-
-        // Use HoverHandler only for viewport membership. Live testing showed its
-        // point can latch at entry in this nested ListView path, so moving
-        // delegates feed pointer coordinates explicitly instead.
-        onHoveredChanged: {
-            if (hovered)
-                root.rememberPointer(point.position.y)
-            else
-                root.trackedPointerY = -1
-        }
-    }
-
-    WheelHandler {
-        id: wheelTracker
-        target: null
-        blocking: false
-        acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
-        onWheel: event => root.rememberPointer(event.y)
+        onEntered: root.trackedPointerY = mouseY
+        onPositionChanged: mouse => root.trackedPointerY = mouse.y
+        onExited: root.trackedPointerY = -1
+        onWheel: wheel => wheel.accepted = false
     }
 }

@@ -20,15 +20,6 @@ Rectangle {
     color: root.active ? K4Theme.surfaceHi
         : root.hovered ? K4Theme.surface : "transparent"
 
-    function reportPointer(x, y) {
-        const tracker = root.ListView.view
-        if (!tracker || typeof tracker.rememberPointer !== "function")
-            return
-
-        const mapped = rowMouse.mapToItem(tracker, x, y)
-        tracker.rememberPointer(mapped.y)
-    }
-
     RowLayout {
         anchors.fill: parent
         anchors.leftMargin: 10
@@ -108,13 +99,9 @@ Rectangle {
     }
 
     MouseArea {
-        id: rowMouse
         anchors.fill: parent
         z: -1
-        hoverEnabled: true
         cursorShape: Qt.PointingHandCursor
-        onEntered: root.reportPointer(mouseX, mouseY)
-        onPositionChanged: mouse => root.reportPointer(mouse.x, mouse.y)
         onClicked: root.activated()
     }
 }

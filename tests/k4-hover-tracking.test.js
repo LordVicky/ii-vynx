@@ -5,33 +5,33 @@ import test from "node:test";
 const root = new URL("../dots/.config/quickshell/ii/", import.meta.url);
 const read = async path => readFile(new URL(path, root), "utf8");
 
-test("scrolling connection rows derive hover from a stationary viewport pointer", async () => {
+test("scrolling connection rows derive hover from a stationary viewport MouseArea", async () => {
     const tracker = await read("modules/ii/k4bar/K4CursorTrackedListView.qml");
 
     assert.match(tracker, /property real trackedPointerY:\s*-1/);
     assert.match(tracker, /trackedPointerY\s*\+\s*contentY\s*-\s*originY/);
     assert.match(tracker, /Math\.floor\(relativeY\s*\/\s*rowStride\)/);
+    assert.match(tracker, /offsetInRow\s*>=\s*0\s*&&\s*offsetInRow\s*<\s*rowHeight/);
     assert.doesNotMatch(tracker, /indexAt\s*\(/);
 
-    assert.match(tracker, /HoverHandler\s*\{[\s\S]*?blocking:\s*false[\s\S]*?onHoveredChanged/);
-    assert.doesNotMatch(tracker, /onPointChanged/);
-    assert.match(tracker, /WheelHandler\s*\{[\s\S]*?target:\s*null[\s\S]*?blocking:\s*false/);
-    assert.match(tracker, /acceptedDevices:\s*PointerDevice\.Mouse\s*\|\s*PointerDevice\.TouchPad/);
-    assert.match(tracker, /onWheel:\s*event\s*=>\s*root\.rememberPointer\(event\.y\)/);
+    assert.match(tracker, /MouseArea\s*\{[\s\S]*?id:\s*viewportMouse[\s\S]*?parent:\s*root[\s\S]*?anchors\.fill:\s*root/);
+    assert.match(tracker, /hoverEnabled:\s*true/);
+    assert.match(tracker, /acceptedButtons:\s*Qt\.NoButton/);
+    assert.match(tracker, /scrollGestureEnabled:\s*false/);
+    assert.match(tracker, /onEntered:\s*root\.trackedPointerY\s*=\s*mouseY/);
+    assert.match(tracker, /onPositionChanged:\s*mouse\s*=>\s*root\.trackedPointerY\s*=\s*mouse\.y/);
+    assert.match(tracker, /onExited:\s*root\.trackedPointerY\s*=\s*-1/);
+    assert.match(tracker, /onWheel:\s*wheel\s*=>\s*wheel\.accepted\s*=\s*false/);
+    assert.doesNotMatch(tracker, /HoverHandler|WheelHandler/);
 });
 
-test("connection rows feed normal cursor movement into viewport hover tracking", async () => {
+test("connection rows only render externally-derived hover", async () => {
     const row = await read("modules/ii/k4bar/K4PanelConnectionRow.qml");
 
     assert.match(row, /property bool hovered:\s*false/);
     assert.match(row, /root\.hovered\s*\?\s*K4Theme\.surface\s*:\s*"transparent"/);
-    assert.match(row, /const tracker = root\.ListView\.view/);
-    assert.match(row, /rowMouse\.mapToItem\(tracker, x, y\)/);
-    assert.match(row, /tracker\.rememberPointer\(mapped\.y\)/);
-    assert.match(row, /MouseArea\s*\{[\s\S]*?id:\s*rowMouse[\s\S]*?hoverEnabled:\s*true/);
-    assert.match(row, /onEntered:\s*root\.reportPointer\(mouseX, mouseY\)/);
-    assert.match(row, /onPositionChanged:\s*mouse\s*=>\s*root\.reportPointer\(mouse\.x, mouse\.y\)/);
-    assert.doesNotMatch(row, /containsMouse|HoverHandler|Behavior\s+on\s+color/);
+    assert.doesNotMatch(row, /containsMouse|HoverHandler|hoverEnabled|reportPointer|rememberPointer/);
+    assert.doesNotMatch(row, /Behavior\s+on\s+color/);
 });
 
 test("Wi-Fi and Bluetooth bind fixed-height rows to viewport-derived hover indices", async () => {
