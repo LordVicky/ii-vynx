@@ -57,9 +57,7 @@ Item {
                 Layout.fillWidth: true
                 Layout.preferredHeight: 54
                 radius: 10
-                color: selected ? K4Theme.surfaceHi : rowHover.hovered ? K4Theme.surface : "transparent"
-
-                Behavior on color { ColorAnimation { duration: 110 } }
+                color: selected ? K4Theme.surfaceHi : rowHover.hovered ? K4Theme.surfaceHi : "transparent"
 
                 HoverHandler { id: rowHover }
                 MouseArea {
