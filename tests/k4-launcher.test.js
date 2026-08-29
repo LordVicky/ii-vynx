@@ -46,7 +46,7 @@ test("k4 launcher releases ownership immediately on close", () => {
     assert.match(source, /function close\(\)[\s\S]*?if \(!open\)[\s\S]*?open = false[\s\S]*?query = ""/);
 });
 
-test("k4 launcher view keeps the pinned spotlight interaction model", () => {
+test("k4 launcher view keeps the spotlight interaction model with viewport hover", () => {
     const source = readShell("modules/ii/k4bar/K4LauncherView.qml");
 
     assert.match(source, /text:\s*"Search applications"/);
@@ -55,7 +55,9 @@ test("k4 launcher view keeps the pinned spotlight interaction model", () => {
     assert.match(source, /Qt\.Key_Down[\s\S]*?root\.plugin\.moveSelection\(1\)/);
     assert.match(source, /Qt\.Key_Up[\s\S]*?root\.plugin\.moveSelection\(-1\)/);
     assert.match(source, /IconImage[\s\S]*?Quickshell\.iconPath\(appRow\.modelData\.icon/);
-    assert.match(source, /onEntered:\s*root\.plugin\.index = appRow\.index/);
+    assert.match(source, /K4CursorTrackedListView\s*\{[\s\S]*?id:\s*appResults[\s\S]*?rowHeight:\s*42/);
+    assert.match(source, /onHoveredIndexChanged:[\s\S]*?root\.plugin\.index\s*=\s*hoveredIndex/);
+    assert.doesNotMatch(source, /onEntered:\s*root\.plugin\.index\s*=\s*appRow\.index/);
     assert.match(source, /onClicked:[\s\S]*?root\.plugin\.launchSelected\(\)/);
 });
 
