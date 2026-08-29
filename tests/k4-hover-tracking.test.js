@@ -13,19 +13,25 @@ test("scrolling connection rows derive hover from a stationary viewport pointer"
     assert.match(tracker, /Math\.floor\(relativeY\s*\/\s*rowStride\)/);
     assert.doesNotMatch(tracker, /indexAt\s*\(/);
 
-    assert.match(tracker, /HoverHandler\s*\{[\s\S]*?blocking:\s*false[\s\S]*?onPointChanged/);
+    assert.match(tracker, /HoverHandler\s*\{[\s\S]*?blocking:\s*false[\s\S]*?onHoveredChanged/);
+    assert.doesNotMatch(tracker, /onPointChanged/);
     assert.match(tracker, /WheelHandler\s*\{[\s\S]*?target:\s*null[\s\S]*?blocking:\s*false/);
     assert.match(tracker, /acceptedDevices:\s*PointerDevice\.Mouse\s*\|\s*PointerDevice\.TouchPad/);
     assert.match(tracker, /onWheel:\s*event\s*=>\s*root\.rememberPointer\(event\.y\)/);
 });
 
-test("connection rows render externally-derived hover without moving-delegate hover state", async () => {
+test("connection rows feed normal cursor movement into viewport hover tracking", async () => {
     const row = await read("modules/ii/k4bar/K4PanelConnectionRow.qml");
 
     assert.match(row, /property bool hovered:\s*false/);
     assert.match(row, /root\.hovered\s*\?\s*K4Theme\.surface\s*:\s*"transparent"/);
-    assert.doesNotMatch(row, /containsMouse|HoverHandler|hoverEnabled/);
-    assert.doesNotMatch(row, /Behavior\s+on\s+color/);
+    assert.match(row, /const tracker = root\.ListView\.view/);
+    assert.match(row, /rowMouse\.mapToItem\(tracker, x, y\)/);
+    assert.match(row, /tracker\.rememberPointer\(mapped\.y\)/);
+    assert.match(row, /MouseArea\s*\{[\s\S]*?id:\s*rowMouse[\s\S]*?hoverEnabled:\s*true/);
+    assert.match(row, /onEntered:\s*root\.reportPointer\(mouseX, mouseY\)/);
+    assert.match(row, /onPositionChanged:\s*mouse\s*=>\s*root\.reportPointer\(mouse\.x, mouse\.y\)/);
+    assert.doesNotMatch(row, /containsMouse|HoverHandler|Behavior\s+on\s+color/);
 });
 
 test("Wi-Fi and Bluetooth bind fixed-height rows to viewport-derived hover indices", async () => {

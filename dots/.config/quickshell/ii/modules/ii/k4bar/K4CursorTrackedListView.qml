@@ -1,9 +1,8 @@
 import QtQuick
 
 // ListView hover that stays tied to the stationary viewport while delegates
-// move underneath it. Qt hover state on moving delegate MouseAreas is event-
-// driven and can become stale during wheel/trackpad scrolling, so remember the
-// pointer in viewport coordinates and derive the row from content motion.
+// move underneath it. Delegate hover events update the pointer during normal
+// cursor motion; wheel events update it during stationary-pointer scrolling.
 ListView {
     id: root
 
@@ -32,11 +31,9 @@ ListView {
         id: viewportHover
         blocking: false
 
-        onPointChanged: {
-            if (hovered)
-                root.rememberPointer(point.position.y)
-        }
-
+        // Use HoverHandler only for viewport membership. Live testing showed its
+        // point can latch at entry in this nested ListView path, so moving
+        // delegates feed pointer coordinates explicitly instead.
         onHoveredChanged: {
             if (hovered)
                 root.rememberPointer(point.position.y)
