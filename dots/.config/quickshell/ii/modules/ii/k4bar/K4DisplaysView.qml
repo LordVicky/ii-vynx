@@ -27,6 +27,7 @@ Item {
         id: chip
         property string label: ""
         property bool selected: false
+        property bool externalHovered: false
         signal clicked()
 
         implicitWidth: Math.max(52, chipText.implicitWidth + 20)
@@ -34,7 +35,7 @@ Item {
         radius: 15
         opacity: enabled ? 1 : 0.35
         color: selected ? K4Theme.surfaceHi
-            : chipMouse.containsMouse && enabled ? K4Theme.surface : "transparent"
+            : (externalHovered || chipMouse.containsMouse) && enabled ? K4Theme.surfaceHi : "transparent"
         border.width: selected ? 1 : 0
         border.color: selected ? K4Theme.blue : "transparent"
 
@@ -166,11 +167,17 @@ Item {
                     }
 
                     Flickable {
+                        id: monitorScroller
                         Layout.fillWidth: true
                         Layout.fillHeight: true
                         clip: true
                         contentWidth: width
                         contentHeight: monitorColumn.implicitHeight
+
+                        K4ViewportPointer {
+                            id: monitorPointer
+                            surface: monitorScroller
+                        }
 
                         Column {
                             id: monitorColumn
@@ -184,13 +191,13 @@ Item {
                                     id: monitorRow
                                     required property var modelData
                                     required property int index
+                                    readonly property bool hovered: monitorPointer.contains(monitorRow)
 
                                     width: monitorColumn.width
                                     height: 58
                                     radius: 11
-                                    color: index === root.plugin.selectedIndex
-                                        ? K4Theme.surfaceHi
-                                        : monitorMouse.containsMouse ? Qt.rgba(1, 1, 1, 0.04) : "transparent"
+                                    color: index === root.plugin.selectedIndex || hovered
+                                        ? K4Theme.surfaceHi : "transparent"
                                     border.width: index === root.plugin.selectedIndex ? 1 : 0
                                     border.color: K4Theme.blue
 
@@ -226,9 +233,7 @@ Item {
                                     }
 
                                     MouseArea {
-                                        id: monitorMouse
                                         anchors.fill: parent
-                                        hoverEnabled: true
                                         cursorShape: Qt.PointingHandCursor
                                         onClicked: root.plugin.selectedIndex = monitorRow.index
                                     }
@@ -293,12 +298,18 @@ Item {
                     }
 
                     Flickable {
+                        id: modeScroller
                         Layout.fillWidth: true
                         Layout.preferredHeight: 34
                         clip: true
                         contentWidth: modeRow.implicitWidth
                         contentHeight: height
                         boundsBehavior: Flickable.StopAtBounds
+
+                        K4ViewportPointer {
+                            id: modePointer
+                            surface: modeScroller
+                        }
 
                         Row {
                             id: modeRow
@@ -308,9 +319,11 @@ Item {
                             Repeater {
                                 model: root.plugin.selectedDraft?.availableModes ?? []
                                 delegate: Chip {
+                                    id: modeChip
                                     required property var modelData
                                     label: String(modelData)
                                     selected: String(modelData) === String(root.plugin.selectedDraft?.mode ?? "")
+                                    externalHovered: modePointer.contains(modeChip)
                                     enabled: !root.plugin.busy
                                     onClicked: root.plugin.updateSelected("mode", String(modelData))
                                 }
