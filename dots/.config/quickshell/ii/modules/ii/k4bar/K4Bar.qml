@@ -644,17 +644,6 @@ Scope {
                                     && modelData.viewLoaded
                                     && modelData.view !== null
                                 sourceComponent: modelData?.view ?? null
-
-                                onStatusChanged: {
-                                    if (!modelData)
-                                        return
-                                    if (status === Loader.Error) {
-                                        modelData.loadError = "View failed to load"
-                                        console.warn("[k4] view load failed:", modelData.name)
-                                    } else if (status === Loader.Ready) {
-                                        modelData.loadError = ""
-                                    }
-                                }
                             }
                         }
                     }
