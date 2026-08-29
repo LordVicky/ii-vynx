@@ -138,7 +138,7 @@ Item {
             }
         }
 
-        K4CursorTrackedGridView {
+        GridView {
             id: utilityGrid
             Layout.fillWidth: true
             Layout.fillHeight: true
@@ -148,8 +148,6 @@ Item {
             currentIndex: root.plugin.applications.length > 0 ? root.plugin.selection : -1
             cellWidth: width / root.plugin.columns
             cellHeight: 104
-            hoverWidth: cellWidth - 6
-            hoverHeight: cellHeight - 6
 
             onCurrentIndexChanged: {
                 if (currentIndex >= 0)
@@ -171,17 +169,18 @@ Item {
                 id: utilityTile
                 required property var modelData
                 required property int index
-                readonly property bool hovered: index === utilityGrid.hoveredIndex
-                readonly property bool selected: utilityGrid.hoveredIndex < 0
-                    && index === root.plugin.selection
 
                 width: GridView.view.cellWidth - 6
                 height: GridView.view.cellHeight - 6
                 radius: 14
                 opacity: modelData.enabled ? 1 : 0.38
-                color: hovered || selected ? K4Theme.surfaceHi : "transparent"
-                border.width: hovered || selected ? 2 : 0
+                color: index === root.plugin.selection
+                    ? K4Theme.surfaceHi
+                    : utilityMouse.containsMouse ? K4Theme.surface : "transparent"
+                border.width: index === root.plugin.selection ? 2 : 0
                 border.color: K4Theme.blue
+
+                Behavior on color { ColorAnimation { duration: 120 } }
 
                 Column {
                     anchors.centerIn: parent
@@ -212,8 +211,11 @@ Item {
                 }
 
                 MouseArea {
+                    id: utilityMouse
                     anchors.fill: parent
+                    hoverEnabled: true
                     cursorShape: modelData.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+                    onEntered: root.plugin.selection = utilityTile.index
                     onClicked: {
                         root.plugin.selection = utilityTile.index
                         if (utilityTile.modelData.enabled)
