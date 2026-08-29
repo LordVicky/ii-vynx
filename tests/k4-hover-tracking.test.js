@@ -62,3 +62,12 @@ test("launcher reuses the validated viewport list tracker without animated hover
     assert.doesNotMatch(launcher, /Behavior\s+on\s+color|highlightMoveDuration/);
     assert.doesNotMatch(launcher, /hoverEnabled:\s*true[\s\S]*?onEntered:\s*root\.plugin\.index/);
 });
+
+test("sound rows use immediate visible hover contrast", async () => {
+    const sound = await read("modules/ii/k4bar/K4PanelAudioView.qml");
+
+    assert.match(sound, /color:\s*selected\s*\?\s*K4Theme\.surfaceHi\s*:\s*rowHover\.hovered\s*\?\s*K4Theme\.surfaceHi\s*:\s*"transparent"/);
+    assert.match(sound, /HoverHandler\s*\{\s*id:\s*rowHover\s*\}/);
+    assert.doesNotMatch(sound, /rowHover\.hovered\s*\?\s*K4Theme\.surface\s*:/);
+    assert.doesNotMatch(sound, /Behavior\s+on\s+color/);
+});
