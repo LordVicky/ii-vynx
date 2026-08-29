@@ -152,13 +152,8 @@ Item {
             hoverHeight: cellHeight - 6
 
             onCurrentIndexChanged: {
-                if (currentIndex >= 0 && hoveredIndex < 0)
+                if (currentIndex >= 0)
                     positionViewAtIndex(currentIndex, GridView.Contain)
-            }
-
-            onHoveredIndexChanged: {
-                if (hoveredIndex >= 0 && hoveredIndex < root.plugin.applications.length)
-                    root.plugin.selection = hoveredIndex
             }
 
             ScrollBar.vertical: ScrollBar {
@@ -177,7 +172,8 @@ Item {
                 required property var modelData
                 required property int index
                 readonly property bool hovered: index === utilityGrid.hoveredIndex
-                readonly property bool selected: index === root.plugin.selection
+                readonly property bool selected: utilityGrid.hoveredIndex < 0
+                    && index === root.plugin.selection
 
                 width: GridView.view.cellWidth - 6
                 height: GridView.view.cellHeight - 6

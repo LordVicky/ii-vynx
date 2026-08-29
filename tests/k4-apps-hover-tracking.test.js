@@ -22,7 +22,10 @@ test("apps grid keeps viewport hover tracking inside the GridView root", async (
     assert.match(apps, /K4CursorTrackedGridView\s*\{[\s\S]*?id:\s*utilityGrid/);
     assert.match(apps, /hoverWidth:\s*cellWidth\s*-\s*6/);
     assert.match(apps, /hoverHeight:\s*cellHeight\s*-\s*6/);
-    assert.match(apps, /onHoveredIndexChanged:[\s\S]*?root\.plugin\.selection\s*=\s*hoveredIndex/);
+    assert.doesNotMatch(apps, /onHoveredIndexChanged/);
+    assert.match(apps, /readonly property bool hovered:\s*index\s*===\s*utilityGrid\.hoveredIndex/);
+    assert.match(apps, /readonly property bool selected:\s*utilityGrid\.hoveredIndex\s*<\s*0[\s\S]*?index\s*===\s*root\.plugin\.selection/);
+    assert.match(apps, /color:\s*hovered\s*\|\|\s*selected\s*\?\s*K4Theme\.surfaceHi/);
     assert.doesNotMatch(apps, /utilityMouse\.containsMouse|hoverEnabled:\s*true[\s\S]*?onEntered:\s*root\.plugin\.selection/);
     assert.doesNotMatch(apps, /Behavior\s+on\s+color/);
 });
