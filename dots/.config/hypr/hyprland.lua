@@ -40,6 +40,15 @@ end
 -- Shell overrides --
 require("hyprland.shellOverrides.main")
 
+-- K4 owns its expansion/collapse motion inside QML. Keep Hyprland from
+-- independently animating the resizing layer surface as it moves between the
+-- collapsed and expanded bottom geometry. This is a targeted #22 runtime A/B;
+-- other Quickshell layer animations remain unchanged.
+hl.layer_rule({
+    match = { namespace = "quickshell:k4bar" },
+    no_anim = true,
+})
+
 -- Dedicated Liquid Glass layers own their compositor blur. This namespace is
 -- never used by the Material dashboard, so the override is safe at all times.
 -- Use the compositor's native slide animation so the visual glass surface
