@@ -34,6 +34,18 @@ The K4-11 managed-plugin lifecycle experiment has been **withdrawn and reverted*
 
 Detailed historical review documents remain under `docs/k4-bar-port/`.
 
+## Recent stabilization evidence
+
+The final stabilization pass has also live-validated several hover/presentation fixes that are now guarded in `tests/k4-hover-tracking.test.js`:
+
+- Wi-Fi and Bluetooth fixed-height connection rows derive hover from the `K4CursorTrackedListView` viewport, so a stationary cursor remains physically aligned while the list scrolls;
+- connection-row hover uses `K4Theme.surfaceHi`, preserving visible contrast against the panel surface;
+- Sound device rows use immediate `surfaceHi` hover contrast with no delayed color animation;
+- Launcher results now reuse the same validated `K4CursorTrackedListView` path as Wi-Fi/Bluetooth, removing delegate-local hover tracking and hover color animation;
+- the abandoned five-column Apps/GridView tracer was removed after runtime evidence showed the reported lag belonged to Launcher rather than `K4AppsView`.
+
+These fixes do not change the selected K4 feature scope or introduce another desktop-service owner.
+
 ## K4-10 Displays boundary
 
 Displays remains monitor-layout only:
@@ -156,4 +168,4 @@ K4-V1-05 therefore remains not fully runtime-green while #22 is open.
 
 ## Next action
 
-Run the consolidated K4 source suite and one live smoke after the lifecycle-removal cleanup. If green, proceed with the remaining K4-V1-05/K4-12 closure work; do not perform per-plugin lifecycle validation because that feature no longer exists.
+Run the consolidated K4 source suite against the current stabilization branch. Then reproduce issue #22 with a narrow bottom-hover diagnostic probe that records the island, edge and bottom-bridge hover contributors separately together with occupant, passive-hover latch, target/surface/island height and pointer-over state. Use that trace to fix the demonstrated cause before K4-V1-05 closure; do not add another timer/surface workaround without discriminating evidence.
