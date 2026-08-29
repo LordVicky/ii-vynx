@@ -152,7 +152,7 @@ Item {
             hoverHeight: cellHeight - 6
 
             onCurrentIndexChanged: {
-                if (currentIndex >= 0)
+                if (currentIndex >= 0 && hoveredIndex < 0)
                     positionViewAtIndex(currentIndex, GridView.Contain)
             }
 
@@ -176,14 +176,15 @@ Item {
                 id: utilityTile
                 required property var modelData
                 required property int index
+                readonly property bool hovered: index === utilityGrid.hoveredIndex
+                readonly property bool selected: index === root.plugin.selection
 
                 width: GridView.view.cellWidth - 6
                 height: GridView.view.cellHeight - 6
                 radius: 14
                 opacity: modelData.enabled ? 1 : 0.38
-                color: index === root.plugin.selection
-                    ? K4Theme.surfaceHi : "transparent"
-                border.width: index === root.plugin.selection ? 2 : 0
+                color: hovered || selected ? K4Theme.surfaceHi : "transparent"
+                border.width: hovered || selected ? 2 : 0
                 border.color: K4Theme.blue
 
                 Column {
