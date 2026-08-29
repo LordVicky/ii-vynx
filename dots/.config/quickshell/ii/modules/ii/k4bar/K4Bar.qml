@@ -197,6 +197,33 @@ Scope {
                 islandBodyHeight + 2 + (island.gestureInProgress ? 44 : 0))
             property int surfaceHeight: targetHeight
 
+            // Temporary #22 probe. Do not change timing/geometry here; the point
+            // is to discriminate which hover contributor disappears while a
+            // bottom-anchored passive Player expands under a stationary cursor.
+            function traceBottom(reason) {
+                if (!bottom || hideMode)
+                    return
+                console.warn(
+                    "[K4BottomHover]", Date.now(), reason,
+                    "screen=", panelWindow.screen.name,
+                    "visible=", panelWindow.pluginVisible?.name ?? "",
+                    "active=", controller.activePlugin?.name ?? "",
+                    "pointerOver=", panelWindow.pointerOver,
+                    "island=", islandHover.hovered,
+                    "bridge=", bottomBridgeHover.hovered,
+                    "edge=", edgeHover.hovered,
+                    "stateHovered=", IslandState.hovered,
+                    "passive=", controller.passiveHoverAllowed,
+                    "targetH=", panelWindow.targetHeight,
+                    "surfaceH=", panelWindow.surfaceHeight,
+                    "islandH=", island.height,
+                    "bridgeX=", bottomHoverBridge.x,
+                    "bridgeW=", bottomHoverBridge.width,
+                    "islandX=", island.x,
+                    "islandW=", island.width
+                )
+            }
+
             function reconsiderWithdrawal() {
                 if (!hideMode) {
                     withdrawTimer.stop()
@@ -210,7 +237,16 @@ Scope {
                 }
             }
 
+            onPluginVisibleChanged: traceBottom("plugin-visible")
+            onSurfaceHeightChanged: traceBottom("surface-height")
+
+            Connections {
+                target: IslandState
+                function onHoveredChanged() { panelWindow.traceBottom("state-hovered") }
+            }
+
             onPointerOverChanged: {
+                traceBottom("pointer-over")
                 if (!hideMode) {
                     if (pointerOver)
                         controller.hoverEntered(panelWindow.screen.name)
@@ -300,6 +336,7 @@ Scope {
             }
 
             onTargetHeightChanged: {
+                traceBottom("target-height")
                 // A pending shrink belongs to the previous owner. If another
                 // explicit view opens during the 520ms collapse grace, cancel
                 // that stale callback before it can resize the layer surface
@@ -354,7 +391,10 @@ Scope {
                 anchors.bottom: panelWindow.bottom ? parent.bottom : undefined
                 opacity: 0
 
-                HoverHandler { id: edgeHover }
+                HoverHandler {
+                    id: edgeHover
+                    onHoveredChanged: panelWindow.traceBottom("edge-hover")
+                }
             }
 
             // Growing a bottom-anchored layer surface moves its window origin.
@@ -372,7 +412,13 @@ Scope {
                 anchors.bottom: parent.bottom
                 opacity: 0
 
-                HoverHandler { id: bottomBridgeHover }
+                onXChanged: panelWindow.traceBottom("bridge-x")
+                onWidthChanged: panelWindow.traceBottom("bridge-width")
+
+                HoverHandler {
+                    id: bottomBridgeHover
+                    onHoveredChanged: panelWindow.traceBottom("bridge-hover")
+                }
             }
 
             Item {
@@ -410,6 +456,9 @@ Scope {
                         duration: 400
                         easing.type: Easing.OutBack
                         easing.overshoot: 0.32
+                        onRunningChanged: panelWindow.traceBottom(
+                            running ? "island-height-animation-start"
+                                    : "island-height-animation-done")
                     }
                 }
 
@@ -540,7 +589,10 @@ Scope {
                     }
                 }
 
-                HoverHandler { id: islandHover }
+                HoverHandler {
+                    id: islandHover
+                    onHoveredChanged: panelWindow.traceBottom("island-hover")
+                }
 
                 Shape {
                     id: silhouette
