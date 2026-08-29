@@ -22,14 +22,15 @@ test("scrolling connection rows derive hover from a stationary viewport MouseAre
     assert.match(tracker, /onPositionChanged:\s*mouse\s*=>\s*root\.trackedPointerY\s*=\s*mouse\.y/);
     assert.match(tracker, /onExited:\s*root\.trackedPointerY\s*=\s*-1/);
     assert.match(tracker, /onWheel:\s*wheel\s*=>\s*wheel\.accepted\s*=\s*false/);
-    assert.doesNotMatch(tracker, /HoverHandler|WheelHandler/);
+    assert.doesNotMatch(tracker, /HoverHandler|WheelHandler|\[K4Hover\]|console\.warn/);
 });
 
-test("connection rows only render externally-derived hover", async () => {
+test("connection rows render externally-derived hover with visible contrast", async () => {
     const row = await read("modules/ii/k4bar/K4PanelConnectionRow.qml");
 
     assert.match(row, /property bool hovered:\s*false/);
-    assert.match(row, /root\.hovered\s*\?\s*K4Theme\.surface\s*:\s*"transparent"/);
+    assert.match(row, /root\.hovered\s*\?\s*K4Theme\.surfaceHi\s*:\s*"transparent"/);
+    assert.doesNotMatch(row, /root\.hovered\s*\?\s*K4Theme\.surface\s*:/);
     assert.doesNotMatch(row, /containsMouse|HoverHandler|hoverEnabled|reportPointer|rememberPointer/);
     assert.doesNotMatch(row, /Behavior\s+on\s+color/);
 });

@@ -18,7 +18,7 @@ Rectangle {
     implicitHeight: 42
     radius: 10
     color: root.active ? K4Theme.surfaceHi
-        : root.hovered ? K4Theme.surface : "transparent"
+        : root.hovered ? K4Theme.surfaceHi : "transparent"
 
     RowLayout {
         anchors.fill: parent
