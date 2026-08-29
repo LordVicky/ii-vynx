@@ -9,9 +9,11 @@ test("connection rows use the same delegate-local MouseArea hover seam as Applic
     const apps = await read("modules/ii/k4bar/K4AppsView.qml");
     const row = await read("modules/ii/k4bar/K4PanelConnectionRow.qml");
 
-    assert.match(apps, /MouseArea\s*\{[\s\S]*?hoverEnabled:\s*true[\s\S]*?containsMouse/);
-    assert.match(row, /MouseArea\s*\{[\s\S]*?id:\s*rowMouse[\s\S]*?hoverEnabled:\s*true/);
+    assert.match(apps, /utilityMouse\.containsMouse\s*\?\s*K4Theme\.surface\s*:\s*"transparent"/);
+    assert.match(apps, /MouseArea\s*\{[\s\S]*?id:\s*utilityMouse[\s\S]*?hoverEnabled:\s*true/);
+
     assert.match(row, /rowMouse\.containsMouse\s*\?\s*K4Theme\.surface\s*:\s*"transparent"/);
+    assert.match(row, /MouseArea\s*\{[\s\S]*?id:\s*rowMouse[\s\S]*?hoverEnabled:\s*true/);
     assert.doesNotMatch(row, /HoverHandler/);
 });
 
