@@ -134,13 +134,21 @@ Item {
                 contentItem: Rectangle { implicitWidth: 4; radius: 2; color: parent.pressed ? K4Theme.muted : K4Theme.dim }
                 background: Item {}
             }
+
+            K4ViewportPointer {
+                id: filesPointer
+                surface: rows
+            }
+
             delegate: Rectangle {
                 id: row
                 required property var modelData
                 required property int index
                 readonly property bool selected: index === root.plugin.index
+                readonly property bool hovered: filesPointer.contains(row)
                 width: ListView.view.width; height: 48; radius: 9
-                color: selected ? K4Theme.surfaceHi : rowMouse.containsMouse ? K4Theme.surface : "transparent"
+                color: selected || hovered ? K4Theme.surfaceHi : "transparent"
+                onHoveredChanged: if (hovered) root.plugin.index = index
                 RowLayout {
                     anchors.fill: parent; anchors.leftMargin: 10; anchors.rightMargin: 10; spacing: 10
                     Text {
@@ -157,8 +165,7 @@ Item {
                     Text { visible: !row.modelData.isDirectory; text: root.sizeText(row.modelData.bytes); color: K4Theme.dim; font.family: K4Theme.uiFont; font.pixelSize: 10 }
                 }
                 MouseArea {
-                    id: rowMouse; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                    onEntered: root.plugin.index = row.index
+                    anchors.fill: parent; cursorShape: Qt.PointingHandCursor
                     onClicked: { root.plugin.index = row.index; root.plugin.choose() }
                 }
             }
