@@ -49,3 +49,16 @@ test("Wi-Fi and Bluetooth bind fixed-height rows to viewport-derived hover indic
     assert.match(bluetooth, /height:\s*ListView\.view\.rowHeight/);
     assert.match(bluetooth, /hovered:\s*index\s*===\s*devicesList\.hoveredIndex/);
 });
+
+test("launcher reuses the validated viewport list tracker without animated hover", async () => {
+    const launcher = await read("modules/ii/k4bar/K4LauncherView.qml");
+
+    assert.match(launcher, /K4CursorTrackedListView\s*\{[\s\S]*?id:\s*appResults[\s\S]*?rowHeight:\s*42/);
+    assert.match(launcher, /onHoveredIndexChanged:[\s\S]*?root\.plugin\.index\s*=\s*hoveredIndex/);
+    assert.match(launcher, /readonly property bool hovered:\s*index\s*===\s*appResults\.hoveredIndex/);
+    assert.match(launcher, /readonly property bool highlighted:[\s\S]*?appResults\.trackedPointerY\s*<\s*0/);
+    assert.match(launcher, /color:\s*highlighted\s*\?\s*K4Theme\.surfaceHi\s*:\s*"transparent"/);
+    assert.match(launcher, /height:\s*ListView\.view\.rowHeight/);
+    assert.doesNotMatch(launcher, /Behavior\s+on\s+color|highlightMoveDuration/);
+    assert.doesNotMatch(launcher, /hoverEnabled:\s*true[\s\S]*?onEntered:\s*root\.plugin\.index/);
+});
