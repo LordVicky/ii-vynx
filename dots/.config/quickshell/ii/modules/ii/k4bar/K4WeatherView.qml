@@ -140,27 +140,19 @@ Item {
                     }
 
                     ListView {
-                        id: cityResults
                         Layout.fillWidth: true
                         Layout.fillHeight: true
                         clip: true
                         model: K4Weather.matches
                         spacing: 2
                         boundsBehavior: Flickable.StopAtBounds
-
-                        K4ViewportPointer {
-                            id: cityPointer
-                            surface: cityResults
-                        }
-
                         delegate: Rectangle {
                             id: cityRow
                             required property var modelData
-                            readonly property bool hovered: cityPointer.contains(cityRow)
                             width: ListView.view.width
                             height: 46
                             radius: 10
-                            color: hovered ? K4Theme.surfaceHi : "transparent"
+                            color: cityHover.containsMouse ? K4Theme.surfaceHi : "transparent"
                             RowLayout {
                                 anchors.fill: parent
                                 anchors.leftMargin: 12; anchors.rightMargin: 12; spacing: 10
@@ -171,7 +163,7 @@ Item {
                                     Text { Layout.fillWidth: true; text: cityRow.modelData.region; color: K4Theme.muted; font.family: K4Theme.uiFont; font.pixelSize: 10; elide: Text.ElideRight }
                                 }
                             }
-                            MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: root.plugin.choose(cityRow.modelData) }
+                            MouseArea { id: cityHover; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: root.plugin.choose(cityRow.modelData) }
                         }
                         Text { anchors.centerIn: parent; visible: !K4Weather.searching && root.plugin.query.length >= 2 && K4Weather.matches.length === 0; text: "No matching places"; color: K4Theme.muted; font.family: K4Theme.uiFont; font.pixelSize: 12 }
                     }

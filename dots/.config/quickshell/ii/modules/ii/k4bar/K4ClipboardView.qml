@@ -162,30 +162,23 @@ Item {
                 background: Item {}
             }
 
-            K4ViewportPointer {
-                id: clipboardPointer
-                surface: rows
-            }
-
             delegate: Rectangle {
                 id: row
                 required property var modelData
                 required property int index
                 readonly property bool selected: index === root.plugin.index
-                readonly property bool hovered: clipboardPointer.contains(row)
                 width: ListView.view.width
                 height: 48
                 radius: 9
-                color: selected || hovered ? K4Theme.surfaceHi : "transparent"
-
-                onHoveredChanged: {
-                    if (hovered)
-                        root.plugin.index = index
-                }
+                color: selected ? K4Theme.surfaceHi : rowMouse.containsMouse ? K4Theme.surface : "transparent"
+                Behavior on color { ColorAnimation { duration: 110 } }
 
                 MouseArea {
+                    id: rowMouse
                     anchors.fill: parent
+                    hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
+                    onEntered: root.plugin.index = row.index
                     onClicked: {
                         root.plugin.index = row.index
                         root.plugin.choose()
@@ -257,7 +250,7 @@ Item {
                     Text {
                         text: String.fromCodePoint(0xF0403)
                         color: row.modelData.pinned ? K4Theme.yellow : K4Theme.dim
-                        opacity: row.modelData.pinned || row.selected || row.hovered ? 1 : 0
+                        opacity: row.modelData.pinned || row.selected || rowMouse.containsMouse ? 1 : 0
                         font.family: K4Theme.iconFont
                         font.pixelSize: 13
                         MouseArea {
@@ -271,7 +264,7 @@ Item {
                     Text {
                         text: K4Theme.ico.close
                         color: K4Theme.dim
-                        opacity: row.selected || row.hovered ? 1 : 0
+                        opacity: row.selected || rowMouse.containsMouse ? 1 : 0
                         font.family: K4Theme.iconFont
                         font.pixelSize: 12
                         MouseArea {

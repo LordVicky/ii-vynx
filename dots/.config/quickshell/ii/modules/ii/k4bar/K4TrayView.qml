@@ -65,7 +65,6 @@ Item {
                 color: K4Theme.surface
 
                 ListView {
-                    id: trayApps
                     anchors.fill: parent
                     anchors.margins: 8
                     clip: true
@@ -80,20 +79,15 @@ Item {
                         background: Item {}
                     }
 
-                    K4ViewportPointer {
-                        id: trayAppsPointer
-                        surface: trayApps
-                    }
-
                     delegate: Rectangle {
                         id: appRow
                         required property var modelData
                         readonly property bool current: root.selected === modelData
-                        readonly property bool hovered: trayAppsPointer.contains(appRow)
                         width: ListView.view.width
                         height: 46
                         radius: 10
-                        color: current || hovered ? K4Theme.surfaceHi : "transparent"
+                        color: current ? K4Theme.surfaceHi : (appMouse.containsMouse ? "#26262a" : "transparent")
+                        Behavior on color { ColorAnimation { duration: 120 } }
 
                         RowLayout {
                             anchors.fill: parent
@@ -119,7 +113,9 @@ Item {
                         }
 
                         MouseArea {
+                            id: appMouse
                             anchors.fill: parent
+                            hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
                             acceptedButtons: Qt.LeftButton | Qt.MiddleButton
                             onClicked: function(mouse) {
@@ -181,7 +177,6 @@ Item {
                     Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: K4Theme.surfaceHi }
 
                     ListView {
-                        id: trayMenu
                         Layout.fillWidth: true
                         Layout.fillHeight: true
                         clip: true
@@ -196,15 +191,9 @@ Item {
                             background: Item {}
                         }
 
-                        K4ViewportPointer {
-                            id: trayMenuPointer
-                            surface: trayMenu
-                        }
-
                         delegate: Item {
                             id: entryRow
                             required property var modelData
-                            readonly property bool hovered: trayMenuPointer.contains(entryRow)
                             width: ListView.view.width
                             height: modelData.isSeparator ? 9 : 30
 
@@ -221,7 +210,8 @@ Item {
                                 visible: !entryRow.modelData.isSeparator
                                 anchors.fill: parent
                                 radius: 8
-                                color: entryRow.hovered && entryRow.modelData.enabled ? K4Theme.surfaceHi : "transparent"
+                                color: entryMouse.containsMouse && entryRow.modelData.enabled ? K4Theme.surfaceHi : "transparent"
+                                Behavior on color { ColorAnimation { duration: 100 } }
 
                                 RowLayout {
                                     anchors.fill: parent
@@ -233,7 +223,9 @@ Item {
                                 }
 
                                 MouseArea {
+                                    id: entryMouse
                                     anchors.fill: parent
+                                    hoverEnabled: true
                                     cursorShape: entryRow.modelData.enabled && !entryRow.modelData.hasChildren ? Qt.PointingHandCursor : Qt.ArrowCursor
                                     enabled: entryRow.modelData.enabled && !entryRow.modelData.hasChildren
                                     onClicked: { entryRow.modelData.triggered(); root.plugin.close() }

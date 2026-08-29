@@ -85,11 +85,6 @@ Item {
                 background: Item {}
             }
 
-            K4ViewportPointer {
-                id: settingsPointer
-                surface: scroller
-            }
-
             ColumnLayout {
                 id: settingsColumn
                 width: scroller.width
@@ -135,12 +130,13 @@ Item {
                                     id: positionChoice
                                     required property var modelData
                                     readonly property bool selected: K4Settings.position === modelData.value
-                                    readonly property bool hovered: settingsPointer.contains(positionChoice)
                                     Layout.preferredWidth: positionLabel.implicitWidth + 24
                                     Layout.preferredHeight: 26
                                     radius: 13
                                     color: selected ? K4Theme.blue
-                                        : hovered ? K4Theme.surfaceHi : K4Theme.track
+                                        : positionHover.hovered ? K4Theme.surfaceHi : K4Theme.track
+
+                                    Behavior on color { ColorAnimation { duration: 120 } }
 
                                     Text {
                                         id: positionLabel
@@ -153,6 +149,7 @@ Item {
                                         renderType: Text.NativeRendering
                                     }
 
+                                    HoverHandler { id: positionHover }
                                     TapHandler {
                                         cursorShape: Qt.PointingHandCursor
                                         onTapped: K4Settings.setPosition(positionChoice.modelData.value)
@@ -195,12 +192,13 @@ Item {
                                     id: alignmentChoice
                                     required property var modelData
                                     readonly property bool selected: K4Settings.alignment === modelData.value
-                                    readonly property bool hovered: settingsPointer.contains(alignmentChoice)
                                     Layout.preferredWidth: alignmentLabel.implicitWidth + 24
                                     Layout.preferredHeight: 26
                                     radius: 13
                                     color: selected ? K4Theme.blue
-                                        : hovered ? K4Theme.surfaceHi : K4Theme.track
+                                        : alignmentHover.hovered ? K4Theme.surfaceHi : K4Theme.track
+
+                                    Behavior on color { ColorAnimation { duration: 120 } }
 
                                     Text {
                                         id: alignmentLabel
@@ -213,6 +211,7 @@ Item {
                                         renderType: Text.NativeRendering
                                     }
 
+                                    HoverHandler { id: alignmentHover }
                                     TapHandler {
                                         cursorShape: Qt.PointingHandCursor
                                         onTapped: K4Settings.setAlignment(alignmentChoice.modelData.value)
@@ -269,12 +268,13 @@ Item {
                                     id: spaceChoice
                                     required property var modelData
                                     readonly property bool selected: K4Settings.spaceMode === modelData.value
-                                    readonly property bool hovered: settingsPointer.contains(spaceChoice)
                                     Layout.preferredWidth: spaceLabel.implicitWidth + 24
                                     Layout.preferredHeight: 26
                                     radius: 13
                                     color: selected ? K4Theme.blue
-                                        : hovered ? K4Theme.surfaceHi : K4Theme.track
+                                        : spaceHover.hovered ? K4Theme.surfaceHi : K4Theme.track
+
+                                    Behavior on color { ColorAnimation { duration: 120 } }
 
                                     Text {
                                         id: spaceLabel
@@ -287,6 +287,7 @@ Item {
                                         renderType: Text.NativeRendering
                                     }
 
+                                    HoverHandler { id: spaceHover }
                                     TapHandler {
                                         cursorShape: Qt.PointingHandCursor
                                         onTapped: K4Settings.setSpaceMode(spaceChoice.modelData.value)
@@ -300,46 +301,38 @@ Item {
                 }
 
                 K4SettingsToggle {
-                    id: trayToggle
                     Layout.fillWidth: true
                     title: "Tray in collapsed pill"
                     description: "Show up to four system-tray items beside the clock"
                     glyph: String.fromCodePoint(0xF1296)
                     checked: K4Settings.trayInPill
-                    externalHovered: settingsPointer.contains(trayToggle)
                     onToggled: value => K4Settings.setTrayInPill(value)
                 }
 
                 K4SettingsToggle {
-                    id: notificationsToggle
                     Layout.fillWidth: true
                     title: "Recent notifications on hover"
                     description: "Show the recent-notification strip under Clock and Player"
                     glyph: K4Theme.ico.bellOutline
                     checked: K4Settings.notificationsOnHover
-                    externalHovered: settingsPointer.contains(notificationsToggle)
                     onToggled: value => K4Settings.setNotificationsOnHover(value)
                 }
 
                 K4SettingsToggle {
-                    id: playerPeekToggle
                     Layout.fillWidth: true
                     title: "Peek Player on track change"
                     description: "Show the new track for a few seconds, even while the bar is hidden"
                     glyph: K4Theme.ico.music
                     checked: K4Settings.playerPeekOnTrackChange
-                    externalHovered: settingsPointer.contains(playerPeekToggle)
                     onToggled: value => K4Settings.setPlayerPeekOnTrackChange(value)
                 }
 
                 K4SettingsToggle {
-                    id: dismissToggle
                     Layout.fillWidth: true
                     title: "Dismiss when application is focused"
                     description: "Clear matching notifications after their application takes focus"
                     glyph: K4Theme.ico.check
                     checked: K4Settings.dismissNotificationsOnFocus
-                    externalHovered: settingsPointer.contains(dismissToggle)
                     onToggled: value => K4Settings.setDismissNotificationsOnFocus(value)
                 }
 

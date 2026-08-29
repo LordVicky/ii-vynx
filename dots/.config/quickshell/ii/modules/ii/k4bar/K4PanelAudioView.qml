@@ -20,7 +20,6 @@ Item {
         required property var nodes
         required property var activeNode
         required property bool input
-        required property var hoverTracker
 
         Layout.fillWidth: true
         spacing: 4
@@ -50,7 +49,6 @@ Item {
                 id: row
                 required property var modelData
                 readonly property bool selected: group.activeNode && group.activeNode.id === modelData.id
-                readonly property bool hovered: group.hoverTracker.contains(row)
                 readonly property int volume: K4AudioDevices.volumeFor(modelData)
                 readonly property bool muted: K4AudioDevices.mutedFor(modelData)
                 readonly property int base: K4AudioDevices.baseFor(modelData)
@@ -59,8 +57,11 @@ Item {
                 Layout.fillWidth: true
                 Layout.preferredHeight: 54
                 radius: 10
-                color: selected || hovered ? K4Theme.surfaceHi : "transparent"
+                color: selected ? K4Theme.surfaceHi : rowHover.hovered ? K4Theme.surface : "transparent"
 
+                Behavior on color { ColorAnimation { duration: 110 } }
+
+                HoverHandler { id: rowHover }
                 MouseArea {
                     anchors.fill: parent
                     z: -1
@@ -191,18 +192,12 @@ Item {
         color: K4Theme.surface
 
         Flickable {
-            id: audioScroller
             anchors.fill: parent
             anchors.margins: 12
             contentWidth: width
             contentHeight: devices.implicitHeight
             clip: true
             boundsBehavior: Flickable.StopAtBounds
-
-            K4ViewportPointer {
-                id: audioPointer
-                surface: audioScroller
-            }
 
             ColumnLayout {
                 id: devices
@@ -214,7 +209,6 @@ Item {
                     nodes: K4AudioDevices.outputs
                     activeNode: K4AudioDevices.activeOutput
                     input: false
-                    hoverTracker: audioPointer
                 }
 
                 DeviceGroup {
@@ -222,7 +216,6 @@ Item {
                     nodes: K4AudioDevices.inputs
                     activeNode: K4AudioDevices.activeInput
                     input: true
-                    hoverTracker: audioPointer
                 }
             }
         }

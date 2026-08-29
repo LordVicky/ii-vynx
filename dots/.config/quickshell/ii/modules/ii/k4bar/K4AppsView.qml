@@ -165,30 +165,22 @@ Item {
                 background: Item {}
             }
 
-            K4ViewportPointer {
-                id: utilityPointer
-                surface: utilityGrid
-            }
-
             delegate: Rectangle {
                 id: utilityTile
                 required property var modelData
                 required property int index
-                readonly property bool hovered: utilityPointer.contains(utilityTile)
 
                 width: GridView.view.cellWidth - 6
                 height: GridView.view.cellHeight - 6
                 radius: 14
                 opacity: modelData.enabled ? 1 : 0.38
-                color: index === root.plugin.selection || hovered
-                    ? K4Theme.surfaceHi : "transparent"
+                color: index === root.plugin.selection
+                    ? K4Theme.surfaceHi
+                    : utilityMouse.containsMouse ? K4Theme.surface : "transparent"
                 border.width: index === root.plugin.selection ? 2 : 0
                 border.color: K4Theme.blue
 
-                onHoveredChanged: {
-                    if (hovered)
-                        root.plugin.selection = index
-                }
+                Behavior on color { ColorAnimation { duration: 120 } }
 
                 Column {
                     anchors.centerIn: parent
@@ -219,8 +211,11 @@ Item {
                 }
 
                 MouseArea {
+                    id: utilityMouse
                     anchors.fill: parent
+                    hoverEnabled: true
                     cursorShape: modelData.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+                    onEntered: root.plugin.selection = utilityTile.index
                     onClicked: {
                         root.plugin.selection = utilityTile.index
                         if (utilityTile.modelData.enabled)

@@ -168,27 +168,17 @@ Item {
                 background: Item {}
             }
 
-            K4ViewportPointer {
-                id: launcherPointer
-                surface: appResults
-            }
-
             delegate: Rectangle {
                 id: appRow
                 required property var modelData
                 required property int index
-                readonly property bool hovered: launcherPointer.contains(appRow)
 
                 width: ListView.view.width
                 height: 42
                 radius: 10
-                color: index === root.plugin.index || hovered
-                    ? K4Theme.surfaceHi : "transparent"
+                color: index === root.plugin.index ? K4Theme.surfaceHi : "transparent"
 
-                onHoveredChanged: {
-                    if (hovered)
-                        root.plugin.index = index
-                }
+                Behavior on color { ColorAnimation { duration: 120 } }
 
                 RowLayout {
                     anchors.fill: parent
@@ -246,7 +236,9 @@ Item {
 
                 MouseArea {
                     anchors.fill: parent
+                    hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
+                    onEntered: root.plugin.index = appRow.index
                     onClicked: {
                         root.plugin.index = appRow.index
                         root.plugin.launchSelected()
