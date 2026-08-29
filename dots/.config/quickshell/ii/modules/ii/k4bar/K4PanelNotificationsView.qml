@@ -11,6 +11,7 @@ Item {
         color: K4Theme.surface
 
         ListView {
+            id: notificationsList
             anchors.fill: parent
             anchors.margins: 10
             clip: true
@@ -18,20 +19,23 @@ Item {
             model: K4Notifications.history
             boundsBehavior: Flickable.StopAtBounds
 
+            K4ViewportPointer {
+                id: notificationsPointer
+                surface: notificationsList
+            }
+
             delegate: Rectangle {
                 id: card
                 required property var modelData
                 readonly property var actions: K4Notifications.buttons(modelData)
                 readonly property string iconSource: K4Notifications.iconFor(modelData)
+                readonly property bool hovered: notificationsPointer.contains(card)
 
                 width: ListView.view.width
                 height: 66 + (actions.length > 0 ? 28 : 0)
                 radius: 11
-                color: cardHover.hovered ? K4Theme.surfaceHi : K4Theme.surface
+                color: hovered ? K4Theme.surfaceHi : K4Theme.surface
 
-                Behavior on color { ColorAnimation { duration: 110 } }
-
-                HoverHandler { id: cardHover }
                 MouseArea {
                     anchors.fill: parent
                     z: -1
@@ -128,10 +132,11 @@ Item {
                                 delegate: Rectangle {
                                     id: chip
                                     required property var modelData
+                                    readonly property bool hovered: notificationsPointer.contains(chip)
                                     Layout.preferredWidth: Math.min(chipText.implicitWidth + 18, 145)
                                     Layout.preferredHeight: 20
                                     radius: 10
-                                    color: chipHover.hovered ? K4Theme.blue : K4Theme.surfaceHi
+                                    color: hovered ? K4Theme.blue : K4Theme.surfaceHi
 
                                     Text {
                                         id: chipText
@@ -144,7 +149,6 @@ Item {
                                         renderType: Text.NativeRendering
                                     }
 
-                                    HoverHandler { id: chipHover }
                                     TapHandler {
                                         cursorShape: Qt.PointingHandCursor
                                         onTapped: K4Notifications.invokeAction(card.modelData, chip.modelData)
