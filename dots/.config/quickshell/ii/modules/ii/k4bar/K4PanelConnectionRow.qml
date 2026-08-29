@@ -19,8 +19,6 @@ Rectangle {
     color: root.active ? K4Theme.surfaceHi
         : hover.hovered ? K4Theme.surface : "transparent"
 
-    Behavior on color { ColorAnimation { duration: 110 } }
-
     RowLayout {
         anchors.fill: parent
         anchors.leftMargin: 10
