@@ -44,6 +44,8 @@ The final stabilization pass has also live-validated several hover/presentation 
 - Launcher results now reuse the same validated `K4CursorTrackedListView` path as Wi-Fi/Bluetooth, removing delegate-local hover tracking and hover color animation;
 - the abandoned five-column Apps/GridView tracer was removed after runtime evidence showed the reported lag belonged to Launcher rather than `K4AppsView`.
 
+The consolidated K4 source suite (`node --test tests/k4-*.test.js`) is green on the current stabilization branch after updating the legacy launcher assertion to match the live-validated viewport-hover contract.
+
 These fixes do not change the selected K4 feature scope or introduce another desktop-service owner.
 
 ## K4-10 Displays boundary
@@ -168,4 +170,4 @@ K4-V1-05 therefore remains not fully runtime-green while #22 is open.
 
 ## Next action
 
-Run the consolidated K4 source suite against the current stabilization branch. Then reproduce issue #22 with a narrow bottom-hover diagnostic probe that records the island, edge and bottom-bridge hover contributors separately together with occupant, passive-hover latch, target/surface/island height and pointer-over state. Use that trace to fix the demonstrated cause before K4-V1-05 closure; do not add another timer/surface workaround without discriminating evidence.
+With the consolidated K4 source suite green, reproduce issue #22 with the narrow bottom-hover diagnostic probe already present on the branch. Capture the `[K4BottomHover]` trace that records the island, edge and bottom-bridge hover contributors separately together with occupant, passive-hover latch, target/surface/island height and pointer-over state. Use that trace to fix the demonstrated cause before K4-V1-05 closure; do not add another timer/surface workaround without discriminating evidence.
