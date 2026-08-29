@@ -37,7 +37,7 @@ Item {
             radius: 12
             color: K4Theme.surface
 
-            K4HoverListView {
+            ListView {
                 id: devicesList
                 anchors.fill: parent
                 anchors.margins: 10
@@ -48,7 +48,6 @@ Item {
 
                 delegate: K4PanelConnectionRow {
                     required property var modelData
-                    required property int index
                     width: ListView.view.width
                     title: modelData.name?.length > 0 ? modelData.name : modelData.address
                     subtitle: K4Bluetooth.status(modelData)
@@ -56,7 +55,6 @@ Item {
                     active: modelData.connected
                     busy: modelData.pairing ?? false
                     forgettable: modelData.paired
-                    hovered: index === devicesList.hoveredIndex
                     onActivated: K4Bluetooth.activate(modelData)
                     onForgotten: K4Bluetooth.togglePair(modelData)
                 }
