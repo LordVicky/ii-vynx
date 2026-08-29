@@ -141,20 +141,25 @@ Item {
             color: K4Theme.surfaceHi
         }
 
-        ListView {
+        K4CursorTrackedListView {
             id: appResults
             Layout.fillWidth: true
             Layout.fillHeight: true
             clip: true
             spacing: 2
+            rowHeight: 42
             boundsBehavior: Flickable.StopAtBounds
             model: root.plugin.matches
             currentIndex: root.plugin.index
-            highlightMoveDuration: 140
 
             onCurrentIndexChanged: {
-                if (currentIndex >= 0)
+                if (currentIndex >= 0 && trackedPointerY < 0)
                     positionViewAtIndex(currentIndex, ListView.Contain)
+            }
+
+            onHoveredIndexChanged: {
+                if (hoveredIndex >= 0 && hoveredIndex < root.plugin.matches.length)
+                    root.plugin.index = hoveredIndex
             }
 
             ScrollBar.vertical: ScrollBar {
@@ -172,13 +177,15 @@ Item {
                 id: appRow
                 required property var modelData
                 required property int index
+                readonly property bool hovered: index === appResults.hoveredIndex
+                readonly property bool selected: index === root.plugin.index
+                readonly property bool highlighted: hovered
+                    || (appResults.trackedPointerY < 0 && selected)
 
                 width: ListView.view.width
-                height: 42
+                height: ListView.view.rowHeight
                 radius: 10
-                color: index === root.plugin.index ? K4Theme.surfaceHi : "transparent"
-
-                Behavior on color { ColorAnimation { duration: 120 } }
+                color: highlighted ? K4Theme.surfaceHi : "transparent"
 
                 RowLayout {
                     anchors.fill: parent
@@ -224,7 +231,7 @@ Item {
                     }
 
                     Text {
-                        visible: appRow.index === root.plugin.index
+                        visible: appRow.highlighted
                         text: root.enterGlyph
                         color: K4Theme.muted
                         font.family: K4Theme.iconFont
@@ -236,9 +243,7 @@ Item {
 
                 MouseArea {
                     anchors.fill: parent
-                    hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
-                    onEntered: root.plugin.index = appRow.index
                     onClicked: {
                         root.plugin.index = appRow.index
                         root.plugin.launchSelected()
