@@ -3,6 +3,7 @@ pragma ComponentBehavior: Bound
 import qs.modules.common
 import QtQuick
 import Quickshell
+import Quickshell.Io
 import Quickshell.Services.Pipewire
 
 /**
@@ -18,6 +19,7 @@ Singleton {
     readonly property real hardMaxValue: 2.00 // People keep joking about setting volume to 5172% so...
     property string audioTheme: Config.options.sounds.theme
     property real value: sink?.audio.volume ?? 0
+    property var baseVolumes: ({})
     
     function friendlyDeviceName(node) {
         return (node.nickname || node.description || Translation.tr("Unknown"));
@@ -40,10 +42,20 @@ Singleton {
             return root.correctType(node, isSink) && !node.isStream
         })
     }
+    function deviceCandidates(isSink) {
+        return Pipewire.nodes.values.filter(node => {
+            return node.isSink === isSink && !node.isStream
+        })
+    }
     readonly property list<var> outputAppNodes: root.appNodes(true)
     readonly property list<var> inputAppNodes: root.appNodes(false)
     readonly property list<var> outputDevices: root.devices(true)
     readonly property list<var> inputDevices: root.devices(false)
+    // Raw non-stream candidates intentionally do not require node.audio. A
+    // presentation view can track these candidates first, which materializes
+    // their audio properties without changing the existing device-list contract.
+    readonly property list<var> outputDeviceCandidates: root.deviceCandidates(true)
+    readonly property list<var> inputDeviceCandidates: root.deviceCandidates(false)
 
     // Signals
     signal sinkProtectionTriggered(string reason);
@@ -75,6 +87,34 @@ Singleton {
 
     function setDefaultSource(node) {
         Pipewire.preferredDefaultAudioSource = node;
+    }
+
+    // A device's natural/reference level is not exposed by PipeWire. Match the
+    // pinned k4 panel by reading PulseAudio-compatible Base Volume once when
+    // Sound opens; this is event-driven presentation metadata, not polling.
+    function naturalLevelKey(node) {
+        if (!node)
+            return ""
+        return String(node.description || node.nickname || node.name || "")
+    }
+
+    function baseVolumeFor(node) {
+        const base = baseVolumes[naturalLevelKey(node)]
+        return base === undefined ? 0 : base
+    }
+
+    function dbOverNatural(node) {
+        const base = baseVolumeFor(node)
+        const volume = node?.audio ? Math.round(node.audio.volume * 100) : 0
+        if (base <= 0 || volume <= 0)
+            return 0
+        // PulseAudio's cubic volume curve: 60 * log10(v / base).
+        return 60 * Math.log(volume / base) / Math.LN10
+    }
+
+    function refreshBaseVolumes() {
+        if (!baseVolumeReader.running)
+            baseVolumeReader.running = true
     }
 
     // Internals
@@ -111,6 +151,32 @@ Singleton {
                 sink.audio.volume = Math.min(lastVolume, maxAllowed);
             }
             lastVolume = sink.audio.volume;
+        }
+    }
+
+    Process {
+        id: baseVolumeReader
+        command: ["sh", "-c",
+            "{ pactl list sources; pactl list sinks; } | "
+            + "grep -E '^[[:space:]]*(Description|Base Volume):'"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const next = ({})
+                let description = ""
+                const lines = text.split("\n")
+                for (let i = 0; i < lines.length; ++i) {
+                    const line = lines[i].trim()
+                    if (line.indexOf("Description:") === 0) {
+                        description = line.slice(12).trim()
+                    } else if (line.indexOf("Base Volume:") === 0 && description) {
+                        const match = line.match(/(\d+)%/)
+                        if (match)
+                            next[description] = parseInt(match[1], 10)
+                        description = ""
+                    }
+                }
+                root.baseVolumes = next
+            }
         }
     }
 
