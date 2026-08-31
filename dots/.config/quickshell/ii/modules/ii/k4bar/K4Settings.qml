@@ -13,16 +13,16 @@ Singleton {
     readonly property int alignment: Config.options.bar.k4.alignment
     readonly property string spaceMode: Config.options.bar.k4.spaceMode
     readonly property real widthScale: Config.options.bar.k4.widthScale
-    readonly property real uiScale: Config.options.bar.k4.uiScale
+    // UI scaling was removed after runtime validation. Keep the host compatibility
+    // token fixed so existing geometry code resolves to the original K4 size.
+    readonly property real uiScale: 1.0
     readonly property bool trayInPill: Config.options.bar.k4.trayInPill
     readonly property bool notificationsOnHover: Config.options.bar.k4.notificationsOnHover
     readonly property bool dismissNotificationsOnFocus: Config.options.bar.k4.dismissNotificationsOnFocus
     readonly property bool playerPeekOnTrackChange: Config.options.bar.k4.playerPeekOnTrackChange
 
-    readonly property real minWidthScale: 0.8
+    readonly property real minWidthScale: 1.0
     readonly property real maxWidthScale: 1.6
-    readonly property real minUiScale: 0.85
-    readonly property real maxUiScale: 1.4
     readonly property real scaleStep: 0.05
 
     readonly property var positions: [
@@ -70,11 +70,6 @@ Singleton {
     function setWidthScale(wanted) {
         Config.options.bar.k4.widthScale = boundedScale(
             wanted, minWidthScale, maxWidthScale)
-    }
-
-    function setUiScale(wanted) {
-        Config.options.bar.k4.uiScale = boundedScale(
-            wanted, minUiScale, maxUiScale)
     }
 
     function setTrayInPill(wanted) {

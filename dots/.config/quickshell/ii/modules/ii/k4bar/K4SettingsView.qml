@@ -234,16 +234,6 @@ Item {
                     onValueEdited: value => K4Settings.setWidthScale(value)
                 }
 
-                K4SettingsScale {
-                    title: "UI scale"
-                    description: "Scales island height, controls, icons and fonts together"
-                    value: K4Settings.uiScale
-                    minimum: K4Settings.minUiScale
-                    maximum: K4Settings.maxUiScale
-                    stepSize: K4Settings.scaleStep
-                    onValueEdited: value => K4Settings.setUiScale(value)
-                }
-
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 96
