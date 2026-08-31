@@ -68,7 +68,6 @@ Rectangle {
             to: root.maximum
             stepSize: root.stepSize
             value: root.value
-            live: true
             onMoved: root.valueEdited(value)
 
             background: Rectangle {
