@@ -43,7 +43,7 @@ Singleton {
 
     function boundedScale(wanted, minimum, maximum) {
         const value = Number(wanted)
-        if (!Number.isFinite(value))
+        if (!isFinite(value))
             return 1.0
         const clamped = Math.max(minimum, Math.min(maximum, value))
         return Math.round(clamped / scaleStep) * scaleStep
