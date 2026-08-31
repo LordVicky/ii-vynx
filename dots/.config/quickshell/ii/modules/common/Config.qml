@@ -492,6 +492,19 @@ Singleton {
             }
 
             property JsonObject bar: JsonObject {
+                property bool enable: true
+                property string variant: "standard" // "standard" | "k4"
+
+                property JsonObject k4: JsonObject {
+                    property string position: "top" // "top" | "bottom"
+                    property int alignment: 50 // 15 | 50 | 85
+                    property string spaceMode: "reserve" // "reserve" | "fullscreen" | "overlay" | "hidden"
+                    property bool trayInPill: false
+                    property bool notificationsOnHover: true
+                    property bool dismissNotificationsOnFocus: true
+                    property bool playerPeekOnTrackChange: true
+                }
+
                 property JsonObject activeWindow: JsonObject {
                     property bool fixedSize: false
                 }

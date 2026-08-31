@@ -25,7 +25,7 @@ import qs.modules.ii.wallpaperSelector
 
 Scope {
     PanelLoader { component: WaffleActionCenter {} }
-    PanelLoader { component: WaffleBar {} }
+    PanelLoader { extraCondition: Config.options.bar.enable; component: WaffleBar {} }
     PanelLoader { component: WaffleBackground {} }
     PanelLoader { component: WaffleLock {} }
     PanelLoader { component: WaffleNotificationCenter {} }

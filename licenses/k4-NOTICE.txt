@@ -1,0 +1,7 @@
+k4-derived bar code
+
+Copyright (c) 2026 k4ditano
+Upstream: https://github.com/k4ditano/k4
+Original implementation reference: 48993812c88f0af5d0c5345cd273467043b889f1
+Selected v1.0 reference: adcf4216038f7881c4a589baafaaaec841377ad5
+License: MIT. The MIT permission/warranty text is stored in licenses/MIT.txt.

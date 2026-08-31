@@ -17,6 +17,7 @@ require("hyprland.general")
 require("hyprland.rules")
 require("hyprland.colors")
 require("hyprland.keybinds")
+require("hyprland.launcher")
 
 -- Custom configurations --
 if is_file_exists(HOME .. "/.config/hypr/custom/execs.lua") then
@@ -38,3 +39,11 @@ end
 
 -- Shell overrides --
 require("hyprland.shellOverrides.main")
+
+-- K4 owns expansion/collapse motion inside QML. Do not let Hyprland animate
+-- the resizing layer surface independently; compositor motion can invalidate
+-- the stationary-pointer hover session during bottom expansion.
+hl.layer_rule({
+    match = { namespace = "quickshell:k4bar" },
+    no_anim = true,
+})
