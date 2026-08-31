@@ -3,7 +3,6 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Shapes
 import Quickshell
-import Quickshell.Io
 import Quickshell.Wayland
 import qs
 import qs.modules.common
@@ -24,136 +23,16 @@ Scope {
         islandHeight: K4Theme.baseHeight
     }
 
-    // Temporary K4-03 runtime harness. These stay inactive unless explicitly
-    // opened through k4barDebug IPC and are replaced by real plugins later.
-    K4Plugin {
-        id: demoTransient
-        name: "demo-transient"
-        title: "Transient"
-        priority: 59
-        transitorio: true
-        islandWidth: 250
-        islandHeight: 88
-        closeOnHoverExit: true
-        hoverExitDelay: 700
-        onHoverTimedOut: close()
-        view: Component {
-            K4DemoView {
-                title: "Transient"
-                detail: "priority 59 · closes when preempted"
-            }
-        }
-    }
-
-    K4Plugin {
-        id: demoSecondary
-        name: "demo-secondary"
-        title: "Secondary"
-        priority: 70
-        islandWidth: 290
-        islandHeight: 118
-        handlesBackgroundTap: true
-        onBackgroundTapped: close()
-        view: Component {
-            K4DemoView {
-                title: "Secondary"
-                detail: "priority 70 · background click closes"
-            }
-        }
-    }
-
-    K4Plugin {
-        id: demoPrimary
-        name: "demo-primary"
-        title: "Primary"
-        priority: 80
-        islandWidth: 360
-        islandHeight: 162
-        optionalKeyboard: true
-        view: Component {
-            K4DemoView {
-                title: "Primary"
-                detail: "priority 80 · click then Escape closes"
-            }
-        }
-    }
-
     K4PluginController {
         id: controller
-        plugins: [idlePlugin, demoTransient, demoSecondary, demoPrimary]
+        plugins: [idlePlugin]
     }
 
     // Band notifications need their own non-reserving surface so an explicit
     // plugin can keep ownership of the island without clipping the toast.
     K4ToastBandHost {}
 
-    function openDemo(plugin, screenName) {
-        if (screenName)
-            IslandState.requestScreen(screenName)
-        plugin.open()
-    }
-
-    function closeDemos() {
-        demoPrimary.close()
-        demoSecondary.close()
-        demoTransient.close()
-    }
-
     Component.onDestruction: controller.reset()
-
-    IpcHandler {
-        target: "k4barDebug"
-
-        function openPrimary(): void { root.openDemo(demoPrimary, "") }
-        function openPrimaryOn(screen: string): void { root.openDemo(demoPrimary, screen) }
-        function closePrimary(): void { demoPrimary.close() }
-
-        function openSecondary(): void { root.openDemo(demoSecondary, "") }
-        function openSecondaryOn(screen: string): void { root.openDemo(demoSecondary, screen) }
-        function closeSecondary(): void { demoSecondary.close() }
-
-        function openTransient(): void { root.openDemo(demoTransient, "") }
-        function closeTransient(): void { demoTransient.close() }
-        function closeAll(): void { root.closeDemos() }
-
-        function disablePrimary(): void { demoPrimary.enabled = false }
-        function enablePrimary(): void { demoPrimary.enabled = true }
-
-        function hideIsland(): void { IslandState.hidden = true }
-        function showIsland(): void { IslandState.hidden = false }
-        function dialogOpen(): void { IslandState.openSystemDialog() }
-        function dialogClose(): void { IslandState.closeSystemDialog() }
-
-        function placePrimary(fraction: real, durationMs: int): void {
-            demoPrimary.requestPlacement(fraction, durationMs)
-        }
-        function releasePrimaryPlacement(): void { demoPrimary.releasePlacement() }
-        function gesture(name: string, strength: real): void {
-            demoPrimary.requestGesture(name, strength)
-        }
-
-        function status(): string {
-            return JSON.stringify({
-                occupant: IslandState.occupant,
-                open: IslandState.open,
-                activeScreen: IslandState.activeScreen,
-                requestedScreen: IslandState.requestedScreen,
-                position: IslandState.position,
-                rect: IslandState.rect,
-                rects: IslandState.rects,
-                hovered: IslandState.hovered,
-                placement: IslandState.placement,
-                placementOwner: IslandState.placementOwner,
-                hidden: IslandState.hidden,
-                dialogs: IslandState.systemDialogs,
-                suppressed: IslandState.suppressed,
-                primaryActive: demoPrimary.active,
-                primaryEnabled: demoPrimary.enabled,
-                secondaryActive: demoSecondary.active,
-                transientActive: demoTransient.active
-            })
-        }
-    }
 
     Variants {
         model: GlobalStates.screenLocked ? [] : Quickshell.screens
