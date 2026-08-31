@@ -224,6 +224,26 @@ Item {
                     }
                 }
 
+                K4SettingsScale {
+                    title: "Island width"
+                    description: "Adds horizontal room without stretching text or controls"
+                    value: K4Settings.widthScale
+                    minimum: K4Settings.minWidthScale
+                    maximum: K4Settings.maxWidthScale
+                    stepSize: K4Settings.scaleStep
+                    onValueEdited: value => K4Settings.setWidthScale(value)
+                }
+
+                K4SettingsScale {
+                    title: "UI scale"
+                    description: "Scales island height, controls, icons and fonts together"
+                    value: K4Settings.uiScale
+                    minimum: K4Settings.minUiScale
+                    maximum: K4Settings.maxUiScale
+                    stepSize: K4Settings.scaleStep
+                    onValueEdited: value => K4Settings.setUiScale(value)
+                }
+
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 96

@@ -499,6 +499,8 @@ Singleton {
                     property string position: "top" // "top" | "bottom"
                     property int alignment: 50 // 15 | 50 | 85
                     property string spaceMode: "reserve" // "reserve" | "fullscreen" | "overlay" | "hidden"
+                    property real widthScale: 1.0 // 0.8 - 1.6
+                    property real uiScale: 1.0 // 0.85 - 1.4
                     property bool trayInPill: false
                     property bool notificationsOnHover: true
                     property bool dismissNotificationsOnFocus: true
