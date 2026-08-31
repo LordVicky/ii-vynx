@@ -40,10 +40,9 @@ end
 -- Shell overrides --
 require("hyprland.shellOverrides.main")
 
--- K4 owns its expansion/collapse motion inside QML. Keep Hyprland from
--- independently animating the resizing layer surface as it moves between the
--- collapsed and expanded bottom geometry. This is a targeted #22 runtime A/B;
--- other Quickshell layer animations remain unchanged.
+-- K4 owns expansion/collapse motion inside QML. Do not let Hyprland animate
+-- the resizing layer surface independently; compositor motion can invalidate
+-- the stationary-pointer hover session during bottom expansion.
 hl.layer_rule({
     match = { namespace = "quickshell:k4bar" },
     no_anim = true,
