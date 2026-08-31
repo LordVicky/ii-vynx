@@ -22,10 +22,10 @@ test("paused media contributes zero width and recenters the collapsed clock", ()
     );
     assert.match(
         source,
-        /id:\s*centerZone[\s\S]*?anchors\.left:\s*parent\.left[\s\S]*?anchors\.leftMargin:\s*root\.leftMeasured \+ 11/
+        /id:\s*centerZone[\s\S]*?anchors\.horizontalCenter:\s*parent\.horizontalCenter/
     );
     assert.doesNotMatch(
         source,
-        /id:\s*centerZone[\s\S]*?anchors\.left:\s*leftMedia\.right/
+        /id:\s*centerZone[\s\S]*?anchors\.left:\s*(?:parent\.left|leftMedia\.right)/
     );
 });
