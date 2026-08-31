@@ -11,7 +11,9 @@ Selected K4 v1.0 reference: `adcf4216038f7881c4a589baafaaaec841377ad5`
 
 The selected K4 port is in final stabilization/audit work.
 
-K4-01 through K4-10 are closed. The selected v1 behavior has been implemented through K4-V1-04. K4-V1-05 has static review evidence but must not be described as fully runtime-green while the bottom passive-hover regression remains open as issue #22.
+K4-01 through K4-10 are closed. The selected v1 behavior has been implemented through K4-V1-04. K4-V1-05 is now at its fixed-point Standards + Spec review and remaining real-shell validation matrix.
+
+The bottom passive-hover regression tracked as issue #22 is live-fixed on the current branch. The demonstrated cause was Hyprland independently animating the resizing `quickshell:k4bar` layer while K4 already owned expansion/collapse motion in QML. A targeted `no_anim` rule for that namespace removed the second spawn in live reproduction. The GitHub issue remains open for tracking until final closure is explicitly chosen.
 
 The K4-11 managed-plugin lifecycle experiment has been **withdrawn and reverted**. It is no longer a port requirement or completion gate. The current path is K4-V1-05 -> K4-12.
 
@@ -36,15 +38,16 @@ Detailed historical review documents remain under `docs/k4-bar-port/`.
 
 ## Recent stabilization evidence
 
-The final stabilization pass has also live-validated several hover/presentation fixes that are now guarded in `tests/k4-hover-tracking.test.js`:
+The final stabilization pass has live-validated several hover/presentation fixes:
 
 - Wi-Fi and Bluetooth fixed-height connection rows derive hover from the `K4CursorTrackedListView` viewport, so a stationary cursor remains physically aligned while the list scrolls;
 - connection-row hover uses `K4Theme.surfaceHi`, preserving visible contrast against the panel surface;
 - Sound device rows use immediate `surfaceHi` hover contrast with no delayed color animation;
-- Launcher results now reuse the same validated `K4CursorTrackedListView` path as Wi-Fi/Bluetooth, removing delegate-local hover tracking and hover color animation;
-- the abandoned five-column Apps/GridView tracer was removed after runtime evidence showed the reported lag belonged to Launcher rather than `K4AppsView`.
+- Launcher results reuse the same validated `K4CursorTrackedListView` path as Wi-Fi/Bluetooth, removing delegate-local hover tracking and hover color animation;
+- the abandoned five-column Apps/GridView tracer was removed after runtime evidence showed the reported lag belonged to Launcher rather than `K4AppsView`;
+- bottom passive hover no longer double-spawns once Hyprland animation is disabled specifically for `quickshell:k4bar`; K4 remains the sole owner of its expansion/collapse animation.
 
-The consolidated K4 source suite (`node --test tests/k4-*.test.js`) is green on the current stabilization branch after updating the legacy launcher assertion to match the live-validated viewport-hover contract.
+The consolidated K4 source suite (`node --test tests/k4-*.test.js`) was green at the preceding stabilization checkpoint after updating the legacy launcher assertion to match the live-validated viewport-hover contract. The current branch additionally carries a focused source guard for the `quickshell:k4bar` `no_anim` rule; no CI status is published for the direct branch commit, so final source-suite execution remains part of the closing audit.
 
 These fixes do not change the selected K4 feature scope or introduce another desktop-service owner.
 
@@ -144,13 +147,15 @@ Player track-change peek reuses `K4Media`, settles split metadata before compari
 
 Collapsed Idle and expanded Clock use sequential measured zones rather than mirroring the wider side. `IslandState.activeScreen` remains the plugin-facing active-monitor contract.
 
-## Open runtime exception
+## Issue #22 resolution evidence
 
-Issue #22 — `K4: bottom passive hover double-spawns after expansion` — remains open/deferred.
+Issue #22 — `K4: bottom passive hover double-spawns after expansion` — remains open as a tracker, but the runtime regression is live-fixed on the current branch.
 
-Evidence shows one K4 layer surface whose hover/session state is lost and later reopened; it is not a duplicate host. Previous timer/bridge/surface-resize workarounds did not resolve it. Do not add another speculative timing/surface workaround without new runtime evidence.
+Historical probes established that the failure used one K4 layer surface: the same surface lost its hover/session state and later reopened. Timer extensions, a stable bottom hover bridge and an earlier surface-resize workaround did not resolve it.
 
-K4-V1-05 therefore remains not fully runtime-green while #22 is open.
+The discriminating A/B disabled Hyprland animation only for the `quickshell:k4bar` namespace while leaving K4's QML expansion/collapse animation intact. The second spawn disappeared in live reproduction. The production rule therefore keeps compositor animation disabled for this K4 layer, with a focused source regression guard.
+
+Do not reintroduce compositor animation for `quickshell:k4bar` without reproducing the stationary-pointer bottom-hover matrix.
 
 ## Important architectural constraints
 
@@ -164,10 +169,10 @@ K4-V1-05 therefore remains not fully runtime-green while #22 is open.
 
 ## Deferred debt
 
-- Bottom passive-hover double-spawn: issue #22.
+- Issue #22 remains open for tracking even though the current `no_anim` rule is live-green; close only after the final audit/explicit closure decision.
 - Reverse workspace animation can skip the desired shrink/grow on some reverse transitions such as `3 -> 2` / `3 -> 1`; revisit only when workspace presentation itself is expanded/redesigned.
 - Real multi-monitor Displays relative placement and K4 per-monitor fullscreen behavior require hardware validation in K4-12 if unavailable earlier.
 
 ## Next action
 
-With the consolidated K4 source suite green, reproduce issue #22 with the narrow bottom-hover diagnostic probe already present on the branch. Capture the `[K4BottomHover]` trace that records the island, edge and bottom-bridge hover contributors separately together with occupant, passive-hover latch, target/surface/island height and pointer-over state. Use that trace to fix the demonstrated cause before K4-V1-05 closure; do not add another timer/surface workaround without discriminating evidence.
+Finish K4-V1-05 at a fixed branch point with an independent Standards + Spec review against `K4-V1-SYNC-DESIGN.md` and `SPEC.md`, remove any temporary development-only harness that is no longer part of selected scope, run the consolidated K4 source suite, and execute the remaining real-shell matrix for space modes, Hidden input/reveal, Player peek, compact sizing and active-screen routing. Then proceed directly to K4-12 for the final selected-scope/performance/licensing audit.
