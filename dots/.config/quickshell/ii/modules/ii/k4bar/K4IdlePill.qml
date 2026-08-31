@@ -188,8 +188,9 @@ Item {
                 anchors.centerIn: parent
                 text: Qt.formatDateTime(K4Clock.date, "HH:mm")
                 font.family: K4Theme.uiFont
-                font.pixelSize: 12
+                font.pixelSize: Math.round(12 * K4Settings.uiScale)
                 font.weight: Font.Medium
+                scale: 1 / K4Settings.uiScale
                 color: root.hasPlayer ? K4Theme.ink : K4Theme.muted
                 opacity: root.showingWorkspaces ? 0 : 1
                 renderType: Text.NativeRendering
