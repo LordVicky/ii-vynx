@@ -118,7 +118,7 @@ test("host seeds only idle, then renders controller winners per monitor", () => 
     assert.match(source, /showingIdle[\s\S]*?idleContent\.desiredBodyWidth[\s\S]*?pluginVisible\.islandWidth/);
 
     assert.match(source, /readonly property string effectiveSpaceMode:\s*K4Settings\.spaceMode === "fullscreen"/);
-    assert.match(source, /exclusiveZone:\s*panelWindow\.effectiveSpaceMode === "reserve"[\s\S]*?\? K4Theme\.baseHeight : 0/);
+    assert.match(source, /exclusiveZone:\s*panelWindow\.effectiveSpaceMode === "reserve"[\s\S]*?\? K4Theme\.baseHeight \+ panelWindow\.shapeInset : 0/);
     assert.match(source, /mask:\s*Region\s*\{[\s\S]*?item:\s*IslandState\.suppressed \? null : island/);
     assert.match(source, /opacity:\s*IslandState\.suppressed \? 0 : 1/);
     assert.match(source, /WlrLayershell\.keyboardFocus:[\s\S]*?plugin\.grabKeyboard[\s\S]*?plugin\.keyboardOnHover[\s\S]*?plugin\.optionalKeyboard/);
