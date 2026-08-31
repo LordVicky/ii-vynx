@@ -40,7 +40,7 @@ test("K4 host resolves Away-when-fullscreen per monitor and only Reserve claims 
     assert.match(source, /import qs\.services/);
     assert.match(source, /readonly property string effectiveSpaceMode:[\s\S]*?K4Settings\.spaceMode === "fullscreen"[\s\S]*?HyprlandData\.monitorHasFullscreen\(panelWindow\.screen\.name\)[\s\S]*?\? "hidden" : "reserve"/);
     assert.match(source, /readonly property bool hideMode:\s*effectiveSpaceMode === "hidden"/);
-    assert.match(source, /exclusiveZone:\s*panelWindow\.effectiveSpaceMode === "reserve"\s*\?\s*Math\.round\(K4Theme\.baseHeight \* panelWindow\.uiScale\)\s*:\s*0/);
+    assert.match(source, /exclusiveZone:\s*panelWindow\.effectiveSpaceMode === "reserve"\s*\?\s*K4Theme\.baseHeight\s*:\s*0/);
     assert.match(source, /notificationOverlay:[\s\S]*?effectiveSpaceMode === "hidden"/);
 });
 
@@ -54,7 +54,7 @@ test("K4 Hidden withdraws only the island drawing and keeps a narrow reveal stri
     assert.match(source, /id:\s*revealEdge[\s\S]*?x:\s*island\.x[\s\S]*?width:\s*island\.width[\s\S]*?height:\s*4[\s\S]*?opacity:\s*0/);
     assert.match(source, /mask:\s*Region\s*\{[\s\S]*?item:\s*IslandState\.suppressed \? null : island[\s\S]*?item:\s*\(IslandState\.suppressed \|\| !panelWindow\.hideMode\)\s*\?\s*null\s*:\s*revealEdge[\s\S]*?Intersection\.Combine/);
 
-    assert.match(source, /id:\s*withdrawTranslate[\s\S]*?panelWindow\.withdrawn[\s\S]*?panelWindow\.bottom \? island\.height \+ 6 \* panelWindow\.uiScale[\s\S]*?: -\(island\.height \+ 6 \* panelWindow\.uiScale\)[\s\S]*?duration:\s*360[\s\S]*?Easing\.OutCubic/);
+    assert.match(source, /id:\s*withdrawTranslate[\s\S]*?panelWindow\.withdrawn[\s\S]*?panelWindow\.bottom \? island\.height \+ 6[\s\S]*?: -\(island\.height \+ 6\)[\s\S]*?duration:\s*360[\s\S]*?Easing\.OutCubic/);
     assert.match(source, /id:\s*hoverDwellTimer[\s\S]*?interval:\s*500[\s\S]*?controller\.hoverEntered\(panelWindow\.screen\.name\)/);
 
     // Hidden must not add a full-edge catcher or resize the layer surface per frame.

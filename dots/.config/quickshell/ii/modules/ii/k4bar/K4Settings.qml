@@ -13,9 +13,6 @@ Singleton {
     readonly property int alignment: Config.options.bar.k4.alignment
     readonly property string spaceMode: Config.options.bar.k4.spaceMode
     readonly property real widthScale: Config.options.bar.k4.widthScale
-    // UI scaling was removed after runtime validation. Keep the host compatibility
-    // token fixed so existing geometry code resolves to the original K4 size.
-    readonly property real uiScale: 1.0
     readonly property bool trayInPill: Config.options.bar.k4.trayInPill
     readonly property bool notificationsOnHover: Config.options.bar.k4.notificationsOnHover
     readonly property bool dismissNotificationsOnFocus: Config.options.bar.k4.dismissNotificationsOnFocus

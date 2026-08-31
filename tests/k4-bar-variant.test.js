@@ -42,7 +42,7 @@ test("k4 host follows upstream all-screen top-bottom ownership seam", () => {
     assert.match(source, /property real smoothPlacement:\s*IslandState\.placement/);
     assert.match(state, /Config\.options\.bar\.k4\.alignment/);
     assert.match(source, /readonly property string effectiveSpaceMode:\s*K4Settings\.spaceMode/);
-    assert.match(source, /exclusiveZone:\s*panelWindow\.effectiveSpaceMode === "reserve"[\s\S]*?\?\s*Math\.round\(K4Theme\.baseHeight \* panelWindow\.uiScale\)\s*:\s*0/);
+    assert.match(source, /exclusiveZone:\s*panelWindow\.effectiveSpaceMode === "reserve"[\s\S]*?K4Theme\.baseHeight\s*:\s*0/);
     assert.match(source, /WlrLayershell\.namespace:\s*"quickshell:k4bar"/);
 });
 

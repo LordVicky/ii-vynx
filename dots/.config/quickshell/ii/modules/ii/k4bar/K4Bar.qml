@@ -62,35 +62,20 @@ Scope {
                 || pluginVisible?.name === "launcher"
                 || pluginVisible?.name === "volume"
                 || effectiveSpaceMode === "hidden"
-
-            // K4 sizing is expressed in two independent dimensions. Width scale
-            // increases horizontal design space, while UI scale grows the whole
-            // island uniformly so fonts, controls, icons and vertical geometry
-            // retain their original proportions.
             readonly property real widthScale: K4Settings.widthScale
-            readonly property real uiScale: K4Settings.uiScale
-            readonly property real designBodyWidth:
+            readonly property int islandBodyWidth: Math.round(
                 (showingIdle ? idleContent.desiredBodyWidth : pluginVisible.islandWidth)
-                * widthScale
-            readonly property real designBodyHeight: showingIdle
+                * widthScale)
+            readonly property int islandBodyHeight: showingIdle
                 ? K4Theme.baseHeight : pluginVisible.islandHeight
-            readonly property int islandBodyWidth:
-                Math.round(designBodyWidth * uiScale)
-            readonly property int islandBodyHeight:
-                Math.round(designBodyHeight * uiScale)
-            readonly property int scaledWing:
-                Math.round(K4Theme.wing * uiScale)
-
             readonly property bool pointerOver:
                 islandHover.hovered || edgeHover.hovered
                 || (bottom && !hideMode && bottomBridgeHover.hovered)
             readonly property bool shouldShow:
                 pointerOver || (!!pluginVisible && pluginVisible.name !== "idle")
             property bool withdrawn: false
-            readonly property int targetHeight: Math.min(
-                Math.round(K4Theme.maxIslandHeight * uiScale),
-                islandBodyHeight + Math.round((2
-                    + (island.gestureInProgress ? 44 : 0)) * uiScale))
+            readonly property int targetHeight: Math.min(K4Theme.maxIslandHeight,
+                islandBodyHeight + 2 + (island.gestureInProgress ? 44 : 0))
             property int surfaceHeight: targetHeight
 
             function reconsiderWithdrawal() {
@@ -176,7 +161,7 @@ Scope {
             }
 
             exclusiveZone: panelWindow.effectiveSpaceMode === "reserve"
-                ? Math.round(K4Theme.baseHeight * panelWindow.uiScale) : 0
+                ? K4Theme.baseHeight : 0
             implicitHeight: surfaceHeight
             mask: Region {
                 item: IslandState.suppressed ? null : island
@@ -262,9 +247,9 @@ Scope {
                 id: bottomHoverBridge
                 visible: panelWindow.bottom && !panelWindow.hideMode
                 width: Math.min(parent.width,
-                    (idleContent.desiredBodyWidth * panelWindow.widthScale
-                        + K4Theme.wing * 2) * panelWindow.uiScale)
-                height: Math.round(K4Theme.baseHeight * panelWindow.uiScale)
+                    idleContent.desiredBodyWidth * panelWindow.widthScale
+                        + K4Theme.wing * 2)
+                height: K4Theme.baseHeight
                 x: (parent.width - width) * IslandState.placement
                 anchors.bottom: parent.bottom
                 opacity: 0
@@ -281,11 +266,10 @@ Scope {
                 property real smoothPlacement: IslandState.placement
                 x: (parent.width - width) * smoothPlacement
                 width: Math.min(parent.width,
-                    panelWindow.islandBodyWidth + panelWindow.scaledWing * 2)
+                    panelWindow.islandBodyWidth + K4Theme.wing * 2)
                 height: panelWindow.islandBodyHeight
 
-                readonly property real bodyRadius:
-                    Math.min(32 * panelWindow.uiScale, height / 2)
+                readonly property real bodyRadius: Math.min(32, height / 2)
 
                 Behavior on smoothPlacement {
                     NumberAnimation {
@@ -359,8 +343,8 @@ Scope {
                     Translate {
                         id: withdrawTranslate
                         y: panelWindow.withdrawn
-                            ? (panelWindow.bottom ? island.height + 6 * panelWindow.uiScale
-                                : -(island.height + 6 * panelWindow.uiScale))
+                            ? (panelWindow.bottom ? island.height + 6
+                                : -(island.height + 6))
                             : 0
 
                         Behavior on y {
@@ -380,10 +364,10 @@ Scope {
                 SequentialAnimation {
                     id: shakeAnimation
                     property real strength: 1
-                    NumberAnimation { target: gestureTranslate; property: "x"; to: -8 * shakeAnimation.strength * panelWindow.uiScale; duration: 40 }
-                    NumberAnimation { target: gestureTranslate; property: "x"; to: 7 * shakeAnimation.strength * panelWindow.uiScale; duration: 70 }
-                    NumberAnimation { target: gestureTranslate; property: "x"; to: -5 * shakeAnimation.strength * panelWindow.uiScale; duration: 70 }
-                    NumberAnimation { target: gestureTranslate; property: "x"; to: 3 * shakeAnimation.strength * panelWindow.uiScale; duration: 60 }
+                    NumberAnimation { target: gestureTranslate; property: "x"; to: -8 * shakeAnimation.strength; duration: 40 }
+                    NumberAnimation { target: gestureTranslate; property: "x"; to: 7 * shakeAnimation.strength; duration: 70 }
+                    NumberAnimation { target: gestureTranslate; property: "x"; to: -5 * shakeAnimation.strength; duration: 70 }
+                    NumberAnimation { target: gestureTranslate; property: "x"; to: 3 * shakeAnimation.strength; duration: 60 }
                     NumberAnimation { target: gestureTranslate; property: "x"; to: 0; duration: 60; easing.type: Easing.OutQuad }
                 }
 
@@ -394,7 +378,6 @@ Scope {
                         target: gestureTranslate
                         property: "y"
                         to: 26 * pushAnimation.strength * island.gestureDirection
-                            * panelWindow.uiScale
                         duration: 150
                         easing.type: Easing.OutQuad
                     }
@@ -411,9 +394,9 @@ Scope {
                 SequentialAnimation {
                     id: tugAnimation
                     property real strength: 1
-                    NumberAnimation { target: gestureTranslate; property: "y"; to: 10 * tugAnimation.strength * island.gestureDirection * panelWindow.uiScale; duration: 90; easing.type: Easing.OutQuad }
-                    NumberAnimation { target: gestureTranslate; property: "y"; to: 2 * island.gestureDirection * panelWindow.uiScale; duration: 90 }
-                    NumberAnimation { target: gestureTranslate; property: "y"; to: 12 * tugAnimation.strength * island.gestureDirection * panelWindow.uiScale; duration: 90 }
+                    NumberAnimation { target: gestureTranslate; property: "y"; to: 10 * tugAnimation.strength * island.gestureDirection; duration: 90; easing.type: Easing.OutQuad }
+                    NumberAnimation { target: gestureTranslate; property: "y"; to: 2 * island.gestureDirection; duration: 90 }
+                    NumberAnimation { target: gestureTranslate; property: "y"; to: 12 * tugAnimation.strength * island.gestureDirection; duration: 90 }
                     NumberAnimation { target: gestureTranslate; property: "y"; to: 0; duration: 140; easing.type: Easing.OutQuad }
                 }
 
@@ -463,8 +446,7 @@ Scope {
                         readonly property real w: island.width
                         readonly property real h: island.height
                         readonly property real r: island.bodyRadius
-                        readonly property real g:
-                            Math.min(panelWindow.scaledWing, island.height / 2)
+                        readonly property real g: Math.min(K4Theme.wing, island.height / 2)
 
                         startX: 0
                         startY: 0
@@ -509,8 +491,8 @@ Scope {
 
                 Item {
                     anchors.fill: parent
-                    anchors.leftMargin: panelWindow.scaledWing
-                    anchors.rightMargin: panelWindow.scaledWing
+                    anchors.leftMargin: K4Theme.wing
+                    anchors.rightMargin: K4Theme.wing
                     clip: true
 
                     MouseArea {
@@ -523,10 +505,8 @@ Scope {
                     Item {
                         anchors.top: parent.top
                         anchors.horizontalCenter: parent.horizontalCenter
-                        width: panelWindow.designBodyWidth
-                        height: panelWindow.designBodyHeight
-                        scale: panelWindow.uiScale
-                        transformOrigin: Item.Top
+                        width: panelWindow.islandBodyWidth
+                        height: panelWindow.islandBodyHeight
 
                         K4IdlePill {
                             id: idleContent
