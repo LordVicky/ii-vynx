@@ -17,6 +17,7 @@ test("k4 sizing controls persist independent width and UI scales", () => {
     assert.match(settings, /maxWidthScale:\s*1\.6/);
     assert.match(settings, /minUiScale:\s*0\.85/);
     assert.match(settings, /maxUiScale:\s*1\.4/);
+    assert.match(settings, /if \(!isFinite\(value\)\)[\s\S]*?return 1\.0/);
     assert.match(settings, /function setWidthScale\(wanted\)[\s\S]*?Config\.options\.bar\.k4\.widthScale = boundedScale/);
     assert.match(settings, /function setUiScale\(wanted\)[\s\S]*?Config\.options\.bar\.k4\.uiScale = boundedScale/);
 });
@@ -41,12 +42,13 @@ test("k4 UI scale grows compositor, input, silhouette, and content geometry toge
     assert.match(bar, /transformOrigin:\s*Item\.Top/);
 });
 
-test("k4 settings exposes live width and UI scale sliders", () => {
+test("k4 settings exposes width and UI scale sliders with live drag updates", () => {
     const view = read("modules/ii/k4bar/K4SettingsView.qml");
     const slider = read("modules/ii/k4bar/K4SettingsScale.qml");
 
     assert.match(view, /K4SettingsScale\s*\{[\s\S]*?title:\s*"Island width"[\s\S]*?value:\s*K4Settings\.widthScale[\s\S]*?setWidthScale/);
     assert.match(view, /K4SettingsScale\s*\{[\s\S]*?title:\s*"UI scale"[\s\S]*?value:\s*K4Settings\.uiScale[\s\S]*?setUiScale/);
-    assert.match(slider, /Slider\s*\{[\s\S]*?live:\s*true[\s\S]*?onMoved:\s*root\.valueEdited\(value\)/);
+    assert.match(slider, /Slider\s*\{[\s\S]*?onMoved:\s*root\.valueEdited\(value\)/);
+    assert.doesNotMatch(slider, /\blive:\s*true/);
     assert.match(slider, /Math\.round\(root\.value \* 100\) \+ "%"/);
 });
