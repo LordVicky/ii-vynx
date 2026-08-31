@@ -62,6 +62,8 @@ Scope {
                 || pluginVisible?.name === "launcher"
                 || pluginVisible?.name === "volume"
                 || effectiveSpaceMode === "hidden"
+            readonly property bool pillShape: K4Settings.shape === "pill"
+            readonly property int shapeInset: pillShape ? 6 : 0
             readonly property real widthScale: K4Settings.widthScale
             readonly property int islandBodyWidth: Math.round(
                 (showingIdle ? idleContent.desiredBodyWidth : pluginVisible.islandWidth)
@@ -74,8 +76,10 @@ Scope {
             readonly property bool shouldShow:
                 pointerOver || (!!pluginVisible && pluginVisible.name !== "idle")
             property bool withdrawn: false
-            readonly property int targetHeight: Math.min(K4Theme.maxIslandHeight,
-                islandBodyHeight + 2 + (island.gestureInProgress ? 44 : 0))
+            readonly property int targetHeight: Math.min(
+                K4Theme.maxIslandHeight + shapeInset,
+                islandBodyHeight + shapeInset + 2
+                    + (island.gestureInProgress ? 44 : 0))
             property int surfaceHeight: targetHeight
 
             function reconsiderWithdrawal() {
@@ -161,7 +165,7 @@ Scope {
             }
 
             exclusiveZone: panelWindow.effectiveSpaceMode === "reserve"
-                ? K4Theme.baseHeight : 0
+                ? K4Theme.baseHeight + panelWindow.shapeInset : 0
             implicitHeight: surfaceHeight
             mask: Region {
                 item: IslandState.suppressed ? null : island
@@ -249,7 +253,7 @@ Scope {
                 width: Math.min(parent.width,
                     idleContent.desiredBodyWidth * panelWindow.widthScale
                         + K4Theme.wing * 2)
-                height: K4Theme.baseHeight
+                height: K4Theme.baseHeight + panelWindow.shapeInset
                 x: (parent.width - width) * IslandState.placement
                 anchors.bottom: parent.bottom
                 opacity: 0
@@ -261,6 +265,8 @@ Scope {
                 id: island
                 anchors.top: panelWindow.bottom ? undefined : parent.top
                 anchors.bottom: panelWindow.bottom ? parent.bottom : undefined
+                anchors.topMargin: panelWindow.bottom ? 0 : panelWindow.shapeInset
+                anchors.bottomMargin: panelWindow.bottom ? panelWindow.shapeInset : 0
 
                 opacity: IslandState.suppressed ? 0 : 1
                 property real smoothPlacement: IslandState.placement
@@ -320,6 +326,7 @@ Scope {
                 // Geometry publication is screen-local and follows the animated
                 // island rather than the full layer surface.
                 onXChanged: publishRect()
+                onYChanged: publishRect()
                 onWidthChanged: publishRect()
                 onHeightChanged: publishRect()
 
@@ -332,7 +339,9 @@ Scope {
                     IslandState.publishRect(panelWindow.screen.name, {
                         x: island.x,
                         y: panelWindow.bottom
-                            ? panelWindow.screen.height - island.height : 0,
+                            ? panelWindow.screen.height - panelWindow.shapeInset
+                                - island.height
+                            : panelWindow.shapeInset,
                         ancho: island.width,
                         alto: island.height
                     }, panelWindow.modelData === Quickshell.screens[0])
@@ -343,8 +352,9 @@ Scope {
                     Translate {
                         id: withdrawTranslate
                         y: panelWindow.withdrawn
-                            ? (panelWindow.bottom ? island.height + 6
-                                : -(island.height + 6))
+                            ? (panelWindow.bottom
+                                ? island.height + panelWindow.shapeInset + 6
+                                : -(island.height + panelWindow.shapeInset + 6))
                             : 0
 
                         Behavior on y {
@@ -424,9 +434,19 @@ Scope {
 
                 HoverHandler { id: islandHover }
 
+                Rectangle {
+                    id: pillSilhouette
+                    anchors.fill: parent
+                    visible: panelWindow.pillShape
+                    radius: island.bodyRadius
+                    color: K4Theme.islandBg
+                    antialiasing: true
+                }
+
                 Shape {
                     id: silhouette
                     anchors.fill: parent
+                    visible: !panelWindow.pillShape
                     antialiasing: true
                     layer.enabled: true
                     layer.samples: 8

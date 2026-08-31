@@ -12,6 +12,7 @@ Singleton {
     readonly property string position: Config.options.bar.k4.position
     readonly property int alignment: Config.options.bar.k4.alignment
     readonly property string spaceMode: Config.options.bar.k4.spaceMode
+    readonly property string shape: Config.options.bar.k4.shape
     readonly property real widthScale: Config.options.bar.k4.widthScale
     readonly property bool trayInPill: Config.options.bar.k4.trayInPill
     readonly property bool notificationsOnHover: Config.options.bar.k4.notificationsOnHover
@@ -30,6 +31,10 @@ Singleton {
         { label: "Left", value: 15 },
         { label: "Center", value: 50 },
         { label: "Right", value: 85 }
+    ]
+    readonly property var shapes: [
+        { label: "Attached", value: "attached" },
+        { label: "Floating pill", value: "pill" }
     ]
     readonly property var spaceModes: [
         { label: "Reserve space", value: "reserve" },
@@ -56,6 +61,12 @@ Singleton {
         const value = Number(wanted)
         if (value === 15 || value === 50 || value === 85)
             Config.options.bar.k4.alignment = value
+    }
+
+    function setShape(wanted) {
+        const value = String(wanted)
+        if (value === "attached" || value === "pill")
+            Config.options.bar.k4.shape = value
     }
 
     function setSpaceMode(wanted) {

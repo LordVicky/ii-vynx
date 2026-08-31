@@ -224,6 +224,68 @@ Item {
                     }
                 }
 
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 82
+                    radius: 12
+                    color: K4Theme.surface
+
+                    ColumnLayout {
+                        anchors.fill: parent
+                        anchors.margins: 10
+                        spacing: 7
+
+                        Text {
+                            text: "Island shape"
+                            color: K4Theme.ink
+                            font.family: K4Theme.uiFont
+                            font.pixelSize: 11
+                            font.weight: Font.DemiBold
+                            renderType: Text.NativeRendering
+                        }
+
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: 5
+
+                            Repeater {
+                                model: K4Settings.shapes
+                                delegate: Rectangle {
+                                    id: shapeChoice
+                                    required property var modelData
+                                    readonly property bool selected: K4Settings.shape === modelData.value
+                                    Layout.preferredWidth: shapeLabel.implicitWidth + 24
+                                    Layout.preferredHeight: 26
+                                    radius: 13
+                                    color: selected ? K4Theme.blue
+                                        : shapeHover.hovered ? K4Theme.surfaceHi : K4Theme.track
+
+                                    Behavior on color { ColorAnimation { duration: 120 } }
+
+                                    Text {
+                                        id: shapeLabel
+                                        anchors.centerIn: parent
+                                        text: shapeChoice.modelData.label
+                                        color: shapeChoice.selected ? K4Theme.ink : K4Theme.muted
+                                        font.family: K4Theme.uiFont
+                                        font.pixelSize: 10
+                                        font.weight: shapeChoice.selected ? Font.DemiBold : Font.Normal
+                                        renderType: Text.NativeRendering
+                                    }
+
+                                    HoverHandler { id: shapeHover }
+                                    TapHandler {
+                                        cursorShape: Qt.PointingHandCursor
+                                        onTapped: K4Settings.setShape(shapeChoice.modelData.value)
+                                    }
+                                }
+                            }
+
+                            Item { Layout.fillWidth: true }
+                        }
+                    }
+                }
+
                 K4SettingsScale {
                     title: "Island width"
                     description: "Adds horizontal room without stretching text or controls"
