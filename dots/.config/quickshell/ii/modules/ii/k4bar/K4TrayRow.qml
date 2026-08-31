@@ -11,6 +11,7 @@ RowLayout {
     property int max: 5
     property int iconSize: 16
 
+    readonly property real uiScale: K4Settings.uiScale
     readonly property int shown: Math.min(K4Tray.count, max)
 
     visible: K4Tray.count > 0
@@ -36,11 +37,12 @@ RowLayout {
 
             Image {
                 anchors.centerIn: parent
-                width: root.iconSize
-                height: root.iconSize
+                width: Math.round(root.iconSize * root.uiScale)
+                height: Math.round(root.iconSize * root.uiScale)
+                scale: 1 / root.uiScale
                 source: cell.modelData.icon
-                sourceSize.width: root.iconSize * 2
-                sourceSize.height: root.iconSize * 2
+                sourceSize.width: Math.ceil(root.iconSize * root.uiScale * 2)
+                sourceSize.height: Math.ceil(root.iconSize * root.uiScale * 2)
                 fillMode: Image.PreserveAspectFit
                 opacity: cell.modelData.status === Status.NeedsAttention ? 1 : 0.85
 
@@ -81,7 +83,8 @@ RowLayout {
         text: "+" + (K4Tray.count - root.shown)
         color: K4Theme.muted
         font.family: K4Theme.uiFont
-        font.pixelSize: 10
+        font.pixelSize: Math.round(10 * root.uiScale)
+        scale: 1 / root.uiScale
         Layout.alignment: Qt.AlignVCenter
 
         MouseArea {
