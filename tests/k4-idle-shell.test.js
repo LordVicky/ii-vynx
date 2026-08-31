@@ -27,7 +27,7 @@ test("island shell uses inverse wings, bottom reflection and stable surface sizi
     assert.match(source, /PathArc\s*\{[\s\S]*?direction:\s*PathArc\.Clockwise/);
     assert.match(source, /yScale:\s*panelWindow\.bottom \? -1 : 1/);
     assert.match(source, /readonly property string effectiveSpaceMode:\s*K4Settings\.spaceMode === "fullscreen"/);
-    assert.match(source, /exclusiveZone:\s*panelWindow\.effectiveSpaceMode === "reserve"[\s\S]*?\?\s*Math\.round\(K4Theme\.baseHeight \* panelWindow\.uiScale\)\s*:\s*0/);
+    assert.match(source, /exclusiveZone:\s*panelWindow\.effectiveSpaceMode === "reserve"[\s\S]*?\? Math\.round\(K4Theme\.baseHeight \* panelWindow\.uiScale\) : 0/);
     assert.match(source, /property int surfaceHeight:\s*targetHeight/);
     assert.match(source, /interval:\s*520[\s\S]*?surfaceHeight = panelWindow\.targetHeight/);
     assert.match(source, /Behavior on width[\s\S]*?duration:\s*440[\s\S]*?Easing\.OutBack/);
@@ -35,17 +35,18 @@ test("island shell uses inverse wings, bottom reflection and stable surface sizi
     assert.match(source, /mask:\s*Region\s*\{[\s\S]*?item:\s*IslandState\.suppressed \? null : island/);
 });
 
-test("collapsed pill uses asymmetric chained side widths", () => {
+test("collapsed pill keeps the clock centered and indicators pinned right", () => {
     const source = readShell("modules/ii/k4bar/K4IdlePill.qml");
 
     assert.match(source, /readonly property bool trayReserveActive:\s*K4Settings\.trayInPill[\s\S]*?K4TrayHost\.plugin !== null && K4Tray\.count > 0/);
     assert.match(source, /readonly property int leftMeasured:\s*isPlaying[\s\S]*?leftMedia\.implicitWidth > 0[\s\S]*?Math\.ceil\(leftMedia\.implicitWidth\)[\s\S]*?: 53[\s\S]*?: 0/);
     assert.match(source, /readonly property int rightMeasured:[\s\S]*?trayReserveActive \? Math\.ceil\(collapsedTray\.implicitWidth\) : 0[\s\S]*?recording \? Math\.ceil\(recordingRow\.implicitWidth\) : 0[\s\S]*?trayReserveActive && recording \? rightIndicators\.spacing : 0/);
-    assert.doesNotMatch(source, /readonly property int sideReserve:/);
-    assert.match(source, /readonly property int desiredBodyWidth:\s*leftMeasured \+ 46 \+ rightMeasured \+ 44/);
+    assert.match(source, /readonly property int sideMeasured:\s*Math\.max\(leftMeasured, rightMeasured\)/);
+    assert.match(source, /readonly property int desiredBodyWidth:\s*sideMeasured \* 2 \+ 90/);
     assert.match(source, /RowLayout\s*\{[\s\S]*?id:\s*leftMedia[\s\S]*?anchors\.left:\s*parent\.left/);
-    assert.match(source, /Item\s*\{[\s\S]*?id:\s*centerZone[\s\S]*?anchors\.left:\s*parent\.left[\s\S]*?anchors\.leftMargin:\s*root\.leftMeasured \+ 11[\s\S]*?width:\s*46/);
-    assert.match(source, /id:\s*rightIndicators[\s\S]*?anchors\.left:\s*centerZone\.right[\s\S]*?anchors\.leftMargin:\s*11/);
+    assert.match(source, /Item\s*\{[\s\S]*?id:\s*centerZone[\s\S]*?anchors\.horizontalCenter:\s*parent\.horizontalCenter[\s\S]*?width:\s*46/);
+    assert.match(source, /id:\s*rightIndicators[\s\S]*?anchors\.right:\s*parent\.right/);
+    assert.doesNotMatch(source, /anchors\.leftMargin:\s*root\.leftMeasured \+ 11/);
 });
 
 test("idle media lifecycle and workspace behavior follows k4 defaults", () => {
