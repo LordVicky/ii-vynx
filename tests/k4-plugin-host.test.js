@@ -107,16 +107,13 @@ test("plugin controller owns priority arbitration, transient preemption and moni
     assert.match(source, /winner\?\.closeOnHoverExit[\s\S]*?winner\.hoverTimedOut\(\)/);
 });
 
-test("host renders the winner on one monitor and keeps idle fallback elsewhere", () => {
+test("host seeds only idle, then renders controller winners per monitor", () => {
     const source = readShell("modules/ii/k4bar/K4Bar.qml");
 
     assert.match(source, /name:\s*"idle"[\s\S]*?priority:\s*0[\s\S]*?active:\s*true/);
-    assert.match(source, /name:\s*"demo-transient"[\s\S]*?priority:\s*59[\s\S]*?transitorio:\s*true/);
-    assert.match(source, /name:\s*"demo-secondary"[\s\S]*?priority:\s*70/);
-    assert.match(source, /name:\s*"demo-primary"[\s\S]*?priority:\s*80/);
+    assert.match(source, /K4PluginController\s*\{[\s\S]*?plugins:\s*\[idlePlugin\]/);
+    assert.doesNotMatch(source, /demo-(?:transient|secondary|primary)|K4DemoView/);
 
-    assert.match(source, /function openDemo\(plugin, screenName\)[\s\S]*?if \(screenName\)[\s\S]*?IslandState\.requestScreen\(screenName\)[\s\S]*?plugin\.open\(\)/);
-    assert.doesNotMatch(source, /function openDemo\(plugin, screenName\)[\s\S]*?requestFocusedScreen/);
     assert.match(source, /controller\.visiblePluginFor\(panelWindow\.screen\.name\)/);
     assert.match(source, /showingIdle[\s\S]*?idleContent\.desiredBodyWidth[\s\S]*?pluginVisible\.islandWidth/);
 
@@ -136,17 +133,13 @@ test("host renders the winner on one monitor and keeps idle fallback elsewhere",
     assert.match(source, /delegate:\s*Loader[\s\S]*?active: modelData\?\.name !== "idle"[\s\S]*?modelData === panelWindow\.pluginVisible[\s\S]*?modelData\.enabled[\s\S]*?modelData\.viewLoaded/);
 });
 
-test("K4-03 exposes a narrow debug harness for live arbitration validation", () => {
+test("production host does not ship the retired K4-03 debug harness", () => {
     const source = readShell("modules/ii/k4bar/K4Bar.qml");
+    const k4Root = path.join(shellRoot, "modules/ii/k4bar");
 
-    assert.match(source, /target:\s*"k4barDebug"/);
-    assert.match(source, /function openPrimary\(\): void/);
-    assert.match(source, /function openPrimaryOn\(screen: string\): void/);
-    assert.match(source, /function openSecondary\(\): void/);
-    assert.match(source, /function openTransient\(\): void/);
-    assert.match(source, /function disablePrimary\(\): void/);
-    assert.match(source, /function hideIsland\(\): void/);
-    assert.match(source, /function placePrimary\(fraction: real, durationMs: int\): void/);
-    assert.match(source, /function gesture\(name: string, strength: real\): void/);
-    assert.match(source, /function status\(\): string/);
+    assert.doesNotMatch(source, /import Quickshell\.Io/);
+    assert.doesNotMatch(source, /IpcHandler\s*\{|target:\s*"k4barDebug"/);
+    assert.doesNotMatch(source, /function (?:openDemo|closeDemos)\(/);
+    assert.doesNotMatch(source, /\bdemo(?:Primary|Secondary|Transient)\b/);
+    assert.equal(fs.existsSync(path.join(k4Root, "K4DemoView.qml")), false);
 });
