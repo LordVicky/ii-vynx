@@ -52,3 +52,15 @@ test("k4 settings exposes width and UI scale sliders with live drag updates", ()
     assert.doesNotMatch(slider, /\blive:\s*true/);
     assert.match(slider, /Math\.round\(root\.value \* 100\) \+ "%"/);
 });
+
+test("compact clock and tray render intrinsically at the selected UI scale", () => {
+    const idle = read("modules/ii/k4bar/K4IdlePill.qml");
+    const tray = read("modules/ii/k4bar/K4TrayRow.qml");
+
+    assert.match(idle, /Qt\.formatDateTime\(K4Clock\.date, "HH:mm"\)[\s\S]*?font\.pixelSize:\s*Math\.round\(12 \* K4Settings\.uiScale\)[\s\S]*?scale:\s*1 \/ K4Settings\.uiScale/);
+
+    assert.match(tray, /readonly property real uiScale:\s*K4Settings\.uiScale/);
+    assert.match(tray, /width:\s*Math\.round\(root\.iconSize \* root\.uiScale\)[\s\S]*?height:\s*Math\.round\(root\.iconSize \* root\.uiScale\)[\s\S]*?scale:\s*1 \/ root\.uiScale/);
+    assert.match(tray, /sourceSize\.width:\s*Math\.ceil\(root\.iconSize \* root\.uiScale \* 2\)/);
+    assert.match(tray, /sourceSize\.height:\s*Math\.ceil\(root\.iconSize \* root\.uiScale \* 2\)/);
+});
