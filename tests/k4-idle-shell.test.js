@@ -27,7 +27,7 @@ test("island shell uses inverse wings, bottom reflection and stable surface sizi
     assert.match(source, /PathArc\s*\{[\s\S]*?direction:\s*PathArc\.Clockwise/);
     assert.match(source, /yScale:\s*panelWindow\.bottom \? -1 : 1/);
     assert.match(source, /readonly property string effectiveSpaceMode:\s*K4Settings\.spaceMode === "fullscreen"/);
-    assert.match(source, /exclusiveZone:\s*panelWindow\.effectiveSpaceMode === "reserve"[\s\S]*?\? K4Theme\.baseHeight : 0/);
+    assert.match(source, /exclusiveZone:\s*panelWindow\.effectiveSpaceMode === "reserve"[\s\S]*?\?\s*Math\.round\(K4Theme\.baseHeight \* panelWindow\.uiScale\)\s*:\s*0/);
     assert.match(source, /property int surfaceHeight:\s*targetHeight/);
     assert.match(source, /interval:\s*520[\s\S]*?surfaceHeight = panelWindow\.targetHeight/);
     assert.match(source, /Behavior on width[\s\S]*?duration:\s*440[\s\S]*?Easing\.OutBack/);

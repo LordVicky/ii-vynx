@@ -18,7 +18,7 @@ test("bottom hover continuity uses a stable collapsed footprint instead of a lon
     );
     assert.match(
         bar,
-        /Item\s*\{[\s\S]*?id:\s*bottomHoverBridge[\s\S]*?visible:\s*panelWindow\.bottom && !panelWindow\.hideMode[\s\S]*?height:\s*K4Theme\.baseHeight[\s\S]*?HoverHandler\s*\{\s*id:\s*bottomBridgeHover\s*\}/
+        /Item\s*\{[\s\S]*?id:\s*bottomHoverBridge[\s\S]*?visible:\s*panelWindow\.bottom && !panelWindow\.hideMode[\s\S]*?height:\s*Math\.round\(K4Theme\.baseHeight \* panelWindow\.uiScale\)[\s\S]*?HoverHandler\s*\{\s*id:\s*bottomBridgeHover\s*\}/
     );
     assert.match(
         bar,
