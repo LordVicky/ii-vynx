@@ -501,6 +501,7 @@ Singleton {
                     property string spaceMode: "reserve" // "reserve" | "fullscreen" | "overlay" | "hidden"
                     property string shape: "attached" // "attached" | "pill"
                     property real widthScale: 1.0 // 1.0 - 1.6
+                    property real idleWidthScale: 1.0 // 1.0 - 1.6
                     property bool trayInPill: false
                     property bool expandIdleOnHover: true
                     property bool notificationsOnHover: true

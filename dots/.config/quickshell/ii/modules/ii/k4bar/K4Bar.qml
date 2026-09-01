@@ -65,9 +65,11 @@ Scope {
             readonly property bool pillShape: K4Settings.shape === "pill"
             readonly property int shapeInset: pillShape ? 6 : 0
             readonly property real widthScale: K4Settings.widthScale
+            readonly property real idleWidthScale: K4Settings.idleWidthScale
             readonly property int islandBodyWidth: Math.round(
-                (showingIdle ? idleContent.desiredBodyWidth : pluginVisible.islandWidth)
-                * widthScale)
+                showingIdle
+                    ? idleContent.desiredBodyWidth * idleWidthScale
+                    : pluginVisible.islandWidth * widthScale)
             readonly property int islandBodyHeight: showingIdle
                 ? K4Theme.baseHeight : pluginVisible.islandHeight
             readonly property bool pointerOver:
@@ -251,7 +253,7 @@ Scope {
                 id: bottomHoverBridge
                 visible: panelWindow.bottom && !panelWindow.hideMode
                 width: Math.min(parent.width,
-                    idleContent.desiredBodyWidth * panelWindow.widthScale
+                    idleContent.desiredBodyWidth * panelWindow.idleWidthScale
                         + K4Theme.wing * 2)
                 height: K4Theme.baseHeight + panelWindow.shapeInset
                 x: (parent.width - width) * IslandState.placement

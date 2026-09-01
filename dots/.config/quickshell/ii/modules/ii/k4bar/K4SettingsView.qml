@@ -287,8 +287,18 @@ Item {
                 }
 
                 K4SettingsScale {
+                    title: "Idle pill width"
+                    description: "Adds horizontal room only to the collapsed pill"
+                    value: K4Settings.idleWidthScale
+                    minimum: K4Settings.minWidthScale
+                    maximum: K4Settings.maxWidthScale
+                    stepSize: K4Settings.scaleStep
+                    onValueEdited: value => K4Settings.setIdleWidthScale(value)
+                }
+
+                K4SettingsScale {
                     title: "Island width"
-                    description: "Adds horizontal room without stretching text or controls"
+                    description: "Adds horizontal room to expanded K4 surfaces"
                     value: K4Settings.widthScale
                     minimum: K4Settings.minWidthScale
                     maximum: K4Settings.maxWidthScale

@@ -14,6 +14,7 @@ Singleton {
     readonly property string spaceMode: Config.options.bar.k4.spaceMode
     readonly property string shape: Config.options.bar.k4.shape
     readonly property real widthScale: Config.options.bar.k4.widthScale
+    readonly property real idleWidthScale: Config.options.bar.k4.idleWidthScale
     readonly property bool trayInPill: Config.options.bar.k4.trayInPill
     readonly property bool expandIdleOnHover: Config.options.bar.k4.expandIdleOnHover
     readonly property bool notificationsOnHover: Config.options.bar.k4.notificationsOnHover
@@ -78,6 +79,11 @@ Singleton {
 
     function setWidthScale(wanted) {
         Config.options.bar.k4.widthScale = boundedScale(
+            wanted, minWidthScale, maxWidthScale)
+    }
+
+    function setIdleWidthScale(wanted) {
+        Config.options.bar.k4.idleWidthScale = boundedScale(
             wanted, minWidthScale, maxWidthScale)
     }
 
