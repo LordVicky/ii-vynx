@@ -37,8 +37,9 @@ test("adaptive notification card provides compact and expanded disclosure", () =
     assert.match(card, /model:\s*root\.buttons/);
     assert.match(card, /signal dismissRequested\(\)/);
     assert.match(card, /signal actionRequested\(var action\)/);
-    assert.match(card, /mouse\.accepted = true[\s\S]*?root\.dismissRequested\(\)/);
-    assert.match(card, /mouse\.accepted = true[\s\S]*?root\.actionRequested\(/);
+    assert.match(card, /component CloseButton:[\s\S]*?mouse\.accepted = true[\s\S]*?closeButton\.clicked\(\)/);
+    assert.equal((card.match(/onClicked:\s*root\.dismissRequested\(\)/g) ?? []).length, 2);
+    assert.match(card, /id:\s*actionMouse[\s\S]*?mouse\.accepted = true[\s\S]*?root\.actionRequested\(/);
 });
 
 test("main toast morphs between compact, detailed, image and action geometry", () => {
@@ -75,4 +76,17 @@ test("compact band reuses the adaptive card without reserving compositor space",
     assert.match(host, /K4Notifications\.activate\(K4Notifications\.latest\)/);
     assert.match(host, /onDismissRequested:\s*K4Notifications\.dismissToast\(\)/);
     assert.match(host, /K4Notifications\.invokeAction\(K4Notifications\.latest, action\)/);
+});
+
+test("notification controls stay above and isolated from default-click hosts", () => {
+    const bar = read("modules/ii/k4bar/K4Bar.qml");
+    const card = read("modules/ii/k4bar/K4NotificationCard.qml");
+    const host = read("modules/ii/k4bar/K4ToastBandHost.qml");
+    const view = read("modules/ii/k4bar/K4ToastView.qml");
+
+    assert.match(bar, /MouseArea\s*\{[\s\S]*?onClicked:\s*controller\.backgroundTap\(panelWindow\.screen\.name\)[\s\S]*?Repeater\s*\{[\s\S]*?delegate:\s*Loader/);
+    assert.ok(host.indexOf("MouseArea {") < host.indexOf("K4NotificationCard {"));
+    assert.doesNotMatch(card, /K4Notifications\.activate/);
+    assert.doesNotMatch(view, /onDismissRequested:[^\n]*activate/);
+    assert.doesNotMatch(view, /onActionRequested:[\s\S]*?K4Notifications\.activate/);
 });

@@ -78,9 +78,13 @@ Singleton {
             || urgency.endsWith(".critical")
     }
 
-    // Retain the history-strip presentation seam while making application
-    // identity explicit and keeping media previews out of icon slots.
+    // K4NotifStrip keeps its existing image-first history presentation. New
+    // toast surfaces use appIconFor/imageFor directly so identity stays split.
     function iconFor(notification) {
+        if (!notification)
+            return ""
+        if (notification.image?.length > 0)
+            return notification.image
         return appIconFor(notification)
     }
 

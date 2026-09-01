@@ -16,9 +16,9 @@ Item {
     readonly property string imageSource: K4Notifications.imageFor(notification)
     readonly property bool hasImage: K4Notifications.hasImage(notification)
     readonly property bool critical: K4Notifications.isCritical(notification)
-    readonly property string appName: clean(notification?.appName ?? "Notification")
-    readonly property string summary: clean(notification?.summary ?? "")
-    readonly property string body: clean(notification?.body ?? "")
+    readonly property string appName: singleLineText(notification?.appName ?? "Notification")
+    readonly property string summary: singleLineText(notification?.summary ?? "")
+    readonly property string body: singleLineText(notification?.body ?? "")
     readonly property string compactLine: {
         if (!bandMode)
             return summary.length > 0 ? summary : "New notification"
@@ -31,7 +31,7 @@ Item {
     signal dismissRequested()
     signal actionRequested(var action)
 
-    function clean(value) {
+    function singleLineText(value) {
         return String(value ?? "").replace(/\s*\n\s*/g, " ")
     }
 
@@ -64,6 +64,43 @@ Item {
             font.family: K4Theme.iconFont
             font.pixelSize: 16
             renderType: Text.NativeRendering
+        }
+    }
+
+    component CloseButton: Item {
+        id: closeButton
+
+        signal clicked()
+
+        implicitWidth: 32
+        implicitHeight: 32
+
+        Rectangle {
+            anchors.fill: parent
+            radius: 16
+            color: closeMouse.containsMouse ? K4Theme.surfaceHi : "transparent"
+
+            Behavior on color { ColorAnimation { duration: 100 } }
+        }
+
+        Text {
+            anchors.centerIn: parent
+            text: K4Theme.ico.close
+            color: closeMouse.containsMouse ? K4Theme.ink : K4Theme.muted
+            font.family: K4Theme.iconFont
+            font.pixelSize: 13
+            renderType: Text.NativeRendering
+        }
+
+        MouseArea {
+            id: closeMouse
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: mouse => {
+                mouse.accepted = true
+                closeButton.clicked()
+            }
         }
     }
 
@@ -155,40 +192,11 @@ Item {
                 }
             }
 
-            Item {
+            CloseButton {
                 Layout.preferredWidth: 32
                 Layout.preferredHeight: 32
                 Layout.alignment: Qt.AlignVCenter
-
-                Rectangle {
-                    anchors.fill: parent
-                    radius: 16
-                    color: compactCloseMouse.containsMouse
-                        ? K4Theme.surfaceHi : "transparent"
-
-                    Behavior on color { ColorAnimation { duration: 100 } }
-                }
-
-                Text {
-                    anchors.centerIn: parent
-                    text: K4Theme.ico.close
-                    color: compactCloseMouse.containsMouse
-                        ? K4Theme.ink : K4Theme.muted
-                    font.family: K4Theme.iconFont
-                    font.pixelSize: 13
-                    renderType: Text.NativeRendering
-                }
-
-                MouseArea {
-                    id: compactCloseMouse
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: mouse => {
-                        mouse.accepted = true
-                        root.dismissRequested()
-                    }
-                }
+                onClicked: root.dismissRequested()
             }
         }
     }
@@ -262,39 +270,10 @@ Item {
                     renderType: Text.NativeRendering
                 }
 
-                Item {
+                CloseButton {
                     Layout.preferredWidth: 32
                     Layout.preferredHeight: 32
-
-                    Rectangle {
-                        anchors.fill: parent
-                        radius: 16
-                        color: expandedCloseMouse.containsMouse
-                            ? K4Theme.surfaceHi : "transparent"
-
-                        Behavior on color { ColorAnimation { duration: 100 } }
-                    }
-
-                    Text {
-                        anchors.centerIn: parent
-                        text: K4Theme.ico.close
-                        color: expandedCloseMouse.containsMouse
-                            ? K4Theme.ink : K4Theme.muted
-                        font.family: K4Theme.iconFont
-                        font.pixelSize: 13
-                        renderType: Text.NativeRendering
-                    }
-
-                    MouseArea {
-                        id: expandedCloseMouse
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: mouse => {
-                            mouse.accepted = true
-                            root.dismissRequested()
-                        }
-                    }
+                    onClicked: root.dismissRequested()
                 }
             }
 
