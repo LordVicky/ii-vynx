@@ -383,6 +383,14 @@ Item {
 
                 K4SettingsToggle {
                     Layout.fillWidth: true
+                    title: "Expand idle pill on hover"
+                    description: "Show Clock or Player when hovering the collapsed island"
+                    checked: K4Settings.expandIdleOnHover
+                    onToggled: value => K4Settings.setExpandIdleOnHover(value)
+                }
+
+                K4SettingsToggle {
+                    Layout.fillWidth: true
                     title: "Recent notifications on hover"
                     description: "Show the recent-notification strip under Clock and Player"
                     glyph: K4Theme.ico.bellOutline

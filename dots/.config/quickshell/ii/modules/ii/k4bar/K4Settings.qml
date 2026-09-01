@@ -15,6 +15,7 @@ Singleton {
     readonly property string shape: Config.options.bar.k4.shape
     readonly property real widthScale: Config.options.bar.k4.widthScale
     readonly property bool trayInPill: Config.options.bar.k4.trayInPill
+    readonly property bool expandIdleOnHover: Config.options.bar.k4.expandIdleOnHover
     readonly property bool notificationsOnHover: Config.options.bar.k4.notificationsOnHover
     readonly property bool dismissNotificationsOnFocus: Config.options.bar.k4.dismissNotificationsOnFocus
     readonly property bool playerPeekOnTrackChange: Config.options.bar.k4.playerPeekOnTrackChange
@@ -82,6 +83,10 @@ Singleton {
 
     function setTrayInPill(wanted) {
         Config.options.bar.k4.trayInPill = Boolean(wanted)
+    }
+
+    function setExpandIdleOnHover(wanted) {
+        Config.options.bar.k4.expandIdleOnHover = Boolean(wanted)
     }
 
     function setNotificationsOnHover(wanted) {

@@ -97,7 +97,8 @@ test("plugin controller owns priority arbitration, transient preemption and moni
     assert.match(source, /activePlugin\.islandHeight > K4Theme\.baseHeight/);
     assert.match(source, /onActivePluginChanged:\s*publishActivePlugin\(\)/);
 
-    assert.match(source, /property QtObject builtins:\s*K4BuiltinPlugins \{[\s\S]*?passiveHoverAllowed:\s*root\.passiveHoverAllowed[\s\S]*?\}/);
+    assert.match(source, /readonly property bool passiveHoverEffective:\s*K4Settings\.expandIdleOnHover[\s\S]*?&& passiveHoverAllowed/);
+    assert.match(source, /property QtObject builtins:\s*K4BuiltinPlugins \{[\s\S]*?passiveHoverAllowed:\s*root\.passiveHoverEffective[\s\S]*?\}/);
     assert.match(source, /function attachBuiltins\(\)[\s\S]*?builtins\.plugins[\s\S]*?plugins = combined/);
     assert.match(source, /Component\.onCompleted:\s*\{[\s\S]*?attachBuiltins\(\)[\s\S]*?publishActivePlugin\(\)[\s\S]*?\}/);
 
