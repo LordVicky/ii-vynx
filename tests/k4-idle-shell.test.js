@@ -81,7 +81,8 @@ test("explicit island owners consume passive hover without an activePlugin bindi
     const builtins = executableSource(readShell("modules/ii/k4bar/K4BuiltinPlugins.qml"));
 
     assert.match(controller, /property bool passiveHoverAllowed:\s*false/);
-    assert.match(controller, /K4BuiltinPlugins\s*\{[\s\S]*?passiveHoverAllowed:\s*root\.passiveHoverAllowed/);
+    assert.match(controller, /readonly property bool passiveHoverEffective:\s*K4Settings\.expandIdleOnHover[\s\S]*?&& passiveHoverAllowed/);
+    assert.match(controller, /K4BuiltinPlugins\s*\{[\s\S]*?passiveHoverAllowed:\s*root\.passiveHoverEffective/);
     assert.match(controller, /function isAmbientPlugin\(candidate\)[\s\S]*?candidate\.transitorio[\s\S]*?isPassiveHoverPlugin\(candidate\)/);
     assert.match(controller, /function schedulePassiveHoverSuppression\(\)[\s\S]*?Qt\.callLater\(function\(\)[\s\S]*?root\.passiveHoverAllowed = false/);
     assert.match(controller, /function publishActivePlugin\(\)[\s\S]*?dismissTransients\(\)[\s\S]*?schedulePassiveHoverSuppression\(\)/);
