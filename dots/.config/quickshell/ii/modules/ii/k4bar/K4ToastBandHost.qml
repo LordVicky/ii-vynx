@@ -1,17 +1,13 @@
 pragma ComponentBehavior: Bound
 
 import QtQuick
-import QtQuick.Layouts
 import Quickshell
 import Quickshell.Wayland
-import Quickshell.Widgets
 import qs
 import qs.modules.common
-import qs.modules.common.widgets
 
-// Separate notification band used when an explicit island plugin owns the
-// island. It never reserves compositor space; K4Bar remains the sole owner of
-// the 34px exclusive zone.
+// Compact notification band used while an explicit plugin owns the island.
+// It shares the island card but never reserves compositor space or expands.
 Scope {
     Variants {
         model: GlobalStates.screenLocked ? [] : Quickshell.screens
@@ -38,7 +34,7 @@ Scope {
             margins.bottom: bottom && islandRect ? screen.height - islandRect.y + 8 : 0
 
             implicitWidth: 420
-            implicitHeight: 56
+            implicitHeight: 54
             color: "transparent"
             focusable: false
             exclusionMode: ExclusionMode.Ignore
@@ -55,101 +51,29 @@ Scope {
                 radius: 16
                 color: K4Theme.islandBg
 
-                readonly property var notification: K4Notifications.latest
-                readonly property string iconSource: K4Notifications.iconFor(notification)
-
-                RowLayout {
+                MouseArea {
                     anchors.fill: parent
-                    anchors.leftMargin: 12
-                    anchors.rightMargin: 10
-                    spacing: 10
-
-                    ClippingRectangle {
-                        Layout.preferredWidth: 32
-                        Layout.preferredHeight: 32
-                        Layout.alignment: Qt.AlignVCenter
-                        radius: 16
-                        color: K4Theme.surface
-
-                        Image {
-                            id: bandIcon
-                            anchors.fill: parent
-                            source: band.iconSource
-                            fillMode: Image.PreserveAspectCrop
-                            asynchronous: true
-                            cache: true
-                            sourceSize.width: 80
-                            sourceSize.height: 80
-                            visible: status === Image.Ready
-                        }
-
-                        MaterialSymbol {
-                            anchors.centerIn: parent
-                            visible: !bandIcon.visible
-                            text: "notifications"
-                            fill: 1
-                            iconSize: 16
-                            color: K4Theme.ink
-                        }
-                    }
-
-                    ColumnLayout {
-                        Layout.fillWidth: true
-                        Layout.alignment: Qt.AlignVCenter
-                        spacing: 1
-
-                        Text {
-                            Layout.fillWidth: true
-                            text: band.notification?.summary ?? ""
-                            color: K4Theme.ink
-                            font.family: K4Theme.uiFont
-                            font.pixelSize: 11
-                            font.weight: Font.DemiBold
-                            elide: Text.ElideRight
-                            maximumLineCount: 1
-                            renderType: Text.NativeRendering
-                        }
-
-                        Text {
-                            Layout.fillWidth: true
-                            text: band.notification?.body ?? ""
-                            color: K4Theme.muted
-                            font.family: K4Theme.uiFont
-                            font.pixelSize: 10
-                            elide: Text.ElideRight
-                            maximumLineCount: 1
-                            renderType: Text.NativeRendering
-                        }
-                    }
-
-                    Text {
-                        text: "×"
-                        color: bandCloseHover.hovered ? K4Theme.ink : K4Theme.muted
-                        font.family: K4Theme.uiFont
-                        font.pixelSize: 15
-                        Layout.preferredWidth: 20
-                        Layout.preferredHeight: 20
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
-                        renderType: Text.NativeRendering
-
-                        HoverHandler { id: bandCloseHover }
-                        TapHandler { onTapped: K4Notifications.dismissToast() }
-                    }
-                }
-
-                HoverHandler {
-                    onHoveredChanged: {
-                        if (hovered)
-                            K4Notifications.holdToast()
-                        else
-                            K4Notifications.resumeToast()
-                    }
-                }
-
-                TapHandler {
-                    onTapped: {
+                    acceptedButtons: Qt.LeftButton
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onEntered: K4Notifications.holdToast()
+                    onExited: K4Notifications.resumeToast()
+                    onClicked: mouse => {
+                        mouse.accepted = true
                         K4Notifications.activate(K4Notifications.latest)
+                        K4Notifications.dismissToast()
+                    }
+                }
+
+                K4NotificationCard {
+                    anchors.fill: parent
+                    notification: K4Notifications.latest
+                    expanded: false
+                    bandMode: true
+
+                    onDismissRequested: K4Notifications.dismissToast()
+                    onActionRequested: action => {
+                        K4Notifications.invokeAction(K4Notifications.latest, action)
                         K4Notifications.dismissToast()
                     }
                 }

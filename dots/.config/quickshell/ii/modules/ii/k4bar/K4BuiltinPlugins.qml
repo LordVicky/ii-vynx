@@ -161,8 +161,14 @@ QtObject {
     property QtObject toastPlugin: K4Plugin {
         name: "toast"; title: "Notification"; priority: 59; transitorio: true
         active: enabled && K4Notifications.toastOpen && !K4Notifications.inBand
-        islandWidth: 440
-        islandHeight: K4Notifications.buttons(K4Notifications.latest).length > 0 ? 112 : 96
+        readonly property bool expanded: IslandState.hovered
+        readonly property bool hasImage: K4Notifications.hasImage(K4Notifications.latest)
+        readonly property var buttons: K4Notifications.buttons(K4Notifications.latest)
+        islandWidth: expanded ? (hasImage ? 520 : 500) : 382
+        islandHeight: !expanded ? 54
+            : hasImage && buttons.length > 0 ? 214
+            : hasImage ? 168
+            : buttons.length > 0 ? 170 : 142
         handlesBackgroundTap: true
         onBackgroundTapped: { K4Notifications.activate(K4Notifications.latest); K4Notifications.dismissToast() }
         function close() { K4Notifications.dismissToast() }

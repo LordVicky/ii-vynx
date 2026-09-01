@@ -3,6 +3,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Hyprland
+import Quickshell.Services.Notifications
 import qs.modules.common
 import qs.services
 
@@ -54,14 +55,33 @@ Singleton {
         return null
     }
 
-    function iconFor(notification) {
+    function appIconFor(notification) {
         if (!notification)
             return ""
-        if (notification.image?.length > 0)
-            return notification.image
         if (notification.appIcon?.length > 0)
             return Quickshell.iconPath(notification.appIcon, true)
         return ""
+    }
+
+    function imageFor(notification) {
+        return notification?.image ?? ""
+    }
+
+    function hasImage(notification) {
+        return imageFor(notification).length > 0
+    }
+
+    function isCritical(notification) {
+        const urgency = String(notification?.urgency ?? "").toLowerCase()
+        const critical = String(NotificationUrgency.Critical).toLowerCase()
+        return urgency === critical || urgency === "critical"
+            || urgency.endsWith(".critical")
+    }
+
+    // Retain the history-strip presentation seam while making application
+    // identity explicit and keeping media previews out of icon slots.
+    function iconFor(notification) {
+        return appIconFor(notification)
     }
 
     function canInvoke(notification) {
