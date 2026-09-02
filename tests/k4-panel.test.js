@@ -112,7 +112,8 @@ test("Network keeps a concrete retry target through Wi-Fi password replacement",
 test("control center v2 preserves the prototype home hierarchy with live K4 seams", async () => {
     const view = await read("modules/ii/k4bar/K4PanelView.qml");
 
-    assert.match(view, /Layout\.preferredWidth:\s*350/);
+    assert.match(view, /id:\s*homeColumns/);
+    assert.match(view, /readonly property int leftWidth:\s*Math\.round\(\(width - spacing\) \* 0\.54\)/);
     assert.match(view, /Layout\.preferredHeight:\s*84/);
     assert.match(view, /Layout\.preferredHeight:\s*94/);
     assert.match(view, /Layout\.preferredHeight:\s*142/);
@@ -130,6 +131,21 @@ test("control center v2 preserves the prototype home hierarchy with live K4 seam
     assert.doesNotMatch(view, /K4ShortcutStrip\s*\{/);
 });
 
+test("control center columns can shrink inside the prototype island instead of clipping the right pane", async () => {
+    const view = await read("modules/ii/k4bar/K4PanelView.qml");
+    const wifi = await read("modules/ii/k4bar/K4PanelWifiView.qml");
+    const bluetooth = await read("modules/ii/k4bar/K4PanelBluetoothView.qml");
+    const audio = await read("modules/ii/k4bar/K4PanelAudioView.qml");
+
+    assert.match(view, /id:\s*homeColumns[\s\S]*?readonly property int leftWidth:[\s\S]*?Layout\.minimumWidth:\s*0[\s\S]*?Layout\.preferredWidth:\s*homeColumns\.leftWidth[\s\S]*?Layout\.maximumWidth:\s*homeColumns\.leftWidth/);
+    assert.match(view, /Layout\.maximumWidth:\s*homeColumns\.leftWidth[\s\S]*?ColumnLayout\s*\{[\s\S]*?Layout\.minimumWidth:\s*0[\s\S]*?Layout\.fillWidth:\s*true/);
+
+    for (const source of [wifi, bluetooth, audio]) {
+        const shrinkablePanes = source.match(/Layout\.minimumWidth:\s*0/g) ?? [];
+        assert.ok(shrinkablePanes.length >= 2);
+    }
+});
+
 test("record tile delegates to Capture and becomes stop while recording", async () => {
     const view = await read("modules/ii/k4bar/K4PanelView.qml");
     const capture = await read("modules/ii/k4bar/K4CapturePlugin.qml");
@@ -140,14 +156,14 @@ test("record tile delegates to Capture and becomes stop while recording", async 
     assert.match(capture, /function\s+openRecord\(\)\s*\{\s*openAt\(2\)\s*\}/);
 });
 
-test("prototype mock telemetry is not hard-coded into the live panel", async () => {
+test("prototype mock telemetry and explanatory placeholders are not hard-coded into the live panel", async () => {
     const sources = [
         await read("modules/ii/k4bar/K4PanelView.qml"),
         await read("modules/ii/k4bar/K4PanelWifiView.qml"),
         await read("modules/ii/k4bar/K4PanelBluetoothView.qml")
     ].join("\n");
 
-    for (const mock of ["Vynx-5G", "866 Mbps", "18.4 Mbps", "192.168.1.87", "Wi-Fi 6", "AirPods Pro", "82%", "91%"])
+    for (const mock of ["Vynx-5G", "866 Mbps", "18.4 Mbps", "192.168.1.87", "Wi-Fi 6", "AirPods Pro", "82%", "91%", "Network speed, IP details", "Battery is shown only"])
         assert.doesNotMatch(sources, new RegExp(mock.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
 });
 
