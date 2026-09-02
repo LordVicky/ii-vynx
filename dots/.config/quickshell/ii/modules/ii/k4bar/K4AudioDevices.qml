@@ -64,19 +64,15 @@ Singleton {
         return null
     }
 
-    function nameFor(node) {
-        if (!node)
-            return ""
-
-        const name = Audio.friendlyDeviceName(node)
-        if (!root.activeOutput || root.activeOutput.id !== node.id)
-            return name
-
+    function bluetoothBatteryPercentFor(node) {
         const bluetoothDevice = root.bluetoothDeviceFor(node)
         if (!bluetoothDevice?.batteryAvailable)
-            return name
+            return -1
+        return Math.round(bluetoothDevice.battery * 100)
+    }
 
-        return `${name} · ${Math.round(bluetoothDevice.battery * 100)}%`
+    function nameFor(node) {
+        return node ? Audio.friendlyDeviceName(node) : ""
     }
 
     function selectOutput(node) {
