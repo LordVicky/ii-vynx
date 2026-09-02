@@ -18,17 +18,27 @@ QtObject {
         capturePlugin, displaysPlugin, trayPlugin
     ]
 
+    // Player preview is armed only by the media sub-region in the collapsed
+    // idle pill. Once armed, keep it latched for the rest of the island hover
+    // session so the idle -> player geometry transition cannot immediately
+    // cancel itself when the collapsed media widget disappears.
     property bool playerHoverSession: false
     property var playerSessionMediaConnections: Connections {
         target: K4Media
-        function onIsPlayingChanged() { if (IslandState.hovered && K4Media.isPlaying) root.playerHoverSession = true }
-        function onHasPlayerChanged() { if (!K4Media.hasPlayer) root.playerHoverSession = false }
+        function onHasPlayerChanged() {
+            if (!K4Media.hasPlayer)
+                root.playerHoverSession = false
+        }
     }
     property var playerSessionHoverConnections: Connections {
         target: IslandState
+        function onMediaHoveredChanged() {
+            if (IslandState.mediaHovered && K4Media.isPlaying)
+                root.playerHoverSession = true
+        }
         function onHoveredChanged() {
-            if (!IslandState.hovered) root.playerHoverSession = false
-            else if (K4Media.isPlaying) root.playerHoverSession = true
+            if (!IslandState.hovered)
+                root.playerHoverSession = false
         }
     }
 
@@ -146,7 +156,7 @@ QtObject {
         active: enabled && (
             (IslandState.hovered && root.passiveHoverAllowed
                 && K4Media.hasPlayer
-                && (K4Media.isPlaying || root.playerHoverSession))
+                && root.playerHoverSession)
             || trackPeekOpen
         )
         islandWidth: 340
