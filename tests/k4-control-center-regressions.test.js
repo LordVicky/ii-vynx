@@ -47,7 +47,7 @@ test("sound card keeps the active output device only in its header and has no fo
     assert.match(soundBlock, /Layout\.preferredHeight:\s*74/);
 });
 
-test("active Bluetooth output renders a compact battery silhouette separate from volume", async () => {
+test("active Bluetooth output renders a textless micro ring separate from volume", async () => {
     const view = await read("modules/ii/k4bar/K4PanelView.qml");
     const audio = await read("modules/ii/k4bar/K4AudioDevices.qml");
     const soundBlock = view.match(/K4PanelTile\s*\{[\s\S]*?id:\s*soundTile[\s\S]*?PanelCard\s*\{/)?.[0] ?? "";
@@ -57,12 +57,11 @@ test("active Bluetooth output renders a compact battery silhouette separate from
     assert.match(audio, /function\s+bluetoothBatteryPercentFor\(node\)[\s\S]*?batteryAvailable[\s\S]*?Math\.round\(bluetoothDevice\.battery \* 100\)/);
     assert.doesNotMatch(audio.match(/function\s+nameFor\(node\)[\s\S]*?\n    \}/)?.[0] ?? "", /battery/);
     assert.match(soundBlock, /readonly property int outputBatteryPercent:\s*K4AudioDevices\.bluetoothBatteryPercentFor\(K4AudioDevices\.activeOutput\)/);
-    assert.match(soundBlock, /id:\s*outputBatteryMeter[\s\S]*?visible:\s*soundTile\.outputBatteryPercent\s*>=\s*0[\s\S]*?Layout\.preferredWidth:\s*47[\s\S]*?Layout\.preferredHeight:\s*18/);
-    assert.match(soundBlock, /id:\s*outputBatteryBody[\s\S]*?width:\s*42[\s\S]*?height:\s*16[\s\S]*?radius:\s*4/);
-    assert.match(soundBlock, /id:\s*outputBatteryTerminal[\s\S]*?width:\s*3[\s\S]*?height:\s*8/);
-    assert.match(soundBlock, /id:\s*outputBatteryFill[\s\S]*?width:\s*\(outputBatteryBody\.width - 4\)\s*\*\s*Math\.max\(0, Math\.min\(1, soundTile\.outputBatteryPercent \/ 100\)\)/);
-    assert.match(soundBlock, /text:\s*soundTile\.outputBatteryPercent\s*\+\s*"%"/);
-    assert.match(soundBlock, /id:\s*outputBatteryFill[\s\S]*?color:\s*soundTile\.outputBatteryPercent\s*<=\s*20\s*\?\s*K4Theme\.red\s*:\s*K4Theme\.green/);
+    assert.match(soundBlock, /Canvas\s*\{[\s\S]*?id:\s*outputBatteryRing[\s\S]*?visible:\s*soundTile\.outputBatteryPercent\s*>=\s*0[\s\S]*?Layout\.preferredWidth:\s*12[\s\S]*?Layout\.preferredHeight:\s*12/);
+    assert.match(soundBlock, /onPaint:[\s\S]*?ctx\.arc\([\s\S]*?soundTile\.outputBatteryPercent \/ 100/);
+    assert.match(soundBlock, /soundTile\.outputBatteryPercent\s*<=\s*20\s*\?\s*K4Theme\.red\s*:\s*K4Theme\.green/);
+    assert.doesNotMatch(soundBlock, /id:\s*outputBatteryBody|id:\s*outputBatteryTerminal/);
+    assert.doesNotMatch(soundBlock, /text:\s*soundTile\.outputBatteryPercent/);
 });
 
 test("control center header has no decorative leading icon", async () => {
