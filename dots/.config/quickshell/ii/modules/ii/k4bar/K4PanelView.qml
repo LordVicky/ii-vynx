@@ -653,7 +653,7 @@ Item {
 
                                 Text {
                                     Layout.minimumWidth: 0
-                                    Layout.maximumWidth: soundTile.outputBatteryPercent >= 0 ? 145 : 190
+                                    Layout.maximumWidth: soundTile.outputBatteryPercent >= 0 ? 160 : 190
                                     text: K4AudioDevices.nameFor(K4AudioDevices.activeOutput)
                                     color: K4Theme.panelMuted
                                     font.family: K4Theme.uiFont
@@ -662,37 +662,58 @@ Item {
                                     textFormat: Text.PlainText
                                 }
 
-                                Rectangle {
+                                Item {
                                     id: outputBatteryMeter
                                     visible: soundTile.outputBatteryPercent >= 0
-                                    Layout.preferredWidth: 64
-                                    Layout.preferredHeight: 16
+                                    Layout.preferredWidth: 47
+                                    Layout.preferredHeight: 18
                                     Layout.alignment: Qt.AlignVCenter
-                                    radius: 8
-                                    color: K4Theme.panelTrack
-                                    border.width: 1
-                                    border.color: K4Theme.panelLineStrong
-                                    clip: true
 
                                     Rectangle {
-                                        id: outputBatteryFill
-                                        x: 1
-                                        y: 1
-                                        width: (parent.width - 2) * Math.max(0, Math.min(1, soundTile.outputBatteryPercent / 100))
-                                        height: parent.height - 2
-                                        radius: 7
-                                        color: K4Theme.green
+                                        id: outputBatteryBody
+                                        anchors.left: parent.left
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        width: 42
+                                        height: 16
+                                        radius: 4
+                                        color: K4Theme.panelTrack
+                                        border.width: 1
+                                        border.color: K4Theme.panelLineStrong
+                                        clip: true
+
+                                        Rectangle {
+                                            id: outputBatteryFill
+                                            x: 2
+                                            y: 2
+                                            width: (outputBatteryBody.width - 4)
+                                                * Math.max(0, Math.min(1, soundTile.outputBatteryPercent / 100))
+                                            height: outputBatteryBody.height - 4
+                                            radius: 2
+                                            color: soundTile.outputBatteryPercent <= 20
+                                                ? K4Theme.red : K4Theme.green
+                                        }
+
+                                        Text {
+                                            anchors.centerIn: parent
+                                            z: 1
+                                            text: soundTile.outputBatteryPercent + "%"
+                                            color: K4Theme.panelInkSoft
+                                            font.family: K4Theme.uiFont
+                                            font.pixelSize: 8
+                                            font.weight: Font.Bold
+                                            textFormat: Text.PlainText
+                                        }
                                     }
 
-                                    Text {
-                                        anchors.centerIn: parent
-                                        z: 1
-                                        text: soundTile.outputBatteryPercent + "%"
-                                        color: K4Theme.panelInkSoft
-                                        font.family: K4Theme.uiFont
-                                        font.pixelSize: 9
-                                        font.weight: Font.DemiBold
-                                        textFormat: Text.PlainText
+                                    Rectangle {
+                                        id: outputBatteryTerminal
+                                        anchors.left: outputBatteryBody.right
+                                        anchors.leftMargin: 2
+                                        anchors.verticalCenter: outputBatteryBody.verticalCenter
+                                        width: 3
+                                        height: 8
+                                        radius: 1.5
+                                        color: K4Theme.panelLineStrong
                                     }
                                 }
                             }
