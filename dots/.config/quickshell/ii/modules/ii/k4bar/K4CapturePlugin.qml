@@ -38,11 +38,22 @@ K4Plugin {
     islandWidth: 520
     islandHeight: recording ? 258 : 220
 
-    function openCapture() {
+    function openAt(index) {
         K4Panel.close()
         K4Notifications.dismissToast()
-        selection = 0
+        selection = Math.max(0, Math.min(3, Number(index) || 0))
         open = true
+    }
+
+    function openCapture() {
+        openAt(0)
+    }
+
+    // Control Center V2's Record tile enters the existing Capture surface with
+    // the recording half of its 2x2 action grid selected. Recording ownership
+    // remains entirely in the existing region/record.sh paths below.
+    function openRecord() {
+        openAt(2)
     }
 
     function openApplication() {
@@ -180,6 +191,7 @@ K4Plugin {
         target: "k4.capture"
         function toggle(): void { root.toggle() }
         function open(): void { root.openCapture() }
+        function record(): void { root.openRecord() }
         function close(): void { root.close() }
         function screenshotRegion(): void { root.screenshotRegion() }
         function screenshotScreen(): void { root.screenshotScreen() }
