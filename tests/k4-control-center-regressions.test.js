@@ -37,21 +37,29 @@ test("sound card opens detail while direct audio controls stay nested", async ()
     assert.doesNotMatch(audio, /MouseArea\s*\{[\s\S]{0,100}?z:\s*-1[\s\S]{0,300}?selectOutput/);
 });
 
-test("sound card keeps the active output device label only in the top-right header", async () => {
+test("sound card keeps the active output device only in its header and has no footer navigation row", async () => {
     const view = await read("modules/ii/k4bar/K4PanelView.qml");
     const soundBlock = view.match(/K4PanelTile\s*\{[\s\S]*?id:\s*soundTile[\s\S]*?PanelCard\s*\{/)?.[0] ?? "";
 
     assert.equal((soundBlock.match(/K4AudioDevices\.nameFor\(K4AudioDevices\.activeOutput\)/g) ?? []).length, 1);
-    assert.match(soundBlock, /text:\s*"Output"[\s\S]*?text:\s*K4Theme\.ico\.forward/);
-    assert.doesNotMatch(soundBlock, /text:\s*"•"/);
+    assert.doesNotMatch(soundBlock, /text:\s*"Output"/);
+    assert.doesNotMatch(soundBlock, /text:\s*K4Theme\.ico\.forward/);
+    assert.match(soundBlock, /Layout\.preferredHeight:\s*74/);
 });
 
-test("active Bluetooth output reuses BluetoothStatus battery in the Sound label", async () => {
+test("active Bluetooth output exposes battery separately from its device name", async () => {
+    const view = await read("modules/ii/k4bar/K4PanelView.qml");
     const audio = await read("modules/ii/k4bar/K4AudioDevices.qml");
+    const soundBlock = view.match(/K4PanelTile\s*\{[\s\S]*?id:\s*soundTile[\s\S]*?PanelCard\s*\{/)?.[0] ?? "";
 
     assert.match(audio, /function\s+bluetoothDeviceFor\(node\)[\s\S]*?nodeName\.indexOf\("bluez_"\)[\s\S]*?BluetoothStatus\.friendlyDeviceList/);
     assert.match(audio, /function\s+bluetoothDeviceFor\(node\)[\s\S]*?device\.connected[\s\S]*?device\.address/);
-    assert.match(audio, /function\s+nameFor\(node\)[\s\S]*?root\.activeOutput[\s\S]*?batteryAvailable[\s\S]*?Math\.round\(bluetoothDevice\.battery \* 100\)[\s\S]*?%/);
+    assert.match(audio, /function\s+bluetoothBatteryPercentFor\(node\)[\s\S]*?batteryAvailable[\s\S]*?Math\.round\(bluetoothDevice\.battery \* 100\)/);
+    assert.doesNotMatch(audio.match(/function\s+nameFor\(node\)[\s\S]*?\n    \}/)?.[0] ?? "", /battery/);
+    assert.match(soundBlock, /readonly property int outputBatteryPercent:\s*K4AudioDevices\.bluetoothBatteryPercentFor\(K4AudioDevices\.activeOutput\)/);
+    assert.match(soundBlock, /id:\s*outputBatteryBadge[\s\S]*?visible:\s*soundTile\.outputBatteryPercent\s*>=\s*0/);
+    assert.match(soundBlock, /text:\s*"Battery "\s*\+\s*soundTile\.outputBatteryPercent\s*\+\s*"%"/);
+    assert.match(soundBlock, /color:\s*K4Theme\.green/);
 });
 
 test("control center header has no decorative leading icon", async () => {
