@@ -9,6 +9,7 @@ Item {
         spacing: 10
 
         Rectangle {
+            Layout.minimumWidth: 0
             Layout.fillWidth: true
             Layout.fillHeight: true
             radius: 17
@@ -97,6 +98,7 @@ Item {
         }
 
         Rectangle {
+            Layout.minimumWidth: 0
             Layout.fillWidth: true
             Layout.fillHeight: true
             radius: 17
@@ -147,6 +149,7 @@ Item {
                         }
 
                         ColumnLayout {
+                            Layout.minimumWidth: 0
                             Layout.fillWidth: true
                             spacing: 1
 
@@ -207,6 +210,7 @@ Item {
 
                         TextInput {
                             id: passwordInput
+                            Layout.minimumWidth: 0
                             Layout.fillWidth: true
                             Layout.preferredHeight: 28
                             verticalAlignment: TextInput.AlignVCenter
@@ -286,16 +290,6 @@ Item {
                 }
 
                 Item { Layout.fillHeight: true }
-
-                Text {
-                    Layout.fillWidth: true
-                    text: "Network speed, IP details and Wi-Fi generation are omitted because the current K4 network adapter does not expose them."
-                    color: K4Theme.dim
-                    font.family: K4Theme.uiFont
-                    font.pixelSize: 8
-                    wrapMode: Text.WordWrap
-                    renderType: Text.NativeRendering
-                }
             }
         }
     }
