@@ -6,32 +6,32 @@ Item {
 
     RowLayout {
         anchors.fill: parent
-        spacing: 10
+        spacing: 9
 
         Rectangle {
             Layout.minimumWidth: 0
             Layout.fillWidth: true
             Layout.fillHeight: true
-            radius: 17
+            radius: 16
             color: K4Theme.panelSurface
             border.width: 1
             border.color: K4Theme.panelLine
 
             ColumnLayout {
                 anchors.fill: parent
-                anchors.margins: 11
-                spacing: 8
+                anchors.margins: 10
+                spacing: 7
 
                 RowLayout {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 28
-                    spacing: 10
+                    spacing: 9
 
                     Text {
                         text: K4Wifi.enabled
                             ? (K4Wifi.scanning ? "Searching networks…" : "Available networks")
                             : "Wi-Fi disabled"
-                        color: K4Theme.ink
+                        color: K4Theme.panelInkSoft
                         font.family: K4Theme.uiFont
                         font.pixelSize: 10
                         font.weight: Font.DemiBold
@@ -88,7 +88,7 @@ Item {
                         anchors.centerIn: parent
                         visible: K4Wifi.networks.length === 0
                         text: K4Wifi.enabled ? "Searching networks…" : "Enable Wi-Fi to see networks"
-                        color: K4Theme.muted
+                        color: K4Theme.panelMuted
                         font.family: K4Theme.uiFont
                         font.pixelSize: 11
                         renderType: Text.NativeRendering
@@ -101,19 +101,19 @@ Item {
             Layout.minimumWidth: 0
             Layout.fillWidth: true
             Layout.fillHeight: true
-            radius: 17
+            radius: 16
             color: K4Theme.panelSurface
             border.width: 1
             border.color: K4Theme.panelLine
 
             ColumnLayout {
                 anchors.fill: parent
-                anchors.margins: 11
-                spacing: 8
+                anchors.margins: 10
+                spacing: 7
 
                 Text {
                     text: "Connection"
-                    color: K4Theme.ink
+                    color: K4Theme.panelInkSoft
                     font.family: K4Theme.uiFont
                     font.pixelSize: 10
                     font.weight: Font.DemiBold
@@ -125,6 +125,8 @@ Item {
                     Layout.preferredHeight: 58
                     radius: 12
                     color: K4Theme.panelSurfaceHi
+                    border.width: 1
+                    border.color: K4Theme.panelLine
                     visible: K4Wifi.active !== null
 
                     RowLayout {
@@ -135,13 +137,15 @@ Item {
                         Rectangle {
                             Layout.preferredWidth: 30
                             Layout.preferredHeight: 30
-                            radius: 10
+                            radius: 9
                             color: K4Theme.panelSurfaceHot
+                            border.width: 1
+                            border.color: K4Theme.panelLine
 
                             Text {
                                 anchors.centerIn: parent
                                 text: K4Wifi.active ? K4Wifi.strengthGlyph(K4Wifi.active) : K4Theme.ico.wifi
-                                color: K4Theme.muted
+                                color: K4Theme.panelInkSoft
                                 font.family: K4Theme.iconFont
                                 font.pixelSize: 13
                                 renderType: Text.NativeRendering
@@ -156,7 +160,7 @@ Item {
                             Text {
                                 Layout.fillWidth: true
                                 text: K4Wifi.name.length > 0 ? K4Wifi.name : "Connected network"
-                                color: K4Theme.ink
+                                color: K4Theme.panelInkSoft
                                 font.family: K4Theme.uiFont
                                 font.pixelSize: 10
                                 font.weight: Font.DemiBold
@@ -167,7 +171,7 @@ Item {
                             Text {
                                 Layout.fillWidth: true
                                 text: K4Wifi.statusText
-                                color: K4Theme.muted
+                                color: K4Theme.panelMuted
                                 font.family: K4Theme.uiFont
                                 font.pixelSize: 8
                                 elide: Text.ElideRight
@@ -180,7 +184,7 @@ Item {
                 Text {
                     visible: K4Wifi.active === null
                     text: K4Wifi.enabled ? "Not connected" : "Wi-Fi is off"
-                    color: K4Theme.muted
+                    color: K4Theme.panelMuted
                     font.family: K4Theme.uiFont
                     font.pixelSize: 10
                     renderType: Text.NativeRendering
@@ -192,6 +196,8 @@ Item {
                     visible: K4Wifi.passwordTarget !== null
                     radius: 12
                     color: K4Theme.panelSurfaceHi
+                    border.width: 1
+                    border.color: K4Theme.panelLine
                     clip: true
 
                     RowLayout {
@@ -202,7 +208,7 @@ Item {
 
                         Text {
                             text: K4Theme.ico.lock
-                            color: K4Theme.muted
+                            color: K4Theme.panelMuted
                             font.family: K4Theme.iconFont
                             font.pixelSize: 13
                             renderType: Text.NativeRendering
@@ -215,7 +221,7 @@ Item {
                             Layout.preferredHeight: 28
                             verticalAlignment: TextInput.AlignVCenter
                             echoMode: TextInput.Password
-                            color: K4Theme.ink
+                            color: K4Theme.panelInkSoft
                             selectionColor: K4Theme.panelBlue
                             font.family: K4Theme.uiFont
                             font.pixelSize: 11
@@ -247,7 +253,7 @@ Item {
                                 visible: passwordInput.text.length === 0
                                 text: K4Wifi.passwordTarget
                                     ? "Password for " + K4Wifi.passwordTarget.ssid : "Password"
-                                color: K4Theme.dim
+                                color: K4Theme.panelDim
                                 font.family: K4Theme.uiFont
                                 font.pixelSize: 10
                                 renderType: Text.NativeRendering
@@ -256,7 +262,7 @@ Item {
 
                         K4PanelButton {
                             glyph: K4Theme.ico.check
-                            glyphColor: K4Wifi.password.length > 0 ? K4Theme.green : K4Theme.dim
+                            glyphColor: K4Wifi.password.length > 0 ? K4Theme.green : K4Theme.panelDim
                             activeColor: K4Theme.panelSurfaceHot
                             enabledAction: K4Wifi.password.length > 0
                             onActivated: K4Wifi.submitPassword()
@@ -282,9 +288,10 @@ Item {
                     Text {
                         anchors.centerIn: parent
                         text: "Open network portal"
-                        color: K4Theme.muted
+                        color: K4Theme.panelMuted
                         font.family: K4Theme.uiFont
                         font.pixelSize: 10
+                        font.weight: Font.Medium
                         renderType: Text.NativeRendering
                     }
                 }
