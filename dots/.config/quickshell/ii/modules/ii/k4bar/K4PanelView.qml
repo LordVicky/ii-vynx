@@ -617,8 +617,10 @@ Item {
 
                     K4PanelTile {
                         id: soundTile
+                        readonly property int outputBatteryPercent: K4AudioDevices.bluetoothBatteryPercentFor(K4AudioDevices.activeOutput)
+
                         Layout.fillWidth: true
-                        Layout.preferredHeight: 92
+                        Layout.preferredHeight: 74
                         baseColor: K4Theme.panelSurface
                         hoverColor: K4Theme.panelSurfaceHi
                         borderColor: K4Theme.panelLine
@@ -651,13 +653,36 @@ Item {
 
                                 Text {
                                     Layout.minimumWidth: 0
-                                    Layout.maximumWidth: 190
+                                    Layout.maximumWidth: soundTile.outputBatteryPercent >= 0 ? 145 : 190
                                     text: K4AudioDevices.nameFor(K4AudioDevices.activeOutput)
                                     color: K4Theme.panelMuted
                                     font.family: K4Theme.uiFont
                                     font.pixelSize: 10
                                     elide: Text.ElideRight
                                     textFormat: Text.PlainText
+                                }
+
+                                Rectangle {
+                                    id: outputBatteryBadge
+                                    visible: soundTile.outputBatteryPercent >= 0
+                                    Layout.preferredWidth: outputBatteryLabel.implicitWidth + 14
+                                    Layout.preferredHeight: 18
+                                    Layout.alignment: Qt.AlignVCenter
+                                    radius: 9
+                                    color: Qt.rgba(0.19, 0.82, 0.35, 0.10)
+                                    border.width: 1
+                                    border.color: Qt.rgba(0.19, 0.82, 0.35, 0.24)
+
+                                    Text {
+                                        id: outputBatteryLabel
+                                        anchors.centerIn: parent
+                                        text: "Battery " + soundTile.outputBatteryPercent + "%"
+                                        color: K4Theme.green
+                                        font.family: K4Theme.uiFont
+                                        font.pixelSize: 9
+                                        font.weight: Font.DemiBold
+                                        textFormat: Text.PlainText
+                                    }
                                 }
                             }
 
@@ -752,29 +777,6 @@ Item {
                                     font.family: K4Theme.uiFont
                                     font.pixelSize: 10
                                     horizontalAlignment: Text.AlignRight
-                                    textFormat: Text.PlainText
-                                }
-                            }
-
-                            RowLayout {
-                                Layout.fillWidth: true
-                                spacing: 6
-
-                                Text {
-                                    text: "Output"
-                                    color: K4Theme.panelDim
-                                    font.family: K4Theme.uiFont
-                                    font.pixelSize: 10
-                                    textFormat: Text.PlainText
-                                }
-
-                                Item { Layout.fillWidth: true }
-
-                                Text {
-                                    text: K4Theme.ico.forward
-                                    color: soundTile.hovered ? K4Theme.panelInkSoft : K4Theme.panelDim
-                                    font.family: K4Theme.iconFont
-                                    font.pixelSize: 12
                                     textFormat: Text.PlainText
                                 }
                             }
