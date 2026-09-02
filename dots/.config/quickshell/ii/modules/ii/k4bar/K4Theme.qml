@@ -21,6 +21,14 @@ Singleton {
     readonly property color green: "#30d158"
     readonly property color yellow: "#ffd60a"
 
+    // Control Center V2 keeps the supplied prototype's cooler desktop palette
+    // local to Panel instead of changing every existing K4 utility surface.
+    readonly property color panelSurface: "#10151b"
+    readonly property color panelSurfaceHi: "#171e27"
+    readonly property color panelSurfaceHot: "#202936"
+    readonly property color panelBlue: "#5f9fff"
+    readonly property color panelLine: Qt.rgba(1, 1, 1, 0.055)
+
     readonly property int wing: 16
     readonly property int baseHeight: 34
     readonly property int maxIslandHeight: 880
