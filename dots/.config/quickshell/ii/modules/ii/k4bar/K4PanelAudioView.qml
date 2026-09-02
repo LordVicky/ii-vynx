@@ -21,19 +21,19 @@ Item {
         required property var activeNode
         required property bool input
 
-        radius: 17
+        radius: 16
         color: K4Theme.panelSurface
         border.width: 1
         border.color: K4Theme.panelLine
 
         ColumnLayout {
             anchors.fill: parent
-            anchors.margins: 11
-            spacing: 8
+            anchors.margins: 10
+            spacing: 7
 
             Text {
                 text: pane.title
-                color: K4Theme.ink
+                color: K4Theme.panelInkSoft
                 font.family: K4Theme.uiFont
                 font.pixelSize: 10
                 font.weight: Font.DemiBold
@@ -56,7 +56,7 @@ Item {
                     Text {
                         visible: pane.nodes.length === 0
                         text: "Nothing connected"
-                        color: K4Theme.dim
+                        color: K4Theme.panelMuted
                         font.family: K4Theme.uiFont
                         font.pixelSize: 10
                         renderType: Text.NativeRendering
@@ -79,10 +79,15 @@ Item {
                             Layout.preferredHeight: 62
                             radius: 12
                             color: selected
-                                ? Qt.rgba(0.37, 0.62, 1, 0.10)
+                                ? Qt.rgba(0.43, 0.66, 1, 0.13)
                                 : rowHover.hovered ? K4Theme.panelSurfaceHot : K4Theme.panelSurfaceHi
-                            border.width: selected ? 1 : 0
-                            border.color: selected ? Qt.rgba(0.37, 0.62, 1, 0.35) : "transparent"
+                            border.width: 1
+                            border.color: selected
+                                ? Qt.rgba(0.43, 0.66, 1, 0.38)
+                                : rowHover.hovered ? K4Theme.panelLineStrong : K4Theme.panelLine
+
+                            Behavior on color { ColorAnimation { duration: 110 } }
+                            Behavior on border.color { ColorAnimation { duration: 110 } }
 
                             HoverHandler { id: rowHover }
                             MouseArea {
@@ -114,12 +119,15 @@ Item {
                                         Layout.preferredHeight: 28
                                         radius: 9
                                         color: K4Theme.panelSurfaceHot
+                                        border.width: 1
+                                        border.color: row.selected
+                                            ? Qt.rgba(0.43, 0.66, 1, 0.30) : K4Theme.panelLine
 
                                         Text {
                                             anchors.centerIn: parent
                                             text: row.selected ? K4Theme.ico.check
                                                 : pane.input ? K4Theme.ico.microphone : K4Theme.ico.speaker
-                                            color: row.selected ? K4Theme.green : K4Theme.muted
+                                            color: row.selected ? K4Theme.panelBlue : K4Theme.panelInkSoft
                                             font.family: K4Theme.iconFont
                                             font.pixelSize: 12
                                             renderType: Text.NativeRendering
@@ -134,7 +142,7 @@ Item {
                                         Text {
                                             Layout.fillWidth: true
                                             text: K4AudioDevices.nameFor(row.modelData)
-                                            color: K4Theme.ink
+                                            color: K4Theme.panelInkSoft
                                             font.family: K4Theme.uiFont
                                             font.pixelSize: 10
                                             font.weight: Font.DemiBold
@@ -145,7 +153,7 @@ Item {
                                         Text {
                                             Layout.fillWidth: true
                                             text: row.selected ? "Default" : "Available"
-                                            color: K4Theme.muted
+                                            color: K4Theme.panelMuted
                                             font.family: K4Theme.uiFont
                                             font.pixelSize: 8
                                             elide: Text.ElideRight
@@ -156,7 +164,7 @@ Item {
                                     Text {
                                         visible: row.base > 0 && row.volume > row.base
                                         text: "+" + row.db.toFixed(0) + " dB"
-                                        color: row.selected ? K4Theme.yellow : K4Theme.dim
+                                        color: row.selected ? K4Theme.yellow : K4Theme.panelDim
                                         font.family: K4Theme.uiFont
                                         font.pixelSize: 8
                                         renderType: Text.NativeRendering
@@ -164,7 +172,7 @@ Item {
 
                                     Text {
                                         text: row.volume + "%"
-                                        color: row.muted ? K4Theme.dim : K4Theme.muted
+                                        color: row.muted ? K4Theme.panelDim : K4Theme.panelMuted
                                         font.family: K4Theme.uiFont
                                         font.pixelSize: 9
                                         renderType: Text.NativeRendering
@@ -173,7 +181,7 @@ Item {
                                     K4PanelButton {
                                         glyph: row.muted ? K4Theme.ico.volOff : K4Theme.ico.volMed
                                         glyphSize: 11
-                                        glyphColor: row.muted ? K4Theme.red : K4Theme.muted
+                                        glyphColor: row.muted ? K4Theme.red : K4Theme.panelMuted
                                         activeColor: K4Theme.panelSurfaceHot
                                         onActivated: K4AudioDevices.toggleMute(row.modelData)
                                     }
@@ -190,16 +198,16 @@ Item {
                                         width: parent.width
                                         height: 4
                                         radius: 2
-                                        color: "#29313a"
+                                        color: K4Theme.panelTrack
                                         opacity: row.muted ? 0.45 : 1
 
                                         Rectangle {
                                             width: track.width * Math.min(1, row.volume / 150)
                                             height: parent.height
                                             radius: parent.radius
-                                            color: !row.selected ? K4Theme.muted
+                                            color: !row.selected ? K4Theme.panelMuted
                                                 : row.base > 0 && row.volume > row.base
-                                                    ? K4Theme.yellow : K4Theme.green
+                                                    ? K4Theme.yellow : K4Theme.panelBlue
                                         }
 
                                         Rectangle {
@@ -209,8 +217,8 @@ Item {
                                             width: 2
                                             height: 10
                                             radius: 1
-                                            color: K4Theme.ink
-                                            opacity: 0.55
+                                            color: K4Theme.panelInkSoft
+                                            opacity: 0.62
                                         }
                                     }
 
@@ -241,7 +249,7 @@ Item {
 
     RowLayout {
         anchors.fill: parent
-        spacing: 10
+        spacing: 9
 
         DevicePane {
             Layout.minimumWidth: 0
