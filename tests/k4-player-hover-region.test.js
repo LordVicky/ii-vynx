@@ -22,7 +22,7 @@ test("player hover is armed only from the scaled idle media region and clears on
     assert.match(state, /function resetHostPublication\(\)[\s\S]*?mediaHovered\s*=\s*false/);
 
     assert.match(builtins, /property bool clockHoverReady:\s*false/);
-    assert.match(builtins, /Timer\s*\{[\s\S]*?id:\s*clockHoverIntent[\s\S]*?interval:\s*140/);
+    assert.match(builtins, /property var clockHoverIntentTimer:\s*Timer\s*\{[\s\S]*?id:\s*clockHoverIntent[\s\S]*?interval:\s*140/);
     assert.match(builtins, /function onMediaHoveredChanged\(\)[\s\S]*?clockHoverIntent\.stop\(\)[\s\S]*?root\.clockHoverReady\s*=\s*false[\s\S]*?root\.playerHoverSession\s*=\s*true/);
     assert.match(builtins, /active:\s*enabled\s*&&\s*IslandState\.hovered\s*&&\s*root\.passiveHoverAllowed\s*&&\s*root\.clockHoverReady\s*&&\s*!root\.playerHoverSession/);
 
