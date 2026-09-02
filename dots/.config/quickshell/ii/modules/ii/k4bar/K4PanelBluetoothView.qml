@@ -36,7 +36,7 @@ Item {
                         font.family: K4Theme.uiFont
                         font.pixelSize: 10
                         font.weight: Font.DemiBold
-                        renderType: Text.NativeRendering
+                        textFormat: Text.PlainText
                     }
 
                     Item { Layout.fillWidth: true }
@@ -48,7 +48,7 @@ Item {
                         color: K4Theme.panelMuted
                         font.family: K4Theme.uiFont
                         font.pixelSize: 8
-                        renderType: Text.NativeRendering
+                        textFormat: Text.PlainText
                     }
 
                     K4PanelSwitch {
@@ -90,7 +90,7 @@ Item {
                         color: K4Theme.panelMuted
                         font.family: K4Theme.uiFont
                         font.pixelSize: 10
-                        renderType: Text.NativeRendering
+                        textFormat: Text.PlainText
                     }
                 }
             }
@@ -121,7 +121,7 @@ Item {
                         font.family: K4Theme.uiFont
                         font.pixelSize: 10
                         font.weight: Font.DemiBold
-                        renderType: Text.NativeRendering
+                        textFormat: Text.PlainText
                     }
 
                     Item { Layout.fillWidth: true }
@@ -132,7 +132,7 @@ Item {
                         color: K4Theme.panelMuted
                         font.family: K4Theme.uiFont
                         font.pixelSize: 8
-                        renderType: Text.NativeRendering
+                        textFormat: Text.PlainText
                     }
                 }
 
@@ -170,7 +170,7 @@ Item {
                         color: K4Theme.panelMuted
                         font.family: K4Theme.uiFont
                         font.pixelSize: 10
-                        renderType: Text.NativeRendering
+                        textFormat: Text.PlainText
                     }
                 }
             }
