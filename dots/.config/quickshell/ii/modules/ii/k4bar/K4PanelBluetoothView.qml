@@ -12,6 +12,7 @@ Item {
         spacing: 10
 
         Rectangle {
+            Layout.minimumWidth: 0
             Layout.fillWidth: true
             Layout.fillHeight: true
             radius: 17
@@ -95,6 +96,7 @@ Item {
         }
 
         Rectangle {
+            Layout.minimumWidth: 0
             Layout.fillWidth: true
             Layout.fillHeight: true
             radius: 17
@@ -168,16 +170,6 @@ Item {
                         font.pixelSize: 10
                         renderType: Text.NativeRendering
                     }
-                }
-
-                Text {
-                    Layout.fillWidth: true
-                    text: "Battery is shown only by device rows whose live Bluetooth object reports it."
-                    color: K4Theme.dim
-                    font.family: K4Theme.uiFont
-                    font.pixelSize: 8
-                    wrapMode: Text.WordWrap
-                    renderType: Text.NativeRendering
                 }
             }
         }
