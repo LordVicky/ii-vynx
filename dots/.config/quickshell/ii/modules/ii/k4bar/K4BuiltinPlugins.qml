@@ -6,10 +6,11 @@ import qs.modules.common
 QtObject {
     id: root
 
-    // Passive Clock/Player hover belongs to a pointer session. The controller
-    // can latch it off while an explicitly opened utility owns the island so
-    // closing that utility does not immediately rebound through Clock/Player.
+    // Passive Clock hover belongs to a generic pointer session. Player hover is
+    // targeted separately from the idle media region so disabling generic idle
+    // expansion does not also disable the media preview.
     property bool passiveHoverAllowed: false
+    property bool clockHoverReady: false
 
     readonly property list<QtObject> plugins: [
         volumePlugin, clockPlugin, playerPlugin, toastPlugin, panelPlugin,
@@ -17,6 +18,33 @@ QtObject {
         windowsPlugin, systemPlugin, sessionPlugin, keysPlugin, weatherPlugin,
         capturePlugin, displaysPlugin, trayPlugin
     ]
+
+    // Give the targeted media region one short intent window before generic
+    // Clock expansion can replace the idle pill. This prevents the outer island
+    // hover from winning the same pointer entry before the media HoverHandler
+    // has published its more-specific intent.
+    Timer {
+        id: clockHoverIntent
+        interval: 140
+        onTriggered: {
+            if (IslandState.hovered && root.passiveHoverAllowed
+                    && !root.playerHoverSession && !IslandState.mediaHovered)
+                root.clockHoverReady = true
+        }
+    }
+
+    onPassiveHoverAllowedChanged: {
+        if (!root.passiveHoverAllowed) {
+            clockHoverIntent.stop()
+            root.clockHoverReady = false
+            return
+        }
+        if (IslandState.hovered && !root.playerHoverSession
+                && !IslandState.mediaHovered) {
+            root.clockHoverReady = false
+            clockHoverIntent.restart()
+        }
+    }
 
     // Player preview is armed only by the media sub-region in the collapsed
     // idle pill. Once armed, keep it latched for the rest of the island hover
@@ -33,12 +61,23 @@ QtObject {
     property var playerSessionHoverConnections: Connections {
         target: IslandState
         function onMediaHoveredChanged() {
-            if (IslandState.mediaHovered && K4Media.isPlaying)
-                root.playerHoverSession = true
+            if (!IslandState.mediaHovered || !K4Media.isPlaying)
+                return
+            clockHoverIntent.stop()
+            root.clockHoverReady = false
+            root.playerHoverSession = true
         }
         function onHoveredChanged() {
-            if (!IslandState.hovered)
+            if (!IslandState.hovered) {
+                clockHoverIntent.stop()
+                root.clockHoverReady = false
                 root.playerHoverSession = false
+                return
+            }
+            root.clockHoverReady = false
+            if (root.passiveHoverAllowed && !IslandState.mediaHovered
+                    && !root.playerHoverSession)
+                clockHoverIntent.restart()
         }
     }
 
@@ -52,6 +91,7 @@ QtObject {
         id: clockPluginObject
         name: "clock"; title: "Clock"; priority: 50
         active: enabled && IslandState.hovered && root.passiveHoverAllowed
+            && root.clockHoverReady && !root.playerHoverSession
 
         // Clock keeps its time at the island center. Measure the three zones,
         // mirror the larger side reserve, and let widthScale add extra room on top.
@@ -154,8 +194,7 @@ QtObject {
         }
 
         active: enabled && (
-            (IslandState.hovered && root.passiveHoverAllowed
-                && K4Media.hasPlayer
+            (IslandState.hovered && K4Media.hasPlayer
                 && root.playerHoverSession)
             || trackPeekOpen
         )
