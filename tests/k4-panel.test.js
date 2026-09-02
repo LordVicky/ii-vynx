@@ -125,8 +125,8 @@ test("control center v2 preserves the prototype home hierarchy with live K4 seam
     for (const title of ["Capture", "Record", "Clipboard", "Windows", "Displays", "Settings", "Files", "System", "Weather", "Session"])
         assert.match(view, new RegExp(`"${title}"`));
 
-    assert.match(view, /function\s+launch\(name\)[\s\S]*?controller\?\.plugin/);
-    assert.match(view, /openApplication/);
+    assert.match(view, /function\s+target\(name\)[\s\S]*?root\.plugin\.controller\?\.plugin\(name\)/);
+    assert.match(view, /function\s+launch\(name\)[\s\S]*?openApplication/);
     assert.doesNotMatch(view, /K4ShortcutStrip\s*\{/);
 });
 
