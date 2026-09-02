@@ -16,6 +16,7 @@ Item {
     readonly property bool recording: Persistent.states.screenRecord.active
     readonly property bool trayReserveActive: K4Settings.trayInPill
         && K4TrayHost.plugin !== null && K4Tray.count > 0
+    readonly property bool mediaHovered: mediaHover.hovered && root.isPlaying
 
     readonly property var workspaces: K4Workspaces.list
     readonly property int activeWorkspaceId: K4Workspaces.activeId
@@ -38,6 +39,8 @@ Item {
         + (trayReserveActive && recording ? rightIndicators.spacing : 0)
     readonly property int sideMeasured: Math.max(leftMeasured, rightMeasured)
     readonly property int desiredBodyWidth: sideMeasured * 2 + 90
+
+    onMediaHoveredChanged: IslandState.mediaHovered = root.mediaHovered
 
     function adjustWorkspaceWindow() {
         const list = workspaces
@@ -82,6 +85,7 @@ Item {
         adjustWorkspaceWindow()
         startupGuard.start()
     }
+    Component.onDestruction: IslandState.mediaHovered = false
 
     Timer {
         id: startupGuard
@@ -111,6 +115,11 @@ Item {
             anchors.left: parent.left
             anchors.verticalCenter: parent.verticalCenter
             spacing: 8
+
+            HoverHandler {
+                id: mediaHover
+                enabled: root.isPlaying
+            }
 
             ClippingRectangle {
                 Layout.preferredWidth: 20
