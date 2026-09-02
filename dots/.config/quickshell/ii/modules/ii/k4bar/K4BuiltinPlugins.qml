@@ -20,10 +20,10 @@ QtObject {
     ]
 
     // Give the targeted media region one short intent window before generic
-    // Clock expansion can replace the idle pill. This prevents the outer island
-    // hover from winning the same pointer entry before the media HoverHandler
-    // has published its more-specific intent.
-    Timer {
+    // Clock expansion can replace the idle pill. Keep the Timer behind an
+    // explicit property because this registry is a bare QtObject and has no
+    // default child property.
+    property var clockHoverIntentTimer: Timer {
         id: clockHoverIntent
         interval: 140
         onTriggered: {
