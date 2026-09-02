@@ -200,6 +200,7 @@ Item {
             }
 
             ColumnLayout {
+                Layout.minimumWidth: 0
                 Layout.fillWidth: true
                 spacing: 1
 
@@ -424,12 +425,17 @@ Item {
             Layout.fillHeight: true
 
             RowLayout {
+                id: homeColumns
                 anchors.fill: parent
                 spacing: 10
                 visible: root.plugin.tab === "controls"
 
+                readonly property int leftWidth: Math.round((width - spacing) * 0.54)
+
                 ColumnLayout {
-                    Layout.preferredWidth: 350
+                    Layout.minimumWidth: 0
+                    Layout.preferredWidth: homeColumns.leftWidth
+                    Layout.maximumWidth: homeColumns.leftWidth
                     Layout.fillHeight: true
                     spacing: 10
 
@@ -484,6 +490,7 @@ Item {
                                     }
 
                                     ColumnLayout {
+                                        Layout.minimumWidth: 0
                                         Layout.fillWidth: true
                                         spacing: 1
 
@@ -563,6 +570,7 @@ Item {
                                     }
 
                                     ColumnLayout {
+                                        Layout.minimumWidth: 0
                                         Layout.fillWidth: true
                                         spacing: 1
 
@@ -626,6 +634,7 @@ Item {
                                 Item { Layout.fillWidth: true }
 
                                 Text {
+                                    Layout.minimumWidth: 0
                                     Layout.maximumWidth: 190
                                     text: K4AudioDevices.nameFor(K4AudioDevices.activeOutput)
                                     color: K4Theme.muted
@@ -666,6 +675,7 @@ Item {
                                 }
 
                                 Item {
+                                    Layout.minimumWidth: 0
                                     Layout.fillWidth: true
                                     Layout.preferredHeight: 20
 
@@ -746,6 +756,7 @@ Item {
                                 }
 
                                 Text {
+                                    Layout.minimumWidth: 0
                                     Layout.fillWidth: true
                                     text: K4AudioDevices.nameFor(K4AudioDevices.activeOutput)
                                     color: K4Theme.dim
@@ -845,6 +856,7 @@ Item {
                 }
 
                 ColumnLayout {
+                    Layout.minimumWidth: 0
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                     spacing: 10
@@ -887,6 +899,7 @@ Item {
                             }
 
                             ColumnLayout {
+                                Layout.minimumWidth: 0
                                 Layout.fillWidth: true
                                 Layout.fillHeight: true
                                 spacing: 2
@@ -928,6 +941,7 @@ Item {
                                 Item { Layout.fillHeight: true }
 
                                 Item {
+                                    Layout.minimumWidth: 0
                                     Layout.fillWidth: true
                                     Layout.preferredHeight: K4Media.hasTimeline ? 10 : 0
                                     visible: K4Media.hasTimeline
