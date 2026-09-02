@@ -6,6 +6,7 @@ Item {
     required property string glyph
     property int glyphSize: 15
     property color glyphColor: K4Theme.muted
+    property color activeColor: K4Theme.surfaceHi
     property bool enabledAction: true
     property bool active: false
     signal activated()
@@ -17,7 +18,7 @@ Item {
     Rectangle {
         anchors.fill: parent
         radius: width / 2
-        color: root.active || hover.hovered ? K4Theme.surfaceHi : "transparent"
+        color: root.active || hover.hovered ? root.activeColor : "transparent"
 
         Behavior on color { ColorAnimation { duration: 110 } }
     }
