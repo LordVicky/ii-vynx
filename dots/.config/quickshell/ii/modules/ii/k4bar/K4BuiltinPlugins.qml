@@ -214,10 +214,13 @@ QtObject {
         readonly property bool hasImage: K4Notifications.hasImage(K4Notifications.latest)
         readonly property var buttons: K4Notifications.buttons(K4Notifications.latest)
         islandWidth: expanded ? (hasImage ? 520 : 500) : 382
+        // Expanded notification geometry stays dense enough that short messages
+        // do not leave a large empty lower half. Image/action variants reserve
+        // only the extra height their visible content needs.
         islandHeight: !expanded ? 54
-            : hasImage && buttons.length > 0 ? 214
-            : hasImage ? 168
-            : buttons.length > 0 ? 170 : 142
+            : hasImage && buttons.length > 0 ? 180
+            : hasImage ? 136
+            : buttons.length > 0 ? 148 : 120
         handlesBackgroundTap: true
         onBackgroundTapped: { K4Notifications.activate(K4Notifications.latest); K4Notifications.dismissToast() }
         function close() { K4Notifications.dismissToast() }
