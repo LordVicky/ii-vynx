@@ -6,10 +6,11 @@ import qs.modules.common
 QtObject {
     id: root
 
-    // Passive Clock/Player hover belongs to a pointer session. The controller
-    // can latch it off while an explicitly opened utility owns the island so
-    // closing that utility does not immediately rebound through Clock/Player.
+    // Passive Clock hover belongs to a generic pointer session. Player hover is
+    // targeted separately from the idle media region so disabling generic idle
+    // expansion does not also disable the media preview.
     property bool passiveHoverAllowed: false
+    property bool clockHoverReady: false
 
     readonly property list<QtObject> plugins: [
         volumePlugin, clockPlugin, playerPlugin, toastPlugin, panelPlugin,
@@ -18,17 +19,65 @@ QtObject {
         capturePlugin, displaysPlugin, trayPlugin
     ]
 
+    // Give the targeted media region one short intent window before generic
+    // Clock expansion can replace the idle pill. Keep the Timer behind an
+    // explicit property because this registry is a bare QtObject and has no
+    // default child property.
+    property var clockHoverIntentTimer: Timer {
+        id: clockHoverIntent
+        interval: 140
+        onTriggered: {
+            if (IslandState.hovered && root.passiveHoverAllowed
+                    && !root.playerHoverSession && !IslandState.mediaHovered)
+                root.clockHoverReady = true
+        }
+    }
+
+    onPassiveHoverAllowedChanged: {
+        if (!root.passiveHoverAllowed) {
+            clockHoverIntent.stop()
+            root.clockHoverReady = false
+            return
+        }
+        if (IslandState.hovered && !root.playerHoverSession
+                && !IslandState.mediaHovered) {
+            root.clockHoverReady = false
+            clockHoverIntent.restart()
+        }
+    }
+
+    // Player preview is armed only by the media sub-region in the collapsed
+    // idle pill. Once armed, keep it latched for the rest of the island hover
+    // session so the idle -> player geometry transition cannot immediately
+    // cancel itself when the collapsed media widget disappears.
     property bool playerHoverSession: false
     property var playerSessionMediaConnections: Connections {
         target: K4Media
-        function onIsPlayingChanged() { if (IslandState.hovered && K4Media.isPlaying) root.playerHoverSession = true }
-        function onHasPlayerChanged() { if (!K4Media.hasPlayer) root.playerHoverSession = false }
+        function onHasPlayerChanged() {
+            if (!K4Media.hasPlayer)
+                root.playerHoverSession = false
+        }
     }
     property var playerSessionHoverConnections: Connections {
         target: IslandState
+        function onMediaHoveredChanged() {
+            if (!IslandState.mediaHovered || !K4Media.isPlaying)
+                return
+            clockHoverIntent.stop()
+            root.clockHoverReady = false
+            root.playerHoverSession = true
+        }
         function onHoveredChanged() {
-            if (!IslandState.hovered) root.playerHoverSession = false
-            else if (K4Media.isPlaying) root.playerHoverSession = true
+            if (!IslandState.hovered) {
+                clockHoverIntent.stop()
+                root.clockHoverReady = false
+                root.playerHoverSession = false
+                return
+            }
+            root.clockHoverReady = false
+            if (root.passiveHoverAllowed && !IslandState.mediaHovered
+                    && !root.playerHoverSession)
+                clockHoverIntent.restart()
         }
     }
 
@@ -42,10 +91,10 @@ QtObject {
         id: clockPluginObject
         name: "clock"; title: "Clock"; priority: 50
         active: enabled && IslandState.hovered && root.passiveHoverAllowed
+            && root.clockHoverReady && !root.playerHoverSession
 
-        // K4 v1.0 measures the three Clock zones in the view and feeds them
-        // back into this stable plugin object. Estimates are only first-frame
-        // fallbacks while the view has not published real implicit widths yet.
+        // Clock keeps its time at the island center. Measure the three zones,
+        // mirror the larger side reserve, and let widthScale add extra room on top.
         property int leftMeasured: 0
         property int centerMeasured: 0
         property int rightMeasured: 0
@@ -64,9 +113,10 @@ QtObject {
         readonly property int rightRaw: rightMeasured > 0
             ? rightMeasured : rightEstimate
         readonly property int rightWidth: Math.min(rightRaw, 480)
+        readonly property int sideWidth: Math.max(leftWidth, rightWidth)
         readonly property int zoneGap: 24
 
-        islandWidth: 44 + leftWidth + zoneGap + centerWidth + zoneGap + rightWidth
+        islandWidth: 44 + centerWidth + 2 * (sideWidth + zoneGap)
         readonly property int notificationStripHeight: K4Settings.notificationsOnHover
             ? K4Notifications.stripHeight(3) : 0
         islandHeight: 68 + (notificationStripHeight > 0 ? notificationStripHeight + 18 : 0)
@@ -144,9 +194,8 @@ QtObject {
         }
 
         active: enabled && (
-            (IslandState.hovered && root.passiveHoverAllowed
-                && K4Media.hasPlayer
-                && (K4Media.isPlaying || root.playerHoverSession))
+            (IslandState.hovered && K4Media.hasPlayer
+                && root.playerHoverSession)
             || trackPeekOpen
         )
         islandWidth: 340
@@ -161,8 +210,14 @@ QtObject {
     property QtObject toastPlugin: K4Plugin {
         name: "toast"; title: "Notification"; priority: 59; transitorio: true
         active: enabled && K4Notifications.toastOpen && !K4Notifications.inBand
-        islandWidth: 440
-        islandHeight: K4Notifications.buttons(K4Notifications.latest).length > 0 ? 112 : 96
+        readonly property bool expanded: IslandState.hovered
+        readonly property bool hasImage: K4Notifications.hasImage(K4Notifications.latest)
+        readonly property var buttons: K4Notifications.buttons(K4Notifications.latest)
+        islandWidth: expanded ? (hasImage ? 520 : 500) : 382
+        islandHeight: !expanded ? 54
+            : hasImage && buttons.length > 0 ? 214
+            : hasImage ? 168
+            : buttons.length > 0 ? 170 : 142
         handlesBackgroundTap: true
         onBackgroundTapped: { K4Notifications.activate(K4Notifications.latest); K4Notifications.dismissToast() }
         function close() { K4Notifications.dismissToast() }

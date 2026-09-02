@@ -4,13 +4,21 @@ Rectangle {
     id: root
 
     property bool interactive: true
+    property color baseColor: K4Theme.panelSurfaceHi
+    property color hoverColor: K4Theme.panelSurfaceHot
+    property color borderColor: K4Theme.panelLine
+    property color hoverBorderColor: K4Theme.panelLineStrong
+    property real cornerRadius: 13
     readonly property bool hovered: hover.hovered
     signal activated()
 
-    radius: 13
-    color: hover.hovered && interactive ? K4Theme.surfaceHi : K4Theme.surface
+    radius: cornerRadius
+    color: hover.hovered && interactive ? hoverColor : baseColor
+    border.width: 1
+    border.color: hover.hovered && interactive ? hoverBorderColor : borderColor
 
     Behavior on color { ColorAnimation { duration: 120 } }
+    Behavior on border.color { ColorAnimation { duration: 120 } }
 
     HoverHandler { id: hover; enabled: root.interactive }
 

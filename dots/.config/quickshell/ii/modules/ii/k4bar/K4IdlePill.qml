@@ -17,6 +17,15 @@ Item {
     readonly property bool trayReserveActive: K4Settings.trayInPill
         && K4TrayHost.plugin !== null && K4Tray.count > 0
 
+    // The hover target follows the actual idle-pill body rather than screen
+    // coordinates or the unscaled default width. The visible media cluster keeps
+    // a little horizontal breathing room while the target is always clamped to
+    // the current custom pill width.
+    readonly property real mediaHoverWidth: root.isPlaying
+        ? Math.min(root.width, 11 + Math.max(48, leftMedia.implicitWidth + 14))
+        : 0
+    readonly property bool mediaHovered: mediaHover.hovered && root.isPlaying
+
     readonly property var workspaces: K4Workspaces.list
     readonly property int activeWorkspaceId: K4Workspaces.activeId
 
@@ -27,8 +36,8 @@ Item {
     readonly property var visibleWorkspaces:
         workspaces.slice(workspaceStart, workspaceStart + 3)
 
-    // K4 v1.0 stopped mirroring the larger side around the clock. Measure each
-    // flank independently so media grows only left and tray/recording only right.
+    // Keep the clock at the geometric center. The larger side reserve is mirrored
+    // so media on the left or tray/recording on the right can never displace it.
     readonly property int leftMeasured: isPlaying
         ? (leftMedia.implicitWidth > 0 ? Math.ceil(leftMedia.implicitWidth) : 53)
         : 0
@@ -36,7 +45,10 @@ Item {
         (trayReserveActive ? Math.ceil(collapsedTray.implicitWidth) : 0)
         + (recording ? Math.ceil(recordingRow.implicitWidth) : 0)
         + (trayReserveActive && recording ? rightIndicators.spacing : 0)
-    readonly property int desiredBodyWidth: leftMeasured + 46 + rightMeasured + 44
+    readonly property int sideMeasured: Math.max(leftMeasured, rightMeasured)
+    readonly property int desiredBodyWidth: sideMeasured * 2 + 90
+
+    onMediaHoveredChanged: IslandState.mediaHovered = root.mediaHovered
 
     function adjustWorkspaceWindow() {
         const list = workspaces
@@ -81,6 +93,7 @@ Item {
         adjustWorkspaceWindow()
         startupGuard.start()
     }
+    Component.onDestruction: IslandState.mediaHovered = false
 
     Timer {
         id: startupGuard
@@ -178,8 +191,7 @@ Item {
 
         Item {
             id: centerZone
-            anchors.left: parent.left
-            anchors.leftMargin: root.leftMeasured + 11
+            anchors.horizontalCenter: parent.horizontalCenter
             anchors.verticalCenter: parent.verticalCenter
             width: 46
             height: parent.height
@@ -188,7 +200,7 @@ Item {
                 anchors.centerIn: parent
                 text: Qt.formatDateTime(K4Clock.date, "HH:mm")
                 font.family: K4Theme.uiFont
-                font.pixelSize: 12
+                font.pixelSize: 14
                 font.weight: Font.Medium
                 color: root.hasPlayer ? K4Theme.ink : K4Theme.muted
                 opacity: root.showingWorkspaces ? 0 : 1
@@ -235,8 +247,7 @@ Item {
 
         RowLayout {
             id: rightIndicators
-            anchors.left: centerZone.right
-            anchors.leftMargin: 11
+            anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
             spacing: 8
 
@@ -285,6 +296,24 @@ Item {
                     }
                 }
             }
+        }
+    }
+
+    // Full-height hover zone for the visible media cluster. A full-height target
+    // makes the intent forgiving vertically, while its width is derived from the
+    // live media layout and clamped to the current custom idle-pill width.
+    Item {
+        id: mediaHoverZone
+        visible: root.isPlaying
+        anchors.left: parent.left
+        anchors.top: parent.top
+        anchors.bottom: parent.bottom
+        width: root.mediaHoverWidth
+        z: 10
+
+        HoverHandler {
+            id: mediaHover
+            enabled: root.isPlaying
         }
     }
 }

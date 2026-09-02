@@ -21,6 +21,20 @@ Singleton {
     readonly property color green: "#30d158"
     readonly property color yellow: "#ffd60a"
 
+    // Control Center V2 follows the OLED-black K4 island rather than introducing
+    // a separate blue-grey dashboard. Nested surfaces stay neutral and use
+    // luminance/borders for hierarchy; blue is reserved for active state.
+    readonly property color panelSurface: "#050505"
+    readonly property color panelSurfaceHi: "#111113"
+    readonly property color panelSurfaceHot: "#1a1a1d"
+    readonly property color panelTrack: "#2a2a2e"
+    readonly property color panelBlue: "#0a84ff"
+    readonly property color panelMuted: "#a1a1a6"
+    readonly property color panelDim: "#636366"
+    readonly property color panelInkSoft: "#f2f2f7"
+    readonly property color panelLine: Qt.rgba(1, 1, 1, 0.08)
+    readonly property color panelLineStrong: Qt.rgba(1, 1, 1, 0.15)
+
     readonly property int wing: 16
     readonly property int baseHeight: 34
     readonly property int maxIslandHeight: 880

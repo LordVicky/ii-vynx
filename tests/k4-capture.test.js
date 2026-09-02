@@ -21,6 +21,10 @@ test("K4 Capture is a thin application over existing ii capture owners", async (
     assert.match(plugin, /Persistent\.states\.screenRecord\.active/);
     assert.match(plugin, /Persistent\.states\.screenRecord\.seconds/);
 
+    assert.match(plugin, /function\s+openAt\(index\)[\s\S]*?selection = Math\.max\(0, Math\.min\(3,[\s\S]*?open = true/);
+    assert.match(plugin, /function\s+openCapture\(\)\s*\{\s*openAt\(0\)\s*\}/);
+    assert.match(plugin, /function\s+openRecord\(\)\s*\{\s*openAt\(2\)\s*\}/);
+
     assert.match(plugin, /function regionCommand\(action\)[\s\S]*?"ipc",\s*"call",\s*"region",\s*action/);
     assert.match(plugin, /function screenshotRegion\(\)[\s\S]*?regionCommand\("screenshot"\)/);
     assert.match(plugin, /function recordRegion\(\)[\s\S]*?regionCommand\("recordWithSound"\)/);

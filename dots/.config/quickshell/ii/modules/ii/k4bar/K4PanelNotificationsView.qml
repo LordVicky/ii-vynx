@@ -7,14 +7,16 @@ Item {
 
     Rectangle {
         anchors.fill: parent
-        radius: 12
-        color: K4Theme.surface
+        radius: 17
+        color: K4Theme.panelSurface
+        border.width: 1
+        border.color: K4Theme.panelLine
 
         ListView {
             anchors.fill: parent
-            anchors.margins: 10
+            anchors.margins: 9
             clip: true
-            spacing: 8
+            spacing: 7
             model: K4Notifications.history
             boundsBehavior: Flickable.StopAtBounds
 
@@ -26,10 +28,13 @@ Item {
 
                 width: ListView.view.width
                 height: 66 + (actions.length > 0 ? 28 : 0)
-                radius: 11
-                color: cardHover.hovered ? K4Theme.surfaceHi : K4Theme.surface
+                radius: 14
+                color: cardHover.hovered ? K4Theme.panelSurfaceHot : K4Theme.panelSurfaceHi
+                border.width: 1
+                border.color: cardHover.hovered ? K4Theme.panelLineStrong : K4Theme.panelLine
 
                 Behavior on color { ColorAnimation { duration: 110 } }
+                Behavior on border.color { ColorAnimation { duration: 110 } }
 
                 HoverHandler { id: cardHover }
                 MouseArea {
@@ -51,8 +56,10 @@ Item {
                         Layout.preferredWidth: 36
                         Layout.preferredHeight: 36
                         Layout.alignment: Qt.AlignTop
-                        radius: 18
-                        color: K4Theme.surfaceHi
+                        radius: 11
+                        color: K4Theme.panelSurfaceHot
+                        border.width: 1
+                        border.color: K4Theme.panelLine
 
                         Image {
                             id: icon
@@ -69,14 +76,15 @@ Item {
                             anchors.centerIn: parent
                             visible: !icon.visible
                             text: K4Theme.ico.bell
-                            color: K4Theme.ink
+                            color: K4Theme.panelInkSoft
                             font.family: K4Theme.iconFont
                             font.pixelSize: 15
-                            renderType: Text.NativeRendering
+                            textFormat: Text.PlainText
                         }
                     }
 
                     ColumnLayout {
+                        Layout.minimumWidth: 0
                         Layout.fillWidth: true
                         Layout.fillHeight: true
                         spacing: 2
@@ -88,34 +96,34 @@ Item {
                             Text {
                                 Layout.fillWidth: true
                                 text: (card.modelData?.summary ?? "").replace(/\s*\n\s*/g, " ")
-                                color: K4Theme.ink
+                                color: K4Theme.panelInkSoft
                                 font.family: K4Theme.uiFont
                                 font.pixelSize: 12
                                 font.weight: Font.DemiBold
                                 elide: Text.ElideRight
-                                renderType: Text.NativeRendering
+                                textFormat: Text.PlainText
                             }
 
                             Text {
                                 text: card.modelData?.appName ?? ""
-                                color: K4Theme.dim
+                                color: K4Theme.panelDim
                                 font.family: K4Theme.uiFont
                                 font.pixelSize: 9
                                 elide: Text.ElideRight
                                 Layout.maximumWidth: 110
-                                renderType: Text.NativeRendering
+                                textFormat: Text.PlainText
                             }
                         }
 
                         Text {
                             Layout.fillWidth: true
                             text: (card.modelData?.body ?? "").replace(/\s*\n\s*/g, " ")
-                            color: K4Theme.muted
+                            color: K4Theme.panelMuted
                             font.family: K4Theme.uiFont
                             font.pixelSize: 10
                             elide: Text.ElideRight
                             maximumLineCount: 1
-                            renderType: Text.NativeRendering
+                            textFormat: Text.PlainText
                         }
 
                         RowLayout {
@@ -131,17 +139,21 @@ Item {
                                     Layout.preferredWidth: Math.min(chipText.implicitWidth + 18, 145)
                                     Layout.preferredHeight: 20
                                     radius: 10
-                                    color: chipHover.hovered ? K4Theme.blue : K4Theme.surfaceHi
+                                    color: chipHover.hovered ? K4Theme.panelBlue : K4Theme.panelSurfaceHot
+                                    border.width: 1
+                                    border.color: chipHover.hovered
+                                        ? Qt.rgba(0.04, 0.52, 1, 0.42) : K4Theme.panelLine
 
                                     Text {
                                         id: chipText
                                         anchors.centerIn: parent
                                         text: chip.modelData.text ?? chip.modelData.identifier ?? ""
-                                        color: K4Theme.ink
+                                        color: chipHover.hovered ? "#07111e" : K4Theme.panelInkSoft
                                         font.family: K4Theme.uiFont
                                         font.pixelSize: 9
+                                        font.weight: Font.Medium
                                         elide: Text.ElideRight
-                                        renderType: Text.NativeRendering
+                                        textFormat: Text.PlainText
                                     }
 
                                     HoverHandler { id: chipHover }
@@ -159,6 +171,7 @@ Item {
                     K4PanelButton {
                         glyph: K4Theme.ico.close
                         glyphSize: 12
+                        activeColor: K4Theme.panelSurfaceHot
                         onActivated: K4Notifications.dismiss(card.modelData)
                         Layout.alignment: Qt.AlignTop
                     }
@@ -169,10 +182,10 @@ Item {
                 anchors.centerIn: parent
                 visible: K4Notifications.history.length === 0
                 text: "No notifications"
-                color: K4Theme.muted
+                color: K4Theme.panelMuted
                 font.family: K4Theme.uiFont
                 font.pixelSize: 12
-                renderType: Text.NativeRendering
+                textFormat: Text.PlainText
             }
         }
     }
