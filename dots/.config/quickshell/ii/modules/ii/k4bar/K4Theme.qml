@@ -23,11 +23,18 @@ Singleton {
 
     // Control Center V2 keeps the supplied prototype's cooler desktop palette
     // local to Panel instead of changing every existing K4 utility surface.
-    readonly property color panelSurface: "#10151b"
-    readonly property color panelSurfaceHi: "#171e27"
-    readonly property color panelSurfaceHot: "#202936"
-    readonly property color panelBlue: "#5f9fff"
-    readonly property color panelLine: Qt.rgba(1, 1, 1, 0.055)
+    // The levels intentionally have wider luminance separation than the base
+    // K4 surfaces so nested cards and controls remain legible at desktop scale.
+    readonly property color panelSurface: "#111820"
+    readonly property color panelSurfaceHi: "#1b2531"
+    readonly property color panelSurfaceHot: "#273545"
+    readonly property color panelTrack: "#33414f"
+    readonly property color panelBlue: "#6ea8ff"
+    readonly property color panelMuted: "#aab5c0"
+    readonly property color panelDim: "#6e7a87"
+    readonly property color panelInkSoft: "#e3e9ef"
+    readonly property color panelLine: Qt.rgba(1, 1, 1, 0.09)
+    readonly property color panelLineStrong: Qt.rgba(1, 1, 1, 0.14)
 
     readonly property int wing: 16
     readonly property int baseHeight: 34
