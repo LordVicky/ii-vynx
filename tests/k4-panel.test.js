@@ -6,7 +6,7 @@ const root = new URL("../dots/.config/quickshell/ii/", import.meta.url);
 const read = async path => readFile(new URL(path, root), "utf8");
 const executableSource = source => source.replace(/^\s*\/\/.*$/gm, "");
 
-test("panel is a priority-60 explicit island owner with pinned geometry and tabs", async () => {
+test("panel is a priority-60 explicit island owner with prototype geometry and tabs", async () => {
     const panel = await read("modules/ii/k4bar/K4PanelPlugin.qml");
 
     assert.match(panel, /name:\s*"panel"/);
@@ -14,8 +14,8 @@ test("panel is a priority-60 explicit island owner with pinned geometry and tabs
     assert.match(panel, /active:\s*enabled\s*&&\s*open/);
     assert.match(panel, /property\s+string\s+tab:\s*"controls"/);
     assert.match(panel, /property\s+bool\s+open:\s*false/);
-    assert.match(panel, /islandWidth:\s*860/);
-    assert.match(panel, /islandHeight:\s*tab\s*===\s*"controls"\s*\?\s*268\s*:\s*400/);
+    assert.match(panel, /islandWidth:\s*690/);
+    assert.match(panel, /islandHeight:\s*430/);
     assert.match(panel, /grabKeyboard:\s*open/);
     assert.match(panel, /handlesBackgroundTap:\s*true/);
     assert.match(panel, /closeOnHoverExit:\s*true/);
@@ -47,7 +47,7 @@ test("unhandled island background taps open panel Controls on the clicked screen
     assert.match(controller, /panel\.openTab\("controls"\)/);
 });
 
-test("controller injects the live registry into Panel for future shortcut targets", async () => {
+test("controller injects the live registry into Panel for desktop tool targets", async () => {
     const controller = await read("modules/ii/k4bar/K4PluginController.qml");
 
     assert.match(controller, /Component\.onCompleted:\s*\{[\s\S]*?attachBuiltins\(\)[\s\S]*?const panel = plugin\("panel"\)[\s\S]*?panel\.controller = root[\s\S]*?publishActivePlugin\(\)/);
@@ -109,40 +109,46 @@ test("Network keeps a concrete retry target through Wi-Fi password replacement",
     assert.match(network, /if \(line\.includes\("Secrets were required"\)\)[\s\S]*?if \(root\.wifiConnectTarget\)[\s\S]*?root\.wifiConnectTarget\.askingPassword = true/);
 });
 
-test("panel controls compose existing K4 media, notification, clock and workspace seams", async () => {
+test("control center v2 preserves the prototype home hierarchy with live K4 seams", async () => {
     const view = await read("modules/ii/k4bar/K4PanelView.qml");
 
-    assert.match(view, /K4Wifi/);
-    assert.match(view, /K4Bluetooth/);
-    assert.match(view, /K4Audio/);
-    assert.match(view, /K4Media/);
-    assert.match(view, /K4Notifications/);
-    assert.match(view, /K4Clock/);
-    assert.match(view, /K4Workspaces/);
-    assert.match(view, /K4PanelWifiView\s*\{/);
-    assert.match(view, /K4PanelBluetoothView\s*\{/);
-    assert.match(view, /K4PanelAudioView\s*\{/);
-    assert.match(view, /K4PanelNotificationsView\s*\{/);
-    assert.match(view, /K4ShortcutStrip\s*\{/);
+    assert.match(view, /Layout\.preferredWidth:\s*350/);
+    assert.match(view, /Layout\.preferredHeight:\s*84/);
+    assert.match(view, /Layout\.preferredHeight:\s*94/);
+    assert.match(view, /Layout\.preferredHeight:\s*142/);
+    assert.match(view, /columns:\s*3[\s\S]*?rows:\s*2/);
+    assert.match(view, /columns:\s*2[\s\S]*?rows:\s*2/);
+
+    for (const seam of ["K4Wifi", "K4Bluetooth", "K4Audio", "K4Media", "K4Notifications", "K4Clock", "K4Workspaces", "K4Weather"])
+        assert.match(view, new RegExp(seam));
+
+    for (const title of ["Capture", "Record", "Clipboard", "Windows", "Displays", "Settings", "Files", "System", "Weather", "Session"])
+        assert.match(view, new RegExp(`"${title}"`));
+
+    assert.match(view, /function\s+launch\(name\)[\s\S]*?controller\?\.plugin/);
+    assert.match(view, /openApplication/);
+    assert.doesNotMatch(view, /K4ShortcutStrip\s*\{/);
 });
 
-test("shortcut strip persists upstream ids but renders only live K4 targets", async () => {
-    const settings = await read("modules/ii/k4bar/K4ShortcutSettings.qml");
-    const shortcuts = await read("modules/ii/k4bar/K4ShortcutStrip.qml");
+test("record tile delegates to Capture and becomes stop while recording", async () => {
+    const view = await read("modules/ii/k4bar/K4PanelView.qml");
+    const capture = await read("modules/ii/k4bar/K4CapturePlugin.qml");
 
-    assert.match(settings, /property\s+var\s+shortcuts:\s*\[\s*"game",\s*"hyprtheme",\s*"system",\s*"clipboard"\s*\]/);
-    assert.match(settings, /Directories\.state/);
-    assert.match(settings, /ii-vynx-k4-shortcuts\.json/);
-    assert.match(shortcuts, /K4ShortcutSettings\.shortcuts/);
-    assert.match(shortcuts, /controller\.plugin\(/);
-    assert.match(shortcuts, /target\s*&&\s*target\.enabled/);
-    assert.match(shortcuts, /function\s+slotFor\s*\(/);
-    assert.match(shortcuts, /function\s+applyReorder\s*\(/);
-    assert.match(shortcuts, /dragging/);
-    assert.match(shortcuts, /destination/);
-    assert.match(shortcuts, /K4ShortcutSettings\.setShortcuts\(/);
-    assert.match(shortcuts, /name:\s*"All"/);
-    assert.match(shortcuts, /plugin\("apps"\)/);
+    assert.match(view, /readonly property bool recording:\s*captureTarget\?\.recording/);
+    assert.match(view, /function\s+openRecord\(\)[\s\S]*?if \(capture\.recording\)[\s\S]*?capture\.stopRecording\(\)[\s\S]*?capture\.openRecord\(\)/);
+    assert.match(view, /title:\s*root\.recording\s*\?\s*"Stop Recording"\s*:\s*"Record"/);
+    assert.match(capture, /function\s+openRecord\(\)\s*\{\s*openAt\(2\)\s*\}/);
+});
+
+test("prototype mock telemetry is not hard-coded into the live panel", async () => {
+    const sources = [
+        await read("modules/ii/k4bar/K4PanelView.qml"),
+        await read("modules/ii/k4bar/K4PanelWifiView.qml"),
+        await read("modules/ii/k4bar/K4PanelBluetoothView.qml")
+    ].join("\n");
+
+    for (const mock of ["Vynx-5G", "866 Mbps", "18.4 Mbps", "192.168.1.87", "Wi-Fi 6", "AirPods Pro", "82%", "91%"])
+        assert.doesNotMatch(sources, new RegExp(mock.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
 });
 
 test("panel detail views expose Wi-Fi, Bluetooth, audio and full notification actions", async () => {
@@ -157,16 +163,20 @@ test("panel detail views expose Wi-Fi, Bluetooth, audio and full notification ac
     assert.match(wifi, /forgettable:\s*modelData\.known/);
     assert.match(wifi, /onForgotten:\s*K4Wifi\.forget\(modelData\)/);
     assert.match(wifi, /password/i);
+    assert.match(wifi, /RowLayout\s*\{[\s\S]*?Available networks[\s\S]*?Connection/);
 
     assert.match(bluetooth, /K4Bluetooth\.devices/);
     assert.match(bluetooth, /K4Bluetooth\.toggle\(\)/);
     assert.match(bluetooth, /K4Bluetooth\.activate\(/);
     assert.match(bluetooth, /onForgotten:\s*K4Bluetooth\.togglePair/);
+    assert.match(bluetooth, /myDevices/);
+    assert.match(bluetooth, /nearbyDevices/);
 
     assert.match(audio, /K4AudioDevices\.outputs/);
     assert.match(audio, /K4AudioDevices\.inputs/);
     assert.match(audio, /K4AudioDevices\.selectOutput\(/);
     assert.match(audio, /K4AudioDevices\.selectInput\(/);
+    assert.match(audio, /DevicePane/);
 
     assert.match(notifications, /K4Notifications\.history/);
     assert.match(notifications, /K4Notifications\.dismiss\(/);
