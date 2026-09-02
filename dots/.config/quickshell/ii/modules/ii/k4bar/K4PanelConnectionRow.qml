@@ -35,9 +35,9 @@ Rectangle {
             Layout.preferredWidth: 28
             Layout.preferredHeight: 28
             radius: 9
-            color: root.active ? Qt.rgba(0.43, 0.66, 1, 0.18) : K4Theme.panelSurfaceHi
+            color: root.active ? Qt.rgba(0.04, 0.52, 1, 0.18) : K4Theme.panelSurfaceHi
             border.width: 1
-            border.color: root.active ? Qt.rgba(0.43, 0.66, 1, 0.30) : K4Theme.panelLine
+            border.color: root.active ? Qt.rgba(0.04, 0.52, 1, 0.32) : K4Theme.panelLine
 
             Text {
                 anchors.centerIn: parent
@@ -45,7 +45,7 @@ Rectangle {
                 color: root.active ? K4Theme.panelBlue : K4Theme.panelMuted
                 font.family: K4Theme.iconFont
                 font.pixelSize: 13
-                renderType: Text.NativeRendering
+                textFormat: Text.PlainText
             }
         }
 
@@ -62,7 +62,7 @@ Rectangle {
                 font.pixelSize: 11
                 font.weight: root.active ? Font.DemiBold : Font.Medium
                 elide: Text.ElideRight
-                renderType: Text.NativeRendering
+                textFormat: Text.PlainText
             }
 
             Text {
@@ -73,7 +73,7 @@ Rectangle {
                 font.family: K4Theme.uiFont
                 font.pixelSize: 8
                 elide: Text.ElideRight
-                renderType: Text.NativeRendering
+                textFormat: Text.PlainText
             }
         }
 
@@ -83,7 +83,7 @@ Rectangle {
             color: K4Theme.panelDim
             font.family: K4Theme.iconFont
             font.pixelSize: 12
-            renderType: Text.NativeRendering
+            textFormat: Text.PlainText
         }
 
         Text {
@@ -92,6 +92,7 @@ Rectangle {
             color: K4Theme.panelMuted
             font.family: K4Theme.uiFont
             font.pixelSize: 14
+            textFormat: Text.PlainText
         }
 
         K4PanelButton {
@@ -108,7 +109,7 @@ Rectangle {
             color: root.active ? K4Theme.green : K4Theme.panelDim
             font.family: K4Theme.iconFont
             font.pixelSize: 13
-            renderType: Text.NativeRendering
+            textFormat: Text.PlainText
         }
     }
 
