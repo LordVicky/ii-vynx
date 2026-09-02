@@ -25,9 +25,17 @@ Item {
                 required property var modelData
                 readonly property var actions: K4Notifications.buttons(modelData)
                 readonly property string iconSource: K4Notifications.iconFor(modelData)
+                readonly property string summaryText: String(modelData?.summary ?? "Notification")
+                    .replace(/\s*\n\s*/g, " ")
+                readonly property string bodyText: String(modelData?.body ?? "")
+                    .replace(/\r\n/g, "\n")
+                    .replace(/\n{3,}/g, "\n\n")
+                    .trim()
+                readonly property string appNameText: String(modelData?.appName ?? "")
+                    .replace(/\s*\n\s*/g, " ")
 
                 width: ListView.view.width
-                height: 66 + (actions.length > 0 ? 28 : 0)
+                height: 78 + (actions.length > 0 ? 32 : 0)
                 radius: 14
                 color: cardHover.hovered ? K4Theme.panelSurfaceHot : K4Theme.panelSurfaceHi
                 border.width: 1
@@ -46,17 +54,17 @@ Item {
 
                 RowLayout {
                     anchors.fill: parent
-                    anchors.leftMargin: 10
+                    anchors.leftMargin: 11
                     anchors.rightMargin: 8
-                    anchors.topMargin: 8
-                    anchors.bottomMargin: 8
-                    spacing: 10
+                    anchors.topMargin: 9
+                    anchors.bottomMargin: 9
+                    spacing: 11
 
                     ClippingRectangle {
-                        Layout.preferredWidth: 36
-                        Layout.preferredHeight: 36
+                        Layout.preferredWidth: 40
+                        Layout.preferredHeight: 40
                         Layout.alignment: Qt.AlignTop
-                        radius: 11
+                        radius: 12
                         color: K4Theme.panelSurfaceHot
                         border.width: 1
                         border.color: K4Theme.panelLine
@@ -78,7 +86,7 @@ Item {
                             text: K4Theme.ico.bell
                             color: K4Theme.panelInkSoft
                             font.family: K4Theme.iconFont
-                            font.pixelSize: 15
+                            font.pixelSize: 16
                             textFormat: Text.PlainText
                         }
                     }
@@ -87,58 +95,65 @@ Item {
                         Layout.minimumWidth: 0
                         Layout.fillWidth: true
                         Layout.fillHeight: true
-                        spacing: 2
+                        spacing: 3
 
                         RowLayout {
                             Layout.fillWidth: true
-                            spacing: 6
+                            spacing: 8
 
                             Text {
+                                Layout.minimumWidth: 0
                                 Layout.fillWidth: true
-                                text: (card.modelData?.summary ?? "").replace(/\s*\n\s*/g, " ")
+                                text: card.summaryText
                                 color: K4Theme.panelInkSoft
                                 font.family: K4Theme.uiFont
-                                font.pixelSize: 12
+                                font.pixelSize: 14
                                 font.weight: Font.DemiBold
                                 elide: Text.ElideRight
+                                maximumLineCount: 1
                                 textFormat: Text.PlainText
                             }
 
                             Text {
-                                text: card.modelData?.appName ?? ""
+                                visible: card.appNameText.length > 0
+                                text: card.appNameText
                                 color: K4Theme.panelDim
                                 font.family: K4Theme.uiFont
-                                font.pixelSize: 9
+                                font.pixelSize: 10
                                 elide: Text.ElideRight
-                                Layout.maximumWidth: 110
+                                Layout.maximumWidth: 120
                                 textFormat: Text.PlainText
                             }
                         }
 
                         Text {
+                            Layout.minimumWidth: 0
                             Layout.fillWidth: true
-                            text: (card.modelData?.body ?? "").replace(/\s*\n\s*/g, " ")
+                            visible: card.bodyText.length > 0
+                            text: card.bodyText
                             color: K4Theme.panelMuted
                             font.family: K4Theme.uiFont
-                            font.pixelSize: 10
+                            font.pixelSize: 12
+                            wrapMode: Text.WordWrap
                             elide: Text.ElideRight
-                            maximumLineCount: 1
+                            maximumLineCount: 2
                             textFormat: Text.PlainText
                         }
 
                         RowLayout {
                             Layout.fillWidth: true
+                            Layout.preferredHeight: 24
                             visible: card.actions.length > 0
-                            spacing: 5
+                            spacing: 6
 
                             Repeater {
                                 model: card.actions
                                 delegate: Rectangle {
                                     id: chip
                                     required property var modelData
-                                    Layout.preferredWidth: Math.min(chipText.implicitWidth + 18, 145)
-                                    Layout.preferredHeight: 20
-                                    radius: 10
+                                    Layout.preferredWidth: Math.min(chipText.implicitWidth + 20, 160)
+                                    Layout.preferredHeight: 24
+                                    radius: 12
                                     color: chipHover.hovered ? K4Theme.panelBlue : K4Theme.panelSurfaceHot
                                     border.width: 1
                                     border.color: chipHover.hovered
@@ -150,7 +165,7 @@ Item {
                                         text: chip.modelData.text ?? chip.modelData.identifier ?? ""
                                         color: chipHover.hovered ? "#07111e" : K4Theme.panelInkSoft
                                         font.family: K4Theme.uiFont
-                                        font.pixelSize: 9
+                                        font.pixelSize: 10
                                         font.weight: Font.Medium
                                         elide: Text.ElideRight
                                         textFormat: Text.PlainText
