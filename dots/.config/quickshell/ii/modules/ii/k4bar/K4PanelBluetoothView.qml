@@ -9,29 +9,30 @@ Item {
 
     RowLayout {
         anchors.fill: parent
-        spacing: 10
+        spacing: 9
 
         Rectangle {
             Layout.minimumWidth: 0
             Layout.fillWidth: true
             Layout.fillHeight: true
-            radius: 17
+            radius: 16
             color: K4Theme.panelSurface
             border.width: 1
             border.color: K4Theme.panelLine
 
             ColumnLayout {
                 anchors.fill: parent
-                anchors.margins: 11
-                spacing: 8
+                anchors.margins: 10
+                spacing: 7
 
                 RowLayout {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 28
+                    spacing: 9
 
                     Text {
                         text: "My devices"
-                        color: K4Theme.ink
+                        color: K4Theme.panelInkSoft
                         font.family: K4Theme.uiFont
                         font.pixelSize: 10
                         font.weight: Font.DemiBold
@@ -44,7 +45,7 @@ Item {
                         text: !K4Bluetooth.available ? "No adapter"
                             : !K4Bluetooth.enabled ? "Off"
                             : K4Bluetooth.discovering ? "Searching…" : root.myDevices.length + " known"
-                        color: K4Theme.muted
+                        color: K4Theme.panelMuted
                         font.family: K4Theme.uiFont
                         font.pixelSize: 8
                         renderType: Text.NativeRendering
@@ -86,7 +87,7 @@ Item {
                         anchors.centerIn: parent
                         visible: root.myDevices.length === 0
                         text: !K4Bluetooth.enabled ? "Enable Bluetooth to see devices" : "No paired devices"
-                        color: K4Theme.muted
+                        color: K4Theme.panelMuted
                         font.family: K4Theme.uiFont
                         font.pixelSize: 10
                         renderType: Text.NativeRendering
@@ -99,23 +100,24 @@ Item {
             Layout.minimumWidth: 0
             Layout.fillWidth: true
             Layout.fillHeight: true
-            radius: 17
+            radius: 16
             color: K4Theme.panelSurface
             border.width: 1
             border.color: K4Theme.panelLine
 
             ColumnLayout {
                 anchors.fill: parent
-                anchors.margins: 11
-                spacing: 8
+                anchors.margins: 10
+                spacing: 7
 
                 RowLayout {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 28
+                    spacing: 9
 
                     Text {
                         text: "Nearby"
-                        color: K4Theme.ink
+                        color: K4Theme.panelInkSoft
                         font.family: K4Theme.uiFont
                         font.pixelSize: 10
                         font.weight: Font.DemiBold
@@ -127,7 +129,7 @@ Item {
                     Text {
                         visible: K4Bluetooth.discovering
                         text: "Searching devices…"
-                        color: K4Theme.muted
+                        color: K4Theme.panelMuted
                         font.family: K4Theme.uiFont
                         font.pixelSize: 8
                         renderType: Text.NativeRendering
@@ -165,7 +167,7 @@ Item {
                         text: !K4Bluetooth.enabled
                             ? "Bluetooth is off"
                             : K4Bluetooth.discovering ? "Searching devices…" : "No nearby devices"
-                        color: K4Theme.muted
+                        color: K4Theme.panelMuted
                         font.family: K4Theme.uiFont
                         font.pixelSize: 10
                         renderType: Text.NativeRendering
