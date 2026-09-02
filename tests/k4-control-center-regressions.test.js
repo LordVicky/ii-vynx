@@ -37,12 +37,21 @@ test("sound card opens detail while direct audio controls stay nested", async ()
     assert.doesNotMatch(audio, /MouseArea\s*\{[\s\S]{0,100}?z:\s*-1[\s\S]{0,300}?selectOutput/);
 });
 
-test("sound card shows the active output name only once", async () => {
+test("sound card keeps the active output device label only in the top-right header", async () => {
     const view = await read("modules/ii/k4bar/K4PanelView.qml");
-    const soundCard = view.match(/id:\s*soundTile[\s\S]*?PanelCard\s*\{/)?.[0] ?? "";
+    const soundBlock = view.match(/K4PanelTile\s*\{[\s\S]*?id:\s*soundTile[\s\S]*?PanelCard\s*\{/)?.[0] ?? "";
 
-    assert.equal((soundCard.match(/K4AudioDevices\.nameFor\(K4AudioDevices\.activeOutput\)/g) ?? []).length, 1);
-    assert.match(soundCard, /text:\s*"Output"/);
+    assert.equal((soundBlock.match(/K4AudioDevices\.nameFor\(K4AudioDevices\.activeOutput\)/g) ?? []).length, 1);
+    assert.match(soundBlock, /text:\s*"Output"[\s\S]*?text:\s*K4Theme\.ico\.forward/);
+    assert.doesNotMatch(soundBlock, /text:\s*"•"/);
+});
+
+test("active Bluetooth output reuses BluetoothStatus battery in the Sound label", async () => {
+    const audio = await read("modules/ii/k4bar/K4AudioDevices.qml");
+
+    assert.match(audio, /function\s+bluetoothDeviceFor\(node\)[\s\S]*?nodeName\.indexOf\("bluez_"\)[\s\S]*?BluetoothStatus\.friendlyDeviceList/);
+    assert.match(audio, /function\s+bluetoothDeviceFor\(node\)[\s\S]*?device\.connected[\s\S]*?device\.address/);
+    assert.match(audio, /function\s+nameFor\(node\)[\s\S]*?root\.activeOutput[\s\S]*?batteryAvailable[\s\S]*?Math\.round\(bluetoothDevice\.battery \* 100\)[\s\S]*?%/);
 });
 
 test("control center header has no decorative leading icon", async () => {
