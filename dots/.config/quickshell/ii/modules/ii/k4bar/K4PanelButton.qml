@@ -32,7 +32,7 @@ Item {
         color: root.active ? K4Theme.ink : root.glyphColor
         font.family: K4Theme.iconFont
         font.pixelSize: root.glyphSize
-        renderType: Text.NativeRendering
+        textFormat: Text.PlainText
     }
 
     HoverHandler { id: hover; enabled: root.enabledAction }
