@@ -35,7 +35,7 @@ Item {
                         font.family: K4Theme.uiFont
                         font.pixelSize: 10
                         font.weight: Font.DemiBold
-                        renderType: Text.NativeRendering
+                        textFormat: Text.PlainText
                     }
 
                     Item { Layout.fillWidth: true }
@@ -91,7 +91,7 @@ Item {
                         color: K4Theme.panelMuted
                         font.family: K4Theme.uiFont
                         font.pixelSize: 11
-                        renderType: Text.NativeRendering
+                        textFormat: Text.PlainText
                     }
                 }
             }
@@ -117,7 +117,7 @@ Item {
                     font.family: K4Theme.uiFont
                     font.pixelSize: 10
                     font.weight: Font.DemiBold
-                    renderType: Text.NativeRendering
+                    textFormat: Text.PlainText
                 }
 
                 Rectangle {
@@ -148,7 +148,7 @@ Item {
                                 color: K4Theme.panelInkSoft
                                 font.family: K4Theme.iconFont
                                 font.pixelSize: 13
-                                renderType: Text.NativeRendering
+                                textFormat: Text.PlainText
                             }
                         }
 
@@ -165,7 +165,7 @@ Item {
                                 font.pixelSize: 10
                                 font.weight: Font.DemiBold
                                 elide: Text.ElideRight
-                                renderType: Text.NativeRendering
+                                textFormat: Text.PlainText
                             }
 
                             Text {
@@ -175,7 +175,7 @@ Item {
                                 font.family: K4Theme.uiFont
                                 font.pixelSize: 8
                                 elide: Text.ElideRight
-                                renderType: Text.NativeRendering
+                                textFormat: Text.PlainText
                             }
                         }
                     }
@@ -187,7 +187,7 @@ Item {
                     color: K4Theme.panelMuted
                     font.family: K4Theme.uiFont
                     font.pixelSize: 10
-                    renderType: Text.NativeRendering
+                    textFormat: Text.PlainText
                 }
 
                 Rectangle {
@@ -211,7 +211,7 @@ Item {
                             color: K4Theme.panelMuted
                             font.family: K4Theme.iconFont
                             font.pixelSize: 13
-                            renderType: Text.NativeRendering
+                            textFormat: Text.PlainText
                         }
 
                         TextInput {
@@ -256,7 +256,7 @@ Item {
                                 color: K4Theme.panelDim
                                 font.family: K4Theme.uiFont
                                 font.pixelSize: 10
-                                renderType: Text.NativeRendering
+                                textFormat: Text.PlainText
                             }
                         }
 
@@ -292,7 +292,7 @@ Item {
                         font.family: K4Theme.uiFont
                         font.pixelSize: 10
                         font.weight: Font.Medium
-                        renderType: Text.NativeRendering
+                        textFormat: Text.PlainText
                     }
                 }
 
