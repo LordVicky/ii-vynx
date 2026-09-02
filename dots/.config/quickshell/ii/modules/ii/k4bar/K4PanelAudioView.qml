@@ -37,7 +37,7 @@ Item {
                 font.family: K4Theme.uiFont
                 font.pixelSize: 10
                 font.weight: Font.DemiBold
-                renderType: Text.NativeRendering
+                textFormat: Text.PlainText
             }
 
             Flickable {
@@ -59,7 +59,7 @@ Item {
                         color: K4Theme.panelMuted
                         font.family: K4Theme.uiFont
                         font.pixelSize: 10
-                        renderType: Text.NativeRendering
+                        textFormat: Text.PlainText
                     }
 
                     Repeater {
@@ -79,22 +79,21 @@ Item {
                             Layout.preferredHeight: 62
                             radius: 12
                             color: selected
-                                ? Qt.rgba(0.43, 0.66, 1, 0.13)
+                                ? Qt.rgba(0.04, 0.52, 1, 0.15)
                                 : rowHover.hovered ? K4Theme.panelSurfaceHot : K4Theme.panelSurfaceHi
                             border.width: 1
                             border.color: selected
-                                ? Qt.rgba(0.43, 0.66, 1, 0.38)
+                                ? Qt.rgba(0.04, 0.52, 1, 0.42)
                                 : rowHover.hovered ? K4Theme.panelLineStrong : K4Theme.panelLine
 
                             Behavior on color { ColorAnimation { duration: 110 } }
                             Behavior on border.color { ColorAnimation { duration: 110 } }
 
                             HoverHandler { id: rowHover }
-                            MouseArea {
-                                anchors.fill: parent
-                                z: -1
+                            TapHandler {
+                                id: deviceTap
                                 cursorShape: Qt.PointingHandCursor
-                                onClicked: {
+                                onTapped: {
                                     if (pane.input)
                                         K4AudioDevices.selectInput(row.modelData)
                                     else
@@ -121,7 +120,7 @@ Item {
                                         color: K4Theme.panelSurfaceHot
                                         border.width: 1
                                         border.color: row.selected
-                                            ? Qt.rgba(0.43, 0.66, 1, 0.30) : K4Theme.panelLine
+                                            ? Qt.rgba(0.04, 0.52, 1, 0.34) : K4Theme.panelLine
 
                                         Text {
                                             anchors.centerIn: parent
@@ -130,7 +129,7 @@ Item {
                                             color: row.selected ? K4Theme.panelBlue : K4Theme.panelInkSoft
                                             font.family: K4Theme.iconFont
                                             font.pixelSize: 12
-                                            renderType: Text.NativeRendering
+                                            textFormat: Text.PlainText
                                         }
                                     }
 
@@ -147,7 +146,7 @@ Item {
                                             font.pixelSize: 10
                                             font.weight: Font.DemiBold
                                             elide: Text.ElideRight
-                                            renderType: Text.NativeRendering
+                                            textFormat: Text.PlainText
                                         }
 
                                         Text {
@@ -157,7 +156,7 @@ Item {
                                             font.family: K4Theme.uiFont
                                             font.pixelSize: 8
                                             elide: Text.ElideRight
-                                            renderType: Text.NativeRendering
+                                            textFormat: Text.PlainText
                                         }
                                     }
 
@@ -167,7 +166,7 @@ Item {
                                         color: row.selected ? K4Theme.yellow : K4Theme.panelDim
                                         font.family: K4Theme.uiFont
                                         font.pixelSize: 8
-                                        renderType: Text.NativeRendering
+                                        textFormat: Text.PlainText
                                     }
 
                                     Text {
@@ -175,7 +174,7 @@ Item {
                                         color: row.muted ? K4Theme.panelDim : K4Theme.panelMuted
                                         font.family: K4Theme.uiFont
                                         font.pixelSize: 9
-                                        renderType: Text.NativeRendering
+                                        textFormat: Text.PlainText
                                     }
 
                                     K4PanelButton {
