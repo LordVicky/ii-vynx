@@ -114,9 +114,9 @@ test("control center v2 preserves the prototype home hierarchy with live K4 seam
 
     assert.match(view, /id:\s*homeColumns/);
     assert.match(view, /readonly property int leftWidth:\s*Math\.round\(\(width - spacing\) \* 0\.54\)/);
-    assert.match(view, /Layout\.preferredHeight:\s*84/);
-    assert.match(view, /Layout\.preferredHeight:\s*94/);
-    assert.match(view, /Layout\.preferredHeight:\s*142/);
+    assert.match(view, /Layout\.preferredHeight:\s*82/);
+    assert.match(view, /Layout\.preferredHeight:\s*92/);
+    assert.match(view, /Layout\.preferredHeight:\s*140/);
     assert.match(view, /columns:\s*3[\s\S]*?rows:\s*2/);
     assert.match(view, /columns:\s*2[\s\S]*?rows:\s*2/);
 
@@ -129,6 +129,24 @@ test("control center v2 preserves the prototype home hierarchy with live K4 seam
     assert.match(view, /function\s+target\(name\)[\s\S]*?root\.plugin\.controller\?\.plugin\(name\)/);
     assert.match(view, /function\s+launch\(name\)[\s\S]*?openApplication/);
     assert.doesNotMatch(view, /K4ShortcutStrip\s*\{/);
+});
+
+test("control center polish uses local contrast tokens and structured icon wells", async () => {
+    const theme = await read("modules/ii/k4bar/K4Theme.qml");
+    const view = await read("modules/ii/k4bar/K4PanelView.qml");
+    const button = await read("modules/ii/k4bar/K4PanelButton.qml");
+    const tile = await read("modules/ii/k4bar/K4PanelTile.qml");
+    const panelSwitch = await read("modules/ii/k4bar/K4PanelSwitch.qml");
+
+    for (const token of ["panelTrack", "panelMuted", "panelDim", "panelInkSoft", "panelLineStrong"])
+        assert.match(theme, new RegExp(`readonly property color ${token}:`));
+
+    assert.match(view, /component ToolTile:[\s\S]*?width:\s*30[\s\S]*?height:\s*30[\s\S]*?K4Theme\.panelInkSoft/);
+    assert.match(view, /component DesktopTile:[\s\S]*?border\.width:\s*1[\s\S]*?Layout\.preferredWidth:\s*30/);
+    assert.match(view, /anchors\.leftMargin:\s*14[\s\S]*?anchors\.rightMargin:\s*14[\s\S]*?anchors\.topMargin:\s*12/);
+    assert.match(button, /glyphColor:\s*K4Theme\.panelMuted/);
+    assert.match(tile, /borderColor:\s*K4Theme\.panelLine/);
+    assert.match(panelSwitch, /root\.checked \? K4Theme\.panelBlue : K4Theme\.panelSurfaceHot/);
 });
 
 test("control center columns can shrink inside the prototype island instead of clipping the right pane", async () => {
