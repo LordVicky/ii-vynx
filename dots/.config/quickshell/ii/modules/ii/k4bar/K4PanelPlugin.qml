@@ -18,8 +18,11 @@ K4Plugin {
     property bool open: false
     property var controller: null
 
-    islandWidth: 860
-    islandHeight: tab === "controls" ? 268 : 400
+    // Control Center V2 follows the supplied desktop prototype as one stable
+    // 690x430 island. Detail pages replace the body in-place instead of making
+    // the host jump between unrelated panel sizes.
+    islandWidth: 690
+    islandHeight: 430
     grabKeyboard: open
     handlesBackgroundTap: true
     closeOnHoverExit: true
