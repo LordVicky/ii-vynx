@@ -57,7 +57,7 @@ test("active Bluetooth output renders a textless micro ring separate from volume
     assert.match(audio, /function\s+bluetoothBatteryPercentFor\(node\)[\s\S]*?batteryAvailable[\s\S]*?Math\.round\(bluetoothDevice\.battery \* 100\)/);
     assert.doesNotMatch(audio.match(/function\s+nameFor\(node\)[\s\S]*?\n    \}/)?.[0] ?? "", /battery/);
     assert.match(soundBlock, /readonly property int outputBatteryPercent:\s*K4AudioDevices\.bluetoothBatteryPercentFor\(K4AudioDevices\.activeOutput\)/);
-    assert.match(soundBlock, /Canvas\s*\{[\s\S]*?id:\s*outputBatteryRing[\s\S]*?visible:\s*soundTile\.outputBatteryPercent\s*>=\s*0[\s\S]*?Layout\.preferredWidth:\s*12[\s\S]*?Layout\.preferredHeight:\s*12/);
+    assert.match(soundBlock, /Canvas\s*\{[\s\S]*?id:\s*outputBatteryRing[\s\S]*?visible:\s*soundTile\.outputBatteryPercent\s*>=\s*0[\s\S]*?Layout\.preferredWidth:\s*10[\s\S]*?Layout\.preferredHeight:\s*10/);
     assert.match(soundBlock, /onPaint:[\s\S]*?ctx\.arc\([\s\S]*?soundTile\.outputBatteryPercent \/ 100/);
     assert.match(soundBlock, /soundTile\.outputBatteryPercent\s*<=\s*20\s*\?\s*K4Theme\.red\s*:\s*K4Theme\.green/);
     assert.doesNotMatch(soundBlock, /id:\s*outputBatteryBody|id:\s*outputBatteryTerminal/);
