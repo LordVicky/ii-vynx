@@ -25,8 +25,58 @@ Singleton {
     readonly property var activeOutput: Audio.sink
     readonly property var activeInput: Audio.source
 
+    function normalizedBluetoothAddress(value) {
+        return String(value || "").toUpperCase().replace(/[^0-9A-F]/g, "")
+    }
+
+    function bluetoothDeviceFor(node) {
+        if (!node)
+            return null
+
+        const nodeName = String(node.name || "")
+        if (nodeName.indexOf("bluez_") !== 0)
+            return null
+
+        const addressMatch = nodeName.match(/([0-9A-Fa-f]{2}(?:[_:-][0-9A-Fa-f]{2}){5})/)
+        const nodeAddress = addressMatch
+            ? root.normalizedBluetoothAddress(addressMatch[1]) : ""
+        const friendlyName = Audio.friendlyDeviceName(node)
+        const devices = BluetoothStatus.friendlyDeviceList
+
+        for (let i = 0; i < devices.length; ++i) {
+            const device = devices[i]
+            if (!device.connected)
+                continue
+
+            const deviceAddress = root.normalizedBluetoothAddress(device.address)
+            if (nodeAddress.length > 0 && deviceAddress === nodeAddress)
+                return device
+        }
+
+        // Keep a display-name fallback for BlueZ/PipeWire variants that do not
+        // expose the hardware address in the node name.
+        for (let i = 0; i < devices.length; ++i) {
+            const device = devices[i]
+            if (device.connected && String(device.name || "") === friendlyName)
+                return device
+        }
+
+        return null
+    }
+
     function nameFor(node) {
-        return node ? Audio.friendlyDeviceName(node) : ""
+        if (!node)
+            return ""
+
+        const name = Audio.friendlyDeviceName(node)
+        if (!root.activeOutput || root.activeOutput.id !== node.id)
+            return name
+
+        const bluetoothDevice = root.bluetoothDeviceFor(node)
+        if (!bluetoothDevice?.batteryAvailable)
+            return name
+
+        return `${name} · ${Math.round(bluetoothDevice.battery * 100)}%`
     }
 
     function selectOutput(node) {
