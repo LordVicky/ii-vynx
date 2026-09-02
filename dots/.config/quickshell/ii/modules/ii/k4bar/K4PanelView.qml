@@ -663,21 +663,32 @@ Item {
                                 }
 
                                 Rectangle {
-                                    id: outputBatteryBadge
+                                    id: outputBatteryMeter
                                     visible: soundTile.outputBatteryPercent >= 0
-                                    Layout.preferredWidth: outputBatteryLabel.implicitWidth + 14
-                                    Layout.preferredHeight: 18
+                                    Layout.preferredWidth: 64
+                                    Layout.preferredHeight: 16
                                     Layout.alignment: Qt.AlignVCenter
-                                    radius: 9
-                                    color: Qt.rgba(0.19, 0.82, 0.35, 0.10)
+                                    radius: 8
+                                    color: K4Theme.panelTrack
                                     border.width: 1
-                                    border.color: Qt.rgba(0.19, 0.82, 0.35, 0.24)
+                                    border.color: K4Theme.panelLineStrong
+                                    clip: true
+
+                                    Rectangle {
+                                        id: outputBatteryFill
+                                        x: 1
+                                        y: 1
+                                        width: (parent.width - 2) * Math.max(0, Math.min(1, soundTile.outputBatteryPercent / 100))
+                                        height: parent.height - 2
+                                        radius: 7
+                                        color: K4Theme.green
+                                    }
 
                                     Text {
-                                        id: outputBatteryLabel
                                         anchors.centerIn: parent
-                                        text: "Battery " + soundTile.outputBatteryPercent + "%"
-                                        color: K4Theme.green
+                                        z: 1
+                                        text: soundTile.outputBatteryPercent + "%"
+                                        color: K4Theme.panelInkSoft
                                         font.family: K4Theme.uiFont
                                         font.pixelSize: 9
                                         font.weight: Font.DemiBold
