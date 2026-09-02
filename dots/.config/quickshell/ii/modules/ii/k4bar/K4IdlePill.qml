@@ -16,6 +16,14 @@ Item {
     readonly property bool recording: Persistent.states.screenRecord.active
     readonly property bool trayReserveActive: K4Settings.trayInPill
         && K4TrayHost.plugin !== null && K4Tray.count > 0
+
+    // The hover target follows the actual idle-pill body rather than screen
+    // coordinates or the unscaled default width. The visible media cluster keeps
+    // a little horizontal breathing room while the target is always clamped to
+    // the current custom pill width.
+    readonly property real mediaHoverWidth: root.isPlaying
+        ? Math.min(root.width, 11 + Math.max(48, leftMedia.implicitWidth + 14))
+        : 0
     readonly property bool mediaHovered: mediaHover.hovered && root.isPlaying
 
     readonly property var workspaces: K4Workspaces.list
@@ -115,11 +123,6 @@ Item {
             anchors.left: parent.left
             anchors.verticalCenter: parent.verticalCenter
             spacing: 8
-
-            HoverHandler {
-                id: mediaHover
-                enabled: root.isPlaying
-            }
 
             ClippingRectangle {
                 Layout.preferredWidth: 20
@@ -293,6 +296,24 @@ Item {
                     }
                 }
             }
+        }
+    }
+
+    // Full-height hover zone for the visible media cluster. A full-height target
+    // makes the intent forgiving vertically, while its width is derived from the
+    // live media layout and clamped to the current custom idle-pill width.
+    Item {
+        id: mediaHoverZone
+        visible: root.isPlaying
+        anchors.left: parent.left
+        anchors.top: parent.top
+        anchors.bottom: parent.bottom
+        width: root.mediaHoverWidth
+        z: 10
+
+        HoverHandler {
+            id: mediaHover
+            enabled: root.isPlaying
         }
     }
 }
