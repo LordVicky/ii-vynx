@@ -7,8 +7,10 @@ Item {
 
     Rectangle {
         anchors.fill: parent
-        radius: 12
-        color: K4Theme.surface
+        radius: 17
+        color: K4Theme.panelSurface
+        border.width: 1
+        border.color: K4Theme.panelLine
 
         ListView {
             anchors.fill: parent
@@ -26,8 +28,8 @@ Item {
 
                 width: ListView.view.width
                 height: 66 + (actions.length > 0 ? 28 : 0)
-                radius: 11
-                color: cardHover.hovered ? K4Theme.surfaceHi : K4Theme.surface
+                radius: 14
+                color: cardHover.hovered ? K4Theme.panelSurfaceHot : K4Theme.panelSurfaceHi
 
                 Behavior on color { ColorAnimation { duration: 110 } }
 
@@ -51,8 +53,8 @@ Item {
                         Layout.preferredWidth: 36
                         Layout.preferredHeight: 36
                         Layout.alignment: Qt.AlignTop
-                        radius: 18
-                        color: K4Theme.surfaceHi
+                        radius: 12
+                        color: K4Theme.panelSurfaceHot
 
                         Image {
                             id: icon
@@ -131,7 +133,7 @@ Item {
                                     Layout.preferredWidth: Math.min(chipText.implicitWidth + 18, 145)
                                     Layout.preferredHeight: 20
                                     radius: 10
-                                    color: chipHover.hovered ? K4Theme.blue : K4Theme.surfaceHi
+                                    color: chipHover.hovered ? K4Theme.panelBlue : K4Theme.panelSurfaceHot
 
                                     Text {
                                         id: chipText
@@ -159,6 +161,7 @@ Item {
                     K4PanelButton {
                         glyph: K4Theme.ico.close
                         glyphSize: 12
+                        activeColor: K4Theme.panelSurfaceHot
                         onActivated: K4Notifications.dismiss(card.modelData)
                         Layout.alignment: Qt.AlignTop
                     }
