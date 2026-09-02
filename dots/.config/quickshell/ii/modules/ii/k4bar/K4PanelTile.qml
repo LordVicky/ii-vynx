@@ -4,11 +4,14 @@ Rectangle {
     id: root
 
     property bool interactive: true
+    property color baseColor: K4Theme.surface
+    property color hoverColor: K4Theme.surfaceHi
+    property real cornerRadius: 13
     readonly property bool hovered: hover.hovered
     signal activated()
 
-    radius: 13
-    color: hover.hovered && interactive ? K4Theme.surfaceHi : K4Theme.surface
+    radius: cornerRadius
+    color: hover.hovered && interactive ? hoverColor : baseColor
 
     Behavior on color { ColorAnimation { duration: 120 } }
 
