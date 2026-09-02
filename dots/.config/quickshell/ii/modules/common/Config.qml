@@ -1047,6 +1047,18 @@ Singleton {
                 ]
             }
 
+            property JsonObject end4WallpaperSelector: JsonObject {
+                property bool useSystemFileDialog: false
+                property bool showBlurBackground: false
+                property bool showHomePath: true
+                property string userPath: ""
+                property string liveWallpapersPath: ""
+                property bool showSearchbar: true
+                property int columns: 4
+                property bool closeAfterSelection: true
+                property int changeInterval: 0
+            }
+
             property JsonObject windows: JsonObject {
                 property bool showTitlebar: true // Client-side decoration for shell apps
                 property bool centerTitle: true

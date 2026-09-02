@@ -31,6 +31,7 @@ Singleton {
     property bool sessionOpen: false
     property bool superDown: false
     property bool superReleaseMightTrigger: true
+    property bool end4WallpaperSelectorOpen: false
     property bool wallpaperSelectorOpen: false
     property bool workspaceShowNumbers: false
 

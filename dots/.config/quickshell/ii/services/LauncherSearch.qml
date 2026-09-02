@@ -119,6 +119,39 @@ Singleton {
             }
         },
         {
+            action: "unsplash",
+            execute: args => {
+                if (!args || args.trim().length === 0) {
+                    Quickshell.execDetached(["notify-send", "Unsplash", Translation.tr("Usage: /unsplash YOUR_API_KEY"), "-a", "Shell"]);
+                    return;
+                }
+                KeyringStorage.setNestedField(["apiKeys", "unsplash"], args.trim());
+                Quickshell.execDetached(["notify-send", "Unsplash", Translation.tr("API key saved!"), "-a", "Shell"]);
+            }
+        },
+        {
+            action: "wallhaven",
+            execute: args => {
+                if (!args || args.trim().length === 0) {
+                    Quickshell.execDetached(["notify-send", "Wallhaven", Translation.tr("Usage: /wallhaven YOUR_API_KEY"), "-a", "Shell"]);
+                    return;
+                }
+                KeyringStorage.setNestedField(["apiKeys", "wallhaven"], args.trim());
+                Quickshell.execDetached(["notify-send", "Wallhaven", Translation.tr("API key saved!"), "-a", "Shell"]);
+            }
+        },
+        {
+            action: "pexels",
+            execute: args => {
+                if (!args || args.trim().length === 0) {
+                    Quickshell.execDetached(["notify-send", "Pexels", Translation.tr("Usage: /pexels YOUR_API_KEY"), "-a", "Shell"]);
+                    return;
+                }
+                KeyringStorage.setNestedField(["apiKeys", "pexels"], args.trim());
+                Quickshell.execDetached(["notify-send", "Pexels", Translation.tr("API key saved!"), "-a", "Shell"]);
+            }
+        },
+        {
             action: "wipeclipboard",
             execute: () => {
                 Cliphist.wipe();
