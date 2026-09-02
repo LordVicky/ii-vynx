@@ -19,6 +19,10 @@ Item {
     readonly property string appName: singleLineText(notification?.appName ?? "Notification")
     readonly property string summary: singleLineText(notification?.summary ?? "")
     readonly property string body: singleLineText(notification?.body ?? "")
+    readonly property string expandedBody: String(notification?.body ?? "")
+        .replace(/\r\n/g, "\n")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim()
     readonly property string compactLine: {
         if (!bandMode)
             return summary.length > 0 ? summary : "New notification"
@@ -278,49 +282,55 @@ Item {
             }
 
             RowLayout {
+                id: messageRow
                 Layout.fillWidth: true
-                Layout.fillHeight: true
+                Layout.preferredHeight: Math.max(messageColumn.implicitHeight,
+                    notificationImage.visible ? 76 : 0)
                 Layout.topMargin: 4
                 Layout.bottomMargin: root.buttons.length > 0 ? 3 : 2
-                spacing: 14
+                spacing: 12
 
                 ColumnLayout {
+                    id: messageColumn
+                    Layout.minimumWidth: 0
                     Layout.fillWidth: true
-                    Layout.fillHeight: true
                     Layout.alignment: Qt.AlignTop
-                    spacing: 4
+                    spacing: 5
 
                     Text {
                         Layout.fillWidth: true
                         text: root.summary.length > 0 ? root.summary : root.body
                         color: K4Theme.ink
                         font.family: K4Theme.uiFont
-                        font.pixelSize: 15
+                        font.pixelSize: 16
                         font.weight: Font.DemiBold
                         wrapMode: Text.WordWrap
                         elide: Text.ElideRight
                         maximumLineCount: 2
+                        textFormat: Text.PlainText
                         renderType: Text.NativeRendering
                     }
 
                     Text {
                         Layout.fillWidth: true
-                        visible: root.body.length > 0 && root.body !== root.summary
-                        text: root.body
+                        visible: root.expandedBody.length > 0 && root.body !== root.summary
+                        text: root.expandedBody
                         color: K4Theme.muted
                         font.family: K4Theme.uiFont
-                        font.pixelSize: 11
+                        font.pixelSize: 13
                         wrapMode: Text.WordWrap
                         elide: Text.ElideRight
-                        maximumLineCount: 2
+                        maximumLineCount: 3
+                        textFormat: Text.PlainText
                         renderType: Text.NativeRendering
                     }
                 }
 
                 ClippingRectangle {
+                    id: notificationImage
                     visible: root.expanded && root.hasImage
-                    Layout.preferredWidth: 128
-                    Layout.preferredHeight: 78
+                    Layout.preferredWidth: 116
+                    Layout.preferredHeight: 76
                     Layout.alignment: Qt.AlignTop
                     radius: 11
                     color: K4Theme.surface
@@ -328,8 +338,8 @@ Item {
                     Image {
                         anchors.fill: parent
                         source: root.imageSource
-                        sourceSize.width: 256
-                        sourceSize.height: 156
+                        sourceSize.width: 232
+                        sourceSize.height: 152
                         fillMode: Image.PreserveAspectCrop
                         asynchronous: true
                         cache: true
