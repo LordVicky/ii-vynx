@@ -149,7 +149,7 @@ Item {
                     color: tile.danger ? "#ffadb3" : K4Theme.panelInkSoft
                     font.family: K4Theme.iconFont
                     font.pixelSize: 15
-                    renderType: Text.NativeRendering
+                    textFormat: Text.PlainText
                 }
             }
 
@@ -163,7 +163,7 @@ Item {
                 font.weight: Font.Medium
                 horizontalAlignment: Text.AlignHCenter
                 elide: Text.ElideRight
-                renderType: Text.NativeRendering
+                textFormat: Text.PlainText
             }
         }
 
@@ -213,7 +213,7 @@ Item {
                     color: K4Theme.panelInkSoft
                     font.family: K4Theme.iconFont
                     font.pixelSize: 13
-                    renderType: Text.NativeRendering
+                    textFormat: Text.PlainText
                 }
             }
 
@@ -230,7 +230,7 @@ Item {
                     font.pixelSize: 9
                     font.weight: Font.DemiBold
                     elide: Text.ElideRight
-                    renderType: Text.NativeRendering
+                    textFormat: Text.PlainText
                 }
 
                 Text {
@@ -240,7 +240,7 @@ Item {
                     font.family: K4Theme.uiFont
                     font.pixelSize: 7
                     elide: Text.ElideRight
-                    renderType: Text.NativeRendering
+                    textFormat: Text.PlainText
                 }
             }
         }
@@ -290,7 +290,7 @@ Item {
                     font.family: K4Theme.uiFont
                     font.pixelSize: 12
                     font.weight: Font.DemiBold
-                    renderType: Text.NativeRendering
+                    textFormat: Text.PlainText
                 }
             }
 
@@ -304,7 +304,7 @@ Item {
                 font.family: K4Theme.uiFont
                 font.pixelSize: 15
                 font.weight: Font.DemiBold
-                renderType: Text.NativeRendering
+                textFormat: Text.PlainText
                 Layout.alignment: Qt.AlignVCenter
             }
 
@@ -328,7 +328,7 @@ Item {
                         color: K4Theme.panelMuted
                         font.family: K4Theme.iconFont
                         font.pixelSize: 11
-                        renderType: Text.NativeRendering
+                        textFormat: Text.PlainText
                     }
 
                     Text {
@@ -338,7 +338,7 @@ Item {
                         font.family: K4Theme.uiFont
                         font.pixelSize: 9
                         font.weight: Font.DemiBold
-                        renderType: Text.NativeRendering
+                        textFormat: Text.PlainText
                     }
                 }
 
@@ -385,7 +385,7 @@ Item {
                 font.family: K4Theme.uiFont
                 font.pixelSize: 12
                 font.weight: Font.Medium
-                renderType: Text.NativeRendering
+                textFormat: Text.PlainText
                 Layout.alignment: Qt.AlignVCenter
             }
 
@@ -429,7 +429,7 @@ Item {
                         font.family: K4Theme.uiFont
                         font.pixelSize: 7
                         font.weight: Font.Bold
-                        renderType: Text.NativeRendering
+                        textFormat: Text.PlainText
                     }
                 }
             }
@@ -493,7 +493,7 @@ Item {
                                             ? K4Theme.panelBlue : K4Theme.panelSurfaceHot
                                         border.width: 1
                                         border.color: K4Wifi.enabled
-                                            ? Qt.rgba(0.43, 0.66, 1, 0.40) : K4Theme.panelLine
+                                            ? Qt.rgba(0.04, 0.52, 1, 0.42) : K4Theme.panelLine
 
                                         Behavior on color { ColorAnimation { duration: 160 } }
 
@@ -504,7 +504,7 @@ Item {
                                             color: K4Wifi.enabled ? "#07111e" : K4Theme.panelMuted
                                             font.family: K4Theme.iconFont
                                             font.pixelSize: 14
-                                            renderType: Text.NativeRendering
+                                            textFormat: Text.PlainText
                                         }
 
                                         MouseArea {
@@ -525,7 +525,7 @@ Item {
                                             font.family: K4Theme.uiFont
                                             font.pixelSize: 11
                                             font.weight: Font.DemiBold
-                                            renderType: Text.NativeRendering
+                                            textFormat: Text.PlainText
                                         }
 
                                         Text {
@@ -538,7 +538,7 @@ Item {
                                             font.family: K4Theme.uiFont
                                             font.pixelSize: 8
                                             elide: Text.ElideRight
-                                            renderType: Text.NativeRendering
+                                            textFormat: Text.PlainText
                                         }
                                     }
 
@@ -547,7 +547,7 @@ Item {
                                         color: wifiTile.hovered ? K4Theme.panelInkSoft : K4Theme.panelDim
                                         font.family: K4Theme.iconFont
                                         font.pixelSize: 13
-                                        renderType: Text.NativeRendering
+                                        textFormat: Text.PlainText
                                     }
                                 }
                             }
@@ -575,7 +575,7 @@ Item {
                                             ? K4Theme.panelBlue : K4Theme.panelSurfaceHot
                                         border.width: 1
                                         border.color: K4Bluetooth.enabled
-                                            ? Qt.rgba(0.43, 0.66, 1, 0.40) : K4Theme.panelLine
+                                            ? Qt.rgba(0.04, 0.52, 1, 0.42) : K4Theme.panelLine
 
                                         Behavior on color { ColorAnimation { duration: 160 } }
 
@@ -586,7 +586,7 @@ Item {
                                             color: K4Bluetooth.enabled ? "#07111e" : K4Theme.panelMuted
                                             font.family: K4Theme.iconFont
                                             font.pixelSize: 14
-                                            renderType: Text.NativeRendering
+                                            textFormat: Text.PlainText
                                         }
 
                                         MouseArea {
@@ -608,7 +608,7 @@ Item {
                                             font.family: K4Theme.uiFont
                                             font.pixelSize: 11
                                             font.weight: Font.DemiBold
-                                            renderType: Text.NativeRendering
+                                            textFormat: Text.PlainText
                                         }
 
                                         Text {
@@ -618,7 +618,7 @@ Item {
                                             font.family: K4Theme.uiFont
                                             font.pixelSize: 8
                                             elide: Text.ElideRight
-                                            renderType: Text.NativeRendering
+                                            textFormat: Text.PlainText
                                         }
                                     }
 
@@ -627,7 +627,7 @@ Item {
                                         color: bluetoothTile.hovered ? K4Theme.panelInkSoft : K4Theme.panelDim
                                         font.family: K4Theme.iconFont
                                         font.pixelSize: 13
-                                        renderType: Text.NativeRendering
+                                        textFormat: Text.PlainText
                                     }
                                 }
                             }
@@ -656,7 +656,7 @@ Item {
                                     font.family: K4Theme.uiFont
                                     font.pixelSize: 11
                                     font.weight: Font.DemiBold
-                                    renderType: Text.NativeRendering
+                                    textFormat: Text.PlainText
                                 }
 
                                 Item { Layout.fillWidth: true }
@@ -669,7 +669,7 @@ Item {
                                     font.family: K4Theme.uiFont
                                     font.pixelSize: 8
                                     elide: Text.ElideRight
-                                    renderType: Text.NativeRendering
+                                    textFormat: Text.PlainText
                                 }
                             }
 
@@ -695,7 +695,7 @@ Item {
                                         color: K4Audio.muted ? K4Theme.red : K4Theme.panelMuted
                                         font.family: K4Theme.iconFont
                                         font.pixelSize: 12
-                                        renderType: Text.NativeRendering
+                                        textFormat: Text.PlainText
                                     }
 
                                     HoverHandler { id: muteHover }
@@ -764,7 +764,7 @@ Item {
                                     font.family: K4Theme.uiFont
                                     font.pixelSize: 9
                                     horizontalAlignment: Text.AlignRight
-                                    renderType: Text.NativeRendering
+                                    textFormat: Text.PlainText
                                 }
                             }
 
@@ -777,7 +777,7 @@ Item {
                                     color: K4Theme.panelDim
                                     font.family: K4Theme.uiFont
                                     font.pixelSize: 8
-                                    renderType: Text.NativeRendering
+                                    textFormat: Text.PlainText
                                 }
 
                                 Text {
@@ -785,7 +785,7 @@ Item {
                                     color: K4Theme.panelDim
                                     font.family: K4Theme.uiFont
                                     font.pixelSize: 8
-                                    renderType: Text.NativeRendering
+                                    textFormat: Text.PlainText
                                 }
 
                                 Text {
@@ -796,17 +796,46 @@ Item {
                                     font.family: K4Theme.uiFont
                                     font.pixelSize: 8
                                     elide: Text.ElideRight
-                                    renderType: Text.NativeRendering
+                                    textFormat: Text.PlainText
                                 }
 
-                                Text {
-                                    text: "Change device  " + K4Theme.ico.forward
-                                    color: soundHover.hovered ? K4Theme.panelInkSoft : K4Theme.panelMuted
-                                    font.family: K4Theme.uiFont
-                                    font.pixelSize: 8
-                                    renderType: Text.NativeRendering
+                                Rectangle {
+                                    id: soundDeviceButton
+                                    Layout.preferredWidth: 94
+                                    Layout.preferredHeight: 22
+                                    radius: 11
+                                    color: soundDeviceHover.hovered
+                                        ? K4Theme.panelSurfaceHot : K4Theme.panelSurfaceHi
+                                    border.width: 1
+                                    border.color: soundDeviceHover.hovered
+                                        ? K4Theme.panelLineStrong : K4Theme.panelLine
 
-                                    HoverHandler { id: soundHover }
+                                    Behavior on color { ColorAnimation { duration: 110 } }
+                                    Behavior on border.color { ColorAnimation { duration: 110 } }
+
+                                    Row {
+                                        anchors.centerIn: parent
+                                        spacing: 4
+
+                                        Text {
+                                            text: "Change device"
+                                            color: K4Theme.panelInkSoft
+                                            font.family: K4Theme.uiFont
+                                            font.pixelSize: 8
+                                            font.weight: Font.Medium
+                                            textFormat: Text.PlainText
+                                        }
+
+                                        Text {
+                                            text: K4Theme.ico.forward
+                                            color: K4Theme.panelMuted
+                                            font.family: K4Theme.iconFont
+                                            font.pixelSize: 10
+                                            textFormat: Text.PlainText
+                                        }
+                                    }
+
+                                    HoverHandler { id: soundDeviceHover }
                                     TapHandler {
                                         cursorShape: Qt.PointingHandCursor
                                         onTapped: root.plugin.openTab("sonido")
@@ -929,7 +958,7 @@ Item {
                                     color: K4Theme.panelMuted
                                     font.family: K4Theme.iconFont
                                     font.pixelSize: 28
-                                    renderType: Text.NativeRendering
+                                    textFormat: Text.PlainText
                                 }
                             }
 
@@ -945,7 +974,7 @@ Item {
                                     font.family: K4Theme.uiFont
                                     font.pixelSize: 8
                                     font.weight: Font.DemiBold
-                                    renderType: Text.NativeRendering
+                                    textFormat: Text.PlainText
                                 }
 
                                 Text {
@@ -959,7 +988,7 @@ Item {
                                     font.pixelSize: 12
                                     font.weight: Font.DemiBold
                                     elide: Text.ElideRight
-                                    renderType: Text.NativeRendering
+                                    textFormat: Text.PlainText
                                 }
 
                                 Text {
@@ -970,7 +999,7 @@ Item {
                                     font.family: K4Theme.uiFont
                                     font.pixelSize: 9
                                     elide: Text.ElideRight
-                                    renderType: Text.NativeRendering
+                                    textFormat: Text.PlainText
                                 }
 
                                 Item { Layout.fillHeight: true }
@@ -1010,60 +1039,67 @@ Item {
                                     }
                                 }
 
-                                RowLayout {
+                                Item {
+                                    id: mediaTransportZone
                                     Layout.fillWidth: true
                                     Layout.preferredHeight: 36
-                                    spacing: 7
 
-                                    K4PanelButton {
-                                        glyph: K4Theme.ico.prev
-                                        glyphSize: 14
-                                        activeColor: K4Theme.panelSurfaceHi
-                                        enabledAction: K4Media.hasPlayer
-                                            && K4Media.activePlayer.canGoPrevious
-                                        onActivated: K4Media.previous()
-                                    }
+                                    Row {
+                                        id: mediaTransport
+                                        anchors.horizontalCenter: parent.horizontalCenter
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        spacing: 7
 
-                                    Rectangle {
-                                        Layout.preferredWidth: 36
-                                        Layout.preferredHeight: 36
-                                        radius: 18
-                                        color: K4Theme.panelInkSoft
-                                        border.width: 1
-                                        border.color: Qt.rgba(1, 1, 1, 0.18)
-                                        opacity: K4Media.hasPlayer
-                                            && K4Media.activePlayer.canTogglePlaying ? 1 : 0.34
-
-                                        Text {
-                                            anchors.centerIn: parent
-                                            text: K4Media.isPlaying
-                                                ? K4Theme.ico.pause : K4Theme.ico.play
-                                            color: "#071017"
-                                            font.family: K4Theme.iconFont
-                                            font.pixelSize: 16
-                                            renderType: Text.NativeRendering
+                                        K4PanelButton {
+                                            glyph: K4Theme.ico.prev
+                                            glyphSize: 14
+                                            activeColor: K4Theme.panelSurfaceHi
+                                            enabledAction: K4Media.hasPlayer
+                                                && K4Media.activePlayer.canGoPrevious
+                                            onActivated: K4Media.previous()
                                         }
 
-                                        TapHandler {
-                                            enabled: K4Media.hasPlayer
-                                                && K4Media.activePlayer.canTogglePlaying
-                                            cursorShape: Qt.PointingHandCursor
-                                            onTapped: K4Media.togglePlaying()
+                                        Rectangle {
+                                            width: 36
+                                            height: 36
+                                            radius: 18
+                                            color: K4Theme.panelInkSoft
+                                            border.width: 1
+                                            border.color: Qt.rgba(1, 1, 1, 0.18)
+                                            opacity: K4Media.hasPlayer
+                                                && K4Media.activePlayer.canTogglePlaying ? 1 : 0.34
+
+                                            Text {
+                                                anchors.centerIn: parent
+                                                text: K4Media.isPlaying
+                                                    ? K4Theme.ico.pause : K4Theme.ico.play
+                                                color: "#071017"
+                                                font.family: K4Theme.iconFont
+                                                font.pixelSize: 16
+                                                textFormat: Text.PlainText
+                                            }
+
+                                            TapHandler {
+                                                enabled: K4Media.hasPlayer
+                                                    && K4Media.activePlayer.canTogglePlaying
+                                                cursorShape: Qt.PointingHandCursor
+                                                onTapped: K4Media.togglePlaying()
+                                            }
+                                        }
+
+                                        K4PanelButton {
+                                            glyph: K4Theme.ico.next
+                                            glyphSize: 14
+                                            activeColor: K4Theme.panelSurfaceHi
+                                            enabledAction: K4Media.hasPlayer
+                                                && K4Media.activePlayer.canGoNext
+                                            onActivated: K4Media.next()
                                         }
                                     }
-
-                                    K4PanelButton {
-                                        glyph: K4Theme.ico.next
-                                        glyphSize: 14
-                                        activeColor: K4Theme.panelSurfaceHi
-                                        enabledAction: K4Media.hasPlayer
-                                            && K4Media.activePlayer.canGoNext
-                                        onActivated: K4Media.next()
-                                    }
-
-                                    Item { Layout.fillWidth: true }
 
                                     Text {
+                                        anchors.right: parent.right
+                                        anchors.verticalCenter: parent.verticalCenter
                                         visible: K4Media.hasTimeline
                                         text: K4Media.formatTime(K4Media.activePlayer?.position ?? 0)
                                             + " / "
@@ -1071,7 +1107,7 @@ Item {
                                         color: K4Theme.panelDim
                                         font.family: K4Theme.uiFont
                                         font.pixelSize: 7
-                                        renderType: Text.NativeRendering
+                                        textFormat: Text.PlainText
                                     }
                                 }
                             }
@@ -1097,7 +1133,7 @@ Item {
                                     font.family: K4Theme.uiFont
                                     font.pixelSize: 10
                                     font.weight: Font.DemiBold
-                                    renderType: Text.NativeRendering
+                                    textFormat: Text.PlainText
                                 }
 
                                 Item { Layout.fillWidth: true }
