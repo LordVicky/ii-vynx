@@ -275,26 +275,6 @@ Item {
                 onActivated: root.goHome()
             }
 
-            Rectangle {
-                visible: root.plugin.tab === "controls"
-                Layout.preferredWidth: 26
-                Layout.preferredHeight: 26
-                radius: 9
-                color: K4Theme.panelSurfaceHi
-                border.width: 1
-                border.color: K4Theme.panelLine
-
-                Text {
-                    anchors.centerIn: parent
-                    text: "⌘"
-                    color: K4Theme.panelInkSoft
-                    font.family: K4Theme.uiFont
-                    font.pixelSize: 12
-                    font.weight: Font.DemiBold
-                    textFormat: Text.PlainText
-                }
-            }
-
             Text {
                 text: root.plugin.tab === "notifications" ? "Notifications"
                     : root.plugin.tab === "wifi" ? "Wi-Fi"
@@ -635,9 +615,16 @@ Item {
                         }
                     }
 
-                    PanelCard {
+                    K4PanelTile {
+                        id: soundTile
                         Layout.fillWidth: true
                         Layout.preferredHeight: 92
+                        baseColor: K4Theme.panelSurface
+                        hoverColor: K4Theme.panelSurfaceHi
+                        borderColor: K4Theme.panelLine
+                        hoverBorderColor: K4Theme.panelLineStrong
+                        cornerRadius: 17
+                        onActivated: root.plugin.openTab("sonido")
 
                         ColumnLayout {
                             anchors.fill: parent
@@ -800,47 +787,12 @@ Item {
                                     textFormat: Text.PlainText
                                 }
 
-                                Rectangle {
-                                    id: soundDeviceButton
-                                    Layout.preferredWidth: 104
-                                    Layout.preferredHeight: 24
-                                    radius: 12
-                                    color: soundDeviceHover.hovered
-                                        ? K4Theme.panelSurfaceHot : K4Theme.panelSurfaceHi
-                                    border.width: 1
-                                    border.color: soundDeviceHover.hovered
-                                        ? K4Theme.panelLineStrong : K4Theme.panelLine
-
-                                    Behavior on color { ColorAnimation { duration: 110 } }
-                                    Behavior on border.color { ColorAnimation { duration: 110 } }
-
-                                    Row {
-                                        anchors.centerIn: parent
-                                        spacing: 4
-
-                                        Text {
-                                            text: "Change device"
-                                            color: K4Theme.panelInkSoft
-                                            font.family: K4Theme.uiFont
-                                            font.pixelSize: 10
-                                            font.weight: Font.Medium
-                                            textFormat: Text.PlainText
-                                        }
-
-                                        Text {
-                                            text: K4Theme.ico.forward
-                                            color: K4Theme.panelMuted
-                                            font.family: K4Theme.iconFont
-                                            font.pixelSize: 10
-                                            textFormat: Text.PlainText
-                                        }
-                                    }
-
-                                    HoverHandler { id: soundDeviceHover }
-                                    TapHandler {
-                                        cursorShape: Qt.PointingHandCursor
-                                        onTapped: root.plugin.openTab("sonido")
-                                    }
+                                Text {
+                                    text: K4Theme.ico.forward
+                                    color: soundTile.hovered ? K4Theme.panelInkSoft : K4Theme.panelDim
+                                    font.family: K4Theme.iconFont
+                                    font.pixelSize: 12
+                                    textFormat: Text.PlainText
                                 }
                             }
                         }
