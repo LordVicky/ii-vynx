@@ -4,85 +4,182 @@ import QtQuick.Layouts
 Item {
     id: root
 
-    ColumnLayout {
+    readonly property var myDevices: K4Bluetooth.devices.filter(device => device.connected || device.paired)
+    readonly property var nearbyDevices: K4Bluetooth.devices.filter(device => !device.connected && !device.paired)
+
+    RowLayout {
         anchors.fill: parent
-        spacing: 8
+        spacing: 10
 
-        RowLayout {
+        Rectangle {
             Layout.fillWidth: true
-            Layout.preferredHeight: 28
-            spacing: 10
+            Layout.fillHeight: true
+            radius: 17
+            color: K4Theme.panelSurface
+            border.width: 1
+            border.color: K4Theme.panelLine
 
-            Text {
-                text: !K4Bluetooth.available ? "No Bluetooth adapter"
-                    : !K4Bluetooth.enabled ? "Bluetooth disabled"
-                    : K4Bluetooth.discovering ? "Searching devices…" : "Devices"
-                color: K4Theme.muted
-                font.family: K4Theme.uiFont
-                font.pixelSize: 11
-                renderType: Text.NativeRendering
-            }
+            ColumnLayout {
+                anchors.fill: parent
+                anchors.margins: 11
+                spacing: 8
 
-            Item { Layout.fillWidth: true }
+                RowLayout {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 28
 
-            K4PanelSwitch {
-                checked: K4Bluetooth.enabled
-                onToggled: K4Bluetooth.toggle()
+                    Text {
+                        text: "My devices"
+                        color: K4Theme.ink
+                        font.family: K4Theme.uiFont
+                        font.pixelSize: 10
+                        font.weight: Font.DemiBold
+                        renderType: Text.NativeRendering
+                    }
+
+                    Item { Layout.fillWidth: true }
+
+                    Text {
+                        text: !K4Bluetooth.available ? "No adapter"
+                            : !K4Bluetooth.enabled ? "Off"
+                            : K4Bluetooth.discovering ? "Searching…" : root.myDevices.length + " known"
+                        color: K4Theme.muted
+                        font.family: K4Theme.uiFont
+                        font.pixelSize: 8
+                        renderType: Text.NativeRendering
+                    }
+
+                    K4PanelSwitch {
+                        checked: K4Bluetooth.enabled
+                        onToggled: K4Bluetooth.toggle()
+                    }
+                }
+
+                K4CursorTrackedListView {
+                    id: myList
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    clip: true
+                    spacing: 3
+                    rowHeight: 48
+                    model: root.myDevices
+                    boundsBehavior: Flickable.StopAtBounds
+
+                    delegate: K4PanelConnectionRow {
+                        required property var modelData
+                        required property int index
+                        width: ListView.view.width
+                        height: ListView.view.rowHeight
+                        title: modelData.name?.length > 0 ? modelData.name : modelData.address
+                        subtitle: K4Bluetooth.status(modelData)
+                        glyph: K4Theme.ico.bluetooth
+                        active: modelData.connected
+                        busy: modelData.pairing ?? false
+                        forgettable: modelData.paired
+                        hovered: index === myList.hoveredIndex
+                        onActivated: K4Bluetooth.activate(modelData)
+                        onForgotten: K4Bluetooth.togglePair(modelData)
+                    }
+
+                    Text {
+                        anchors.centerIn: parent
+                        visible: root.myDevices.length === 0
+                        text: !K4Bluetooth.enabled ? "Enable Bluetooth to see devices" : "No paired devices"
+                        color: K4Theme.muted
+                        font.family: K4Theme.uiFont
+                        font.pixelSize: 10
+                        renderType: Text.NativeRendering
+                    }
+                }
             }
         }
 
         Rectangle {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            radius: 12
-            color: K4Theme.surface
+            radius: 17
+            color: K4Theme.panelSurface
+            border.width: 1
+            border.color: K4Theme.panelLine
 
-            K4CursorTrackedListView {
-                id: devicesList
+            ColumnLayout {
                 anchors.fill: parent
-                anchors.margins: 10
-                clip: true
-                spacing: 2
-                rowHeight: 42
-                model: K4Bluetooth.devices
-                boundsBehavior: Flickable.StopAtBounds
+                anchors.margins: 11
+                spacing: 8
 
-                delegate: K4PanelConnectionRow {
-                    required property var modelData
-                    required property int index
-                    width: ListView.view.width
-                    height: ListView.view.rowHeight
-                    title: modelData.name?.length > 0 ? modelData.name : modelData.address
-                    subtitle: K4Bluetooth.status(modelData)
-                    glyph: K4Theme.ico.bluetooth
-                    active: modelData.connected
-                    busy: modelData.pairing ?? false
-                    forgettable: modelData.paired
-                    hovered: index === devicesList.hoveredIndex
-                    onActivated: K4Bluetooth.activate(modelData)
-                    onForgotten: K4Bluetooth.togglePair(modelData)
+                RowLayout {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 28
+
+                    Text {
+                        text: "Nearby"
+                        color: K4Theme.ink
+                        font.family: K4Theme.uiFont
+                        font.pixelSize: 10
+                        font.weight: Font.DemiBold
+                        renderType: Text.NativeRendering
+                    }
+
+                    Item { Layout.fillWidth: true }
+
+                    Text {
+                        visible: K4Bluetooth.discovering
+                        text: "Searching devices…"
+                        color: K4Theme.muted
+                        font.family: K4Theme.uiFont
+                        font.pixelSize: 8
+                        renderType: Text.NativeRendering
+                    }
+                }
+
+                K4CursorTrackedListView {
+                    id: nearbyList
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    clip: true
+                    spacing: 3
+                    rowHeight: 48
+                    model: root.nearbyDevices
+                    boundsBehavior: Flickable.StopAtBounds
+
+                    delegate: K4PanelConnectionRow {
+                        required property var modelData
+                        required property int index
+                        width: ListView.view.width
+                        height: ListView.view.rowHeight
+                        title: modelData.name?.length > 0 ? modelData.name : modelData.address
+                        subtitle: K4Bluetooth.status(modelData)
+                        glyph: K4Theme.ico.bluetooth
+                        active: false
+                        busy: modelData.pairing ?? false
+                        forgettable: false
+                        hovered: index === nearbyList.hoveredIndex
+                        onActivated: K4Bluetooth.activate(modelData)
+                    }
+
+                    Text {
+                        anchors.centerIn: parent
+                        visible: root.nearbyDevices.length === 0
+                        text: !K4Bluetooth.enabled
+                            ? "Bluetooth is off"
+                            : K4Bluetooth.discovering ? "Searching devices…" : "No nearby devices"
+                        color: K4Theme.muted
+                        font.family: K4Theme.uiFont
+                        font.pixelSize: 10
+                        renderType: Text.NativeRendering
+                    }
                 }
 
                 Text {
-                    anchors.centerIn: parent
-                    visible: K4Bluetooth.devices.length === 0
-                    text: K4Bluetooth.enabled ? "Searching devices…" : "Enable Bluetooth to search"
-                    color: K4Theme.muted
+                    Layout.fillWidth: true
+                    text: "Battery is shown only by device rows whose live Bluetooth object reports it."
+                    color: K4Theme.dim
                     font.family: K4Theme.uiFont
-                    font.pixelSize: 12
+                    font.pixelSize: 8
+                    wrapMode: Text.WordWrap
                     renderType: Text.NativeRendering
                 }
             }
-        }
-
-        Text {
-            Layout.fillWidth: true
-            text: "Use × to forget paired devices; select a row to connect or disconnect."
-            color: K4Theme.dim
-            font.family: K4Theme.uiFont
-            font.pixelSize: 9
-            wrapMode: Text.WordWrap
-            renderType: Text.NativeRendering
         }
     }
 }
