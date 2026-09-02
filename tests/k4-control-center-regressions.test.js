@@ -26,13 +26,21 @@ test("control center follows the K4 Qt Quick text rendering path", async () => {
     assert.match(view, /font\.family:\s*K4Theme\.iconFont/);
 });
 
-test("sound device navigation and selection use full explicit hit targets", async () => {
+test("sound card opens detail while direct audio controls stay nested", async () => {
     const view = await read("modules/ii/k4bar/K4PanelView.qml");
     const audio = await read("modules/ii/k4bar/K4PanelAudioView.qml");
 
-    assert.match(view, /id:\s*soundDeviceButton[\s\S]*?TapHandler[\s\S]*?root\.plugin\.openTab\("sonido"\)/);
+    assert.match(view, /K4PanelTile\s*\{[\s\S]*?id:\s*soundTile[\s\S]*?onActivated:\s*root\.plugin\.openTab\("sonido"\)/);
+    assert.doesNotMatch(view, /id:\s*soundDeviceButton/);
+    assert.match(view, /id:\s*soundTile[\s\S]*?K4Audio\.toggleMute\(\)[\s\S]*?K4Audio\.setVolume/);
     assert.match(audio, /id:\s*deviceTap[\s\S]*?K4AudioDevices\.selectInput\(row\.modelData\)[\s\S]*?K4AudioDevices\.selectOutput\(row\.modelData\)/);
     assert.doesNotMatch(audio, /MouseArea\s*\{[\s\S]{0,100}?z:\s*-1[\s\S]{0,300}?selectOutput/);
+});
+
+test("control center header has no decorative leading icon", async () => {
+    const view = await read("modules/ii/k4bar/K4PanelView.qml");
+
+    assert.doesNotMatch(view, /text:\s*"⌘"/);
 });
 
 test("now playing transport stays centered as expanded island width changes", async () => {
