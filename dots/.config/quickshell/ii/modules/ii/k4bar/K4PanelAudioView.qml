@@ -127,6 +127,7 @@ Item {
                                     }
 
                                     ColumnLayout {
+                                        Layout.minimumWidth: 0
                                         Layout.fillWidth: true
                                         spacing: 1
 
@@ -179,6 +180,7 @@ Item {
                                 }
 
                                 Item {
+                                    Layout.minimumWidth: 0
                                     Layout.fillWidth: true
                                     Layout.preferredHeight: 12
 
@@ -242,6 +244,7 @@ Item {
         spacing: 10
 
         DevicePane {
+            Layout.minimumWidth: 0
             Layout.fillWidth: true
             Layout.fillHeight: true
             title: "Output"
@@ -251,6 +254,7 @@ Item {
         }
 
         DevicePane {
+            Layout.minimumWidth: 0
             Layout.fillWidth: true
             Layout.fillHeight: true
             title: "Input"
