@@ -638,7 +638,7 @@ Item {
 
                             RowLayout {
                                 Layout.fillWidth: true
-                                spacing: 8
+                                spacing: 6
 
                                 Text {
                                     text: "Sound"
@@ -653,7 +653,7 @@ Item {
 
                                 Text {
                                     Layout.minimumWidth: 0
-                                    Layout.maximumWidth: soundTile.outputBatteryPercent >= 0 ? 160 : 190
+                                    Layout.maximumWidth: soundTile.outputBatteryPercent >= 0 ? 180 : 190
                                     text: K4AudioDevices.nameFor(K4AudioDevices.activeOutput)
                                     color: K4Theme.panelMuted
                                     font.family: K4Theme.uiFont
@@ -662,59 +662,54 @@ Item {
                                     textFormat: Text.PlainText
                                 }
 
-                                Item {
-                                    id: outputBatteryMeter
+                                Canvas {
+                                    id: outputBatteryRing
                                     visible: soundTile.outputBatteryPercent >= 0
-                                    Layout.preferredWidth: 47
-                                    Layout.preferredHeight: 18
+                                    Layout.preferredWidth: 10
+                                    Layout.preferredHeight: 10
                                     Layout.alignment: Qt.AlignVCenter
 
-                                    Rectangle {
-                                        id: outputBatteryBody
-                                        anchors.left: parent.left
-                                        anchors.verticalCenter: parent.verticalCenter
-                                        width: 42
-                                        height: 16
-                                        radius: 4
-                                        color: K4Theme.panelTrack
-                                        border.width: 1
-                                        border.color: K4Theme.panelLineStrong
-                                        clip: true
+                                    onPaint: {
+                                        const ctx = getContext("2d")
+                                        const progress = Math.max(0, Math.min(1,
+                                            soundTile.outputBatteryPercent / 100))
+                                        const centerX = width / 2
+                                        const centerY = height / 2
+                                        const radius = 3.8
+                                        const start = -Math.PI / 2
 
-                                        Rectangle {
-                                            id: outputBatteryFill
-                                            x: 2
-                                            y: 2
-                                            width: (outputBatteryBody.width - 4)
-                                                * Math.max(0, Math.min(1, soundTile.outputBatteryPercent / 100))
-                                            height: outputBatteryBody.height - 4
-                                            radius: 2
-                                            color: soundTile.outputBatteryPercent <= 20
-                                                ? K4Theme.red : K4Theme.green
-                                        }
+                                        ctx.clearRect(0, 0, width, height)
+                                        ctx.lineWidth = 1.6
+                                        ctx.lineCap = "round"
+                                        ctx.strokeStyle = K4Theme.panelTrack
+                                        ctx.beginPath()
+                                        ctx.arc(centerX, centerY, radius, 0, Math.PI * 2, false)
+                                        ctx.stroke()
 
-                                        Text {
-                                            anchors.centerIn: parent
-                                            z: 1
-                                            text: soundTile.outputBatteryPercent + "%"
-                                            color: K4Theme.panelInkSoft
-                                            font.family: K4Theme.uiFont
-                                            font.pixelSize: 8
-                                            font.weight: Font.Bold
-                                            textFormat: Text.PlainText
+                                        if (progress <= 0)
+                                            return
+
+                                        ctx.strokeStyle = soundTile.outputBatteryPercent <= 20
+                                            ? K4Theme.red : K4Theme.green
+                                        ctx.beginPath()
+                                        ctx.arc(centerX, centerY, radius, start,
+                                            start + Math.PI * 2 * progress, false)
+                                        ctx.stroke()
+                                    }
+
+                                    onVisibleChanged: {
+                                        if (visible)
+                                            requestPaint()
+                                    }
+
+                                    Connections {
+                                        target: soundTile
+                                        function onOutputBatteryPercentChanged() {
+                                            outputBatteryRing.requestPaint()
                                         }
                                     }
 
-                                    Rectangle {
-                                        id: outputBatteryTerminal
-                                        anchors.left: outputBatteryBody.right
-                                        anchors.leftMargin: 2
-                                        anchors.verticalCenter: outputBatteryBody.verticalCenter
-                                        width: 3
-                                        height: 8
-                                        radius: 1.5
-                                        color: K4Theme.panelLineStrong
-                                    }
+                                    Component.onCompleted: requestPaint()
                                 }
                             }
 
