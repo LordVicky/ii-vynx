@@ -33,7 +33,10 @@ test("adaptive notification card provides compact and expanded disclosure", () =
     assert.match(card, /fillMode:\s*Image\.PreserveAspectCrop/);
     assert.match(card, /asynchronous:\s*true/);
     assert.match(card, /cache:\s*true/);
-    assert.match(card, /maximumLineCount:\s*2/);
+    assert.match(card, /id:\s*messageColumn[\s\S]*?font\.pixelSize:\s*16[\s\S]*?maximumLineCount:\s*2/);
+    assert.match(card, /id:\s*messageColumn[\s\S]*?font\.pixelSize:\s*13[\s\S]*?maximumLineCount:\s*3/);
+    assert.match(card, /id:\s*messageRow[\s\S]*?Layout\.preferredHeight:\s*Math\.max\(messageColumn\.implicitHeight,[\s\S]*?notificationImage\.visible \? 76 : 0\)/);
+    assert.doesNotMatch(card, /id:\s*messageRow[\s\S]*?Layout\.fillHeight:\s*true/);
     assert.match(card, /model:\s*root\.buttons/);
     assert.match(card, /signal dismissRequested\(\)/);
     assert.match(card, /signal actionRequested\(var action\)/);
@@ -42,7 +45,7 @@ test("adaptive notification card provides compact and expanded disclosure", () =
     assert.match(card, /id:\s*actionMouse[\s\S]*?mouse\.accepted = true[\s\S]*?root\.actionRequested\(/);
 });
 
-test("main toast morphs between compact, detailed, image and action geometry", () => {
+test("main toast morphs between compact and content-dense expanded geometry", () => {
     const builtins = read("modules/ii/k4bar/K4BuiltinPlugins.qml");
     const view = read("modules/ii/k4bar/K4ToastView.qml");
 
@@ -50,9 +53,10 @@ test("main toast morphs between compact, detailed, image and action geometry", (
     assert.match(builtins, /readonly property bool expanded:\s*IslandState\.hovered/);
     assert.match(builtins, /islandWidth:\s*expanded[\s\S]*?hasImage \? 520 : 500[\s\S]*?: 382/);
     assert.match(builtins, /islandHeight:\s*!expanded \? 54/);
-    assert.match(builtins, /hasImage && buttons\.length > 0 \? 214/);
-    assert.match(builtins, /hasImage \? 168/);
-    assert.match(builtins, /buttons\.length > 0 \? 170 : 142/);
+    assert.match(builtins, /hasImage && buttons\.length > 0 \? 180/);
+    assert.match(builtins, /hasImage \? 136/);
+    assert.match(builtins, /buttons\.length > 0 \? 148 : 120/);
+    assert.doesNotMatch(builtins, /hasImage && buttons\.length > 0 \? 214|hasImage \? 168|buttons\.length > 0 \? 170 : 142/);
     assert.match(builtins, /handlesBackgroundTap:\s*true/);
     assert.match(builtins, /K4Notifications\.activate\(K4Notifications\.latest\)/);
 
@@ -61,6 +65,17 @@ test("main toast morphs between compact, detailed, image and action geometry", (
     assert.match(view, /onDismissRequested:\s*K4Notifications\.dismissToast\(\)/);
     assert.match(view, /K4Notifications\.invokeAction\(root\.notification, action\)/);
     assert.doesNotMatch(view, /ClippingRectangle\s*\{/);
+});
+
+test("control center notification history favors readable content over tiny metadata", () => {
+    const view = read("modules/ii/k4bar/K4PanelNotificationsView.qml");
+
+    assert.match(view, /readonly property string bodyText:/);
+    assert.match(view, /height:\s*78 \+ \(actions\.length > 0 \? 32 : 0\)/);
+    assert.match(view, /font\.pixelSize:\s*14[\s\S]*?maximumLineCount:\s*1/);
+    assert.match(view, /font\.pixelSize:\s*12[\s\S]*?wrapMode:\s*Text\.WordWrap[\s\S]*?maximumLineCount:\s*2/);
+    assert.match(view, /Layout\.preferredHeight:\s*24/);
+    assert.doesNotMatch(view, /font\.pixelSize:\s*10[\s\S]*?maximumLineCount:\s*1/);
 });
 
 test("compact band reuses the adaptive card without reserving compositor space", () => {
