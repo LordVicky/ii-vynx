@@ -37,6 +37,14 @@ test("sound card opens detail while direct audio controls stay nested", async ()
     assert.doesNotMatch(audio, /MouseArea\s*\{[\s\S]{0,100}?z:\s*-1[\s\S]{0,300}?selectOutput/);
 });
 
+test("sound card shows the active output name only once", async () => {
+    const view = await read("modules/ii/k4bar/K4PanelView.qml");
+    const soundCard = view.match(/id:\s*soundTile[\s\S]*?PanelCard\s*\{/)?.[0] ?? "";
+
+    assert.equal((soundCard.match(/K4AudioDevices\.nameFor\(K4AudioDevices\.activeOutput\)/g) ?? []).length, 1);
+    assert.match(soundCard, /text:\s*"Output"/);
+});
+
 test("control center header has no decorative leading icon", async () => {
     const view = await read("modules/ii/k4bar/K4PanelView.qml");
 
