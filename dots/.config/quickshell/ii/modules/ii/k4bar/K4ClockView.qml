@@ -8,9 +8,9 @@ Item {
 
     property var trayPlugin: null
 
-    // Publish the real width of each sequential zone back to the stable Clock
-    // plugin. These values are authoritative once the view has been laid out;
-    // the plugin keeps conservative fallbacks for the first expansion frame.
+    // Publish the real width of each zone back to the stable Clock plugin. The
+    // plugin mirrors the larger side reserve so the time stays mathematically
+    // centered while date and indicators remain pinned to opposite edges.
     readonly property int measuredLeft: leftDate.implicitWidth
     readonly property int measuredCenter: clockText.implicitWidth
     readonly property int measuredRight: rightIndicators.implicitWidth
@@ -67,8 +67,7 @@ Item {
 
             Text {
                 id: clockText
-                anchors.left: leftDate.right
-                anchors.leftMargin: root.zoneGap
+                anchors.horizontalCenter: parent.horizontalCenter
                 anchors.verticalCenter: parent.verticalCenter
                 text: Qt.formatDateTime(K4Clock.date, "HH:mm")
                 color: K4Theme.ink
@@ -80,8 +79,7 @@ Item {
 
             RowLayout {
                 id: rightIndicators
-                anchors.left: clockText.right
-                anchors.leftMargin: root.zoneGap
+                anchors.right: parent.right
                 anchors.verticalCenter: parent.verticalCenter
                 spacing: 6
 

@@ -12,10 +12,18 @@ Singleton {
     readonly property string position: Config.options.bar.k4.position
     readonly property int alignment: Config.options.bar.k4.alignment
     readonly property string spaceMode: Config.options.bar.k4.spaceMode
+    readonly property string shape: Config.options.bar.k4.shape
+    readonly property real widthScale: Config.options.bar.k4.widthScale
+    readonly property real idleWidthScale: Config.options.bar.k4.idleWidthScale
     readonly property bool trayInPill: Config.options.bar.k4.trayInPill
+    readonly property bool expandIdleOnHover: Config.options.bar.k4.expandIdleOnHover
     readonly property bool notificationsOnHover: Config.options.bar.k4.notificationsOnHover
     readonly property bool dismissNotificationsOnFocus: Config.options.bar.k4.dismissNotificationsOnFocus
     readonly property bool playerPeekOnTrackChange: Config.options.bar.k4.playerPeekOnTrackChange
+
+    readonly property real minWidthScale: 1.0
+    readonly property real maxWidthScale: 1.6
+    readonly property real scaleStep: 0.05
 
     readonly property var positions: [
         { label: "Top", value: "top" },
@@ -26,12 +34,24 @@ Singleton {
         { label: "Center", value: 50 },
         { label: "Right", value: 85 }
     ]
+    readonly property var shapes: [
+        { label: "Attached", value: "attached" },
+        { label: "Floating pill", value: "pill" }
+    ]
     readonly property var spaceModes: [
         { label: "Reserve space", value: "reserve" },
         { label: "Away when fullscreen", value: "fullscreen" },
         { label: "On top", value: "overlay" },
         { label: "Hidden", value: "hidden" }
     ]
+
+    function boundedScale(wanted, minimum, maximum) {
+        const value = Number(wanted)
+        if (!isFinite(value))
+            return 1.0
+        const clamped = Math.max(minimum, Math.min(maximum, value))
+        return Math.round(clamped / scaleStep) * scaleStep
+    }
 
     function setPosition(wanted) {
         const value = String(wanted)
@@ -45,14 +65,34 @@ Singleton {
             Config.options.bar.k4.alignment = value
     }
 
+    function setShape(wanted) {
+        const value = String(wanted)
+        if (value === "attached" || value === "pill")
+            Config.options.bar.k4.shape = value
+    }
+
     function setSpaceMode(wanted) {
         const value = String(wanted)
         if (["reserve", "fullscreen", "overlay", "hidden"].indexOf(value) >= 0)
             Config.options.bar.k4.spaceMode = value
     }
 
+    function setWidthScale(wanted) {
+        Config.options.bar.k4.widthScale = boundedScale(
+            wanted, minWidthScale, maxWidthScale)
+    }
+
+    function setIdleWidthScale(wanted) {
+        Config.options.bar.k4.idleWidthScale = boundedScale(
+            wanted, minWidthScale, maxWidthScale)
+    }
+
     function setTrayInPill(wanted) {
         Config.options.bar.k4.trayInPill = Boolean(wanted)
+    }
+
+    function setExpandIdleOnHover(wanted) {
+        Config.options.bar.k4.expandIdleOnHover = Boolean(wanted)
     }
 
     function setNotificationsOnHover(wanted) {

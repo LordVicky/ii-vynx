@@ -7,8 +7,10 @@ QtObject {
 
     property list<QtObject> plugins
     property bool passiveHoverAllowed: false
+    readonly property bool passiveHoverEffective: K4Settings.expandIdleOnHover
+        && passiveHoverAllowed
     property QtObject builtins: K4BuiltinPlugins {
-        passiveHoverAllowed: root.passiveHoverAllowed
+        passiveHoverAllowed: root.passiveHoverEffective
     }
 
     function attachBuiltins() {

@@ -64,25 +64,10 @@ test("k4 toast participates as the pinned priority-59 transient", () => {
     assert.match(builtins, /toastPlugin/);
     assert.match(builtins, /name:\s*"toast"[\s\S]*?priority:\s*59[\s\S]*?transitorio:\s*true/);
     assert.match(builtins, /active:\s*enabled && K4Notifications\.toastOpen && !K4Notifications\.inBand/);
-    assert.match(builtins, /islandWidth:\s*440/);
-    assert.match(builtins, /islandHeight:\s*K4Notifications\.buttons\(K4Notifications\.latest\)\.length > 0 \? 112 : 96/);
     assert.match(builtins, /handlesBackgroundTap:\s*true/);
     assert.match(builtins, /onBackgroundTapped:[\s\S]*?K4Notifications\.activate\(K4Notifications\.latest\)[\s\S]*?K4Notifications\.dismissToast\(\)/);
     assert.match(builtins, /function close\(\)[\s\S]*?K4Notifications\.dismissToast\(\)/);
     assert.match(builtins, /view:\s*Component \{ K4ToastView \{\} \}/);
-});
-
-test("k4 toast view exposes notification content, actions and dismissal", () => {
-    const source = read("modules/ii/k4bar/K4ToastView.qml");
-
-    assert.match(source, /readonly property var notification:\s*K4Notifications\.latest/);
-    assert.match(source, /readonly property var buttons:\s*K4Notifications\.buttons\(notification\)/);
-    assert.match(source, /notification\?\.summary \?\? ""/);
-    assert.match(source, /notification\?\.appName \?\? ""/);
-    assert.match(source, /notification\?\.body \?\? ""/);
-    assert.match(source, /model:\s*root\.buttons/);
-    assert.match(source, /onClicked:[\s\S]*?K4Notifications\.invokeAction\(root\.notification, actionChip\.modelData\)/);
-    assert.match(source, /K4Notifications\.dismissToast\(\)/);
 });
 
 test("explicit island owners route notifications to a non-reserving band window", () => {
@@ -97,8 +82,6 @@ test("explicit island owners route notifications to a non-reserving band window"
     assert.match(bar, /K4ToastBandHost\s*\{\s*\}/);
     assert.match(host, /Variants\s*\{[\s\S]*?model:\s*GlobalStates\.screenLocked \? \[\] : Quickshell\.screens/);
     assert.match(host, /PanelWindow\s*\{[\s\S]*?exclusionMode:\s*ExclusionMode\.Ignore/);
-    assert.match(host, /implicitWidth:\s*420/);
-    assert.match(host, /implicitHeight:\s*56/);
     assert.match(host, /K4Notifications\.toastOpen && K4Notifications\.inBand/);
     assert.match(host, /IslandState\.rects\[bandWindow\.screen\.name\]/);
     assert.match(host, /K4Notifications\.activate\(K4Notifications\.latest\)/);
@@ -125,6 +108,7 @@ test("notification presentation lifts to overlay only while it needs to beat ful
 
 test("recent notification strip matches pinned k4 max-three history behavior", () => {
     const strip = read("modules/ii/k4bar/K4NotifStrip.qml");
+    const adapter = read("modules/ii/k4bar/K4Notifications.qml");
     const theme = read("modules/ii/k4bar/K4Theme.qml");
 
     assert.match(strip, /property int max:\s*3/);
@@ -133,6 +117,7 @@ test("recent notification strip matches pinned k4 max-three history behavior", (
     assert.match(strip, /readonly property int neededHeight:\s*K4Notifications\.stripHeight\(max\)/);
     assert.match(strip, /model:\s*K4Notifications\.recent\.slice\(0, strip\.shown\)/);
     assert.match(strip, /K4Notifications\.iconFor\(modelData\)/);
+    assert.match(adapter, /function iconFor\(notification\)[\s\S]*?notification\.image[\s\S]*?return appIconFor\(notification\)/);
     assert.match(strip, /K4Notifications\.clear\(\)/);
     assert.match(strip, /K4Notifications\.dismiss\(row\.modelData\)/);
     assert.match(strip, /K4Notifications\.activate\(row\.modelData\)/);

@@ -43,9 +43,8 @@ QtObject {
         name: "clock"; title: "Clock"; priority: 50
         active: enabled && IslandState.hovered && root.passiveHoverAllowed
 
-        // K4 v1.0 measures the three Clock zones in the view and feeds them
-        // back into this stable plugin object. Estimates are only first-frame
-        // fallbacks while the view has not published real implicit widths yet.
+        // Clock keeps its time at the island center. Measure the three zones,
+        // mirror the larger side reserve, and let widthScale add extra room on top.
         property int leftMeasured: 0
         property int centerMeasured: 0
         property int rightMeasured: 0
@@ -64,9 +63,10 @@ QtObject {
         readonly property int rightRaw: rightMeasured > 0
             ? rightMeasured : rightEstimate
         readonly property int rightWidth: Math.min(rightRaw, 480)
+        readonly property int sideWidth: Math.max(leftWidth, rightWidth)
         readonly property int zoneGap: 24
 
-        islandWidth: 44 + leftWidth + zoneGap + centerWidth + zoneGap + rightWidth
+        islandWidth: 44 + centerWidth + 2 * (sideWidth + zoneGap)
         readonly property int notificationStripHeight: K4Settings.notificationsOnHover
             ? K4Notifications.stripHeight(3) : 0
         islandHeight: 68 + (notificationStripHeight > 0 ? notificationStripHeight + 18 : 0)
@@ -161,8 +161,14 @@ QtObject {
     property QtObject toastPlugin: K4Plugin {
         name: "toast"; title: "Notification"; priority: 59; transitorio: true
         active: enabled && K4Notifications.toastOpen && !K4Notifications.inBand
-        islandWidth: 440
-        islandHeight: K4Notifications.buttons(K4Notifications.latest).length > 0 ? 112 : 96
+        readonly property bool expanded: IslandState.hovered
+        readonly property bool hasImage: K4Notifications.hasImage(K4Notifications.latest)
+        readonly property var buttons: K4Notifications.buttons(K4Notifications.latest)
+        islandWidth: expanded ? (hasImage ? 520 : 500) : 382
+        islandHeight: !expanded ? 54
+            : hasImage && buttons.length > 0 ? 214
+            : hasImage ? 168
+            : buttons.length > 0 ? 170 : 142
         handlesBackgroundTap: true
         onBackgroundTapped: { K4Notifications.activate(K4Notifications.latest); K4Notifications.dismissToast() }
         function close() { K4Notifications.dismissToast() }

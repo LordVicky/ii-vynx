@@ -499,7 +499,11 @@ Singleton {
                     property string position: "top" // "top" | "bottom"
                     property int alignment: 50 // 15 | 50 | 85
                     property string spaceMode: "reserve" // "reserve" | "fullscreen" | "overlay" | "hidden"
+                    property string shape: "attached" // "attached" | "pill"
+                    property real widthScale: 1.0 // 1.0 - 1.6
+                    property real idleWidthScale: 1.0 // 1.0 - 1.6
                     property bool trayInPill: false
+                    property bool expandIdleOnHover: true
                     property bool notificationsOnHover: true
                     property bool dismissNotificationsOnFocus: true
                     property bool playerPeekOnTrackChange: true
