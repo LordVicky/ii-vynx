@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
+import Quickshell.Widgets
 
 Item {
     id: root
@@ -159,7 +160,7 @@ Item {
                 text: tile.title
                 color: tile.danger ? "#ffadb3" : K4Theme.panelMuted
                 font.family: K4Theme.uiFont
-                font.pixelSize: tile.title === "Stop Recording" ? 7 : 8
+                font.pixelSize: 10
                 font.weight: Font.Medium
                 horizontalAlignment: Text.AlignHCenter
                 elide: Text.ElideRight
@@ -227,7 +228,7 @@ Item {
                     text: tile.title
                     color: K4Theme.panelInkSoft
                     font.family: K4Theme.uiFont
-                    font.pixelSize: 9
+                    font.pixelSize: 11
                     font.weight: Font.DemiBold
                     elide: Text.ElideRight
                     textFormat: Text.PlainText
@@ -238,7 +239,7 @@ Item {
                     text: tile.subtitle
                     color: K4Theme.panelMuted
                     font.family: K4Theme.uiFont
-                    font.pixelSize: 7
+                    font.pixelSize: 10
                     elide: Text.ElideRight
                     textFormat: Text.PlainText
                 }
@@ -336,7 +337,7 @@ Item {
                         text: "Clear all"
                         color: K4Theme.panelInkSoft
                         font.family: K4Theme.uiFont
-                        font.pixelSize: 9
+                        font.pixelSize: 11
                         font.weight: Font.DemiBold
                         textFormat: Text.PlainText
                     }
@@ -383,7 +384,7 @@ Item {
                 text: Qt.formatDateTime(K4Clock.date, "HH:mm")
                 color: K4Theme.panelMuted
                 font.family: K4Theme.uiFont
-                font.pixelSize: 12
+                font.pixelSize: 13
                 font.weight: Font.Medium
                 textFormat: Text.PlainText
                 Layout.alignment: Qt.AlignVCenter
@@ -414,9 +415,9 @@ Item {
                     anchors.top: parent.top
                     anchors.rightMargin: -2
                     anchors.topMargin: -3
-                    width: Math.max(14, badgeText.implicitWidth + 6)
-                    height: 14
-                    radius: 7
+                    width: Math.max(16, badgeText.implicitWidth + 6)
+                    height: 16
+                    radius: 8
                     color: K4Theme.panelBlue
                     border.width: 2
                     border.color: K4Theme.islandBg
@@ -427,7 +428,7 @@ Item {
                         text: K4Notifications.count
                         color: "#07101a"
                         font.family: K4Theme.uiFont
-                        font.pixelSize: 7
+                        font.pixelSize: 10
                         font.weight: Font.Bold
                         textFormat: Text.PlainText
                     }
@@ -523,7 +524,7 @@ Item {
                                             text: "Wi-Fi"
                                             color: K4Theme.panelInkSoft
                                             font.family: K4Theme.uiFont
-                                            font.pixelSize: 11
+                                            font.pixelSize: 12
                                             font.weight: Font.DemiBold
                                             textFormat: Text.PlainText
                                         }
@@ -536,7 +537,7 @@ Item {
                                                 : "Off"
                                             color: K4Theme.panelMuted
                                             font.family: K4Theme.uiFont
-                                            font.pixelSize: 8
+                                            font.pixelSize: 10
                                             elide: Text.ElideRight
                                             textFormat: Text.PlainText
                                         }
@@ -606,7 +607,7 @@ Item {
                                             text: "Bluetooth"
                                             color: K4Theme.panelInkSoft
                                             font.family: K4Theme.uiFont
-                                            font.pixelSize: 11
+                                            font.pixelSize: 12
                                             font.weight: Font.DemiBold
                                             textFormat: Text.PlainText
                                         }
@@ -616,7 +617,7 @@ Item {
                                             text: root.bluetoothSubtitle()
                                             color: K4Theme.panelMuted
                                             font.family: K4Theme.uiFont
-                                            font.pixelSize: 8
+                                            font.pixelSize: 10
                                             elide: Text.ElideRight
                                             textFormat: Text.PlainText
                                         }
@@ -654,7 +655,7 @@ Item {
                                     text: "Sound"
                                     color: K4Theme.panelInkSoft
                                     font.family: K4Theme.uiFont
-                                    font.pixelSize: 11
+                                    font.pixelSize: 12
                                     font.weight: Font.DemiBold
                                     textFormat: Text.PlainText
                                 }
@@ -667,7 +668,7 @@ Item {
                                     text: K4AudioDevices.nameFor(K4AudioDevices.activeOutput)
                                     color: K4Theme.panelMuted
                                     font.family: K4Theme.uiFont
-                                    font.pixelSize: 8
+                                    font.pixelSize: 10
                                     elide: Text.ElideRight
                                     textFormat: Text.PlainText
                                 }
@@ -762,7 +763,7 @@ Item {
                                     text: Math.round(K4Audio.volume) + "%"
                                     color: K4Theme.panelMuted
                                     font.family: K4Theme.uiFont
-                                    font.pixelSize: 9
+                                    font.pixelSize: 10
                                     horizontalAlignment: Text.AlignRight
                                     textFormat: Text.PlainText
                                 }
@@ -776,7 +777,7 @@ Item {
                                     text: "Output"
                                     color: K4Theme.panelDim
                                     font.family: K4Theme.uiFont
-                                    font.pixelSize: 8
+                                    font.pixelSize: 10
                                     textFormat: Text.PlainText
                                 }
 
@@ -784,7 +785,7 @@ Item {
                                     text: "•"
                                     color: K4Theme.panelDim
                                     font.family: K4Theme.uiFont
-                                    font.pixelSize: 8
+                                    font.pixelSize: 10
                                     textFormat: Text.PlainText
                                 }
 
@@ -794,16 +795,16 @@ Item {
                                     text: K4AudioDevices.nameFor(K4AudioDevices.activeOutput)
                                     color: K4Theme.panelDim
                                     font.family: K4Theme.uiFont
-                                    font.pixelSize: 8
+                                    font.pixelSize: 10
                                     elide: Text.ElideRight
                                     textFormat: Text.PlainText
                                 }
 
                                 Rectangle {
                                     id: soundDeviceButton
-                                    Layout.preferredWidth: 94
-                                    Layout.preferredHeight: 22
-                                    radius: 11
+                                    Layout.preferredWidth: 104
+                                    Layout.preferredHeight: 24
+                                    radius: 12
                                     color: soundDeviceHover.hovered
                                         ? K4Theme.panelSurfaceHot : K4Theme.panelSurfaceHi
                                     border.width: 1
@@ -821,7 +822,7 @@ Item {
                                             text: "Change device"
                                             color: K4Theme.panelInkSoft
                                             font.family: K4Theme.uiFont
-                                            font.pixelSize: 8
+                                            font.pixelSize: 10
                                             font.weight: Font.Medium
                                             textFormat: Text.PlainText
                                         }
@@ -924,13 +925,40 @@ Item {
                     spacing: 9
 
                     PanelCard {
+                        id: mediaCard
                         Layout.fillWidth: true
                         Layout.preferredHeight: 140
+                        color: "transparent"
+
+                        ClippingRectangle {
+                            anchors.fill: parent
+                            anchors.margins: 1
+                            radius: 16
+                            color: K4Theme.panelSurface
+
+                            Image {
+                                id: mediaBackdrop
+                                anchors.fill: parent
+                                source: K4Media.coverFor(K4Media.activePlayer)
+                                fillMode: Image.PreserveAspectCrop
+                                asynchronous: true
+                                cache: true
+                                opacity: 0.38
+                                visible: K4Media.hasPlayer && status === Image.Ready
+                            }
+
+                            Rectangle {
+                                anchors.fill: parent
+                                color: K4Theme.islandBg
+                                opacity: mediaBackdrop.visible ? 0.58 : 0
+                            }
+                        }
 
                         RowLayout {
                             anchors.fill: parent
                             anchors.margins: 10
                             spacing: 11
+                            z: 1
 
                             Rectangle {
                                 Layout.preferredWidth: 92
@@ -972,7 +1000,7 @@ Item {
                                     text: "NOW PLAYING"
                                     color: K4Theme.panelMuted
                                     font.family: K4Theme.uiFont
-                                    font.pixelSize: 8
+                                    font.pixelSize: 10
                                     font.weight: Font.DemiBold
                                     textFormat: Text.PlainText
                                 }
@@ -985,7 +1013,7 @@ Item {
                                             : "Nothing playing"
                                     color: K4Theme.panelInkSoft
                                     font.family: K4Theme.uiFont
-                                    font.pixelSize: 12
+                                    font.pixelSize: 13
                                     font.weight: Font.DemiBold
                                     elide: Text.ElideRight
                                     textFormat: Text.PlainText
@@ -997,7 +1025,7 @@ Item {
                                         ? K4Media.activePlayer.trackArtist : ""
                                     color: K4Theme.panelMuted
                                     font.family: K4Theme.uiFont
-                                    font.pixelSize: 9
+                                    font.pixelSize: 10
                                     elide: Text.ElideRight
                                     textFormat: Text.PlainText
                                 }
@@ -1106,7 +1134,7 @@ Item {
                                             + K4Media.formatTime(K4Media.activePlayer?.length ?? 0)
                                         color: K4Theme.panelDim
                                         font.family: K4Theme.uiFont
-                                        font.pixelSize: 7
+                                        font.pixelSize: 10
                                         textFormat: Text.PlainText
                                     }
                                 }
@@ -1131,7 +1159,7 @@ Item {
                                     text: "Desktop tools"
                                     color: K4Theme.panelInkSoft
                                     font.family: K4Theme.uiFont
-                                    font.pixelSize: 10
+                                    font.pixelSize: 11
                                     font.weight: Font.DemiBold
                                     textFormat: Text.PlainText
                                 }
