@@ -79,7 +79,7 @@ Item {
                             color: K4Theme.panelInkSoft
                             font.family: K4Theme.iconFont
                             font.pixelSize: 15
-                            renderType: Text.NativeRendering
+                            textFormat: Text.PlainText
                         }
                     }
 
@@ -101,7 +101,7 @@ Item {
                                 font.pixelSize: 12
                                 font.weight: Font.DemiBold
                                 elide: Text.ElideRight
-                                renderType: Text.NativeRendering
+                                textFormat: Text.PlainText
                             }
 
                             Text {
@@ -111,7 +111,7 @@ Item {
                                 font.pixelSize: 9
                                 elide: Text.ElideRight
                                 Layout.maximumWidth: 110
-                                renderType: Text.NativeRendering
+                                textFormat: Text.PlainText
                             }
                         }
 
@@ -123,7 +123,7 @@ Item {
                             font.pixelSize: 10
                             elide: Text.ElideRight
                             maximumLineCount: 1
-                            renderType: Text.NativeRendering
+                            textFormat: Text.PlainText
                         }
 
                         RowLayout {
@@ -142,7 +142,7 @@ Item {
                                     color: chipHover.hovered ? K4Theme.panelBlue : K4Theme.panelSurfaceHot
                                     border.width: 1
                                     border.color: chipHover.hovered
-                                        ? Qt.rgba(0.43, 0.66, 1, 0.42) : K4Theme.panelLine
+                                        ? Qt.rgba(0.04, 0.52, 1, 0.42) : K4Theme.panelLine
 
                                     Text {
                                         id: chipText
@@ -153,7 +153,7 @@ Item {
                                         font.pixelSize: 9
                                         font.weight: Font.Medium
                                         elide: Text.ElideRight
-                                        renderType: Text.NativeRendering
+                                        textFormat: Text.PlainText
                                     }
 
                                     HoverHandler { id: chipHover }
@@ -185,7 +185,7 @@ Item {
                 color: K4Theme.panelMuted
                 font.family: K4Theme.uiFont
                 font.pixelSize: 12
-                renderType: Text.NativeRendering
+                textFormat: Text.PlainText
             }
         }
     }
