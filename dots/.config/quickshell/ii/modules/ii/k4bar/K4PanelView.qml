@@ -101,7 +101,7 @@ Item {
     }
 
     component PanelCard: Rectangle {
-        radius: 18
+        radius: 17
         color: K4Theme.panelSurface
         border.width: 1
         border.color: K4Theme.panelLine
@@ -115,37 +115,49 @@ Item {
         property bool danger: false
         signal activated()
 
-        radius: 13
+        radius: 14
         color: danger
-            ? Qt.rgba(1, 0.38, 0.42, hover.hovered ? 0.16 : 0.10)
+            ? Qt.rgba(1, 0.38, 0.42, hover.hovered ? 0.18 : 0.11)
             : hover.hovered ? K4Theme.panelSurfaceHot : K4Theme.panelSurfaceHi
         border.width: 1
         border.color: danger
-            ? Qt.rgba(1, 0.38, 0.42, 0.18)
-            : hover.hovered ? Qt.rgba(1, 1, 1, 0.075) : "transparent"
-        opacity: enabledAction ? 1 : 0.38
+            ? Qt.rgba(1, 0.38, 0.42, hover.hovered ? 0.34 : 0.22)
+            : hover.hovered ? K4Theme.panelLineStrong : K4Theme.panelLine
+        opacity: enabledAction ? 1 : 0.34
 
         Behavior on color { ColorAnimation { duration: 120 } }
         Behavior on border.color { ColorAnimation { duration: 120 } }
 
         Column {
             anchors.centerIn: parent
-            spacing: 5
+            spacing: 6
 
-            Text {
+            Rectangle {
                 anchors.horizontalCenter: parent.horizontalCenter
-                text: tile.glyph
-                color: tile.danger ? "#ff9ba2" : K4Theme.muted
-                font.family: K4Theme.iconFont
-                font.pixelSize: 16
-                renderType: Text.NativeRendering
+                width: 30
+                height: 30
+                radius: 9
+                color: tile.danger
+                    ? Qt.rgba(1, 0.38, 0.42, 0.14) : K4Theme.panelSurfaceHot
+                border.width: 1
+                border.color: tile.danger
+                    ? Qt.rgba(1, 0.38, 0.42, 0.24) : K4Theme.panelLine
+
+                Text {
+                    anchors.centerIn: parent
+                    text: tile.glyph
+                    color: tile.danger ? "#ffadb3" : K4Theme.panelInkSoft
+                    font.family: K4Theme.iconFont
+                    font.pixelSize: 15
+                    renderType: Text.NativeRendering
+                }
             }
 
             Text {
                 anchors.horizontalCenter: parent.horizontalCenter
                 width: Math.max(0, tile.width - 12)
                 text: tile.title
-                color: tile.danger ? "#ff9ba2" : K4Theme.muted
+                color: tile.danger ? "#ffadb3" : K4Theme.panelMuted
                 font.family: K4Theme.uiFont
                 font.pixelSize: tile.title === "Stop Recording" ? 7 : 8
                 font.weight: Font.Medium
@@ -171,28 +183,34 @@ Item {
         property bool enabledAction: true
         signal activated()
 
-        radius: 13
+        radius: 14
         color: hover.hovered && enabledAction
             ? K4Theme.panelSurfaceHot : K4Theme.panelSurfaceHi
-        opacity: enabledAction ? 1 : 0.38
+        border.width: 1
+        border.color: hover.hovered && enabledAction
+            ? K4Theme.panelLineStrong : K4Theme.panelLine
+        opacity: enabledAction ? 1 : 0.34
 
         Behavior on color { ColorAnimation { duration: 120 } }
+        Behavior on border.color { ColorAnimation { duration: 120 } }
 
         RowLayout {
             anchors.fill: parent
-            anchors.margins: 9
-            spacing: 8
+            anchors.margins: 10
+            spacing: 9
 
             Rectangle {
-                Layout.preferredWidth: 28
-                Layout.preferredHeight: 28
+                Layout.preferredWidth: 30
+                Layout.preferredHeight: 30
                 radius: 9
                 color: K4Theme.panelSurfaceHot
+                border.width: 1
+                border.color: K4Theme.panelLine
 
                 Text {
                     anchors.centerIn: parent
                     text: tile.glyph
-                    color: K4Theme.muted
+                    color: K4Theme.panelInkSoft
                     font.family: K4Theme.iconFont
                     font.pixelSize: 13
                     renderType: Text.NativeRendering
@@ -207,7 +225,7 @@ Item {
                 Text {
                     Layout.fillWidth: true
                     text: tile.title
-                    color: K4Theme.ink
+                    color: K4Theme.panelInkSoft
                     font.family: K4Theme.uiFont
                     font.pixelSize: 9
                     font.weight: Font.DemiBold
@@ -218,7 +236,7 @@ Item {
                 Text {
                     Layout.fillWidth: true
                     text: tile.subtitle
-                    color: K4Theme.muted
+                    color: K4Theme.panelMuted
                     font.family: K4Theme.uiFont
                     font.pixelSize: 7
                     elide: Text.ElideRight
@@ -237,16 +255,16 @@ Item {
 
     ColumnLayout {
         anchors.fill: parent
-        anchors.leftMargin: 16
-        anchors.rightMargin: 16
-        anchors.topMargin: 14
-        anchors.bottomMargin: 16
-        spacing: 11
+        anchors.leftMargin: 14
+        anchors.rightMargin: 14
+        anchors.topMargin: 12
+        anchors.bottomMargin: 14
+        spacing: 10
 
         RowLayout {
             Layout.fillWidth: true
             Layout.preferredHeight: 34
-            spacing: 9
+            spacing: 10
 
             K4PanelButton {
                 visible: root.plugin.tab !== "controls"
@@ -258,15 +276,17 @@ Item {
 
             Rectangle {
                 visible: root.plugin.tab === "controls"
-                Layout.preferredWidth: 25
-                Layout.preferredHeight: 25
+                Layout.preferredWidth: 26
+                Layout.preferredHeight: 26
                 radius: 9
                 color: K4Theme.panelSurfaceHi
+                border.width: 1
+                border.color: K4Theme.panelLine
 
                 Text {
                     anchors.centerIn: parent
                     text: "⌘"
-                    color: K4Theme.ink
+                    color: K4Theme.panelInkSoft
                     font.family: K4Theme.uiFont
                     font.pixelSize: 12
                     font.weight: Font.DemiBold
@@ -294,6 +314,8 @@ Item {
                 Layout.preferredHeight: 24
                 radius: 12
                 color: clearHover.hovered ? K4Theme.red : K4Theme.panelSurfaceHi
+                border.width: 1
+                border.color: clearHover.hovered ? Qt.rgba(1, 0.27, 0.23, 0.36) : K4Theme.panelLine
 
                 Behavior on color { ColorAnimation { duration: 120 } }
 
@@ -303,7 +325,7 @@ Item {
 
                     Text {
                         text: K4Theme.ico.clearAll
-                        color: K4Theme.muted
+                        color: K4Theme.panelMuted
                         font.family: K4Theme.iconFont
                         font.pixelSize: 11
                         renderType: Text.NativeRendering
@@ -312,7 +334,7 @@ Item {
                     Text {
                         id: clearLabel
                         text: "Clear all"
-                        color: K4Theme.ink
+                        color: K4Theme.panelInkSoft
                         font.family: K4Theme.uiFont
                         font.pixelSize: 9
                         font.weight: Font.DemiBold
@@ -341,7 +363,7 @@ Item {
                         width: modelData.focused ? 24 : 7
                         height: 7
                         radius: 4
-                        color: modelData.focused ? K4Theme.ink : K4Theme.panelSurfaceHot
+                        color: modelData.focused ? K4Theme.panelInkSoft : K4Theme.panelDim
 
                         Behavior on width {
                             NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
@@ -359,7 +381,7 @@ Item {
 
             Text {
                 text: Qt.formatDateTime(K4Clock.date, "HH:mm")
-                color: K4Theme.muted
+                color: K4Theme.panelMuted
                 font.family: K4Theme.uiFont
                 font.pixelSize: 12
                 font.weight: Font.Medium
@@ -437,16 +459,16 @@ Item {
                     Layout.preferredWidth: homeColumns.leftWidth
                     Layout.maximumWidth: homeColumns.leftWidth
                     Layout.fillHeight: true
-                    spacing: 10
+                    spacing: 9
 
                     PanelCard {
                         Layout.fillWidth: true
-                        Layout.preferredHeight: 84
+                        Layout.preferredHeight: 82
 
                         RowLayout {
                             anchors.fill: parent
-                            anchors.margins: 8
-                            spacing: 8
+                            anchors.margins: 7
+                            spacing: 7
 
                             K4PanelTile {
                                 id: wifiTile
@@ -460,15 +482,18 @@ Item {
                                 RowLayout {
                                     anchors.fill: parent
                                     anchors.leftMargin: 10
-                                    anchors.rightMargin: 10
+                                    anchors.rightMargin: 9
                                     spacing: 9
 
                                     Rectangle {
-                                        Layout.preferredWidth: 32
-                                        Layout.preferredHeight: 32
-                                        radius: 16
+                                        Layout.preferredWidth: 34
+                                        Layout.preferredHeight: 34
+                                        radius: 17
                                         color: K4Wifi.enabled
                                             ? K4Theme.panelBlue : K4Theme.panelSurfaceHot
+                                        border.width: 1
+                                        border.color: K4Wifi.enabled
+                                            ? Qt.rgba(0.43, 0.66, 1, 0.40) : K4Theme.panelLine
 
                                         Behavior on color { ColorAnimation { duration: 160 } }
 
@@ -476,7 +501,7 @@ Item {
                                             anchors.centerIn: parent
                                             text: K4Wifi.enabled
                                                 ? K4Theme.ico.wifi : K4Theme.ico.wifiOff
-                                            color: K4Wifi.enabled ? "#07111e" : K4Theme.muted
+                                            color: K4Wifi.enabled ? "#07111e" : K4Theme.panelMuted
                                             font.family: K4Theme.iconFont
                                             font.pixelSize: 14
                                             renderType: Text.NativeRendering
@@ -496,7 +521,7 @@ Item {
 
                                         Text {
                                             text: "Wi-Fi"
-                                            color: K4Theme.ink
+                                            color: K4Theme.panelInkSoft
                                             font.family: K4Theme.uiFont
                                             font.pixelSize: 11
                                             font.weight: Font.DemiBold
@@ -509,7 +534,7 @@ Item {
                                                 ? (K4Wifi.name.length > 0
                                                     ? K4Wifi.name : K4Wifi.statusText)
                                                 : "Off"
-                                            color: K4Theme.muted
+                                            color: K4Theme.panelMuted
                                             font.family: K4Theme.uiFont
                                             font.pixelSize: 8
                                             elide: Text.ElideRight
@@ -519,7 +544,7 @@ Item {
 
                                     Text {
                                         text: K4Theme.ico.forward
-                                        color: wifiTile.hovered ? K4Theme.ink : K4Theme.dim
+                                        color: wifiTile.hovered ? K4Theme.panelInkSoft : K4Theme.panelDim
                                         font.family: K4Theme.iconFont
                                         font.pixelSize: 13
                                         renderType: Text.NativeRendering
@@ -539,15 +564,18 @@ Item {
                                 RowLayout {
                                     anchors.fill: parent
                                     anchors.leftMargin: 10
-                                    anchors.rightMargin: 10
+                                    anchors.rightMargin: 9
                                     spacing: 9
 
                                     Rectangle {
-                                        Layout.preferredWidth: 32
-                                        Layout.preferredHeight: 32
-                                        radius: 16
+                                        Layout.preferredWidth: 34
+                                        Layout.preferredHeight: 34
+                                        radius: 17
                                         color: K4Bluetooth.enabled
                                             ? K4Theme.panelBlue : K4Theme.panelSurfaceHot
+                                        border.width: 1
+                                        border.color: K4Bluetooth.enabled
+                                            ? Qt.rgba(0.43, 0.66, 1, 0.40) : K4Theme.panelLine
 
                                         Behavior on color { ColorAnimation { duration: 160 } }
 
@@ -555,7 +583,7 @@ Item {
                                             anchors.centerIn: parent
                                             text: K4Bluetooth.enabled
                                                 ? K4Theme.ico.bluetooth : K4Theme.ico.bluetoothOff
-                                            color: K4Bluetooth.enabled ? "#07111e" : K4Theme.muted
+                                            color: K4Bluetooth.enabled ? "#07111e" : K4Theme.panelMuted
                                             font.family: K4Theme.iconFont
                                             font.pixelSize: 14
                                             renderType: Text.NativeRendering
@@ -576,7 +604,7 @@ Item {
 
                                         Text {
                                             text: "Bluetooth"
-                                            color: K4Theme.ink
+                                            color: K4Theme.panelInkSoft
                                             font.family: K4Theme.uiFont
                                             font.pixelSize: 11
                                             font.weight: Font.DemiBold
@@ -586,7 +614,7 @@ Item {
                                         Text {
                                             Layout.fillWidth: true
                                             text: root.bluetoothSubtitle()
-                                            color: K4Theme.muted
+                                            color: K4Theme.panelMuted
                                             font.family: K4Theme.uiFont
                                             font.pixelSize: 8
                                             elide: Text.ElideRight
@@ -596,7 +624,7 @@ Item {
 
                                     Text {
                                         text: K4Theme.ico.forward
-                                        color: bluetoothTile.hovered ? K4Theme.ink : K4Theme.dim
+                                        color: bluetoothTile.hovered ? K4Theme.panelInkSoft : K4Theme.panelDim
                                         font.family: K4Theme.iconFont
                                         font.pixelSize: 13
                                         renderType: Text.NativeRendering
@@ -608,15 +636,15 @@ Item {
 
                     PanelCard {
                         Layout.fillWidth: true
-                        Layout.preferredHeight: 94
+                        Layout.preferredHeight: 92
 
                         ColumnLayout {
                             anchors.fill: parent
-                            anchors.leftMargin: 12
-                            anchors.rightMargin: 12
-                            anchors.topMargin: 10
-                            anchors.bottomMargin: 9
-                            spacing: 7
+                            anchors.leftMargin: 11
+                            anchors.rightMargin: 11
+                            anchors.topMargin: 9
+                            anchors.bottomMargin: 8
+                            spacing: 6
 
                             RowLayout {
                                 Layout.fillWidth: true
@@ -624,7 +652,7 @@ Item {
 
                                 Text {
                                     text: "Sound"
-                                    color: K4Theme.ink
+                                    color: K4Theme.panelInkSoft
                                     font.family: K4Theme.uiFont
                                     font.pixelSize: 11
                                     font.weight: Font.DemiBold
@@ -637,7 +665,7 @@ Item {
                                     Layout.minimumWidth: 0
                                     Layout.maximumWidth: 190
                                     text: K4AudioDevices.nameFor(K4AudioDevices.activeOutput)
-                                    color: K4Theme.muted
+                                    color: K4Theme.panelMuted
                                     font.family: K4Theme.uiFont
                                     font.pixelSize: 8
                                     elide: Text.ElideRight
@@ -656,12 +684,15 @@ Item {
                                     radius: 14
                                     color: muteHover.hovered
                                         ? K4Theme.panelSurfaceHot : K4Theme.panelSurfaceHi
+                                    border.width: 1
+                                    border.color: muteHover.hovered
+                                        ? K4Theme.panelLineStrong : K4Theme.panelLine
 
                                     Text {
                                         anchors.centerIn: parent
                                         text: K4Audio.muted
                                             ? K4Theme.ico.volOff : K4Theme.ico.volMed
-                                        color: K4Theme.muted
+                                        color: K4Audio.muted ? K4Theme.red : K4Theme.panelMuted
                                         font.family: K4Theme.iconFont
                                         font.pixelSize: 12
                                         renderType: Text.NativeRendering
@@ -685,14 +716,14 @@ Item {
                                         width: parent.width
                                         height: 6
                                         radius: 3
-                                        color: "#29313a"
+                                        color: K4Theme.panelTrack
 
                                         Rectangle {
                                             width: volumeTrack.width
                                                 * Math.max(0, Math.min(1, K4Audio.volume / 100))
                                             height: parent.height
                                             radius: parent.radius
-                                            color: K4Theme.ink
+                                            color: K4Theme.panelInkSoft
                                         }
 
                                         Rectangle {
@@ -701,10 +732,12 @@ Item {
                                                     * Math.max(0, Math.min(1, K4Audio.volume / 100))
                                                     - width / 2))
                                             anchors.verticalCenter: parent.verticalCenter
-                                            width: 14
-                                            height: 14
+                                            width: 13
+                                            height: 13
                                             radius: 7
                                             color: K4Theme.ink
+                                            border.width: 1
+                                            border.color: Qt.rgba(0, 0, 0, 0.22)
                                         }
                                     }
 
@@ -727,7 +760,7 @@ Item {
                                 Text {
                                     Layout.preferredWidth: 34
                                     text: Math.round(K4Audio.volume) + "%"
-                                    color: K4Theme.muted
+                                    color: K4Theme.panelMuted
                                     font.family: K4Theme.uiFont
                                     font.pixelSize: 9
                                     horizontalAlignment: Text.AlignRight
@@ -741,7 +774,7 @@ Item {
 
                                 Text {
                                     text: "Output"
-                                    color: K4Theme.dim
+                                    color: K4Theme.panelDim
                                     font.family: K4Theme.uiFont
                                     font.pixelSize: 8
                                     renderType: Text.NativeRendering
@@ -749,7 +782,7 @@ Item {
 
                                 Text {
                                     text: "•"
-                                    color: K4Theme.dim
+                                    color: K4Theme.panelDim
                                     font.family: K4Theme.uiFont
                                     font.pixelSize: 8
                                     renderType: Text.NativeRendering
@@ -759,7 +792,7 @@ Item {
                                     Layout.minimumWidth: 0
                                     Layout.fillWidth: true
                                     text: K4AudioDevices.nameFor(K4AudioDevices.activeOutput)
-                                    color: K4Theme.dim
+                                    color: K4Theme.panelDim
                                     font.family: K4Theme.uiFont
                                     font.pixelSize: 8
                                     elide: Text.ElideRight
@@ -768,7 +801,7 @@ Item {
 
                                 Text {
                                     text: "Change device  " + K4Theme.ico.forward
-                                    color: soundHover.hovered ? K4Theme.ink : K4Theme.muted
+                                    color: soundHover.hovered ? K4Theme.panelInkSoft : K4Theme.panelMuted
                                     font.family: K4Theme.uiFont
                                     font.pixelSize: 8
                                     renderType: Text.NativeRendering
@@ -789,7 +822,7 @@ Item {
 
                         GridLayout {
                             anchors.fill: parent
-                            anchors.margins: 10
+                            anchors.margins: 9
                             columns: 3
                             rows: 2
                             columnSpacing: 7
@@ -859,22 +892,24 @@ Item {
                     Layout.minimumWidth: 0
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-                    spacing: 10
+                    spacing: 9
 
                     PanelCard {
                         Layout.fillWidth: true
-                        Layout.preferredHeight: 142
+                        Layout.preferredHeight: 140
 
                         RowLayout {
                             anchors.fill: parent
-                            anchors.margins: 11
-                            spacing: 12
+                            anchors.margins: 10
+                            spacing: 11
 
                             Rectangle {
-                                Layout.preferredWidth: 94
+                                Layout.preferredWidth: 92
                                 Layout.fillHeight: true
-                                radius: 14
+                                radius: 13
                                 color: K4Theme.panelSurfaceHi
+                                border.width: 1
+                                border.color: K4Theme.panelLine
                                 clip: true
 
                                 Image {
@@ -891,7 +926,7 @@ Item {
                                     anchors.centerIn: parent
                                     visible: !mediaCover.visible
                                     text: K4Theme.ico.music
-                                    color: K4Theme.muted
+                                    color: K4Theme.panelMuted
                                     font.family: K4Theme.iconFont
                                     font.pixelSize: 28
                                     renderType: Text.NativeRendering
@@ -906,7 +941,7 @@ Item {
 
                                 Text {
                                     text: "NOW PLAYING"
-                                    color: K4Theme.dim
+                                    color: K4Theme.panelMuted
                                     font.family: K4Theme.uiFont
                                     font.pixelSize: 8
                                     font.weight: Font.DemiBold
@@ -919,7 +954,7 @@ Item {
                                         && K4Media.activePlayer.trackTitle.length > 0
                                             ? K4Media.activePlayer.trackTitle
                                             : "Nothing playing"
-                                    color: K4Theme.ink
+                                    color: K4Theme.panelInkSoft
                                     font.family: K4Theme.uiFont
                                     font.pixelSize: 12
                                     font.weight: Font.DemiBold
@@ -931,7 +966,7 @@ Item {
                                     Layout.fillWidth: true
                                     text: K4Media.hasPlayer
                                         ? K4Media.activePlayer.trackArtist : ""
-                                    color: K4Theme.muted
+                                    color: K4Theme.panelMuted
                                     font.family: K4Theme.uiFont
                                     font.pixelSize: 9
                                     elide: Text.ElideRight
@@ -952,7 +987,7 @@ Item {
                                         width: parent.width
                                         height: 4
                                         radius: 2
-                                        color: "#2a313a"
+                                        color: K4Theme.panelTrack
 
                                         Rectangle {
                                             width: mediaTimeline.width * Math.max(0, Math.min(1,
@@ -960,7 +995,7 @@ Item {
                                                     / Math.max(1, K4Media.activePlayer?.length ?? 1)))
                                             height: parent.height
                                             radius: parent.radius
-                                            color: K4Theme.ink
+                                            color: K4Theme.panelInkSoft
                                         }
                                     }
 
@@ -977,7 +1012,7 @@ Item {
 
                                 RowLayout {
                                     Layout.fillWidth: true
-                                    Layout.preferredHeight: 34
+                                    Layout.preferredHeight: 36
                                     spacing: 7
 
                                     K4PanelButton {
@@ -990,12 +1025,14 @@ Item {
                                     }
 
                                     Rectangle {
-                                        Layout.preferredWidth: 34
-                                        Layout.preferredHeight: 34
-                                        radius: 17
-                                        color: K4Theme.ink
+                                        Layout.preferredWidth: 36
+                                        Layout.preferredHeight: 36
+                                        radius: 18
+                                        color: K4Theme.panelInkSoft
+                                        border.width: 1
+                                        border.color: Qt.rgba(1, 1, 1, 0.18)
                                         opacity: K4Media.hasPlayer
-                                            && K4Media.activePlayer.canTogglePlaying ? 1 : 0.38
+                                            && K4Media.activePlayer.canTogglePlaying ? 1 : 0.34
 
                                         Text {
                                             anchors.centerIn: parent
@@ -1031,7 +1068,7 @@ Item {
                                         text: K4Media.formatTime(K4Media.activePlayer?.position ?? 0)
                                             + " / "
                                             + K4Media.formatTime(K4Media.activePlayer?.length ?? 0)
-                                        color: K4Theme.dim
+                                        color: K4Theme.panelDim
                                         font.family: K4Theme.uiFont
                                         font.pixelSize: 7
                                         renderType: Text.NativeRendering
@@ -1047,16 +1084,16 @@ Item {
 
                         ColumnLayout {
                             anchors.fill: parent
-                            anchors.margins: 10
-                            spacing: 7
+                            anchors.margins: 9
+                            spacing: 6
 
                             RowLayout {
                                 Layout.fillWidth: true
-                                Layout.preferredHeight: 15
+                                Layout.preferredHeight: 16
 
                                 Text {
                                     text: "Desktop tools"
-                                    color: K4Theme.ink
+                                    color: K4Theme.panelInkSoft
                                     font.family: K4Theme.uiFont
                                     font.pixelSize: 10
                                     font.weight: Font.DemiBold
@@ -1064,14 +1101,6 @@ Item {
                                 }
 
                                 Item { Layout.fillWidth: true }
-
-                                Text {
-                                    text: "Open in island"
-                                    color: K4Theme.dim
-                                    font.family: K4Theme.uiFont
-                                    font.pixelSize: 8
-                                    renderType: Text.NativeRendering
-                                }
                             }
 
                             GridLayout {
