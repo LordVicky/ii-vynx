@@ -768,24 +768,7 @@ Item {
                                     textFormat: Text.PlainText
                                 }
 
-                                Text {
-                                    text: "•"
-                                    color: K4Theme.panelDim
-                                    font.family: K4Theme.uiFont
-                                    font.pixelSize: 10
-                                    textFormat: Text.PlainText
-                                }
-
-                                Text {
-                                    Layout.minimumWidth: 0
-                                    Layout.fillWidth: true
-                                    text: K4AudioDevices.nameFor(K4AudioDevices.activeOutput)
-                                    color: K4Theme.panelDim
-                                    font.family: K4Theme.uiFont
-                                    font.pixelSize: 10
-                                    elide: Text.ElideRight
-                                    textFormat: Text.PlainText
-                                }
+                                Item { Layout.fillWidth: true }
 
                                 Text {
                                     text: K4Theme.ico.forward
