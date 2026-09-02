@@ -14,6 +14,23 @@ ContentPage {
     Component.onCompleted: Qt.callLater(() => page.allowHeavyLoads = true)
 
     ContentSection {
+        icon: "wallpaper"
+        title: Translation.tr("Wallpaper")
+
+        ConfigSwitch {
+            buttonIcon: "fit_screen"
+            text: Translation.tr("Centered")
+            checked: Config.options.background.centered
+            onCheckedChanged: {
+                Config.options.background.centered = checked;
+            }
+            StyledToolTip {
+                text: Translation.tr("Fit the whole wallpaper on screen and center it instead of cropping to fill.\nRaise 'Preferred wallpaper zoom' (Parallax section) to crop it to fill a wide screen.\nSidebar parallax still applies; workspace parallax does not.")
+            }
+        }
+    }
+
+    ContentSection {
         icon: "sync_alt"
         title: Translation.tr("Parallax")
 

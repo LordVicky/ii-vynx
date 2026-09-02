@@ -84,13 +84,21 @@ Variants {
             const sensitiveNetwork = (CF.StringUtils.stringListContainsSubstring(Network.networkName.toLowerCase(), Config.options.workSafety.triggerCondition.networkNameKeywords));
             return enabled && sensitiveWallpaper && sensitiveNetwork;
         }
+        // Centered mode contains the whole image, then applies the preferred zoom.
+        // Workspace parallax is disabled, while the optional sidebar offset remains.
+        readonly property bool centered: Config.options.background.centered ?? false
         property real wallpaperToScreenRatio: Math.min(wallpaperWidth / screen.width, wallpaperHeight / screen.height)
+        property real wallpaperContainRatio: Math.max(wallpaperWidth / screen.width, wallpaperHeight / screen.height)
+        property real effectiveWallpaperRatio: centered ? wallpaperContainRatio : wallpaperToScreenRatio
         property real preferredWallpaperScale: Config.options.background.parallax.workspaceZoom
         property real effectiveWallpaperScale: 1 // Some reasonable init value, to be updated
+        property real effectiveScale: centered ? preferredWallpaperScale : effectiveWallpaperScale
         property int wallpaperWidth: modelData.width // Some reasonable init value, to be updated
         property int wallpaperHeight: modelData.height // Some reasonable init value, to be updated
-        property real movableXSpace: ((wallpaperWidth / wallpaperToScreenRatio * effectiveWallpaperScale) - screen.width) / 2
-        property real movableYSpace: ((wallpaperHeight / wallpaperToScreenRatio * effectiveWallpaperScale) - screen.height) / 2
+        property real renderedWallpaperWidth: wallpaperWidth / effectiveWallpaperRatio * effectiveScale
+        property real renderedWallpaperHeight: wallpaperHeight / effectiveWallpaperRatio * effectiveScale
+        property real movableXSpace: (renderedWallpaperWidth - screen.width) / 2
+        property real movableYSpace: (renderedWallpaperHeight - screen.height) / 2
 
         readonly property bool verticalParallax: (Config.options.background.parallax.autoVertical && wallpaperHeight > wallpaperWidth) || Config.options.background.parallax.vertical
         // Colors
@@ -156,9 +164,11 @@ Variants {
         color: {
             if (!bgRoot.backgroundContentActive)
                 return "transparent";
-            if (!bgRoot.wallpaperSafetyTriggered || bgRoot.wallpaperIsVideo)
-                return "transparent";
-            return CF.ColorUtils.mix(Appearance.colors.colLayer0, Appearance.colors.colPrimary, 0.75);
+            if (bgRoot.wallpaperSafetyTriggered && !bgRoot.wallpaperIsVideo)
+                return CF.ColorUtils.mix(Appearance.colors.colLayer0, Appearance.colors.colPrimary, 0.75);
+            if (bgRoot.centered)
+                return Appearance.colors.colLayer0;
+            return "transparent";
         }
         Behavior on color {
             animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
@@ -386,8 +396,8 @@ Variants {
                     }
                     return result;
                 }
-                property real effectiveValueX: Math.max(0, Math.min(1, valueX)) + sidebarOffsetX
-                property real effectiveValueY: Math.max(0, Math.min(1, valueY))
+                property real effectiveValueX: bgRoot.centered ? (0.5 + sidebarOffsetX) : (Math.max(0, Math.min(1, valueX)) + sidebarOffsetX)
+                property real effectiveValueY: bgRoot.centered ? 0.5 : Math.max(0, Math.min(1, valueY))
                 x: -(bgRoot.movableXSpace) - (effectiveValueX - 0.5) * 2 * bgRoot.movableXSpace
                 y: -(bgRoot.movableYSpace) - (effectiveValueY - 0.5) * 2 * bgRoot.movableYSpace
 
@@ -415,14 +425,14 @@ Variants {
                         easing.type: Easing.OutCubic
                     }
                 }
-                width: bgRoot.wallpaperWidth / bgRoot.wallpaperToScreenRatio * bgRoot.effectiveWallpaperScale
-                height: bgRoot.wallpaperHeight / bgRoot.wallpaperToScreenRatio * bgRoot.effectiveWallpaperScale
+                width: bgRoot.renderedWallpaperWidth
+                height: bgRoot.renderedWallpaperHeight
 
                 sourceComponent: TransitionImage {
                     anchors.fill: parent
                     imageSource: bgRoot.wallpaperSafetyTriggered ? "" : bgRoot.wallpaperPath
                     animated: !bgRoot.wallpaperIsVideo
-                    fillMode: Image.PreserveAspectCrop
+                    fillMode: bgRoot.centered ? Image.PreserveAspectFit : Image.PreserveAspectCrop
                 }
             }
 

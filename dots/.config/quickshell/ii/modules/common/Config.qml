@@ -466,6 +466,7 @@ Singleton {
                 property string wallpaperPath: ""
                 property string thumbnailPath: ""
                 property bool hideWhenFullscreen: true
+                property bool centered: false // Fit the whole wallpaper on screen (letterboxed) instead of cropping to fill; disables workspace parallax
                 property JsonObject parallax: JsonObject {
                     property bool vertical: true
                     property bool autoVertical: false
