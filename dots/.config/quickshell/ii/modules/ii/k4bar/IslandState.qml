@@ -14,6 +14,7 @@ Singleton {
 
     // Published by the host. Plugins read these; they do not choose the winner.
     property bool hovered: false
+    property bool mediaHovered: false
     property string occupant: ""
     property bool open: false
 
@@ -166,6 +167,7 @@ Singleton {
     // k4 activation through this long-lived singleton.
     function resetHostPublication() {
         hovered = false
+        mediaHovered = false
         occupant = ""
         open = false
         activeScreen = ""
