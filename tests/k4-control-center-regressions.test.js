@@ -47,7 +47,7 @@ test("sound card keeps the active output device only in its header and has no fo
     assert.match(soundBlock, /Layout\.preferredHeight:\s*74/);
 });
 
-test("active Bluetooth output exposes battery separately from its device name", async () => {
+test("active Bluetooth output renders battery as a proportional meter separate from volume", async () => {
     const view = await read("modules/ii/k4bar/K4PanelView.qml");
     const audio = await read("modules/ii/k4bar/K4AudioDevices.qml");
     const soundBlock = view.match(/K4PanelTile\s*\{[\s\S]*?id:\s*soundTile[\s\S]*?PanelCard\s*\{/)?.[0] ?? "";
@@ -57,9 +57,10 @@ test("active Bluetooth output exposes battery separately from its device name", 
     assert.match(audio, /function\s+bluetoothBatteryPercentFor\(node\)[\s\S]*?batteryAvailable[\s\S]*?Math\.round\(bluetoothDevice\.battery \* 100\)/);
     assert.doesNotMatch(audio.match(/function\s+nameFor\(node\)[\s\S]*?\n    \}/)?.[0] ?? "", /battery/);
     assert.match(soundBlock, /readonly property int outputBatteryPercent:\s*K4AudioDevices\.bluetoothBatteryPercentFor\(K4AudioDevices\.activeOutput\)/);
-    assert.match(soundBlock, /id:\s*outputBatteryBadge[\s\S]*?visible:\s*soundTile\.outputBatteryPercent\s*>=\s*0/);
-    assert.match(soundBlock, /text:\s*"Battery "\s*\+\s*soundTile\.outputBatteryPercent\s*\+\s*"%"/);
-    assert.match(soundBlock, /color:\s*K4Theme\.green/);
+    assert.match(soundBlock, /id:\s*outputBatteryMeter[\s\S]*?visible:\s*soundTile\.outputBatteryPercent\s*>=\s*0[\s\S]*?Layout\.preferredWidth:\s*64[\s\S]*?Layout\.preferredHeight:\s*16/);
+    assert.match(soundBlock, /id:\s*outputBatteryFill[\s\S]*?width:\s*\(parent\.width - 2\)\s*\*\s*Math\.max\(0, Math\.min\(1, soundTile\.outputBatteryPercent \/ 100\)\)/);
+    assert.match(soundBlock, /text:\s*soundTile\.outputBatteryPercent\s*\+\s*"%"/);
+    assert.match(soundBlock, /id:\s*outputBatteryFill[\s\S]*?color:\s*K4Theme\.green/);
 });
 
 test("control center header has no decorative leading icon", async () => {
