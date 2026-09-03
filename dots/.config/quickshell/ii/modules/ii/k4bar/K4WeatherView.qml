@@ -65,6 +65,16 @@ Item {
         return Math.max(5, Math.ceil(peak + 1))
     }
 
+    function precipitationScaleMaximum() {
+        const peak = Math.max(0, Math.min(100, K4Weather.peakRainChance()))
+        const padded = Math.max(10, Math.min(100, peak * 1.2))
+        const ceilings = [10, 25, 50, 75, 100]
+        for (let i = 0; i < ceilings.length; ++i) {
+            if (padded <= ceilings[i]) return ceilings[i]
+        }
+        return 100
+    }
+
     function historyMinimum() {
         if (!K4Weather.history.length) return 0
         let value = Number(K4Weather.history[0].minValue)
@@ -364,6 +374,7 @@ Item {
 
     component PrecipitationPanel: Item {
         id: precipPanel
+        readonly property real scaleMaximum: root.precipitationScaleMaximum()
         clip: true
 
         ValueText {
@@ -425,13 +436,15 @@ Item {
                         height: precipBars.height
                         readonly property real chance:
                             Number(K4Weather.hourly[index].rain || 0)
+                        readonly property real scaledFraction: Math.max(0, Math.min(1,
+                            chance / Math.max(1, precipPanel.scaleMaximum)))
 
                         Rectangle {
                             anchors.horizontalCenter: parent.horizontalCenter
                             anchors.bottom: parent.bottom
                             width: Math.max(7, parent.width * 0.34)
                             height: chance > 0
-                                ? Math.max(3, parent.height * chance / 100) : 0
+                                ? Math.max(3, parent.height * scaledFraction) : 0
                             radius: 3
                             color: "#67d8ff"
                             opacity: 0.95
@@ -441,7 +454,7 @@ Item {
                             anchors.horizontalCenter: parent.horizontalCenter
                             anchors.bottom: parent.bottom
                             anchors.bottomMargin: chance > 0
-                                ? Math.max(12, parent.height * chance / 100 + 3) : 3
+                                ? Math.max(12, parent.height * scaledFraction + 3) : 3
                             text: chance > 0 ? `${chance}` : ""
                             color: "#67d8ff"
                             font.family: K4Theme.uiFont
