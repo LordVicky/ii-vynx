@@ -151,6 +151,16 @@ test('K4 weather page two is a compact four-metric grid', () => {
   assert.match(source, /lineColor:\s*"#ffbd6a"/);
 });
 
+test('K4 precipitation bars scale to a local probability ceiling instead of fixed 100 percent', () => {
+  const source = read(`${base}/K4WeatherView.qml`);
+  assert.match(source, /function\s+precipitationScaleMaximum\(\)/);
+  assert.match(source, /const ceilings\s*=\s*\[10,\s*25,\s*50,\s*75,\s*100\]/);
+  assert.match(source, /readonly property real scaleMaximum:\s*root\.precipitationScaleMaximum\(\)/);
+  assert.match(source, /readonly property real scaledFraction:[\s\S]*?chance\s*\/\s*Math\.max\(1,\s*precipPanel\.scaleMaximum\)/);
+  assert.match(source, /parent\.height\s*\*\s*scaledFraction/);
+  assert.doesNotMatch(source, /parent\.height\s*\*\s*chance\s*\/\s*100/);
+});
+
 test('K4 weather history temperature span is an emphasized right-aligned header value', () => {
   const source = read(`${base}/K4WeatherView.qml`);
   assert.match(source, /Layout\.alignment:\s*Qt\.AlignRight\s*\|\s*Qt\.AlignVCenter/);
