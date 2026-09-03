@@ -123,12 +123,14 @@ test('K4 weather removes colliding helper labels and page-two chrome', () => {
   assert.doesNotMatch(source, /LabelText\s*\{\s*text:\s*"local time"\s*\}/);
 });
 
-test('K4 weather fact strip merges status into the label row and emphasizes the value', () => {
+test('K4 weather overview uses six readable metrics in a three-by-two card grid', () => {
   const source = read(`${base}/K4WeatherView.qml`);
-  assert.match(source, /root\.factLabel\(index\)\.toUpperCase\(\)/);
-  assert.match(source, /`· \$\{root\.factNote\(index\)\}`/);
-  assert.match(source, /text:\s*root\.factValue\(index\)[\s\S]*?font\.pixelSize:\s*13/);
-  assert.doesNotMatch(source, /ValueText\s*\{\s*text:\s*root\.factValue\(index\)\s*\}\s*MetaText\s*\{\s*text:\s*root\.factNote\(index\)/);
+  assert.match(source, /id:\s*overviewMetricGrid[\s\S]*?columns:\s*3[\s\S]*?rows:\s*2/);
+  assert.match(source, /id:\s*overviewMetricCard/);
+  assert.match(source, /text:\s*root\.factLabel\(index\)/);
+  assert.match(source, /text:\s*root\.factNote\(index\)/);
+  assert.match(source, /text:\s*root\.factValue\(index\)[\s\S]*?font\.pixelSize:\s*17/);
+  assert.doesNotMatch(source, /root\.factLabel\(index\)\.toUpperCase\(\)/);
 });
 
 test('K4 weather page one ends with the hourly temperature chart instead of a three-day list', () => {
@@ -161,14 +163,16 @@ test('K4 precipitation bars scale to a local probability ceiling instead of fixe
   assert.doesNotMatch(source, /parent\.height\s*\*\s*chance\s*\/\s*100/);
 });
 
-test('K4 weather today chart attaches temperature values to their plotted points', () => {
+test('K4 weather today chart is temperature-only with a smooth curve and readable bottom axis', () => {
   const source = read(`${base}/K4WeatherView.qml`);
-  assert.match(source, /id:\s*todayTempChart/);
-  assert.match(source, /id:\s*todayTemperatureLabels/);
-  assert.match(source, /readonly property real normalized:[\s\S]*?K4Weather\.hourly\[index\]\.tempValue/);
-  assert.match(source, /readonly property real pointY:[\s\S]*?normalized/);
-  assert.match(source, /text:\s*K4Weather\.hourly\[index\]\.temp\s*\|\|\s*"--"/);
-  assert.doesNotMatch(source, /anchors\.top:\s*parent\.top\s*\n\s*height:\s*19[\s\S]*?K4Weather\.hourly\[index\]\.temp/);
+  const overview = source.match(/id:\s*overviewPage[\s\S]*?\n\s*Component\s*\{\n\s*id:\s*detailsPage/)?.[0] || '';
+  assert.match(source, /property bool smoothCurve:\s*false/);
+  assert.match(source, /ctx\.bezierCurveTo\(/);
+  assert.match(overview, /ValueText\s*\{\s*text:\s*"Temperature"/);
+  assert.match(overview, /id:\s*todayTempChart[\s\S]*?smoothCurve:\s*true[\s\S]*?gridOpacity:\s*0\.55/);
+  assert.match(overview, /text:\s*K4Weather\.hourly\[index\]\.temp\s*\|\|\s*"--"[\s\S]*?font\.pixelSize:\s*12/);
+  assert.match(overview, /text:\s*K4Weather\.hourly\[index\]\.hour\s*\|\|\s*""[\s\S]*?font\.pixelSize:\s*12/);
+  assert.doesNotMatch(overview, /Rain chance|hourly\[index\]\.rain|todayTemperatureLabels/);
 });
 
 test('K4 weather history temperature span is an emphasized right-aligned header value', () => {
