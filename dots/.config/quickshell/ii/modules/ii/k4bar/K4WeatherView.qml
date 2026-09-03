@@ -116,14 +116,16 @@ Item {
     }
 
     component MetaText: Text {
-        color: K4Theme.muted
+        color: K4Theme.ink
+        opacity: 0.68
         font.family: K4Theme.uiFont
         font.pixelSize: 11
         textFormat: Text.PlainText
     }
 
     component LabelText: Text {
-        color: K4Theme.muted
+        color: K4Theme.ink
+        opacity: 0.78
         font.family: K4Theme.uiFont
         font.pixelSize: 11
         textFormat: Text.PlainText
@@ -596,29 +598,6 @@ Item {
                     }
                 }
             }
-
-            Row {
-                visible: root.pageIndex < 2
-                anchors.right: parent.right
-                anchors.bottom: parent.bottom
-                anchors.rightMargin: 11
-                spacing: 5
-                opacity: 0.7
-                z: 3
-
-                Text {
-                    text: K4Theme.ico.chevronUp
-                    rotation: 180
-                    color: K4Theme.muted
-                    font.family: K4Theme.iconFont
-                    font.pixelSize: 11
-                    textFormat: Text.PlainText
-                }
-                LabelText {
-                    text: root.pageIndex === 0
-                        ? "Scroll for hourly details" : "Scroll for 7-day history"
-                }
-            }
         }
     }
 
@@ -826,8 +805,6 @@ Item {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 22
                     ValueText { text: "Next 3 days"; font.pixelSize: 12 }
-                    Item { Layout.fillWidth: true }
-                    LabelText { text: "rain · high / low" }
                 }
 
                 Item {
@@ -935,27 +912,6 @@ Item {
                 anchors.fill: parent
                 anchors.rightMargin: 10
                 spacing: 0
-
-                RowLayout {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 42
-
-                    ColumnLayout {
-                        Layout.fillWidth: true
-                        spacing: 0
-                        ValueText {
-                            text: "Hourly details"
-                            font.pixelSize: 14
-                        }
-                        MetaText {
-                            text: "Precipitation probability and humidity through today"
-                        }
-                    }
-
-                    LabelText { text: "local time" }
-                }
-
-                Hairline { Layout.fillWidth: true }
 
                 RowLayout {
                     Layout.fillWidth: true
