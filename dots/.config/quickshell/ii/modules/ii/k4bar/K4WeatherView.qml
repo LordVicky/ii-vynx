@@ -55,6 +55,16 @@ Item {
         return Math.ceil(root.valueMax(root.hourlyValues("tempValue"), 1) + 1)
     }
 
+    function hourlyWindMax() {
+        const peak = root.valueMax(root.hourlyValues("windValue"), 10)
+        return Math.max(10, Math.ceil(peak / 5) * 5)
+    }
+
+    function hourlyUvMax() {
+        const peak = root.valueMax(root.hourlyValues("uv"), 5)
+        return Math.max(5, Math.ceil(peak + 1))
+    }
+
     function historyMinimum() {
         if (!K4Weather.history.length) return 0
         let value = Number(K4Weather.history[0].minValue)
@@ -237,12 +247,31 @@ Item {
                     return { x: x, y: y }
                 }
 
+                const first = point(0)
+                const last = point(lineChart.values.length - 1)
+                const gradient = ctx.createLinearGradient(0, 0, 0, height)
+                gradient.addColorStop(0, String(lineChart.lineColor))
+                gradient.addColorStop(1, "transparent")
+                ctx.fillStyle = gradient
+                ctx.globalAlpha = 0.22
+                ctx.beginPath()
+                ctx.moveTo(first.x, height)
+                ctx.lineTo(first.x, first.y)
+                for (let i = 1; i < lineChart.values.length; ++i) {
+                    const p = point(i)
+                    ctx.lineTo(p.x, p.y)
+                }
+                ctx.lineTo(last.x, height)
+                ctx.closePath()
+                ctx.fill()
+                ctx.globalAlpha = 1
+
                 ctx.lineWidth = 2.4
                 ctx.lineJoin = "round"
                 ctx.lineCap = "round"
                 ctx.strokeStyle = String(lineChart.lineColor)
                 ctx.beginPath()
-                let p = point(0)
+                let p = first
                 ctx.moveTo(p.x, p.y)
                 for (let i = 1; i < lineChart.values.length; ++i) {
                     p = point(i)
@@ -259,6 +288,185 @@ Item {
                     ctx.arc(p.x, p.y, 3, 0, Math.PI * 2)
                     ctx.fill()
                     ctx.stroke()
+                }
+            }
+        }
+    }
+
+    component MetricLinePanel: Item {
+        id: metric
+        property string title: ""
+        property string subtitle: ""
+        property string valueText: ""
+        property string valueNote: "current"
+        property var values: []
+        property real minimum: 0
+        property real maximum: 100
+        property color lineColor: K4Theme.ink
+
+        clip: true
+
+        ValueText {
+            anchors.left: parent.left
+            anchors.top: parent.top
+            text: metric.title
+            font.pixelSize: 13
+        }
+        MetaText {
+            anchors.left: parent.left
+            anchors.top: parent.top
+            anchors.topMargin: 18
+            text: metric.subtitle
+        }
+        ValueText {
+            anchors.right: parent.right
+            anchors.top: parent.top
+            text: metric.valueText
+            font.pixelSize: 13
+        }
+        LabelText {
+            anchors.right: parent.right
+            anchors.top: parent.top
+            anchors.topMargin: 18
+            text: metric.valueNote
+        }
+
+        WeatherLineChart {
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.top: parent.top
+            anchors.topMargin: 43
+            anchors.bottom: parent.bottom
+            anchors.bottomMargin: 21
+            values: metric.values
+            minimum: metric.minimum
+            maximum: metric.maximum
+            lineColor: metric.lineColor
+        }
+
+        Row {
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.bottom: parent.bottom
+            height: 18
+
+            Repeater {
+                model: K4Weather.hourly.length
+                delegate: LabelText {
+                    required property int index
+                    width: parent.width / Math.max(1, K4Weather.hourly.length)
+                    text: K4Weather.hourly[index].hour.substring(0, 2)
+                    horizontalAlignment: Text.AlignHCenter
+                }
+            }
+        }
+    }
+
+    component PrecipitationPanel: Item {
+        id: precipPanel
+        clip: true
+
+        ValueText {
+            anchors.left: parent.left
+            anchors.top: parent.top
+            text: "Precipitation chance"
+            font.pixelSize: 13
+        }
+        MetaText {
+            anchors.left: parent.left
+            anchors.top: parent.top
+            anchors.topMargin: 18
+            text: "hourly probability"
+        }
+        ValueText {
+            anchors.right: parent.right
+            anchors.top: parent.top
+            text: `${K4Weather.peakRainChance()}%`
+            font.pixelSize: 13
+        }
+        LabelText {
+            anchors.right: parent.right
+            anchors.top: parent.top
+            anchors.topMargin: 18
+            text: "daily peak"
+        }
+
+        Item {
+            id: precipPlot
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.top: parent.top
+            anchors.topMargin: 43
+            anchors.bottom: parent.bottom
+            anchors.bottomMargin: 21
+
+            Repeater {
+                model: 3
+                delegate: Rectangle {
+                    required property int index
+                    x: 0
+                    y: index * (precipPlot.height - 1) / 2
+                    width: precipPlot.width
+                    height: 1
+                    color: K4Theme.panelLineStrong
+                    opacity: 0.8
+                }
+            }
+
+            Row {
+                id: precipBars
+                anchors.fill: parent
+
+                Repeater {
+                    model: K4Weather.hourly.length
+                    delegate: Item {
+                        required property int index
+                        width: precipBars.width / Math.max(1, K4Weather.hourly.length)
+                        height: precipBars.height
+                        readonly property real chance:
+                            Number(K4Weather.hourly[index].rain || 0)
+
+                        Rectangle {
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            anchors.bottom: parent.bottom
+                            width: Math.max(7, parent.width * 0.34)
+                            height: chance > 0
+                                ? Math.max(3, parent.height * chance / 100) : 0
+                            radius: 3
+                            color: "#67d8ff"
+                            opacity: 0.95
+                        }
+
+                        Text {
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            anchors.bottom: parent.bottom
+                            anchors.bottomMargin: chance > 0
+                                ? Math.max(12, parent.height * chance / 100 + 3) : 3
+                            text: chance > 0 ? `${chance}` : ""
+                            color: "#67d8ff"
+                            font.family: K4Theme.uiFont
+                            font.pixelSize: 11
+                            font.weight: Font.Medium
+                            textFormat: Text.PlainText
+                        }
+                    }
+                }
+            }
+        }
+
+        Row {
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.bottom: parent.bottom
+            height: 18
+
+            Repeater {
+                model: K4Weather.hourly.length
+                delegate: LabelText {
+                    required property int index
+                    width: parent.width / Math.max(1, K4Weather.hourly.length)
+                    text: K4Weather.hourly[index].hour.substring(0, 2)
+                    horizontalAlignment: Text.AlignHCenter
                 }
             }
         }
@@ -742,15 +950,16 @@ Item {
 
                 Item {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 84
+                    Layout.fillHeight: true
+                    Layout.minimumHeight: 120
 
                     WeatherLineChart {
                         anchors.left: parent.left
                         anchors.right: parent.right
                         anchors.top: parent.top
                         anchors.bottom: parent.bottom
-                        anchors.topMargin: 20
-                        anchors.bottomMargin: 25
+                        anchors.topMargin: 22
+                        anchors.bottomMargin: 28
                         values: root.hourlyValues("tempValue")
                         minimum: root.hourlyTempMin()
                         maximum: root.hourlyTempMax()
@@ -761,7 +970,7 @@ Item {
                         anchors.left: parent.left
                         anchors.right: parent.right
                         anchors.top: parent.top
-                        height: 18
+                        height: 19
 
                         Repeater {
                             model: K4Weather.hourly.length
@@ -779,7 +988,7 @@ Item {
                         anchors.left: parent.left
                         anchors.right: parent.right
                         anchors.bottom: parent.bottom
-                        height: 24
+                        height: 25
 
                         Repeater {
                             model: K4Weather.hourly.length
@@ -815,106 +1024,6 @@ Item {
                         font.pixelSize: 12
                     }
                 }
-
-                Hairline { Layout.fillWidth: true }
-
-                RowLayout {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 22
-                    ValueText { text: "Next 3 days"; font.pixelSize: 12 }
-                }
-
-                Item {
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
-                    clip: true
-
-                    Column {
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        anchors.top: parent.top
-
-                        Repeater {
-                            model: Math.min(3, K4Weather.daily.length)
-                            delegate: Item {
-                                required property int index
-                                width: parent.width
-                                height: 30
-                                readonly property var day: K4Weather.daily[index]
-
-                                ValueText {
-                                    anchors.left: parent.left
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    width: 64
-                                    text: index === 0 ? "Today" : day.label
-                                    font.pixelSize: 12
-                                }
-
-                                WeatherGlyph {
-                                    anchors.left: parent.left
-                                    anchors.leftMargin: 67
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    width: 25
-                                    text: K4Weather.icon(day.code)
-                                    font.pixelSize: 18
-                                    color: K4Theme.muted
-                                }
-
-                                MetaText {
-                                    anchors.left: parent.left
-                                    anchors.leftMargin: 101
-                                    anchors.right: rainText.left
-                                    anchors.rightMargin: 10
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    text: day.description
-                                    elide: Text.ElideRight
-                                }
-
-                                Text {
-                                    id: rainText
-                                    anchors.right: tempsText.left
-                                    anchors.rightMargin: 18
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    width: 44
-                                    text: `${day.rain}%`
-                                    color: "#67d8ff"
-                                    font.family: K4Theme.uiFont
-                                    font.pixelSize: 11
-                                    font.weight: Font.Medium
-                                    horizontalAlignment: Text.AlignRight
-                                    textFormat: Text.PlainText
-                                }
-
-                                ValueText {
-                                    id: tempsText
-                                    anchors.right: parent.right
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    width: 92
-                                    text: `${day.max}   ${day.min}`
-                                    font.pixelSize: 12
-                                    horizontalAlignment: Text.AlignRight
-                                }
-
-                                Hairline {
-                                    anchors.left: parent.left
-                                    anchors.right: parent.right
-                                    anchors.bottom: parent.bottom
-                                    visible: index < Math.min(3, K4Weather.daily.length) - 1
-                                }
-                            }
-                        }
-                    }
-
-                    MetaText {
-                        anchors.centerIn: parent
-                        visible: K4Weather.daily.length === 0
-                        text: K4Weather.error.length
-                            ? K4Weather.error
-                            : (K4Weather.loading
-                                ? "Loading forecast…" : "Forecast unavailable")
-                        font.pixelSize: 12
-                    }
-                }
             }
         }
     }
@@ -925,286 +1034,64 @@ Item {
         Item {
             clip: true
 
-            ColumnLayout {
+            GridLayout {
                 anchors.fill: parent
                 anchors.rightMargin: 10
-                spacing: 0
+                columns: 2
+                rows: 2
+                columnSpacing: 20
+                rowSpacing: 12
 
-                RowLayout {
+                PrecipitationPanel {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-                    spacing: 20
+                    Layout.minimumWidth: 0
+                    Layout.minimumHeight: 0
+                }
 
-                    Item {
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
+                MetricLinePanel {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    Layout.minimumWidth: 0
+                    Layout.minimumHeight: 0
+                    title: "Humidity"
+                    subtitle: "relative humidity"
+                    valueText: K4Weather.current.humidity || "--"
+                    valueNote: "current"
+                    values: root.hourlyValues("humidity")
+                    minimum: 0
+                    maximum: 100
+                    lineColor: "#c0b4ff"
+                }
 
-                        ValueText {
-                            anchors.left: parent.left
-                            anchors.top: parent.top
-                            text: "Precipitation chance"
-                            font.pixelSize: 13
-                        }
-                        MetaText {
-                            anchors.left: parent.left
-                            anchors.top: parent.top
-                            anchors.topMargin: 19
-                            text: "hourly probability"
-                        }
-                        ValueText {
-                            anchors.right: parent.right
-                            anchors.top: parent.top
-                            text: `${K4Weather.peakRainChance()}%`
-                            font.pixelSize: 14
-                        }
-                        LabelText {
-                            anchors.right: parent.right
-                            anchors.top: parent.top
-                            anchors.topMargin: 19
-                            text: "daily peak"
-                        }
+                MetricLinePanel {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    Layout.minimumWidth: 0
+                    Layout.minimumHeight: 0
+                    title: "Wind"
+                    subtitle: "hourly speed"
+                    valueText: K4Weather.current.wind || "--"
+                    valueNote: K4Weather.current.windDir || "current"
+                    values: root.hourlyValues("windValue")
+                    minimum: 0
+                    maximum: root.hourlyWindMax()
+                    lineColor: "#72e0c4"
+                }
 
-                        Item {
-                            anchors.left: parent.left
-                            anchors.right: parent.right
-                            anchors.top: parent.top
-                            anchors.topMargin: 48
-                            anchors.bottom: parent.bottom
-                            anchors.bottomMargin: 6
-
-                            Column {
-                                anchors.left: parent.left
-                                anchors.top: parent.top
-                                anchors.bottom: parent.bottom
-                                anchors.bottomMargin: 24
-                                width: 34
-
-                                LabelText {
-                                    width: parent.width
-                                    height: parent.height / 3
-                                    text: "100"
-                                    horizontalAlignment: Text.AlignRight
-                                }
-                                LabelText {
-                                    width: parent.width
-                                    height: parent.height / 3
-                                    text: "50"
-                                    horizontalAlignment: Text.AlignRight
-                                    verticalAlignment: Text.AlignVCenter
-                                }
-                                LabelText {
-                                    width: parent.width
-                                    height: parent.height / 3
-                                    text: "0%"
-                                    horizontalAlignment: Text.AlignRight
-                                    verticalAlignment: Text.AlignBottom
-                                }
-                            }
-
-                            Item {
-                                id: precipPlot
-                                anchors.left: parent.left
-                                anchors.leftMargin: 44
-                                anchors.right: parent.right
-                                anchors.top: parent.top
-                                anchors.bottom: parent.bottom
-
-                                Repeater {
-                                    model: 3
-                                    delegate: Rectangle {
-                                        required property int index
-                                        x: 0
-                                        y: index * (precipPlot.height - 24) / 2
-                                        width: precipPlot.width
-                                        height: 1
-                                        color: K4Theme.panelLineStrong
-                                        opacity: 0.8
-                                    }
-                                }
-
-                                Row {
-                                    id: precipBars
-                                    anchors.left: parent.left
-                                    anchors.right: parent.right
-                                    anchors.top: parent.top
-                                    anchors.bottom: parent.bottom
-                                    anchors.bottomMargin: 24
-
-                                    Repeater {
-                                        model: K4Weather.hourly.length
-                                        delegate: Item {
-                                            required property int index
-                                            width: precipBars.width
-                                                / Math.max(1, K4Weather.hourly.length)
-                                            height: precipBars.height
-                                            readonly property real chance:
-                                                Number(K4Weather.hourly[index].rain || 0)
-
-                                            Rectangle {
-                                                anchors.horizontalCenter: parent.horizontalCenter
-                                                anchors.bottom: parent.bottom
-                                                width: Math.max(8, parent.width * 0.36)
-                                                height: chance > 0
-                                                    ? Math.max(3,
-                                                        parent.height * chance / 100) : 0
-                                                radius: 3
-                                                color: "#67d8ff"
-                                                opacity: 0.95
-                                            }
-
-                                            Text {
-                                                anchors.horizontalCenter: parent.horizontalCenter
-                                                anchors.bottom: parent.bottom
-                                                anchors.bottomMargin: chance > 0
-                                                    ? Math.max(13,
-                                                        parent.height * chance / 100 + 4)
-                                                    : 3
-                                                text: chance > 0 ? `${chance}` : ""
-                                                color: "#67d8ff"
-                                                font.family: K4Theme.uiFont
-                                                font.pixelSize: 11
-                                                font.weight: Font.Medium
-                                                textFormat: Text.PlainText
-                                            }
-                                        }
-                                    }
-                                }
-
-                                Row {
-                                    anchors.left: parent.left
-                                    anchors.right: parent.right
-                                    anchors.bottom: parent.bottom
-                                    height: 20
-
-                                    Repeater {
-                                        model: K4Weather.hourly.length
-                                        delegate: LabelText {
-                                            required property int index
-                                            width: parent.width
-                                                / Math.max(1, K4Weather.hourly.length)
-                                            text: K4Weather.hourly[index].hour.substring(0, 2)
-                                            horizontalAlignment: Text.AlignHCenter
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    Rectangle {
-                        Layout.preferredWidth: 1
-                        Layout.fillHeight: true
-                        Layout.topMargin: 10
-                        Layout.bottomMargin: 10
-                        color: K4Theme.panelLineStrong
-                        opacity: 0.72
-                    }
-
-                    Item {
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-
-                        ValueText {
-                            anchors.left: parent.left
-                            anchors.top: parent.top
-                            text: "Humidity"
-                            font.pixelSize: 13
-                        }
-                        MetaText {
-                            anchors.left: parent.left
-                            anchors.top: parent.top
-                            anchors.topMargin: 19
-                            text: "relative humidity"
-                        }
-                        ValueText {
-                            anchors.right: parent.right
-                            anchors.top: parent.top
-                            text: K4Weather.current.humidity || "--"
-                            font.pixelSize: 14
-                        }
-                        LabelText {
-                            anchors.right: parent.right
-                            anchors.top: parent.top
-                            anchors.topMargin: 19
-                            text: "current"
-                        }
-
-                        Item {
-                            anchors.left: parent.left
-                            anchors.right: parent.right
-                            anchors.top: parent.top
-                            anchors.topMargin: 48
-                            anchors.bottom: parent.bottom
-                            anchors.bottomMargin: 6
-
-                            Column {
-                                anchors.left: parent.left
-                                anchors.top: parent.top
-                                anchors.bottom: parent.bottom
-                                anchors.bottomMargin: 24
-                                width: 34
-
-                                LabelText {
-                                    width: parent.width
-                                    height: parent.height / 3
-                                    text: "100"
-                                    horizontalAlignment: Text.AlignRight
-                                }
-                                LabelText {
-                                    width: parent.width
-                                    height: parent.height / 3
-                                    text: "50"
-                                    horizontalAlignment: Text.AlignRight
-                                    verticalAlignment: Text.AlignVCenter
-                                }
-                                LabelText {
-                                    width: parent.width
-                                    height: parent.height / 3
-                                    text: "0%"
-                                    horizontalAlignment: Text.AlignRight
-                                    verticalAlignment: Text.AlignBottom
-                                }
-                            }
-
-                            Item {
-                                anchors.left: parent.left
-                                anchors.leftMargin: 44
-                                anchors.right: parent.right
-                                anchors.top: parent.top
-                                anchors.bottom: parent.bottom
-
-                                WeatherLineChart {
-                                    anchors.left: parent.left
-                                    anchors.right: parent.right
-                                    anchors.top: parent.top
-                                    anchors.bottom: parent.bottom
-                                    anchors.bottomMargin: 24
-                                    values: root.hourlyValues("humidity")
-                                    minimum: 0
-                                    maximum: 100
-                                    lineColor: "#c0b4ff"
-                                }
-
-                                Row {
-                                    anchors.left: parent.left
-                                    anchors.right: parent.right
-                                    anchors.bottom: parent.bottom
-                                    height: 20
-
-                                    Repeater {
-                                        model: K4Weather.hourly.length
-                                        delegate: LabelText {
-                                            required property int index
-                                            width: parent.width
-                                                / Math.max(1, K4Weather.hourly.length)
-                                            text: K4Weather.hourly[index].hour.substring(0, 2)
-                                            horizontalAlignment: Text.AlignHCenter
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
+                MetricLinePanel {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    Layout.minimumWidth: 0
+                    Layout.minimumHeight: 0
+                    title: "UV index"
+                    subtitle: "hourly exposure"
+                    valueText: String(K4Weather.current.uv ?? "--")
+                    valueNote: K4Weather.uvStatus(K4Weather.current.uv)
+                    values: root.hourlyValues("uv")
+                    minimum: 0
+                    maximum: root.hourlyUvMax()
+                    lineColor: "#ffbd6a"
                 }
             }
         }
@@ -1252,24 +1139,28 @@ Item {
                 RowLayout {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 32
+                    spacing: 0
 
                     ValueText {
                         Layout.preferredWidth: 82
                         text: "Day"
                         font.pixelSize: 11
                     }
+                    Item { Layout.preferredWidth: 10 }
                     LabelText {
                         Layout.fillWidth: true
-                        text: "temperature range"
+                        text: "Temperature range"
                     }
+                    Item { Layout.preferredWidth: 16 }
                     LabelText {
                         Layout.preferredWidth: 72
-                        text: "rain"
+                        text: "Rain"
                         horizontalAlignment: Text.AlignRight
                     }
+                    Item { Layout.preferredWidth: 16 }
                     LabelText {
                         Layout.preferredWidth: 74
-                        text: "humidity"
+                        text: "Humidity"
                         horizontalAlignment: Text.AlignRight
                     }
                 }
@@ -1328,8 +1219,7 @@ Item {
 
                                     Rectangle {
                                         id: rangeBand
-                                        x: rangeCell.width
-                                            * root.historyFraction(day.minValue)
+                                        x: rangeCell.width * root.historyFraction(day.minValue)
                                         y: 21
                                         width: Math.max(7, rangeCell.width
                                             * (root.historyFraction(day.maxValue)
