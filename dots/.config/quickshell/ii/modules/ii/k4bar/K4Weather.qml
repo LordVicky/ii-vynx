@@ -28,6 +28,7 @@ Singleton {
     readonly property string summary: root.summaryText()
     readonly property string temperatureUnit: Weather.useUSCS ? "°F" : "°C"
     readonly property string precipitationUnit: Weather.useUSCS ? "in" : "mm"
+    readonly property string windUnit: Weather.useUSCS ? "mph" : "km/h"
 
     function target() {
         if (Weather.gpsActive && Weather.location.valid)
@@ -282,7 +283,11 @@ Singleton {
                                 tempValue: root.temperatureValue(slot.tempC || "0"),
                                 rain: Number(slot.chanceofrain || 0),
                                 humidity: Number(slot.humidity || 0),
-                                precip: root.precipitationValue(slot.precipMM || 0)
+                                precip: root.precipitationValue(slot.precipMM || 0),
+                                windValue: Number(Weather.useUSCS
+                                    ? (slot.windspeedMiles || 0)
+                                    : (slot.windspeedKmph || 0)),
+                                uv: Number(slot.uvIndex || 0)
                             })
                         }
                     }
