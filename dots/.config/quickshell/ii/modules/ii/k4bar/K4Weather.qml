@@ -16,8 +16,10 @@ Singleton {
     property var daily: []
     property var history: []
     property var matches: []
+    property var airQuality: ({})
     property bool loading: false
     property bool historyLoading: false
+    property bool airQualityLoading: false
     property bool searching: false
     property string error: ""
     property string historyError: ""
@@ -152,26 +154,106 @@ Singleton {
         return "Reduced"
     }
 
+    function airQualityStatus(value) {
+        const aqi = Number(value)
+        if (!Number.isFinite(aqi)) return "Unavailable"
+        if (aqi <= 50) return "Good"
+        if (aqi <= 100) return "Moderate"
+        if (aqi <= 150) return "Unhealthy for sensitive groups"
+        if (aqi <= 200) return "Unhealthy"
+        if (aqi <= 300) return "Very unhealthy"
+        return "Hazardous"
+    }
+
+    // This is a descriptive UI heuristic for modeled airborne dust, not a
+    // health threshold. Health context is carried by the AQI instead.
+    function dustStatus(value) {
+        const dust = Number(value)
+        if (!Number.isFinite(dust)) return ""
+        if (dust >= 100) return "high"
+        if (dust >= 40) return "elevated"
+        if (dust >= 15) return "noticeable"
+        return "low"
+    }
+
+    function windDescription() {
+        const displayedSpeed = root.numeric(root.current.wind)
+        if (!Number.isFinite(displayedSpeed)) return ""
+        const kmh = Weather.useUSCS ? displayedSpeed * 1.60934 : displayedSpeed
+        const direction = String(root.current.windDir || "").trim()
+        let strength = "light"
+        if (kmh >= 40) strength = "strong"
+        else if (kmh >= 25) strength = "breezy"
+        else if (kmh >= 10) strength = "steady"
+        const directionText = direction.length ? `${direction} ` : ""
+        return `${strength} ${directionText}winds around ${root.current.wind}`
+    }
+
     function summaryText() {
+        const lines = []
         const kind = root.conditionKind(root.current.wCode)
         const temperature = root.temperatureDescription()
-        let lead = "Mixed conditions right now."
+        const rawDescription = String(root.current.wDesc || "").trim()
+        let lead = rawDescription.length
+            ? `${rawDescription} and ${temperature}.`
+            : `Mixed conditions and ${temperature}.`
         if (kind === "clear") lead = `Clear and ${temperature}.`
         else if (kind === "partly") lead = `Partly cloudy and ${temperature}.`
         else if (kind === "cloudy") lead = `Cloudy and ${temperature}.`
-        else if (kind === "fog") lead = "Fog is reducing visibility."
-        else if (kind === "rain") lead = "Rainy conditions are active."
+        else if (kind === "fog") lead = "Fog is reducing visibility right now."
+        else if (kind === "rain") lead = "Rainy conditions are active right now."
         else if (kind === "storm") lead = "Thunderstorms are active nearby."
-        else if (kind === "snow") lead = "Snowy conditions are active."
+        else if (kind === "snow") lead = "Snowy conditions are active right now."
+        lines.push(lead)
+
+        const humidity = root.numeric(root.current.humidity)
+        const wind = root.windDescription()
+        if (Number.isFinite(humidity) && wind.length)
+            lines.push(`Humidity is ${Math.round(humidity)}%, with ${wind}.`)
+        else if (Number.isFinite(humidity))
+            lines.push(`Humidity is ${Math.round(humidity)}%.`)
+        else if (wind.length)
+            lines.push(`${wind.charAt(0).toUpperCase()}${wind.slice(1)}.`)
 
         const peak = root.peakRainChance()
-        let outlook = "Forecast confidence is limited."
-        if (peak >= 70) outlook = `Rain is very likely later today, peaking near ${peak}%.`
-        else if (peak >= 40) outlook = `Rain is possible later today, peaking near ${peak}%.`
-        else if (peak >= 15) outlook = `A small rain chance remains today, peaking near ${peak}%.`
-        else if (root.hourly.length > 0) outlook = "No meaningful rain is expected today."
+        if (root.hourly.length > 0) {
+            if (peak >= 70)
+                lines.push(`Rain is likely later today, peaking near ${peak}%.`)
+            else if (peak >= 40)
+                lines.push(`Rain is possible later today, peaking near ${peak}%.`)
+            else if (peak >= 15)
+                lines.push(`A small rain chance develops today, peaking near ${peak}%.`)
+            else if (peak > 0)
+                lines.push(`Rain risk stays low today, peaking near ${peak}%.`)
+            else
+                lines.push("No rain is expected in today's hourly forecast.")
+        }
 
-        return `${lead} ${outlook}`
+        const environment = []
+        const aqi = Number(root.airQuality.aqi)
+        if (Number.isFinite(aqi))
+            environment.push(`Air quality is ${root.airQualityStatus(aqi).toLowerCase()} (AQI ${Math.round(aqi)})`)
+
+        const dust = Number(root.airQuality.dust)
+        const dustState = root.dustStatus(dust)
+        if (dustState.length && dustState !== "low")
+            environment.push(`modeled dust is ${dustState}`)
+
+        const visible = root.numeric(root.current.visib)
+        if (Number.isFinite(visible)) {
+            const km = Weather.useUSCS ? visible * 1.60934 : visible
+            if (km < 10)
+                environment.push(`visibility is ${root.visibilityStatus(root.current.visib).toLowerCase()} at ${root.current.visib}`)
+        }
+
+        const uv = root.numeric(root.current.uv)
+        if (Number.isFinite(uv) && uv >= 3)
+            environment.push(`UV is ${root.uvStatus(uv).toLowerCase()} at ${Math.round(uv)}`)
+
+        if (environment.length)
+            lines.push(`${environment.join("; ")}.`)
+
+        return lines.join("\n")
     }
 
     // Upstream k4 uses the Nerd Fonts Weather Icons E3xx range. The ii-vynx
@@ -202,6 +284,20 @@ Singleton {
         historyFetch.command = ["curl", "-s", "--max-time", "15",
             `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}&start_date=${start}&end_date=${end}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,relative_humidity_2m_mean&timezone=auto`]
         historyFetch.running = true
+    }
+
+    function refreshAirQuality(latitude, longitude) {
+        const lat = Number(latitude)
+        const lon = Number(longitude)
+        if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+            root.airQuality = ({})
+            return
+        }
+
+        airQualityLoading = true
+        airQualityFetch.command = ["curl", "-s", "--max-time", "15",
+            `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=us_aqi,pm2_5,pm10,dust&timezone=auto`]
+        airQualityFetch.running = true
     }
 
     function refresh() {
@@ -307,6 +403,7 @@ Singleton {
                     longitude = Number(area.longitude)
                 }
                 root.refreshHistory(latitude, longitude)
+                root.refreshAirQuality(latitude, longitude)
             }
         }
         onExited: function(code) {
@@ -357,6 +454,34 @@ Singleton {
             root.historyLoading = false
             if (code !== 0 && root.history.length === 0)
                 root.historyError = "Could not connect to history service"
+        }
+    }
+
+    Process {
+        id: airQualityFetch
+        stdout: StdioCollector {
+            onStreamFinished: {
+                root.airQualityLoading = false
+                let data
+                try { data = JSON.parse(this.text) }
+                catch (e) {
+                    root.airQuality = ({})
+                    return
+                }
+
+                const currentAir = data.current || {}
+                root.airQuality = ({
+                    aqi: Number(currentAir.us_aqi),
+                    pm25: Number(currentAir.pm2_5),
+                    pm10: Number(currentAir.pm10),
+                    dust: Number(currentAir.dust)
+                })
+            }
+        }
+        onExited: function(code) {
+            root.airQualityLoading = false
+            if (code !== 0)
+                root.airQuality = ({})
         }
     }
 
