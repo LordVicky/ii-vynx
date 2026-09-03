@@ -90,6 +90,12 @@ test('K4 weather keeps all explicit UI text at an eleven-pixel readability floor
   assert.match(source, /component ValueText:[\s\S]*?font\.pixelSize:\s*12/);
 });
 
+test('K4 weather secondary text uses readable ink contrast instead of muted gray', () => {
+  const source = read(`${base}/K4WeatherView.qml`);
+  assert.match(source, /component MetaText:[\s\S]*?color:\s*K4Theme\.ink[\s\S]*?opacity:\s*0\.68/);
+  assert.match(source, /component LabelText:[\s\S]*?color:\s*K4Theme\.ink[\s\S]*?opacity:\s*0\.78/);
+});
+
 test('K4 weather charts use high-contrast grid and data strokes', () => {
   const source = read(`${base}/K4WeatherView.qml`);
   assert.match(source, /ctx\.strokeStyle\s*=\s*String\(K4Theme\.panelLineStrong\)/);
@@ -97,6 +103,15 @@ test('K4 weather charts use high-contrast grid and data strokes', () => {
   assert.match(source, /ctx\.arc\(p\.x,\s*p\.y,\s*3/);
   assert.match(source, /lineColor:\s*"#67d8ff"/);
   assert.match(source, /lineColor:\s*"#c0b4ff"/);
+});
+
+test('K4 weather removes colliding helper labels and page-two chrome', () => {
+  const source = read(`${base}/K4WeatherView.qml`);
+  assert.doesNotMatch(source, /Scroll for hourly details|Scroll for 7-day history/);
+  assert.doesNotMatch(source, /rain · high \/ low/);
+  assert.doesNotMatch(source, /text:\s*"Hourly details"/);
+  assert.doesNotMatch(source, /Precipitation probability and humidity through today/);
+  assert.doesNotMatch(source, /LabelText\s*\{\s*text:\s*"local time"\s*\}/);
 });
 
 test('K4 weather lets the host own the rounded OLED background', () => {
