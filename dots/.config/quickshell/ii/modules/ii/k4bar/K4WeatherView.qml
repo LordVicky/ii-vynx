@@ -674,7 +674,7 @@ Item {
 
                 RowLayout {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 58
+                    Layout.preferredHeight: 50
                     spacing: 0
 
                     Repeater {
@@ -686,16 +686,33 @@ Item {
 
                             Column {
                                 anchors.left: parent.left
+                                anchors.right: parent.right
                                 anchors.verticalCenter: parent.verticalCenter
                                 anchors.leftMargin: index === 0 ? 1 : 10
-                                spacing: 1
+                                anchors.rightMargin: index === 5 ? 1 : 10
+                                spacing: 3
 
-                                LabelText {
-                                    text: root.factLabel(index).toUpperCase()
-                                    font.letterSpacing: 0.2
+                                RowLayout {
+                                    width: parent.width
+                                    spacing: 4
+
+                                    LabelText {
+                                        text: root.factLabel(index).toUpperCase()
+                                        font.letterSpacing: 0.2
+                                    }
+                                    MetaText {
+                                        Layout.fillWidth: true
+                                        text: root.factNote(index).length > 0
+                                            ? `· ${root.factNote(index)}` : ""
+                                        opacity: 0.6
+                                        elide: Text.ElideRight
+                                    }
                                 }
-                                ValueText { text: root.factValue(index) }
-                                MetaText { text: root.factNote(index) }
+
+                                ValueText {
+                                    text: root.factValue(index)
+                                    font.pixelSize: 13
+                                }
                             }
 
                             Rectangle {
@@ -703,11 +720,11 @@ Item {
                                 anchors.right: parent.right
                                 anchors.top: parent.top
                                 anchors.bottom: parent.bottom
-                                anchors.topMargin: 8
-                                anchors.bottomMargin: 8
+                                anchors.topMargin: 7
+                                anchors.bottomMargin: 7
                                 width: 1
                                 color: K4Theme.panelLineStrong
-                                opacity: 0.7
+                                opacity: 0.48
                             }
                         }
                     }
@@ -1220,8 +1237,13 @@ Item {
                         }
                     }
 
-                    LabelText {
+                    ValueText {
+                        Layout.preferredWidth: 112
+                        Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
                         text: `${root.tempValueText(root.historyMinimum())} – ${root.tempValueText(root.historyMaximum())}`
+                        font.pixelSize: 14
+                        font.weight: Font.Medium
+                        horizontalAlignment: Text.AlignRight
                     }
                 }
 
