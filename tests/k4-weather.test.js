@@ -114,6 +114,21 @@ test('K4 weather removes colliding helper labels and page-two chrome', () => {
   assert.doesNotMatch(source, /LabelText\s*\{\s*text:\s*"local time"\s*\}/);
 });
 
+test('K4 weather fact strip merges status into the label row and emphasizes the value', () => {
+  const source = read(`${base}/K4WeatherView.qml`);
+  assert.match(source, /root\.factLabel\(index\)\.toUpperCase\(\)/);
+  assert.match(source, /`· \$\{root\.factNote\(index\)\}`/);
+  assert.match(source, /text:\s*root\.factValue\(index\)[\s\S]*?font\.pixelSize:\s*13/);
+  assert.doesNotMatch(source, /ValueText\s*\{\s*text:\s*root\.factValue\(index\)\s*\}\s*MetaText\s*\{\s*text:\s*root\.factNote\(index\)/);
+});
+
+test('K4 weather history temperature span is an emphasized right-aligned header value', () => {
+  const source = read(`${base}/K4WeatherView.qml`);
+  assert.match(source, /Layout\.alignment:\s*Qt\.AlignRight\s*\|\s*Qt\.AlignVCenter/);
+  assert.match(source, /text:\s*`\$\{root\.tempValueText\(root\.historyMinimum\(\)\)\} – \$\{root\.tempValueText\(root\.historyMaximum\(\)\)\}`/);
+  assert.match(source, /font\.pixelSize:\s*14[\s\S]*?horizontalAlignment:\s*Text\.AlignRight/);
+});
+
 test('K4 weather lets the host own the rounded OLED background', () => {
   const source = read(`${base}/K4WeatherView.qml`);
   assert.doesNotMatch(source, /Rectangle\s*\{\s*anchors\.fill:\s*parent\s*color:\s*K4Theme\.islandBg\s*z:\s*-1/);
