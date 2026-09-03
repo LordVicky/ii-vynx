@@ -19,8 +19,8 @@ K4Plugin {
     property bool searchOpen: false
     property string query: ""
 
-    islandWidth: 820
-    islandHeight: 420
+    islandWidth: 760
+    islandHeight: 440
 
     handlesBackgroundTap: true
     onBackgroundTapped: {}
