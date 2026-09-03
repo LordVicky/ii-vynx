@@ -58,6 +58,14 @@ test('K4 weather adapter exposes real hourly humidity and seven-day history data
   assert.match(source, /temperature_2m_min/);
 });
 
+test('K4 weather adapter exposes hourly wind and UV from the existing forecast response', () => {
+  const source = read(`${base}/K4Weather.qml`);
+  assert.match(source, /readonly property string windUnit:\s*Weather\.useUSCS\s*\?\s*"mph"\s*:\s*"km\/h"/);
+  assert.match(source, /windValue:\s*Number\(Weather\.useUSCS\s*\?\s*\(slot\.windspeedMiles/);
+  assert.match(source, /slot\.windspeedKmph/);
+  assert.match(source, /uv:\s*Number\(slot\.uvIndex/);
+});
+
 test('K4 weather summary copy derives from live condition and forecast state', () => {
   const source = read(`${base}/K4Weather.qml`);
   assert.match(source, /readonly property string summary:\s*root\.summaryText\(\)/);
@@ -96,13 +104,14 @@ test('K4 weather secondary text uses readable ink contrast instead of muted gray
   assert.match(source, /component LabelText:[\s\S]*?color:\s*K4Theme\.ink[\s\S]*?opacity:\s*0\.78/);
 });
 
-test('K4 weather charts use high-contrast grid and data strokes', () => {
+test('K4 weather line charts use high-contrast strokes with a color-to-transparent gradient fill', () => {
   const source = read(`${base}/K4WeatherView.qml`);
   assert.match(source, /ctx\.strokeStyle\s*=\s*String\(K4Theme\.panelLineStrong\)/);
   assert.match(source, /ctx\.lineWidth\s*=\s*2\.4/);
   assert.match(source, /ctx\.arc\(p\.x,\s*p\.y,\s*3/);
-  assert.match(source, /lineColor:\s*"#67d8ff"/);
-  assert.match(source, /lineColor:\s*"#c0b4ff"/);
+  assert.match(source, /createLinearGradient\(0,\s*0,\s*0,\s*height\)/);
+  assert.match(source, /addColorStop\(0,\s*String\(lineChart\.lineColor\)\)/);
+  assert.match(source, /addColorStop\(1,\s*"transparent"\)/);
 });
 
 test('K4 weather removes colliding helper labels and page-two chrome', () => {
@@ -122,11 +131,41 @@ test('K4 weather fact strip merges status into the label row and emphasizes the 
   assert.doesNotMatch(source, /ValueText\s*\{\s*text:\s*root\.factValue\(index\)\s*\}\s*MetaText\s*\{\s*text:\s*root\.factNote\(index\)/);
 });
 
+test('K4 weather page one ends with the hourly temperature chart instead of a three-day list', () => {
+  const source = read(`${base}/K4WeatherView.qml`);
+  assert.doesNotMatch(source, /Next 3 days/);
+  assert.doesNotMatch(source, /Math\.min\(3,\s*K4Weather\.daily\.length\)/);
+});
+
+test('K4 weather page two is a compact four-metric grid', () => {
+  const source = read(`${base}/K4WeatherView.qml`);
+  assert.match(source, /id:\s*detailsPage[\s\S]*?GridLayout\s*\{[\s\S]*?columns:\s*2/);
+  assert.match(source, /text:\s*"Precipitation chance"/);
+  assert.match(source, /text:\s*"Humidity"/);
+  assert.match(source, /text:\s*"Wind"/);
+  assert.match(source, /text:\s*"UV index"/);
+  assert.match(source, /values:\s*root\.hourlyValues\("windValue"\)/);
+  assert.match(source, /values:\s*root\.hourlyValues\("uv"\)/);
+  assert.match(source, /lineColor:\s*"#c0b4ff"/);
+  assert.match(source, /lineColor:\s*"#72e0c4"/);
+  assert.match(source, /lineColor:\s*"#ffbd6a"/);
+});
+
 test('K4 weather history temperature span is an emphasized right-aligned header value', () => {
   const source = read(`${base}/K4WeatherView.qml`);
   assert.match(source, /Layout\.alignment:\s*Qt\.AlignRight\s*\|\s*Qt\.AlignVCenter/);
   assert.match(source, /text:\s*`\$\{root\.tempValueText\(root\.historyMinimum\(\)\)\} – \$\{root\.tempValueText\(root\.historyMaximum\(\)\)\}`/);
   assert.match(source, /font\.pixelSize:\s*14[\s\S]*?horizontalAlignment:\s*Text\.AlignRight/);
+});
+
+test('K4 weather history headers mirror the row geometry and use title case', () => {
+  const source = read(`${base}/K4WeatherView.qml`);
+  assert.match(source, /Layout\.preferredHeight:\s*32[\s\S]*?spacing:\s*0/);
+  assert.match(source, /text:\s*"Temperature range"/);
+  assert.match(source, /text:\s*"Rain"/);
+  assert.match(source, /text:\s*"Humidity"/);
+  assert.match(source, /Item\s*\{\s*Layout\.preferredWidth:\s*10\s*\}/);
+  assert.match(source, /Item\s*\{\s*Layout\.preferredWidth:\s*16\s*\}/);
 });
 
 test('K4 weather lets the host own the rounded OLED background', () => {
