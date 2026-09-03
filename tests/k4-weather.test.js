@@ -75,6 +75,22 @@ test('K4 weather summary copy derives from live condition and forecast state', (
   assert.match(source, /Thunderstorms|Rainy|Fog|Cloudy|Clear/);
 });
 
+test('K4 weather narrative combines live atmospheric context and event-driven air quality', () => {
+  const source = read(`${base}/K4Weather.qml`);
+  assert.match(source, /property var airQuality:\s*\(\{\}\)/);
+  assert.match(source, /function\s+windDescription\(\)/);
+  assert.match(source, /Humidity is \$\{Math\.round\(humidity\)\}%/);
+  assert.match(source, /Rain risk stays low today/);
+  assert.match(source, /Air quality is \$\{root\.airQualityStatus\(aqi\)\.toLowerCase\(\)\}/);
+  assert.match(source, /modeled dust is \$\{dustState\}/);
+  assert.match(source, /visibility is \$\{root\.visibilityStatus/);
+  assert.match(source, /UV is \$\{root\.uvStatus/);
+  assert.match(source, /function\s+refreshAirQuality\(latitude, longitude\)/);
+  assert.match(source, /air-quality-api\.open-meteo\.com\/v1\/air-quality/);
+  assert.match(source, /current=us_aqi,pm2_5,pm10,dust/);
+  assert.match(source, /root\.refreshAirQuality\(latitude, longitude\)/);
+});
+
 test('K4 weather uses three isolated exact pages for forecast, hourly charts and history', () => {
   const source = read(`${base}/K4WeatherView.qml`);
   assert.match(source, /id:\s*pageViewport[\s\S]*?clip:\s*true/);
