@@ -1238,7 +1238,7 @@ Item {
                             delegate: Item {
                                 required property int index
                                 width: parent.width
-                                height: 27
+                                height: 21
                                 readonly property var day: K4Weather.history[index]
 
                                 Text {
@@ -1264,7 +1264,6 @@ Item {
                                     Text {
                                         anchors.left: parent.left
                                         anchors.top: parent.top
-                                        anchors.topMargin: 1
                                         text: `${root.tempValueText(day.minValue)} → ${root.tempValueText(day.maxValue)}`
                                         color: K4Theme.muted
                                         font.family: K4Theme.uiFont
@@ -1275,7 +1274,7 @@ Item {
                                         anchors.left: parent.left
                                         anchors.right: parent.right
                                         anchors.top: parent.top
-                                        anchors.topMargin: 17
+                                        anchors.topMargin: 14
                                         height: 1
                                         color: K4Theme.panelLine
                                     }
@@ -1283,7 +1282,7 @@ Item {
                                     Rectangle {
                                         id: rangeBand
                                         x: rangeCell.width * root.historyFraction(day.minValue)
-                                        y: 15
+                                        y: 12
                                         width: Math.max(5, rangeCell.width * (root.historyFraction(day.maxValue) - root.historyFraction(day.minValue)))
                                         height: 5
                                         radius: 3
@@ -1296,7 +1295,7 @@ Item {
 
                                     Rectangle {
                                         x: rangeBand.x - 2
-                                        y: 15
+                                        y: 12
                                         width: 5
                                         height: 5
                                         radius: 3
@@ -1306,7 +1305,7 @@ Item {
                                     }
                                     Rectangle {
                                         x: rangeBand.x + rangeBand.width - 3
-                                        y: 15
+                                        y: 12
                                         width: 5
                                         height: 5
                                         radius: 3
