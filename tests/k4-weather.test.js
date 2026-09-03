@@ -67,27 +67,36 @@ test('K4 weather summary copy derives from live condition and forecast state', (
   assert.match(source, /Thunderstorms|Rainy|Fog|Cloudy|Clear/);
 });
 
-test('K4 weather pages are isolated and wheel navigation always lands on an exact page', () => {
+test('K4 weather uses three isolated exact pages for forecast, hourly charts and history', () => {
   const source = read(`${base}/K4WeatherView.qml`);
   assert.match(source, /id:\s*pageViewport[\s\S]*?clip:\s*true/);
-  assert.match(source, /id:\s*pageStack[\s\S]*?y:\s*-root\.pageIndex\s*\*\s*pageViewport\.height/);
-  assert.match(source, /Behavior on y\s*\{[\s\S]*?NumberAnimation/);
+  assert.match(source, /id:\s*pageStack[\s\S]*?height:\s*pageViewport\.height\s*\*\s*3/);
+  assert.match(source, /y:\s*-root\.pageIndex\s*\*\s*pageViewport\.height/);
   assert.match(source, /sourceComponent:\s*overviewPage[\s\S]*?clip:\s*true/);
   assert.match(source, /sourceComponent:\s*detailsPage[\s\S]*?clip:\s*true/);
-  assert.match(source, /id:\s*pageWheelArea[\s\S]*?acceptedButtons:\s*Qt\.NoButton[\s\S]*?onWheel:/);
+  assert.match(source, /sourceComponent:\s*historyPage[\s\S]*?clip:\s*true/);
+  assert.match(source, /model:\s*3/);
+  assert.match(source, /Math\.min\(2,[\s\S]*?root\.pageIndex\s*\+\s*direction/);
   assert.match(source, /id:\s*pageWheelGuard[\s\S]*?interval:\s*240/);
   assert.doesNotMatch(source, /snapMode:\s*ListView\.SnapOneItem/);
-  assert.match(source, /Precipitation chance/);
-  assert.match(source, /Humidity/);
-  assert.match(source, /7-day history/);
 });
 
-test('K4 weather uses the same Qt Quick text path and readable type scale as the rest of K4', () => {
+test('K4 weather keeps all explicit UI text at an eleven-pixel readability floor', () => {
   const source = read(`${base}/K4WeatherView.qml`);
   assert.doesNotMatch(source, /renderType:\s*Text\.NativeRendering/);
-  assert.doesNotMatch(source, /font\.pixelSize:\s*[0-8]\b/);
-  assert.match(source, /font\.family:\s*K4Theme\.uiFont/);
-  assert.match(source, /font\.family:\s*K4Theme\.iconFont/);
+  assert.doesNotMatch(source, /font\.pixelSize:\s*(?:[0-9]|10)\b/);
+  assert.match(source, /component MetaText:[\s\S]*?font\.pixelSize:\s*11/);
+  assert.match(source, /component LabelText:[\s\S]*?font\.pixelSize:\s*11/);
+  assert.match(source, /component ValueText:[\s\S]*?font\.pixelSize:\s*12/);
+});
+
+test('K4 weather charts use high-contrast grid and data strokes', () => {
+  const source = read(`${base}/K4WeatherView.qml`);
+  assert.match(source, /ctx\.strokeStyle\s*=\s*String\(K4Theme\.panelLineStrong\)/);
+  assert.match(source, /ctx\.lineWidth\s*=\s*2\.4/);
+  assert.match(source, /ctx\.arc\(p\.x,\s*p\.y,\s*3/);
+  assert.match(source, /lineColor:\s*"#67d8ff"/);
+  assert.match(source, /lineColor:\s*"#c0b4ff"/);
 });
 
 test('K4 weather lets the host own the rounded OLED background', () => {
