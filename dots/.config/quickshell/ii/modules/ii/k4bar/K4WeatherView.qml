@@ -958,20 +958,22 @@ Item {
                     Layout.preferredHeight: 22
                     ValueText { text: "Today"; font.pixelSize: 12 }
                     Item { Layout.fillWidth: true }
-                    LabelText { text: "temperature · rain chance" }
+                    LabelText { text: "Temperature · Rain chance" }
                 }
 
                 Item {
+                    id: todayChart
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                     Layout.minimumHeight: 120
 
                     WeatherLineChart {
+                        id: todayTempChart
                         anchors.left: parent.left
                         anchors.right: parent.right
                         anchors.top: parent.top
                         anchors.bottom: parent.bottom
-                        anchors.topMargin: 22
+                        anchors.topMargin: 18
                         anchors.bottomMargin: 28
                         values: root.hourlyValues("tempValue")
                         minimum: root.hourlyTempMin()
@@ -979,19 +981,32 @@ Item {
                         lineColor: "#67d8ff"
                     }
 
-                    Row {
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        anchors.top: parent.top
-                        height: 19
+                    Item {
+                        id: todayTemperatureLabels
+                        anchors.fill: todayTempChart
 
                         Repeater {
                             model: K4Weather.hourly.length
                             delegate: ValueText {
                                 required property int index
-                                width: parent.width / Math.max(1, K4Weather.hourly.length)
+                                readonly property real minimum: root.hourlyTempMin()
+                                readonly property real maximum: root.hourlyTempMax()
+                                readonly property real normalized: Math.max(0, Math.min(1,
+                                    (Number(K4Weather.hourly[index].tempValue) - minimum)
+                                        / Math.max(1, maximum - minimum)))
+                                readonly property real pointX: 4
+                                    + (todayTemperatureLabels.width - 8) * index
+                                        / Math.max(1, K4Weather.hourly.length - 1)
+                                readonly property real pointY: todayTemperatureLabels.height - 5
+                                    - normalized * (todayTemperatureLabels.height - 10)
+
+                                width: 44
+                                x: Math.max(0, Math.min(todayTemperatureLabels.width - width,
+                                    pointX - width / 2))
+                                y: Math.max(-16, pointY - 22)
                                 text: K4Weather.hourly[index].temp || "--"
                                 font.pixelSize: 11
+                                opacity: 0.92
                                 horizontalAlignment: Text.AlignHCenter
                             }
                         }
