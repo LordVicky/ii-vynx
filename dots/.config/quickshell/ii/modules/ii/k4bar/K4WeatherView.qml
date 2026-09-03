@@ -212,11 +212,17 @@ Item {
         property real maximum: 100
         property color lineColor: K4Theme.ink
         property int gridCount: 3
+        property real gridOpacity: 0.8
+        property bool smoothCurve: false
+        property real pointRadius: 3
 
         onValuesChanged: chart.requestPaint()
         onMinimumChanged: chart.requestPaint()
         onMaximumChanged: chart.requestPaint()
         onLineColorChanged: chart.requestPaint()
+        onGridOpacityChanged: chart.requestPaint()
+        onSmoothCurveChanged: chart.requestPaint()
+        onPointRadiusChanged: chart.requestPaint()
 
         Canvas {
             id: chart
@@ -232,7 +238,7 @@ Item {
 
                 ctx.lineWidth = 1.2
                 ctx.strokeStyle = String(K4Theme.panelLineStrong)
-                ctx.globalAlpha = 0.8
+                ctx.globalAlpha = lineChart.gridOpacity
                 const count = Math.max(2, lineChart.gridCount)
                 for (let i = 0; i < count; ++i) {
                     const y = 1 + (height - 2) * i / (count - 1)
@@ -256,9 +262,34 @@ Item {
                         - Math.max(0, Math.min(1, normalized)) * (height - 10)
                     return { x: x, y: y }
                 }
+                const points = []
+                for (let i = 0; i < lineChart.values.length; ++i)
+                    points.push(point(i))
 
-                const first = point(0)
-                const last = point(lineChart.values.length - 1)
+                const appendSeries = function(includeMove) {
+                    if (includeMove)
+                        ctx.moveTo(points[0].x, points[0].y)
+                    if (!lineChart.smoothCurve) {
+                        for (let i = 1; i < points.length; ++i)
+                            ctx.lineTo(points[i].x, points[i].y)
+                        return
+                    }
+
+                    for (let i = 0; i < points.length - 1; ++i) {
+                        const p0 = i > 0 ? points[i - 1] : points[i]
+                        const p1 = points[i]
+                        const p2 = points[i + 1]
+                        const p3 = i + 2 < points.length ? points[i + 2] : p2
+                        const cp1x = p1.x + (p2.x - p0.x) / 6
+                        const cp1y = p1.y + (p2.y - p0.y) / 6
+                        const cp2x = p2.x - (p3.x - p1.x) / 6
+                        const cp2y = p2.y - (p3.y - p1.y) / 6
+                        ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y)
+                    }
+                }
+
+                const first = points[0]
+                const last = points[points.length - 1]
                 const gradient = ctx.createLinearGradient(0, 0, 0, height)
                 gradient.addColorStop(0, String(lineChart.lineColor))
                 gradient.addColorStop(1, "transparent")
@@ -267,10 +298,7 @@ Item {
                 ctx.beginPath()
                 ctx.moveTo(first.x, height)
                 ctx.lineTo(first.x, first.y)
-                for (let i = 1; i < lineChart.values.length; ++i) {
-                    const p = point(i)
-                    ctx.lineTo(p.x, p.y)
-                }
+                appendSeries(false)
                 ctx.lineTo(last.x, height)
                 ctx.closePath()
                 ctx.fill()
@@ -281,21 +309,16 @@ Item {
                 ctx.lineCap = "round"
                 ctx.strokeStyle = String(lineChart.lineColor)
                 ctx.beginPath()
-                let p = first
-                ctx.moveTo(p.x, p.y)
-                for (let i = 1; i < lineChart.values.length; ++i) {
-                    p = point(i)
-                    ctx.lineTo(p.x, p.y)
-                }
+                appendSeries(true)
                 ctx.stroke()
 
                 ctx.fillStyle = String(K4Theme.islandBg)
                 ctx.strokeStyle = String(lineChart.lineColor)
                 ctx.lineWidth = 1.7
-                for (let i = 0; i < lineChart.values.length; ++i) {
-                    p = point(i)
+                for (let i = 0; i < points.length; ++i) {
+                    const p = points[i]
                     ctx.beginPath()
-                    ctx.arc(p.x, p.y, 3, 0, Math.PI * 2)
+                    ctx.arc(p.x, p.y, lineChart.pointRadius, 0, Math.PI * 2)
                     ctx.fill()
                     ctx.stroke()
                 }
@@ -864,15 +887,17 @@ Item {
                             }
                             ValueText {
                                 text: K4Weather.current.wDesc || "No weather data"
-                                font.pixelSize: 13
+                                font.pixelSize: 14
                             }
                             MetaText {
                                 text: `Feels like ${K4Weather.current.tempFeelsLike || "--"}`
+                                font.pixelSize: 12
                             }
                             LabelText {
                                 text: K4Weather.daily.length > 0
                                     ? `${K4Weather.daily[0].max} high · ${K4Weather.daily[0].min} low`
                                     : ""
+                                font.pixelSize: 12
                             }
                         }
                     }
@@ -893,59 +918,78 @@ Item {
 
                 Hairline { Layout.fillWidth: true }
 
-                RowLayout {
+                GridLayout {
+                    id: overviewMetricGrid
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 50
-                    spacing: 0
+                    Layout.preferredHeight: 104
+                    Layout.topMargin: 7
+                    Layout.bottomMargin: 7
+                    columns: 3
+                    rows: 2
+                    columnSpacing: 7
+                    rowSpacing: 7
 
                     Repeater {
                         model: 6
-                        delegate: Item {
+                        delegate: Rectangle {
+                            id: overviewMetricCard
                             required property int index
                             Layout.fillWidth: true
                             Layout.fillHeight: true
+                            Layout.minimumWidth: 0
+                            Layout.minimumHeight: 0
+                            radius: 9
+                            color: Qt.rgba(1, 1, 1, 0.025)
+                            border.width: 1
+                            border.color: K4Theme.panelLineStrong
 
-                            Column {
-                                anchors.left: parent.left
-                                anchors.right: parent.right
-                                anchors.verticalCenter: parent.verticalCenter
-                                anchors.leftMargin: index === 0 ? 1 : 10
-                                anchors.rightMargin: index === 5 ? 1 : 10
-                                spacing: 3
+                            ColumnLayout {
+                                anchors.fill: parent
+                                anchors.leftMargin: 10
+                                anchors.rightMargin: 10
+                                anchors.topMargin: 6
+                                anchors.bottomMargin: 6
+                                spacing: 1
 
                                 RowLayout {
-                                    width: parent.width
-                                    spacing: 4
+                                    Layout.fillWidth: true
+                                    spacing: 6
 
-                                    LabelText {
-                                        text: root.factLabel(index).toUpperCase()
-                                        font.letterSpacing: 0.2
-                                    }
-                                    MetaText {
+                                    Text {
                                         Layout.fillWidth: true
-                                        text: root.factNote(index).length > 0
-                                            ? `· ${root.factNote(index)}` : ""
-                                        opacity: 0.6
+                                        text: root.factLabel(index)
+                                        color: K4Theme.ink
+                                        opacity: 0.82
+                                        font.family: K4Theme.uiFont
+                                        font.pixelSize: 12
+                                        font.weight: Font.DemiBold
                                         elide: Text.ElideRight
+                                        textFormat: Text.PlainText
+                                    }
+
+                                    Text {
+                                        Layout.maximumWidth: overviewMetricCard.width * 0.45
+                                        text: root.factNote(index)
+                                        color: K4Theme.ink
+                                        opacity: 0.68
+                                        font.family: K4Theme.uiFont
+                                        font.pixelSize: 12
+                                        elide: Text.ElideRight
+                                        horizontalAlignment: Text.AlignRight
+                                        textFormat: Text.PlainText
                                     }
                                 }
 
-                                ValueText {
+                                Text {
+                                    Layout.fillWidth: true
                                     text: root.factValue(index)
-                                    font.pixelSize: 13
+                                    color: K4Theme.ink
+                                    font.family: K4Theme.uiFont
+                                    font.pixelSize: 17
+                                    font.weight: Font.DemiBold
+                                    elide: Text.ElideRight
+                                    textFormat: Text.PlainText
                                 }
-                            }
-
-                            Rectangle {
-                                visible: index < 5
-                                anchors.right: parent.right
-                                anchors.top: parent.top
-                                anchors.bottom: parent.bottom
-                                anchors.topMargin: 7
-                                anchors.bottomMargin: 7
-                                width: 1
-                                color: K4Theme.panelLineStrong
-                                opacity: 0.48
                             }
                         }
                     }
@@ -955,10 +999,12 @@ Item {
 
                 RowLayout {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 22
-                    ValueText { text: "Today"; font.pixelSize: 12 }
+                    Layout.preferredHeight: 25
+                    ValueText {
+                        text: "Temperature"
+                        font.pixelSize: 14
+                    }
                     Item { Layout.fillWidth: true }
-                    LabelText { text: "Temperature · Rain chance" }
                 }
 
                 Item {
@@ -973,71 +1019,41 @@ Item {
                         anchors.right: parent.right
                         anchors.top: parent.top
                         anchors.bottom: parent.bottom
-                        anchors.topMargin: 18
-                        anchors.bottomMargin: 28
+                        anchors.topMargin: 4
+                        anchors.bottomMargin: 36
                         values: root.hourlyValues("tempValue")
                         minimum: root.hourlyTempMin()
                         maximum: root.hourlyTempMax()
                         lineColor: "#67d8ff"
-                    }
-
-                    Item {
-                        id: todayTemperatureLabels
-                        anchors.fill: todayTempChart
-
-                        Repeater {
-                            model: K4Weather.hourly.length
-                            delegate: ValueText {
-                                required property int index
-                                readonly property real minimum: root.hourlyTempMin()
-                                readonly property real maximum: root.hourlyTempMax()
-                                readonly property real normalized: Math.max(0, Math.min(1,
-                                    (Number(K4Weather.hourly[index].tempValue) - minimum)
-                                        / Math.max(1, maximum - minimum)))
-                                readonly property real pointX: 4
-                                    + (todayTemperatureLabels.width - 8) * index
-                                        / Math.max(1, K4Weather.hourly.length - 1)
-                                readonly property real pointY: todayTemperatureLabels.height - 5
-                                    - normalized * (todayTemperatureLabels.height - 10)
-
-                                width: 44
-                                x: Math.max(0, Math.min(todayTemperatureLabels.width - width,
-                                    pointX - width / 2))
-                                y: Math.max(-16, pointY - 22)
-                                text: K4Weather.hourly[index].temp || "--"
-                                font.pixelSize: 11
-                                opacity: 0.92
-                                horizontalAlignment: Text.AlignHCenter
-                            }
-                        }
+                        smoothCurve: true
+                        gridOpacity: 0.55
+                        pointRadius: 2.5
                     }
 
                     Row {
                         anchors.left: parent.left
                         anchors.right: parent.right
                         anchors.bottom: parent.bottom
-                        height: 25
+                        height: 34
 
                         Repeater {
                             model: K4Weather.hourly.length
                             delegate: Column {
                                 required property int index
                                 width: parent.width / Math.max(1, K4Weather.hourly.length)
-                                spacing: 0
+                                spacing: 1
 
-                                Text {
+                                ValueText {
                                     width: parent.width
-                                    text: `${K4Weather.hourly[index].rain}%`
-                                    color: "#67d8ff"
-                                    font.family: K4Theme.uiFont
-                                    font.pixelSize: 11
-                                    font.weight: Font.Medium
+                                    text: K4Weather.hourly[index].temp || "--"
+                                    font.pixelSize: 12
                                     horizontalAlignment: Text.AlignHCenter
-                                    textFormat: Text.PlainText
                                 }
                                 LabelText {
                                     width: parent.width
                                     text: K4Weather.hourly[index].hour || ""
+                                    font.pixelSize: 12
+                                    opacity: 0.72
                                     horizontalAlignment: Text.AlignHCenter
                                 }
                             }
