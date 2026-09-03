@@ -67,23 +67,33 @@ test('K4 weather summary copy derives from live condition and forecast state', (
   assert.match(source, /Thunderstorms|Rainy|Fog|Cloudy|Clear/);
 });
 
-test('K4 weather view is a two-page vertical snap surface with analytical charts', () => {
+test('K4 weather pages are isolated and wheel navigation always lands on an exact page', () => {
   const source = read(`${base}/K4WeatherView.qml`);
-  assert.match(source, /orientation:\s*ListView\.Vertical/);
-  assert.match(source, /snapMode:\s*ListView\.SnapOneItem/);
-  assert.match(source, /model:\s*2/);
+  assert.match(source, /id:\s*pageViewport[\s\S]*?clip:\s*true/);
+  assert.match(source, /id:\s*pageStack[\s\S]*?y:\s*-root\.pageIndex\s*\*\s*pageViewport\.height/);
+  assert.match(source, /Behavior on y\s*\{[\s\S]*?NumberAnimation/);
+  assert.match(source, /sourceComponent:\s*overviewPage[\s\S]*?clip:\s*true/);
+  assert.match(source, /sourceComponent:\s*detailsPage[\s\S]*?clip:\s*true/);
+  assert.match(source, /id:\s*pageWheelArea[\s\S]*?acceptedButtons:\s*Qt\.NoButton[\s\S]*?onWheel:/);
+  assert.match(source, /id:\s*pageWheelGuard[\s\S]*?interval:\s*240/);
+  assert.doesNotMatch(source, /snapMode:\s*ListView\.SnapOneItem/);
   assert.match(source, /Precipitation chance/);
   assert.match(source, /Humidity/);
   assert.match(source, /7-day history/);
-  assert.match(source, /K4Weather\.summary/);
-  assert.match(source, /K4Weather\.history/);
-  assert.match(source, /K4Weather\.hourly/);
 });
 
-test('K4 weather keeps content surfaces black instead of colored dashboard cards', () => {
+test('K4 weather uses the same Qt Quick text path and readable type scale as the rest of K4', () => {
   const source = read(`${base}/K4WeatherView.qml`);
+  assert.doesNotMatch(source, /renderType:\s*Text\.NativeRendering/);
+  assert.doesNotMatch(source, /font\.pixelSize:\s*[0-8]\b/);
+  assert.match(source, /font\.family:\s*K4Theme\.uiFont/);
+  assert.match(source, /font\.family:\s*K4Theme\.iconFont/);
+});
+
+test('K4 weather lets the host own the rounded OLED background', () => {
+  const source = read(`${base}/K4WeatherView.qml`);
+  assert.doesNotMatch(source, /Rectangle\s*\{\s*anchors\.fill:\s*parent\s*color:\s*K4Theme\.islandBg\s*z:\s*-1/);
   assert.doesNotMatch(source, /color:\s*K4Theme\.(?:surface|surfaceHi|panelSurface|panelSurfaceHi|panelSurfaceHot)/);
-  assert.match(source, /K4Theme\.islandBg/);
 });
 
 test('K4 weather preserves search, refresh and keyboard behavior', () => {
@@ -91,4 +101,5 @@ test('K4 weather preserves search, refresh and keyboard behavior', () => {
   assert.match(source, /K4Weather\.search\(root\.plugin\.query\)/);
   assert.match(source, /K4Weather\.refresh\(\)/);
   assert.match(source, /Qt\.Key_Escape/);
+  assert.match(source, /root\.plugin\.choose\(cityRow\.modelData\)/);
 });
