@@ -2,8 +2,8 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 
-// Compact two-page weather surface. Page one is glanceable current/forecast
-// information; page two exposes scaled analytical plots and real 7-day history.
+// Two-page weather utility. The K4 host owns the rounded OLED silhouette;
+// this view only paints content inside that surface.
 Item {
     id: root
     required property var plugin
@@ -11,6 +11,7 @@ Item {
     property int pageIndex: 0
 
     opacity: 0
+    clip: true
     Component.onCompleted: fadeIn.start()
 
     NumberAnimation {
@@ -47,13 +48,11 @@ Item {
     }
 
     function hourlyTempMin() {
-        const values = root.hourlyValues("tempValue")
-        return Math.floor(root.valueMin(values, 0) - 1)
+        return Math.floor(root.valueMin(root.hourlyValues("tempValue"), 0) - 1)
     }
 
     function hourlyTempMax() {
-        const values = root.hourlyValues("tempValue")
-        return Math.ceil(root.valueMax(values, 1) + 1)
+        return Math.ceil(root.valueMax(root.hourlyValues("tempValue"), 1) + 1)
     }
 
     function historyMinimum() {
@@ -75,12 +74,12 @@ Item {
     function historyFraction(value) {
         const low = root.historyMinimum()
         const high = root.historyMaximum()
-        return Math.max(0, Math.min(1, (Number(value) - low) / Math.max(1, high - low)))
+        return Math.max(0, Math.min(1,
+            (Number(value) - low) / Math.max(1, high - low)))
     }
 
     function tempValueText(value) {
-        if (!Number.isFinite(Number(value))) return "--"
-        return `${Math.round(Number(value))}°`
+        return Number.isFinite(Number(value)) ? `${Math.round(Number(value))}°` : "--"
     }
 
     function precipText(value) {
@@ -105,7 +104,8 @@ Item {
 
     function factNote(index) {
         const current = K4Weather.current
-        if (index === 0) return K4Weather.humidityStatus(K4Weather.numeric(current.humidity))
+        if (index === 0)
+            return K4Weather.humidityStatus(K4Weather.numeric(current.humidity))
         if (index === 1) return current.windDir || "Current"
         if (index === 2) return K4Weather.precipitationStatus()
         if (index === 3) return K4Weather.visibilityStatus(current.visib)
@@ -114,12 +114,34 @@ Item {
         return ""
     }
 
+    component MetaText: Text {
+        color: K4Theme.muted
+        font.family: K4Theme.uiFont
+        font.pixelSize: 9
+        textFormat: Text.PlainText
+    }
+
+    component LabelText: Text {
+        color: K4Theme.dim
+        font.family: K4Theme.uiFont
+        font.pixelSize: 9
+        textFormat: Text.PlainText
+    }
+
+    component ValueText: Text {
+        color: K4Theme.ink
+        font.family: K4Theme.uiFont
+        font.pixelSize: 11
+        font.weight: Font.DemiBold
+        textFormat: Text.PlainText
+    }
+
     component WeatherGlyph: Text {
         color: K4Theme.ink
         font.family: K4Theme.iconFont
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
-        renderType: Text.NativeRendering
+        textFormat: Text.PlainText
     }
 
     component Hairline: Rectangle {
@@ -135,7 +157,7 @@ Item {
         implicitWidth: 28
         implicitHeight: 26
         radius: 8
-        color: K4Theme.islandBg
+        color: buttonMouse.containsMouse ? Qt.rgba(1, 1, 1, 0.045) : "transparent"
         border.width: 1
         border.color: buttonMouse.containsMouse ? K4Theme.panelLineStrong : "transparent"
 
@@ -145,6 +167,7 @@ Item {
             color: buttonMouse.containsMouse ? K4Theme.ink : K4Theme.muted
             font.family: K4Theme.iconFont
             font.pixelSize: 14
+            textFormat: Text.PlainText
         }
 
         MouseArea {
@@ -192,12 +215,17 @@ Item {
                     ctx.stroke()
                 }
 
-                if (!lineChart.values || lineChart.values.length < 2) return
+                if (!lineChart.values || lineChart.values.length < 2)
+                    return
+
                 const range = Math.max(1, lineChart.maximum - lineChart.minimum)
                 const point = function(index) {
-                    const x = 2 + (width - 4) * index / Math.max(1, lineChart.values.length - 1)
-                    const normalized = (Number(lineChart.values[index]) - lineChart.minimum) / range
-                    const y = height - 3 - Math.max(0, Math.min(1, normalized)) * (height - 6)
+                    const x = 3 + (width - 6) * index
+                        / Math.max(1, lineChart.values.length - 1)
+                    const normalized = (Number(lineChart.values[index])
+                        - lineChart.minimum) / range
+                    const y = height - 4
+                        - Math.max(0, Math.min(1, normalized)) * (height - 8)
                     return { x: x, y: y }
                 }
 
@@ -220,18 +248,12 @@ Item {
                 for (let i = 0; i < lineChart.values.length; ++i) {
                     p = point(i)
                     ctx.beginPath()
-                    ctx.arc(p.x, p.y, 2.3, 0, Math.PI * 2)
+                    ctx.arc(p.x, p.y, 2.4, 0, Math.PI * 2)
                     ctx.fill()
                     ctx.stroke()
                 }
             }
         }
-    }
-
-    Rectangle {
-        anchors.fill: parent
-        color: K4Theme.islandBg
-        z: -1
     }
 
     ColumnLayout {
@@ -262,27 +284,24 @@ Item {
                 font.pixelSize: 13
                 font.weight: Font.DemiBold
                 elide: Text.ElideRight
+                textFormat: Text.PlainText
             }
 
-            Text {
+            MetaText {
                 visible: K4Weather.loading || K4Weather.historyLoading
-                text: K4Weather.loading ? "updating…" : "history…"
-                color: K4Theme.dim
-                font.family: K4Theme.uiFont
-                font.pixelSize: 8
+                text: K4Weather.loading ? "Updating…" : "Loading history…"
             }
 
-            Text {
-                visible: !K4Weather.loading && !K4Weather.historyLoading && String(K4Weather.current.lastRefresh || "").length > 0
+            LabelText {
+                visible: !K4Weather.loading && !K4Weather.historyLoading
+                    && String(K4Weather.current.lastRefresh || "").length > 0
                 text: K4Weather.current.lastRefresh || ""
-                color: K4Theme.dim
-                font.family: K4Theme.uiFont
-                font.pixelSize: 8
             }
 
             HeaderButton {
                 glyph: String.fromCodePoint(0xF0349)
-                onActivated: root.plugin.searchOpen ? root.plugin.closeSearch() : root.plugin.openSearch()
+                onActivated: root.plugin.searchOpen
+                    ? root.plugin.closeSearch() : root.plugin.openSearch()
             }
             HeaderButton {
                 glyph: String.fromCodePoint(0xF0450)
@@ -301,18 +320,16 @@ Item {
             Layout.fillHeight: true
             active: root.plugin.searchOpen
             visible: active
-            sourceComponent: Rectangle {
-                color: K4Theme.islandBg
-
+            sourceComponent: Item {
                 ColumnLayout {
                     anchors.fill: parent
                     spacing: 8
 
                     Rectangle {
                         Layout.fillWidth: true
-                        Layout.preferredHeight: 38
+                        Layout.preferredHeight: 40
                         radius: 10
-                        color: K4Theme.islandBg
+                        color: Qt.rgba(1, 1, 1, 0.025)
                         border.width: 1
                         border.color: K4Theme.panelLineStrong
 
@@ -320,27 +337,26 @@ Item {
                             anchors.fill: parent
                             anchors.leftMargin: 11
                             anchors.rightMargin: 11
-                            spacing: 8
+                            spacing: 9
 
                             Text {
                                 text: String.fromCodePoint(0xF0349)
                                 color: K4Theme.muted
                                 font.family: K4Theme.iconFont
                                 font.pixelSize: 14
+                                textFormat: Text.PlainText
                             }
 
                             Item {
                                 Layout.fillWidth: true
                                 Layout.fillHeight: true
 
-                                Text {
+                                MetaText {
                                     anchors.fill: parent
                                     verticalAlignment: Text.AlignVCenter
                                     visible: cityInput.text.length === 0
                                     text: "Type a city…"
-                                    color: K4Theme.dim
-                                    font.family: K4Theme.uiFont
-                                    font.pixelSize: 13
+                                    font.pixelSize: 12
                                 }
 
                                 TextInput {
@@ -349,7 +365,7 @@ Item {
                                     verticalAlignment: TextInput.AlignVCenter
                                     color: K4Theme.ink
                                     font.family: K4Theme.uiFont
-                                    font.pixelSize: 13
+                                    font.pixelSize: 12
                                     focus: true
                                     clip: true
                                     selectByMouse: true
@@ -365,7 +381,9 @@ Item {
                                         if (event.key === Qt.Key_Escape) {
                                             root.plugin.closeSearch()
                                             event.accepted = true
-                                        } else if ((event.key === Qt.Key_Return || event.key === Qt.Key_Enter) && K4Weather.matches.length > 0) {
+                                        } else if ((event.key === Qt.Key_Return
+                                                || event.key === Qt.Key_Enter)
+                                                && K4Weather.matches.length > 0) {
                                             root.plugin.choose(K4Weather.matches[0])
                                             event.accepted = true
                                         }
@@ -379,11 +397,8 @@ Item {
                                 }
                             }
 
-                            Text {
-                                text: K4Weather.searching ? "searching…" : "esc"
-                                color: K4Theme.dim
-                                font.family: K4Theme.uiFont
-                                font.pixelSize: 8
+                            LabelText {
+                                text: K4Weather.searching ? "Searching…" : "Esc"
                             }
                         }
                     }
@@ -393,16 +408,17 @@ Item {
                         Layout.fillHeight: true
                         clip: true
                         model: K4Weather.matches
-                        spacing: 2
+                        spacing: 3
                         boundsBehavior: Flickable.StopAtBounds
 
                         delegate: Rectangle {
                             id: cityRow
                             required property var modelData
                             width: ListView.view.width
-                            height: 42
-                            radius: 8
-                            color: K4Theme.islandBg
+                            height: 44
+                            radius: 9
+                            color: cityHover.containsMouse
+                                ? Qt.rgba(1, 1, 1, 0.035) : "transparent"
                             border.width: cityHover.containsMouse ? 1 : 0
                             border.color: K4Theme.panelLineStrong
 
@@ -410,33 +426,28 @@ Item {
                                 anchors.fill: parent
                                 anchors.leftMargin: 10
                                 anchors.rightMargin: 10
-                                spacing: 9
+                                spacing: 10
 
                                 Text {
                                     text: String.fromCodePoint(0xF0417)
                                     color: K4Theme.muted
                                     font.family: K4Theme.iconFont
                                     font.pixelSize: 14
+                                    textFormat: Text.PlainText
                                 }
 
                                 ColumnLayout {
                                     Layout.fillWidth: true
-                                    spacing: 0
-                                    Text {
+                                    spacing: 1
+                                    ValueText {
                                         Layout.fillWidth: true
                                         text: cityRow.modelData.name
-                                        color: K4Theme.ink
-                                        font.family: K4Theme.uiFont
                                         font.pixelSize: 12
-                                        font.weight: Font.DemiBold
                                         elide: Text.ElideRight
                                     }
-                                    Text {
+                                    MetaText {
                                         Layout.fillWidth: true
                                         text: cityRow.modelData.region
-                                        color: K4Theme.muted
-                                        font.family: K4Theme.uiFont
-                                        font.pixelSize: 9
                                         elide: Text.ElideRight
                                     }
                                 }
@@ -451,12 +462,12 @@ Item {
                             }
                         }
 
-                        Text {
+                        MetaText {
                             anchors.centerIn: parent
-                            visible: !K4Weather.searching && root.plugin.query.length >= 2 && K4Weather.matches.length === 0
+                            visible: !K4Weather.searching
+                                && root.plugin.query.length >= 2
+                                && K4Weather.matches.length === 0
                             text: "No matching places"
-                            color: K4Theme.muted
-                            font.family: K4Theme.uiFont
                             font.pixelSize: 11
                         }
                     }
@@ -468,28 +479,76 @@ Item {
             Layout.fillWidth: true
             Layout.fillHeight: true
             visible: !root.plugin.searchOpen
+            clip: true
 
-            ListView {
-                id: pages
+            Item {
+                id: pageViewport
                 anchors.fill: parent
-                orientation: ListView.Vertical
-                model: 2
                 clip: true
-                snapMode: ListView.SnapOneItem
-                boundsBehavior: Flickable.StopAtBounds
-                flickDeceleration: 5000
 
-                onContentYChanged: {
-                    if (height > 0)
-                        root.pageIndex = Math.max(0, Math.min(1, Math.round(contentY / height)))
-                }
+                Item {
+                    id: pageStack
+                    width: pageViewport.width
+                    height: pageViewport.height * 2
+                    y: -root.pageIndex * pageViewport.height
 
-                delegate: Loader {
-                    required property int index
-                    width: pages.width
-                    height: pages.height
-                    sourceComponent: index === 0 ? overviewPage : detailsPage
+                    Behavior on y {
+                        NumberAnimation {
+                            duration: 220
+                            easing.type: Easing.OutCubic
+                        }
+                    }
+
+                    Loader {
+                        x: 0
+                        y: 0
+                        width: pageViewport.width
+                        height: pageViewport.height
+                        sourceComponent: overviewPage
+                        clip: true
+                    }
+
+                    Loader {
+                        x: 0
+                        y: pageViewport.height
+                        width: pageViewport.width
+                        height: pageViewport.height
+                        sourceComponent: detailsPage
+                        clip: true
+                    }
                 }
+            }
+
+            MouseArea {
+                id: pageWheelArea
+                anchors.fill: parent
+                acceptedButtons: Qt.NoButton
+                z: 4
+
+                onWheel: function(wheel) {
+                    const delta = wheel.angleDelta.y !== 0
+                        ? wheel.angleDelta.y : wheel.pixelDelta.y
+                    if (delta === 0) {
+                        wheel.accepted = false
+                        return
+                    }
+
+                    if (!pageWheelGuard.running) {
+                        const direction = delta < 0 ? 1 : -1
+                        const next = Math.max(0, Math.min(1,
+                            root.pageIndex + direction))
+                        if (next !== root.pageIndex) {
+                            root.pageIndex = next
+                            pageWheelGuard.restart()
+                        }
+                    }
+                    wheel.accepted = true
+                }
+            }
+
+            Timer {
+                id: pageWheelGuard
+                interval: 240
             }
 
             Column {
@@ -505,18 +564,18 @@ Item {
                         width: 3
                         height: root.pageIndex === index ? 22 : 12
                         radius: 2
-                        color: root.pageIndex === index ? K4Theme.ink : K4Theme.panelLineStrong
+                        color: root.pageIndex === index
+                            ? K4Theme.ink : K4Theme.panelLineStrong
 
-                        Behavior on height { NumberAnimation { duration: 120 } }
+                        Behavior on height {
+                            NumberAnimation { duration: 120 }
+                        }
 
                         MouseArea {
                             anchors.fill: parent
-                            anchors.margins: -5
+                            anchors.margins: -6
                             cursorShape: Qt.PointingHandCursor
-                            onClicked: {
-                                root.pageIndex = index
-                                pages.positionViewAtIndex(index, ListView.Beginning)
-                            }
+                            onClicked: root.pageIndex = index
                         }
                     }
                 }
@@ -526,23 +585,20 @@ Item {
                 visible: root.pageIndex === 0
                 anchors.right: parent.right
                 anchors.bottom: parent.bottom
-                anchors.rightMargin: 9
-                spacing: 3
-                opacity: 0.45
+                anchors.rightMargin: 10
+                spacing: 4
+                opacity: 0.52
+                z: 3
 
                 Text {
                     text: K4Theme.ico.chevronUp
                     rotation: 180
                     color: K4Theme.dim
                     font.family: K4Theme.iconFont
-                    font.pixelSize: 9
+                    font.pixelSize: 10
+                    textFormat: Text.PlainText
                 }
-                Text {
-                    text: "scroll for details"
-                    color: K4Theme.dim
-                    font.family: K4Theme.uiFont
-                    font.pixelSize: 7
-                }
+                LabelText { text: "Scroll for details" }
             }
         }
     }
@@ -551,6 +607,8 @@ Item {
         id: overviewPage
 
         Item {
+            clip: true
+
             ColumnLayout {
                 anchors.fill: parent
                 anchors.rightMargin: 10
@@ -558,65 +616,59 @@ Item {
 
                 RowLayout {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 100
-                    spacing: 22
+                    Layout.preferredHeight: 88
+                    spacing: 18
 
                     RowLayout {
                         Layout.preferredWidth: 320
                         Layout.fillHeight: true
-                        spacing: 14
+                        spacing: 13
 
                         WeatherGlyph {
                             text: K4Weather.icon(K4Weather.current.wCode)
-                            font.pixelSize: 54
-                            Layout.preferredWidth: 62
+                            font.pixelSize: 50
+                            Layout.preferredWidth: 58
                             Layout.fillHeight: true
                         }
 
                         ColumnLayout {
                             Layout.fillWidth: true
                             spacing: 0
+
                             Text {
                                 text: K4Weather.current.temp || "--"
                                 color: K4Theme.ink
                                 font.family: K4Theme.uiFont
-                                font.pixelSize: 43
+                                font.pixelSize: 40
                                 font.weight: Font.Light
+                                textFormat: Text.PlainText
                             }
-                            Text {
+                            ValueText {
                                 text: K4Weather.current.wDesc || "No weather data"
-                                color: K4Theme.ink
-                                font.family: K4Theme.uiFont
                                 font.pixelSize: 12
-                                font.weight: Font.DemiBold
                             }
-                            Text {
+                            MetaText {
                                 text: `Feels like ${K4Weather.current.tempFeelsLike || "--"}`
-                                color: K4Theme.muted
-                                font.family: K4Theme.uiFont
-                                font.pixelSize: 8
                             }
-                            Text {
+                            LabelText {
                                 text: K4Weather.daily.length > 0
-                                    ? `${K4Weather.daily[0].max} high   ${K4Weather.daily[0].min} low`
+                                    ? `${K4Weather.daily[0].max} high · ${K4Weather.daily[0].min} low`
                                     : ""
-                                color: K4Theme.dim
-                                font.family: K4Theme.uiFont
-                                font.pixelSize: 8
                             }
                         }
                     }
 
                     Text {
                         Layout.fillWidth: true
-                        Layout.maximumWidth: 335
+                        Layout.maximumWidth: 340
                         text: K4Weather.summary
                         color: K4Theme.ink
                         font.family: K4Theme.uiFont
                         font.pixelSize: 14
                         font.weight: Font.Medium
-                        lineHeight: 1.18
+                        lineHeight: 1.2
                         wrapMode: Text.WordWrap
+                        textFormat: Text.PlainText
                     }
                 }
 
@@ -624,7 +676,7 @@ Item {
 
                 RowLayout {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 56
+                    Layout.preferredHeight: 52
                     spacing: 0
 
                     Repeater {
@@ -638,28 +690,14 @@ Item {
                                 anchors.left: parent.left
                                 anchors.verticalCenter: parent.verticalCenter
                                 anchors.leftMargin: index === 0 ? 1 : 10
-                                spacing: 2
+                                spacing: 1
 
-                                Text {
+                                LabelText {
                                     text: root.factLabel(index).toUpperCase()
-                                    color: K4Theme.dim
-                                    font.family: K4Theme.uiFont
-                                    font.pixelSize: 7
-                                    font.letterSpacing: 0.3
+                                    font.letterSpacing: 0.25
                                 }
-                                Text {
-                                    text: root.factValue(index)
-                                    color: K4Theme.ink
-                                    font.family: K4Theme.uiFont
-                                    font.pixelSize: 11
-                                    font.weight: Font.DemiBold
-                                }
-                                Text {
-                                    text: root.factNote(index)
-                                    color: K4Theme.muted
-                                    font.family: K4Theme.uiFont
-                                    font.pixelSize: 7
-                                }
+                                ValueText { text: root.factValue(index) }
+                                MetaText { text: root.factNote(index) }
                             }
 
                             Rectangle {
@@ -667,8 +705,8 @@ Item {
                                 anchors.right: parent.right
                                 anchors.top: parent.top
                                 anchors.bottom: parent.bottom
-                                anchors.topMargin: 9
-                                anchors.bottomMargin: 9
+                                anchors.topMargin: 8
+                                anchors.bottomMargin: 8
                                 width: 1
                                 color: K4Theme.panelLine
                             }
@@ -681,20 +719,9 @@ Item {
                 RowLayout {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 20
-                    Text {
-                        text: "Today"
-                        color: K4Theme.ink
-                        font.family: K4Theme.uiFont
-                        font.pixelSize: 9
-                        font.weight: Font.DemiBold
-                    }
+                    ValueText { text: "Today"; font.pixelSize: 10 }
                     Item { Layout.fillWidth: true }
-                    Text {
-                        text: "temperature · rain chance"
-                        color: K4Theme.dim
-                        font.family: K4Theme.uiFont
-                        font.pixelSize: 7
-                    }
+                    LabelText { text: "temperature · rain chance" }
                 }
 
                 Item {
@@ -706,8 +733,8 @@ Item {
                         anchors.right: parent.right
                         anchors.top: parent.top
                         anchors.bottom: parent.bottom
-                        anchors.topMargin: 17
-                        anchors.bottomMargin: 21
+                        anchors.topMargin: 18
+                        anchors.bottomMargin: 23
                         values: root.hourlyValues("tempValue")
                         minimum: root.hourlyTempMin()
                         maximum: root.hourlyTempMax()
@@ -718,18 +745,15 @@ Item {
                         anchors.left: parent.left
                         anchors.right: parent.right
                         anchors.top: parent.top
-                        height: 13
+                        height: 15
 
                         Repeater {
                             model: K4Weather.hourly.length
-                            delegate: Text {
+                            delegate: ValueText {
                                 required property int index
                                 width: parent.width / Math.max(1, K4Weather.hourly.length)
                                 text: K4Weather.hourly[index].temp || "--"
-                                color: K4Theme.ink
-                                font.family: K4Theme.uiFont
-                                font.pixelSize: 7
-                                font.weight: Font.DemiBold
+                                font.pixelSize: 9
                                 horizontalAlignment: Text.AlignHCenter
                             }
                         }
@@ -739,7 +763,7 @@ Item {
                         anchors.left: parent.left
                         anchors.right: parent.right
                         anchors.bottom: parent.bottom
-                        height: 20
+                        height: 22
 
                         Repeater {
                             model: K4Weather.hourly.length
@@ -747,32 +771,30 @@ Item {
                                 required property int index
                                 width: parent.width / Math.max(1, K4Weather.hourly.length)
                                 spacing: 0
+
                                 Text {
                                     width: parent.width
                                     text: `${K4Weather.hourly[index].rain}%`
                                     color: K4Theme.blue
                                     font.family: K4Theme.uiFont
-                                    font.pixelSize: 6
+                                    font.pixelSize: 9
                                     horizontalAlignment: Text.AlignHCenter
+                                    textFormat: Text.PlainText
                                 }
-                                Text {
+                                LabelText {
                                     width: parent.width
                                     text: K4Weather.hourly[index].hour || ""
-                                    color: K4Theme.dim
-                                    font.family: K4Theme.uiFont
-                                    font.pixelSize: 6
                                     horizontalAlignment: Text.AlignHCenter
                                 }
                             }
                         }
                     }
 
-                    Text {
+                    MetaText {
                         anchors.centerIn: parent
                         visible: K4Weather.hourly.length === 0
-                        text: K4Weather.loading ? "Loading hourly forecast…" : "Hourly forecast unavailable"
-                        color: K4Theme.muted
-                        font.family: K4Theme.uiFont
+                        text: K4Weather.loading
+                            ? "Loading hourly forecast…" : "Hourly forecast unavailable"
                         font.pixelSize: 10
                     }
                 }
@@ -782,25 +804,15 @@ Item {
                 RowLayout {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 20
-                    Text {
-                        text: "Next 3 days"
-                        color: K4Theme.ink
-                        font.family: K4Theme.uiFont
-                        font.pixelSize: 9
-                        font.weight: Font.DemiBold
-                    }
+                    ValueText { text: "Next 3 days"; font.pixelSize: 10 }
                     Item { Layout.fillWidth: true }
-                    Text {
-                        text: "high / low"
-                        color: K4Theme.dim
-                        font.family: K4Theme.uiFont
-                        font.pixelSize: 7
-                    }
+                    LabelText { text: "rain · high / low" }
                 }
 
                 Item {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
+                    clip: true
 
                     Column {
                         anchors.left: parent.left
@@ -812,63 +824,61 @@ Item {
                             delegate: Item {
                                 required property int index
                                 width: parent.width
-                                height: 25
+                                height: 29
                                 readonly property var day: K4Weather.daily[index]
 
-                                Text {
+                                ValueText {
                                     anchors.left: parent.left
                                     anchors.verticalCenter: parent.verticalCenter
-                                    width: 60
+                                    width: 62
                                     text: index === 0 ? "Today" : day.label
-                                    color: K4Theme.ink
-                                    font.family: K4Theme.uiFont
-                                    font.pixelSize: 8
-                                    font.weight: Font.DemiBold
+                                    font.pixelSize: 10
                                 }
+
                                 WeatherGlyph {
                                     anchors.left: parent.left
-                                    anchors.leftMargin: 62
+                                    anchors.leftMargin: 65
                                     anchors.verticalCenter: parent.verticalCenter
-                                    width: 22
+                                    width: 24
                                     text: K4Weather.icon(day.code)
-                                    font.pixelSize: 16
+                                    font.pixelSize: 17
                                     color: K4Theme.muted
                                 }
-                                Text {
+
+                                MetaText {
                                     anchors.left: parent.left
-                                    anchors.leftMargin: 92
+                                    anchors.leftMargin: 98
                                     anchors.right: rainText.left
                                     anchors.rightMargin: 10
                                     anchors.verticalCenter: parent.verticalCenter
                                     text: day.description
-                                    color: K4Theme.muted
-                                    font.family: K4Theme.uiFont
-                                    font.pixelSize: 7
                                     elide: Text.ElideRight
                                 }
+
                                 Text {
                                     id: rainText
                                     anchors.right: tempsText.left
                                     anchors.rightMargin: 18
                                     anchors.verticalCenter: parent.verticalCenter
-                                    width: 38
+                                    width: 42
                                     text: `${day.rain}%`
                                     color: K4Theme.blue
                                     font.family: K4Theme.uiFont
-                                    font.pixelSize: 7
+                                    font.pixelSize: 9
                                     horizontalAlignment: Text.AlignRight
+                                    textFormat: Text.PlainText
                                 }
-                                Text {
+
+                                ValueText {
                                     id: tempsText
                                     anchors.right: parent.right
                                     anchors.verticalCenter: parent.verticalCenter
-                                    width: 84
+                                    width: 88
                                     text: `${day.max}   ${day.min}`
-                                    color: K4Theme.ink
-                                    font.family: K4Theme.uiFont
-                                    font.pixelSize: 8
+                                    font.pixelSize: 10
                                     horizontalAlignment: Text.AlignRight
                                 }
+
                                 Hairline {
                                     anchors.left: parent.left
                                     anchors.right: parent.right
@@ -879,12 +889,12 @@ Item {
                         }
                     }
 
-                    Text {
+                    MetaText {
                         anchors.centerIn: parent
                         visible: K4Weather.daily.length === 0
-                        text: K4Weather.error.length ? K4Weather.error : (K4Weather.loading ? "Loading forecast…" : "Forecast unavailable")
-                        color: K4Theme.muted
-                        font.family: K4Theme.uiFont
+                        text: K4Weather.error.length
+                            ? K4Weather.error
+                            : (K4Weather.loading ? "Loading forecast…" : "Forecast unavailable")
                         font.pixelSize: 10
                     }
                 }
@@ -896,6 +906,8 @@ Item {
         id: detailsPage
 
         Item {
+            clip: true
+
             ColumnLayout {
                 anchors.fill: parent
                 anchors.rightMargin: 10
@@ -904,102 +916,98 @@ Item {
                 RowLayout {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 34
+
                     ColumnLayout {
                         Layout.fillWidth: true
                         spacing: 0
-                        Text {
+                        ValueText {
                             text: "Weather details"
-                            color: K4Theme.ink
-                            font.family: K4Theme.uiFont
                             font.pixelSize: 13
-                            font.weight: Font.DemiBold
                         }
-                        Text {
+                        MetaText {
                             text: "Hourly conditions today · 7-day context below"
-                            color: K4Theme.muted
-                            font.family: K4Theme.uiFont
-                            font.pixelSize: 7
                         }
                     }
-                    Text {
-                        text: "local time"
-                        color: K4Theme.dim
-                        font.family: K4Theme.uiFont
-                        font.pixelSize: 7
-                    }
+
+                    LabelText { text: "local time" }
                 }
 
                 Hairline { Layout.fillWidth: true }
 
                 RowLayout {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 132
+                    Layout.preferredHeight: 140
                     spacing: 18
 
                     Item {
                         Layout.fillWidth: true
                         Layout.fillHeight: true
 
-                        Text {
+                        ValueText {
                             anchors.left: parent.left
                             anchors.top: parent.top
                             text: "Precipitation chance"
-                            color: K4Theme.ink
-                            font.family: K4Theme.uiFont
-                            font.pixelSize: 9
-                            font.weight: Font.DemiBold
+                            font.pixelSize: 10
                         }
-                        Text {
+                        MetaText {
                             anchors.left: parent.left
                             anchors.top: parent.top
-                            anchors.topMargin: 13
+                            anchors.topMargin: 15
                             text: "hourly probability"
-                            color: K4Theme.muted
-                            font.family: K4Theme.uiFont
-                            font.pixelSize: 7
                         }
-                        Text {
+                        ValueText {
                             anchors.right: parent.right
                             anchors.top: parent.top
                             text: `${K4Weather.peakRainChance()}%`
-                            color: K4Theme.ink
-                            font.family: K4Theme.uiFont
-                            font.pixelSize: 11
-                            font.weight: Font.DemiBold
+                            font.pixelSize: 12
                         }
-                        Text {
+                        LabelText {
                             anchors.right: parent.right
                             anchors.top: parent.top
-                            anchors.topMargin: 14
+                            anchors.topMargin: 16
                             text: "daily peak"
-                            color: K4Theme.dim
-                            font.family: K4Theme.uiFont
-                            font.pixelSize: 6
                         }
 
                         Item {
                             anchors.left: parent.left
                             anchors.right: parent.right
                             anchors.top: parent.top
-                            anchors.topMargin: 34
+                            anchors.topMargin: 38
                             anchors.bottom: parent.bottom
 
                             Column {
                                 anchors.left: parent.left
                                 anchors.top: parent.top
                                 anchors.bottom: parent.bottom
-                                anchors.bottomMargin: 16
-                                width: 24
+                                anchors.bottomMargin: 18
+                                width: 26
 
-                                Text { width: parent.width; height: parent.height / 3; text: "100"; color: K4Theme.dim; font.family: K4Theme.uiFont; font.pixelSize: 6; horizontalAlignment: Text.AlignRight }
-                                Text { width: parent.width; height: parent.height / 3; text: "50"; color: K4Theme.dim; font.family: K4Theme.uiFont; font.pixelSize: 6; horizontalAlignment: Text.AlignRight; verticalAlignment: Text.AlignVCenter }
-                                Text { width: parent.width; height: parent.height / 3; text: "0%"; color: K4Theme.dim; font.family: K4Theme.uiFont; font.pixelSize: 6; horizontalAlignment: Text.AlignRight; verticalAlignment: Text.AlignBottom }
+                                LabelText {
+                                    width: parent.width
+                                    height: parent.height / 3
+                                    text: "100"
+                                    horizontalAlignment: Text.AlignRight
+                                }
+                                LabelText {
+                                    width: parent.width
+                                    height: parent.height / 3
+                                    text: "50"
+                                    horizontalAlignment: Text.AlignRight
+                                    verticalAlignment: Text.AlignVCenter
+                                }
+                                LabelText {
+                                    width: parent.width
+                                    height: parent.height / 3
+                                    text: "0%"
+                                    horizontalAlignment: Text.AlignRight
+                                    verticalAlignment: Text.AlignBottom
+                                }
                             }
 
                             Item {
                                 id: precipPlot
                                 anchors.left: parent.left
-                                anchors.leftMargin: 31
+                                anchors.leftMargin: 34
                                 anchors.right: parent.right
                                 anchors.top: parent.top
                                 anchors.bottom: parent.bottom
@@ -1009,7 +1017,7 @@ Item {
                                     delegate: Rectangle {
                                         required property int index
                                         x: 0
-                                        y: index * (precipPlot.height - 16) / 2
+                                        y: index * (precipPlot.height - 18) / 2
                                         width: precipPlot.width
                                         height: 1
                                         color: K4Theme.panelLine
@@ -1022,21 +1030,24 @@ Item {
                                     anchors.right: parent.right
                                     anchors.top: parent.top
                                     anchors.bottom: parent.bottom
-                                    anchors.bottomMargin: 16
+                                    anchors.bottomMargin: 18
 
                                     Repeater {
                                         model: K4Weather.hourly.length
                                         delegate: Item {
                                             required property int index
-                                            width: precipBars.width / Math.max(1, K4Weather.hourly.length)
+                                            width: precipBars.width
+                                                / Math.max(1, K4Weather.hourly.length)
                                             height: precipBars.height
-                                            readonly property real chance: Number(K4Weather.hourly[index].rain || 0)
+                                            readonly property real chance:
+                                                Number(K4Weather.hourly[index].rain || 0)
 
                                             Rectangle {
                                                 anchors.horizontalCenter: parent.horizontalCenter
                                                 anchors.bottom: parent.bottom
-                                                width: Math.max(7, parent.width * 0.35)
-                                                height: chance > 0 ? Math.max(2, parent.height * chance / 100) : 0
+                                                width: Math.max(7, parent.width * 0.34)
+                                                height: chance > 0
+                                                    ? Math.max(2, parent.height * chance / 100) : 0
                                                 radius: 2
                                                 color: K4Theme.blue
                                                 opacity: 0.78
@@ -1045,11 +1056,15 @@ Item {
                                             Text {
                                                 anchors.horizontalCenter: parent.horizontalCenter
                                                 anchors.bottom: parent.bottom
-                                                anchors.bottomMargin: chance > 0 ? Math.max(4, parent.height * chance / 100 + 2) : 2
+                                                anchors.bottomMargin: chance > 0
+                                                    ? Math.max(10,
+                                                        parent.height * chance / 100 + 3)
+                                                    : 2
                                                 text: chance > 0 ? `${chance}` : ""
                                                 color: K4Theme.blue
                                                 font.family: K4Theme.uiFont
-                                                font.pixelSize: 6
+                                                font.pixelSize: 9
+                                                textFormat: Text.PlainText
                                             }
                                         }
                                     }
@@ -1059,16 +1074,15 @@ Item {
                                     anchors.left: parent.left
                                     anchors.right: parent.right
                                     anchors.bottom: parent.bottom
-                                    height: 13
+                                    height: 16
+
                                     Repeater {
                                         model: K4Weather.hourly.length
-                                        delegate: Text {
+                                        delegate: LabelText {
                                             required property int index
-                                            width: parent.width / Math.max(1, K4Weather.hourly.length)
+                                            width: parent.width
+                                                / Math.max(1, K4Weather.hourly.length)
                                             text: K4Weather.hourly[index].hour.substring(0, 2)
-                                            color: K4Theme.dim
-                                            font.family: K4Theme.uiFont
-                                            font.pixelSize: 6
                                             horizontalAlignment: Text.AlignHCenter
                                         }
                                     }
@@ -1089,64 +1103,70 @@ Item {
                         Layout.fillWidth: true
                         Layout.fillHeight: true
 
-                        Text {
+                        ValueText {
                             anchors.left: parent.left
                             anchors.top: parent.top
                             text: "Humidity"
-                            color: K4Theme.ink
-                            font.family: K4Theme.uiFont
-                            font.pixelSize: 9
-                            font.weight: Font.DemiBold
+                            font.pixelSize: 10
                         }
-                        Text {
+                        MetaText {
                             anchors.left: parent.left
                             anchors.top: parent.top
-                            anchors.topMargin: 13
+                            anchors.topMargin: 15
                             text: "relative humidity"
-                            color: K4Theme.muted
-                            font.family: K4Theme.uiFont
-                            font.pixelSize: 7
                         }
-                        Text {
+                        ValueText {
                             anchors.right: parent.right
                             anchors.top: parent.top
                             text: K4Weather.current.humidity || "--"
-                            color: K4Theme.ink
-                            font.family: K4Theme.uiFont
-                            font.pixelSize: 11
-                            font.weight: Font.DemiBold
+                            font.pixelSize: 12
                         }
-                        Text {
+                        LabelText {
                             anchors.right: parent.right
                             anchors.top: parent.top
-                            anchors.topMargin: 14
+                            anchors.topMargin: 16
                             text: "current"
-                            color: K4Theme.dim
-                            font.family: K4Theme.uiFont
-                            font.pixelSize: 6
                         }
 
                         Item {
                             anchors.left: parent.left
                             anchors.right: parent.right
                             anchors.top: parent.top
-                            anchors.topMargin: 34
+                            anchors.topMargin: 38
                             anchors.bottom: parent.bottom
 
                             Column {
                                 anchors.left: parent.left
                                 anchors.top: parent.top
                                 anchors.bottom: parent.bottom
-                                anchors.bottomMargin: 16
-                                width: 24
-                                Text { width: parent.width; height: parent.height / 3; text: "100"; color: K4Theme.dim; font.family: K4Theme.uiFont; font.pixelSize: 6; horizontalAlignment: Text.AlignRight }
-                                Text { width: parent.width; height: parent.height / 3; text: "50"; color: K4Theme.dim; font.family: K4Theme.uiFont; font.pixelSize: 6; horizontalAlignment: Text.AlignRight; verticalAlignment: Text.AlignVCenter }
-                                Text { width: parent.width; height: parent.height / 3; text: "0%"; color: K4Theme.dim; font.family: K4Theme.uiFont; font.pixelSize: 6; horizontalAlignment: Text.AlignRight; verticalAlignment: Text.AlignBottom }
+                                anchors.bottomMargin: 18
+                                width: 26
+
+                                LabelText {
+                                    width: parent.width
+                                    height: parent.height / 3
+                                    text: "100"
+                                    horizontalAlignment: Text.AlignRight
+                                }
+                                LabelText {
+                                    width: parent.width
+                                    height: parent.height / 3
+                                    text: "50"
+                                    horizontalAlignment: Text.AlignRight
+                                    verticalAlignment: Text.AlignVCenter
+                                }
+                                LabelText {
+                                    width: parent.width
+                                    height: parent.height / 3
+                                    text: "0%"
+                                    horizontalAlignment: Text.AlignRight
+                                    verticalAlignment: Text.AlignBottom
+                                }
                             }
 
                             Item {
                                 anchors.left: parent.left
-                                anchors.leftMargin: 31
+                                anchors.leftMargin: 34
                                 anchors.right: parent.right
                                 anchors.top: parent.top
                                 anchors.bottom: parent.bottom
@@ -1156,7 +1176,7 @@ Item {
                                     anchors.right: parent.right
                                     anchors.top: parent.top
                                     anchors.bottom: parent.bottom
-                                    anchors.bottomMargin: 16
+                                    anchors.bottomMargin: 18
                                     values: root.hourlyValues("humidity")
                                     minimum: 0
                                     maximum: 100
@@ -1167,16 +1187,15 @@ Item {
                                     anchors.left: parent.left
                                     anchors.right: parent.right
                                     anchors.bottom: parent.bottom
-                                    height: 13
+                                    height: 16
+
                                     Repeater {
                                         model: K4Weather.hourly.length
-                                        delegate: Text {
+                                        delegate: LabelText {
                                             required property int index
-                                            width: parent.width / Math.max(1, K4Weather.hourly.length)
+                                            width: parent.width
+                                                / Math.max(1, K4Weather.hourly.length)
                                             text: K4Weather.hourly[index].hour.substring(0, 2)
-                                            color: K4Theme.dim
-                                            font.family: K4Theme.uiFont
-                                            font.pixelSize: 6
                                             horizontalAlignment: Text.AlignHCenter
                                         }
                                     }
@@ -1191,35 +1210,24 @@ Item {
                 RowLayout {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 24
-                    Text {
-                        Layout.preferredWidth: 64
+
+                    ValueText {
+                        Layout.preferredWidth: 72
                         text: "7-day history"
-                        color: K4Theme.ink
-                        font.family: K4Theme.uiFont
-                        font.pixelSize: 9
-                        font.weight: Font.DemiBold
+                        font.pixelSize: 10
                     }
-                    Text {
+                    LabelText {
                         Layout.fillWidth: true
                         text: "temperature range"
-                        color: K4Theme.dim
-                        font.family: K4Theme.uiFont
-                        font.pixelSize: 6
                     }
-                    Text {
-                        Layout.preferredWidth: 56
+                    LabelText {
+                        Layout.preferredWidth: 60
                         text: "rain"
-                        color: K4Theme.dim
-                        font.family: K4Theme.uiFont
-                        font.pixelSize: 6
                         horizontalAlignment: Text.AlignRight
                     }
-                    Text {
-                        Layout.preferredWidth: 58
+                    LabelText {
+                        Layout.preferredWidth: 62
                         text: "humidity"
-                        color: K4Theme.dim
-                        font.family: K4Theme.uiFont
-                        font.pixelSize: 6
                         horizontalAlignment: Text.AlignRight
                     }
                 }
@@ -1227,6 +1235,7 @@ Item {
                 Item {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
+                    clip: true
 
                     Column {
                         anchors.left: parent.left
@@ -1238,43 +1247,37 @@ Item {
                             delegate: Item {
                                 required property int index
                                 width: parent.width
-                                height: 21
+                                height: 23
                                 readonly property var day: K4Weather.history[index]
 
-                                Text {
+                                ValueText {
                                     anchors.left: parent.left
                                     anchors.verticalCenter: parent.verticalCenter
-                                    width: 64
+                                    width: 72
                                     text: day.label
-                                    color: K4Theme.ink
-                                    font.family: K4Theme.uiFont
-                                    font.pixelSize: 7
-                                    font.weight: Font.DemiBold
+                                    font.pixelSize: 9
                                 }
 
                                 Item {
                                     id: rangeCell
                                     anchors.left: parent.left
-                                    anchors.leftMargin: 72
+                                    anchors.leftMargin: 80
                                     anchors.right: rainHistory.left
-                                    anchors.rightMargin: 12
+                                    anchors.rightMargin: 14
                                     anchors.top: parent.top
                                     anchors.bottom: parent.bottom
 
-                                    Text {
+                                    MetaText {
                                         anchors.left: parent.left
                                         anchors.top: parent.top
                                         text: `${root.tempValueText(day.minValue)} → ${root.tempValueText(day.maxValue)}`
-                                        color: K4Theme.muted
-                                        font.family: K4Theme.uiFont
-                                        font.pixelSize: 6
                                     }
 
                                     Rectangle {
                                         anchors.left: parent.left
                                         anchors.right: parent.right
                                         anchors.top: parent.top
-                                        anchors.topMargin: 14
+                                        anchors.topMargin: 16
                                         height: 1
                                         color: K4Theme.panelLine
                                     }
@@ -1282,8 +1285,10 @@ Item {
                                     Rectangle {
                                         id: rangeBand
                                         x: rangeCell.width * root.historyFraction(day.minValue)
-                                        y: 12
-                                        width: Math.max(5, rangeCell.width * (root.historyFraction(day.maxValue) - root.historyFraction(day.minValue)))
+                                        y: 14
+                                        width: Math.max(5, rangeCell.width
+                                            * (root.historyFraction(day.maxValue)
+                                                - root.historyFraction(day.minValue)))
                                         height: 5
                                         radius: 3
                                         gradient: Gradient {
@@ -1295,7 +1300,7 @@ Item {
 
                                     Rectangle {
                                         x: rangeBand.x - 2
-                                        y: 12
+                                        y: 14
                                         width: 5
                                         height: 5
                                         radius: 3
@@ -1305,7 +1310,7 @@ Item {
                                     }
                                     Rectangle {
                                         x: rangeBand.x + rangeBand.width - 3
-                                        y: 12
+                                        y: 14
                                         width: 5
                                         height: 5
                                         radius: 3
@@ -1315,28 +1320,22 @@ Item {
                                     }
                                 }
 
-                                Text {
+                                MetaText {
                                     id: rainHistory
                                     anchors.right: humidityHistory.left
-                                    anchors.rightMargin: 12
+                                    anchors.rightMargin: 14
                                     anchors.verticalCenter: parent.verticalCenter
-                                    width: 56
+                                    width: 60
                                     text: root.precipText(day.precip)
-                                    color: K4Theme.muted
-                                    font.family: K4Theme.uiFont
-                                    font.pixelSize: 7
                                     horizontalAlignment: Text.AlignRight
                                 }
 
-                                Text {
+                                MetaText {
                                     id: humidityHistory
                                     anchors.right: parent.right
                                     anchors.verticalCenter: parent.verticalCenter
-                                    width: 58
+                                    width: 62
                                     text: `${Math.round(Number(day.humidity || 0))}%`
-                                    color: K4Theme.muted
-                                    font.family: K4Theme.uiFont
-                                    font.pixelSize: 7
                                     horizontalAlignment: Text.AlignRight
                                 }
 
@@ -1350,31 +1349,15 @@ Item {
                         }
                     }
 
-                    Text {
+                    MetaText {
                         anchors.centerIn: parent
                         visible: K4Weather.history.length === 0
                         text: K4Weather.historyError.length
                             ? K4Weather.historyError
-                            : (K4Weather.historyLoading ? "Loading 7-day history…" : "7-day history unavailable")
-                        color: K4Theme.muted
-                        font.family: K4Theme.uiFont
+                            : (K4Weather.historyLoading
+                                ? "Loading 7-day history…" : "7-day history unavailable")
                         font.pixelSize: 10
                     }
-                }
-
-                RowLayout {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 18
-                    Item { Layout.preferredWidth: 72 }
-                    Text {
-                        Layout.fillWidth: true
-                        text: `${root.tempValueText(root.historyMinimum())}                 ${root.tempValueText((root.historyMinimum() + root.historyMaximum()) / 2)}                 ${root.tempValueText(root.historyMaximum())}`
-                        color: K4Theme.dim
-                        font.family: K4Theme.uiFont
-                        font.pixelSize: 6
-                        horizontalAlignment: Text.AlignHCenter
-                    }
-                    Item { Layout.preferredWidth: 126 }
                 }
             }
         }
