@@ -375,6 +375,7 @@ Item {
             minimum: metric.minimum
             maximum: metric.maximum
             lineColor: metric.lineColor
+            smoothCurve: true
         }
 
         Row {
