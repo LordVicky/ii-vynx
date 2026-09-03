@@ -161,6 +161,16 @@ test('K4 precipitation bars scale to a local probability ceiling instead of fixe
   assert.doesNotMatch(source, /parent\.height\s*\*\s*chance\s*\/\s*100/);
 });
 
+test('K4 weather today chart attaches temperature values to their plotted points', () => {
+  const source = read(`${base}/K4WeatherView.qml`);
+  assert.match(source, /id:\s*todayTempChart/);
+  assert.match(source, /id:\s*todayTemperatureLabels/);
+  assert.match(source, /readonly property real normalized:[\s\S]*?K4Weather\.hourly\[index\]\.tempValue/);
+  assert.match(source, /readonly property real pointY:[\s\S]*?normalized/);
+  assert.match(source, /text:\s*K4Weather\.hourly\[index\]\.temp\s*\|\|\s*"--"/);
+  assert.doesNotMatch(source, /anchors\.top:\s*parent\.top\s*\n\s*height:\s*19[\s\S]*?K4Weather\.hourly\[index\]\.temp/);
+});
+
 test('K4 weather history temperature span is an emphasized right-aligned header value', () => {
   const source = read(`${base}/K4WeatherView.qml`);
   assert.match(source, /Layout\.alignment:\s*Qt\.AlignRight\s*\|\s*Qt\.AlignVCenter/);
