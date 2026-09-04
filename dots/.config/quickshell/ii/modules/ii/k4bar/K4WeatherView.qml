@@ -860,7 +860,7 @@ Item {
                 RowLayout {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 86
-                    spacing: 18
+                    spacing: 14
 
                     RowLayout {
                         Layout.preferredWidth: 320
@@ -906,7 +906,7 @@ Item {
                     Text {
                         Layout.fillWidth: true
                         Layout.fillHeight: true
-                        Layout.maximumWidth: 340
+                        Layout.minimumWidth: 0
                         text: K4Weather.summary
                         color: K4Theme.ink
                         font.family: K4Theme.uiFont
