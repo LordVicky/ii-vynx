@@ -61,6 +61,18 @@ test("k4 launcher releases ownership immediately on close", () => {
     assert.match(source, /function close\(\)[\s\S]*?if \(!open\)[\s\S]*?open = false[\s\S]*?query = ""/);
 });
 
+test("k4 launcher rebuilds before activation and clears rows on every close path", () => {
+    const source = readShell("modules/ii/k4bar/K4LauncherPlugin.qml");
+    const openSearch = source.match(/function openSearch\(initial = ""\) \{([\s\S]*?)\n    \}/)?.[1] ?? "";
+    const close = source.match(/function close\(\) \{([\s\S]*?)\n    \}/)?.[1] ?? "";
+    const yieldToNotification = source.match(/function yieldToNotification\(\) \{([\s\S]*?)\n    \}/)?.[1] ?? "";
+
+    assert.ok(openSearch.indexOf("rebuild()") >= 0);
+    assert.ok(openSearch.indexOf("rebuild()") < openSearch.indexOf("open = true"));
+    assert.match(close, /open = false[\s\S]*?query = ""[\s\S]*?matches = \[\]/);
+    assert.match(yieldToNotification, /open = false[\s\S]*?query = ""[\s\S]*?matches = \[\]/);
+});
+
 test("k4 launcher view keeps the spotlight interaction model with viewport hover", () => {
     const source = readShell("modules/ii/k4bar/K4LauncherView.qml");
 

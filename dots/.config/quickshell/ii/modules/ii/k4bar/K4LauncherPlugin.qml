@@ -47,8 +47,8 @@ K4Plugin {
         K4Notifications.dismissToast()
         query = String(initial || "")
         index = 0
-        open = true
         rebuild()
+        open = true
     }
 
     // The ii-vynx island host already animates width/height to the next owner.
@@ -58,11 +58,13 @@ K4Plugin {
             return
         open = false
         query = ""
+        matches = []
     }
 
     function yieldToNotification() {
         open = false
         query = ""
+        matches = []
     }
 
     function launchSelected() {
