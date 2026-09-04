@@ -187,18 +187,18 @@ Singleton {
     function conditionOutlook() {
         const kind = root.conditionKind(root.current.wCode)
         const temperature = root.temperatureDescription()
-        const rawDescription = String(root.current.wDesc || "").trim().toLowerCase()
-        if (kind === "clear") return `It's clear and ${temperature}`
-        if (kind === "partly") return `It's partly cloudy and ${temperature}`
+        const description = String(root.current.wDesc || "").trim().toLowerCase()
+
+        if (kind === "clear") return `It's ${temperature} and clear outside`
+        if (kind === "partly") return `It's ${temperature}, with a mix of sun and clouds`
         if (kind === "cloudy")
-            return `It's ${rawDescription.length ? rawDescription : "cloudy"} and ${temperature}`
-        if (kind === "fog") return "It's foggy with reduced visibility"
-        if (kind === "rain") return "There are showers around right now"
-        if (kind === "storm") return "Thunderstorms are nearby"
-        if (kind === "snow") return "It's snowy right now"
-        return rawDescription.length
-            ? `It's ${rawDescription} and ${temperature}`
-            : `It's mixed and ${temperature}`
+            return `It's ${temperature} and ${description.length ? description : "cloudy"} outside`
+        if (kind === "fog") return "It's foggy outside, and visibility is a bit limited"
+        if (kind === "rain") return `It's ${temperature}, with showers around`
+        if (kind === "storm") return "Thunderstorms are nearby right now"
+        if (kind === "snow") return `It's ${temperature} and snowy outside`
+        if (description.length) return `It's ${temperature}, with ${description} conditions`
+        return `It's ${temperature} with mixed conditions`
     }
 
     function humidityDescription(value) {
@@ -215,56 +215,56 @@ Singleton {
         if (!Number.isFinite(displayedSpeed)) return ""
         const kmh = Weather.useUSCS ? displayedSpeed * 1.60934 : displayedSpeed
         const direction = String(root.current.windDir || "").trim()
-        let strength = "light breeze"
-        if (kmh >= 40) strength = "strong wind"
-        else if (kmh >= 25) strength = "brisk breeze"
-        else if (kmh >= 10) strength = "steady breeze"
-        const directionText = direction.length ? ` from the ${direction}` : ""
-        return `${strength}${directionText}`
+        let strength = "a light breeze"
+        if (kmh >= 40) strength = "strong winds"
+        else if (kmh >= 25) strength = "a brisk breeze"
+        else if (kmh >= 10) strength = "a steady breeze"
+        return direction.length ? `${strength} from the ${direction}` : strength
     }
 
     function rainOutlook() {
         if (root.hourly.length === 0) return ""
         const peak = root.peakRainChance()
-        if (peak >= 70) return "Keep an umbrella nearby; rain is likely later"
-        if (peak >= 40) return "You may want an umbrella later"
-        if (peak >= 15) return "A brief shower is possible"
+        if (peak >= 70) return "Keep an umbrella nearby—rain looks likely later"
+        if (peak >= 40) return "A few showers may move through later, so an umbrella could be handy"
+        if (peak >= 15) return "There's a small chance of a shower later"
         if (peak > 0) return "Rain looks unlikely today"
         return "It should stay dry today"
     }
 
     function environmentalOutlook() {
         const aqi = Number(root.airQuality.aqi)
-        const dust = Number(root.airQuality.dust)
-        const dustState = root.dustStatus(dust)
-        let air = ""
+        const dustState = root.dustStatus(Number(root.airQuality.dust))
+        const dusty = dustState === "elevated" || dustState === "high"
 
-        if (Number.isFinite(aqi)) {
-            if (aqi > 200) air = "Air quality is very poor"
-            else if (aqi > 150) air = "Air quality is poor"
-            else if (aqi > 100) air = "Air quality may bother sensitive people"
+        if (Number.isFinite(aqi) && aqi > 200) {
+            if (dusty)
+                return `Air quality is very poor and dust levels are ${dustState}, so I'd keep outdoor time light if you can`
+            return "Air quality is very poor today, so I'd keep outdoor time light if you can"
         }
+        if (Number.isFinite(aqi) && aqi > 150) {
+            if (dusty)
+                return `Air quality is poor today, with ${dustState} dust levels, so I'd take it a little easy outdoors`
+            return "Air quality is poor today, so I'd take it a little easy outdoors"
+        }
+        if (Number.isFinite(aqi) && aqi > 100)
+            return "Air quality may bother sensitive people today, so a little extra care outdoors could help"
 
-        if (air.length && (dustState === "elevated" || dustState === "high"))
-            return `${air}, with ${dustState} dust levels`
-        if (air.length && dustState === "noticeable")
-            return `${air}, with some dust in the air`
-        if (air.length) return air
-
-        if (dustState === "elevated" || dustState === "high")
-            return `Dust levels are ${dustState} today`
-        if (dustState === "noticeable") return "There's some dust in the air"
+        if (dusty)
+            return `There is ${dustState} dust in the air today, so I'd keep that in mind if you're heading out`
+        if (dustState === "noticeable")
+            return "There's a little dust in the air today"
 
         const uv = root.numeric(root.current.uv)
         if (Number.isFinite(uv) && uv >= 8)
-            return "UV is very strong; sunscreen would be a good idea"
+            return "The sun will be strong today, so sunscreen would be a good idea if you're heading out"
         if (Number.isFinite(uv) && uv >= 6)
-            return "UV is strong; some sun protection would help"
+            return "UV is fairly strong today, so a little sun protection would help"
 
         const visible = root.numeric(root.current.visib)
         if (Number.isFinite(visible)) {
             const km = Weather.useUSCS ? visible * 1.60934 : visible
-            if (km < 5) return "Visibility is a little poor"
+            if (km < 5) return "Visibility is a little poor right now, so take care if you're heading out"
         }
 
         return ""
@@ -275,10 +275,12 @@ Singleton {
         const humidity = root.humidityDescription(root.numeric(root.current.humidity))
         const wind = root.windDescription()
 
-        if (humidity.length)
+        if (humidity.length && wind.length)
+            sentences.push(`${humidity}, and there's ${wind}.`)
+        else if (humidity.length)
             sentences.push(`${humidity}.`)
-        if (wind.length)
-            sentences.push(`There is a ${wind}.`)
+        else if (wind.length)
+            sentences.push(`There's ${wind}.`)
 
         const rain = root.rainOutlook()
         const environment = root.environmentalOutlook()
