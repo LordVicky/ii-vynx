@@ -75,18 +75,20 @@ test('K4 weather summary copy derives from live condition and forecast state', (
   assert.match(source, /Thunderstorms|Rainy|Fog|Cloudy|Clear/);
 });
 
-test('K4 weather narrative combines live atmospheric context and event-driven air quality', () => {
+test('K4 weather narrative sounds conversational while keeping live atmospheric context', () => {
   const source = read(`${base}/K4Weather.qml`);
   assert.match(source, /property var airQuality:\s*\(\{\}\)/);
+  assert.match(source, /function\s+humidityDescription\(value\)/);
   assert.match(source, /function\s+windDescription\(\)/);
-  assert.match(source, /Humidity \$\{Math\.round\(humidity\)\}%/);
-  assert.match(source, /Rain risk low · \$\{peak\}% peak/);
-  assert.match(source, /AQI \$\{Math\.round\(aqi\)\} \$\{root\.airQualityStatus\(aqi\)\.toLowerCase\(\)\}/);
-  assert.match(source, /dust \$\{dustState\}/);
-  assert.match(source, /visibility \$\{root\.visibilityStatus/);
-  assert.match(source, /UV \$\{root\.uvStatus/);
-  assert.match(source, /environment\.slice\(0,\s*2\)/);
-  assert.match(source, /return parts\.join\(" "\)/);
+  assert.match(source, /function\s+rainOutlook\(\)/);
+  assert.match(source, /function\s+environmentalOutlook\(\)/);
+  assert.match(source, /Humidity feels comfortable/);
+  assert.match(source, /Rain looks unlikely today, with only about a \$\{peak\}% chance at its peak/);
+  assert.match(source, /air quality is \$\{status\.toLowerCase\(\)\} today/);
+  assert.match(source, /dust levels are \$\{dustState\}/);
+  assert.match(source, /while \$\{environment\}/);
+  assert.match(source, /return sentences\.join\(" "\)/);
+  assert.doesNotMatch(source, /Rain risk low ·|AQI .* ·|Humidity .* ·/);
   assert.match(source, /function\s+refreshAirQuality\(latitude, longitude\)/);
   assert.match(source, /air-quality-api\.open-meteo\.com\/v1\/air-quality/);
   assert.match(source, /current=us_aqi,pm2_5,pm10,dust/);
