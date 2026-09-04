@@ -905,14 +905,19 @@ Item {
 
                     Text {
                         Layout.fillWidth: true
+                        Layout.fillHeight: true
                         Layout.maximumWidth: 340
                         text: K4Weather.summary
                         color: K4Theme.ink
                         font.family: K4Theme.uiFont
-                        font.pixelSize: 15
+                        font.pixelSize: 13
                         font.weight: Font.Medium
-                        lineHeight: 1.2
+                        lineHeight: 1.12
                         wrapMode: Text.WordWrap
+                        maximumLineCount: 4
+                        elide: Text.ElideRight
+                        clip: true
+                        verticalAlignment: Text.AlignVCenter
                         textFormat: Text.PlainText
                     }
                 }
