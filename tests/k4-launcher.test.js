@@ -20,6 +20,21 @@ test("k4 desktop-app adapter reuses ii application ownership", () => {
     assert.doesNotMatch(source, /update-desktop-database/);
 });
 
+test("k4 desktop-app results snapshot values and resolve a fresh entry for launch", () => {
+    const source = readShell("modules/ii/k4bar/K4DesktopApps.qml");
+
+    assert.match(source, /function snapshot\(entry\)/);
+    assert.match(source, /id:\s*String\(entry\.id \?\? ""\)/);
+    assert.match(source, /name:\s*String\(entry\.name \?\? ""\)/);
+    assert.match(source, /icon:\s*String\(entry\.icon \?\? ""\)/);
+    assert.match(source, /runInTerminal:\s*Boolean\(entry\.runInTerminal\)/);
+    assert.match(source, /command:\s*Array\.from\(entry\.command \?\? \[\]\)/);
+    assert.match(source, /visible\.slice\(0, resultLimit\)\.map\(entry => root\.snapshot\(entry\)\)/);
+    assert.match(source, /function resolve\(row\)[\s\S]*?AppSearch\.list\.find\(entry => entry && entry\.id === row\.id\) \?\? null/);
+    assert.match(source, /function launch\(row\)[\s\S]*?const entry = root\.resolve\(row\)[\s\S]*?if \(!entry\)[\s\S]*?return/);
+    assert.doesNotMatch(source, /return visible\.slice\(0, resultLimit\)\s*$/m);
+});
+
 test("k4 launcher preserves island ownership and keyboard lifecycle", () => {
     const source = readShell("modules/ii/k4bar/K4LauncherPlugin.qml");
 

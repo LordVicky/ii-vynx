@@ -12,6 +12,22 @@ Singleton {
 
     readonly property int resultLimit: 40
 
+    function snapshot(entry) {
+        return {
+            id: String(entry.id ?? ""),
+            name: String(entry.name ?? ""),
+            icon: String(entry.icon ?? ""),
+            runInTerminal: Boolean(entry.runInTerminal),
+            command: Array.from(entry.command ?? [])
+        }
+    }
+
+    function resolve(row) {
+        if (!row || !row.id)
+            return null
+        return AppSearch.list.find(entry => entry && entry.id === row.id) ?? null
+    }
+
     function search(query) {
         const normalized = String(query || "").trim()
         const source = normalized.length > 0
@@ -24,10 +40,11 @@ Singleton {
                 String(b.name || "")))
         }
 
-        return visible.slice(0, resultLimit)
+        return visible.slice(0, resultLimit).map(entry => root.snapshot(entry))
     }
 
-    function launch(entry) {
+    function launch(row) {
+        const entry = root.resolve(row)
         if (!entry)
             return
 
