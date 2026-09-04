@@ -72,23 +72,29 @@ test('K4 weather summary copy derives from live condition and forecast state', (
   assert.match(source, /function\s+summaryText\(\)/);
   assert.match(source, /peakRainChance\(\)/);
   assert.match(source, /current\.wCode/);
-  assert.match(source, /Thunderstorms|Rainy|Fog|Cloudy|Clear/);
+  assert.match(source, /thunderstorms|showers|foggy|cloudy|clear/);
 });
 
-test('K4 weather narrative sounds conversational while keeping live atmospheric context', () => {
+test('K4 weather narrative behaves like a warm time-aware personal assistant', () => {
   const source = read(`${base}/K4Weather.qml`);
   assert.match(source, /property var airQuality:\s*\(\{\}\)/);
+  assert.match(source, /function\s+greetingText\(\)/);
+  assert.match(source, /K4Clock\.date\.getHours\(\)/);
+  assert.match(source, /Good morning/);
+  assert.match(source, /Good afternoon/);
+  assert.match(source, /Good evening/);
+  assert.match(source, /function\s+conditionOutlook\(\)/);
   assert.match(source, /function\s+humidityDescription\(value\)/);
   assert.match(source, /function\s+windDescription\(\)/);
   assert.match(source, /function\s+rainOutlook\(\)/);
   assert.match(source, /function\s+environmentalOutlook\(\)/);
-  assert.match(source, /Humidity feels comfortable/);
-  assert.match(source, /Rain looks unlikely today, with only about a \$\{peak\}% chance at its peak/);
-  assert.match(source, /air quality is \$\{status\.toLowerCase\(\)\} today/);
-  assert.match(source, /dust levels are \$\{dustState\}/);
-  assert.match(source, /while \$\{environment\}/);
+  assert.match(source, /The humidity should feel comfortable/);
+  assert.match(source, /Rain isn't much of a concern today/);
+  assert.match(source, /I'd keep an umbrella nearby/);
+  assert.match(source, /sunscreen would be a good idea/);
+  assert.match(source, /Air quality isn't great today/);
   assert.match(source, /return sentences\.join\(" "\)/);
-  assert.doesNotMatch(source, /Rain risk low ·|AQI .* ·|Humidity .* ·/);
+  assert.doesNotMatch(source, /Rain risk low ·|AQI .* ·|Humidity .* ·|chance at its peak/);
   assert.match(source, /function\s+refreshAirQuality\(latitude, longitude\)/);
   assert.match(source, /air-quality-api\.open-meteo\.com\/v1\/air-quality/);
   assert.match(source, /current=us_aqi,pm2_5,pm10,dust/);
