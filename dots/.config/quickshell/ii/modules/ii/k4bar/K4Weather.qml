@@ -194,8 +194,8 @@ Singleton {
         if (kmh >= 40) strength = "strong wind"
         else if (kmh >= 25) strength = "brisk breeze"
         else if (kmh >= 10) strength = "steady breeze"
-        const directionText = direction.length ? `${direction} ` : ""
-        return `a ${strength} from the ${directionText || "local area"}around ${root.current.wind}`
+        const directionText = direction.length ? ` from the ${direction}` : ""
+        return `a ${strength}${directionText} around ${root.current.wind}`
     }
 
     function rainOutlook() {
