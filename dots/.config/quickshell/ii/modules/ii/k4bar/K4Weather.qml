@@ -246,13 +246,13 @@ Singleton {
         }
 
         if (air.length && (dustState === "elevated" || dustState === "high"))
-            return `${air}, with ${dustState} dust`
+            return `${air}, with ${dustState} dust levels`
         if (air.length && dustState === "noticeable")
             return `${air}, with some dust in the air`
         if (air.length) return air
 
         if (dustState === "elevated" || dustState === "high")
-            return `Dust is ${dustState} today`
+            return `Dust levels are ${dustState} today`
         if (dustState === "noticeable") return "There's some dust in the air"
 
         const uv = root.numeric(root.current.uv)
@@ -271,16 +271,14 @@ Singleton {
     }
 
     function summaryText() {
-        const sentences = [`${root.greetingText()}. ${root.conditionOutlook()}.`]
+        const sentences = [`${root.greetingText()}.`, `${root.conditionOutlook()}.`]
         const humidity = root.humidityDescription(root.numeric(root.current.humidity))
         const wind = root.windDescription()
 
-        if (humidity.length && wind.length)
-            sentences.push(`${humidity}, with a ${wind}.`)
-        else if (humidity.length)
+        if (humidity.length)
             sentences.push(`${humidity}.`)
-        else if (wind.length)
-            sentences.push(`There's a ${wind}.`)
+        if (wind.length)
+            sentences.push(`There is a ${wind}.`)
 
         const rain = root.rainOutlook()
         const environment = root.environmentalOutlook()
