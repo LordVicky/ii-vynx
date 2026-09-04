@@ -218,9 +218,9 @@ Item {
         ColumnLayout {
             anchors.fill: parent
             anchors.leftMargin: 18
-            anchors.rightMargin: 12
+            anchors.rightMargin: 18
             anchors.topMargin: 9
-            anchors.bottomMargin: 8
+            anchors.bottomMargin: 10
             spacing: 2
 
             RowLayout {
@@ -285,7 +285,7 @@ Item {
                 id: messageRow
                 Layout.fillWidth: true
                 Layout.preferredHeight: Math.max(messageColumn.implicitHeight,
-                    notificationImage.visible ? 76 : 0)
+                    notificationImage.visible ? 64 : 0)
                 Layout.topMargin: 4
                 Layout.bottomMargin: root.buttons.length > 0 ? 3 : 2
                 spacing: 12
@@ -317,7 +317,7 @@ Item {
                         text: root.expandedBody
                         color: K4Theme.muted
                         font.family: K4Theme.uiFont
-                        font.pixelSize: 13
+                        font.pixelSize: 14
                         wrapMode: Text.WordWrap
                         elide: Text.ElideRight
                         maximumLineCount: 3
@@ -329,17 +329,17 @@ Item {
                 ClippingRectangle {
                     id: notificationImage
                     visible: root.expanded && root.hasImage
-                    Layout.preferredWidth: 116
-                    Layout.preferredHeight: 76
+                    Layout.preferredWidth: 92
+                    Layout.preferredHeight: 64
                     Layout.alignment: Qt.AlignTop
-                    radius: 11
+                    radius: 10
                     color: K4Theme.surface
 
                     Image {
                         anchors.fill: parent
                         source: root.imageSource
-                        sourceSize.width: 232
-                        sourceSize.height: 152
+                        sourceSize.width: 184
+                        sourceSize.height: 128
                         fillMode: Image.PreserveAspectCrop
                         asynchronous: true
                         cache: true
