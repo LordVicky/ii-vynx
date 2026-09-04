@@ -72,10 +72,10 @@ test('K4 weather summary copy derives from live condition and forecast state', (
   assert.match(source, /function\s+summaryText\(\)/);
   assert.match(source, /peakRainChance\(\)/);
   assert.match(source, /current\.wCode/);
-  assert.match(source, /thunderstorms|showers|foggy|cloudy|clear/);
+  assert.match(source, /Thunderstorms|showers|foggy|cloudy|clear/);
 });
 
-test('K4 weather narrative behaves like a warm time-aware personal assistant', () => {
+test('K4 weather narrative stays warm, time-aware and compact', () => {
   const source = read(`${base}/K4Weather.qml`);
   assert.match(source, /property var airQuality:\s*\(\{\}\)/);
   assert.match(source, /function\s+greetingText\(\)/);
@@ -88,12 +88,14 @@ test('K4 weather narrative behaves like a warm time-aware personal assistant', (
   assert.match(source, /function\s+windDescription\(\)/);
   assert.match(source, /function\s+rainOutlook\(\)/);
   assert.match(source, /function\s+environmentalOutlook\(\)/);
-  assert.match(source, /The humidity should feel comfortable/);
-  assert.match(source, /Rain isn't much of a concern today/);
-  assert.match(source, /I'd keep an umbrella nearby/);
+  assert.match(source, /It feels a little humid/);
+  assert.match(source, /Rain looks unlikely today/);
+  assert.match(source, /Keep an umbrella nearby/);
   assert.match(source, /sunscreen would be a good idea/);
-  assert.match(source, /Air quality isn't great today/);
-  assert.match(source, /return sentences\.join\(" "\)/);
+  assert.match(source, /Air quality is poor/);
+  assert.match(source, /const rainPeak = root\.peakRainChance\(\)/);
+  assert.match(source, /if \(rainPeak >= 40 && rain\.length\)[\s\S]*?else if \(environment\.length\)[\s\S]*?else if \(rain\.length\)/);
+  assert.doesNotMatch(source, /around \$\{root\.current\.wind\}/);
   assert.doesNotMatch(source, /Rain risk low ·|AQI .* ·|Humidity .* ·|chance at its peak/);
   assert.match(source, /function\s+refreshAirQuality\(latitude, longitude\)/);
   assert.match(source, /air-quality-api\.open-meteo\.com\/v1\/air-quality/);
