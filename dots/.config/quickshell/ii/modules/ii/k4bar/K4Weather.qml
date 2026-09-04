@@ -176,21 +176,82 @@ Singleton {
         return "low"
     }
 
+    function humidityDescription(value) {
+        const humidity = Number(value)
+        if (!Number.isFinite(humidity)) return ""
+        if (humidity >= 75) return "It feels quite humid"
+        if (humidity >= 60) return "There is some humidity in the air"
+        if (humidity >= 40) return "Humidity feels comfortable"
+        return "The air feels dry"
+    }
+
     function windDescription() {
         const displayedSpeed = root.numeric(root.current.wind)
         if (!Number.isFinite(displayedSpeed)) return ""
         const kmh = Weather.useUSCS ? displayedSpeed * 1.60934 : displayedSpeed
         const direction = String(root.current.windDir || "").trim()
-        let strength = "light"
-        if (kmh >= 40) strength = "strong"
-        else if (kmh >= 25) strength = "breezy"
-        else if (kmh >= 10) strength = "steady"
+        let strength = "light breeze"
+        if (kmh >= 40) strength = "strong wind"
+        else if (kmh >= 25) strength = "brisk breeze"
+        else if (kmh >= 10) strength = "steady breeze"
         const directionText = direction.length ? `${direction} ` : ""
-        return `${strength} ${directionText}wind ${root.current.wind}`
+        return `a ${strength} from the ${directionText || "local area"}around ${root.current.wind}`
+    }
+
+    function rainOutlook() {
+        if (root.hourly.length === 0) return ""
+        const peak = root.peakRainChance()
+        if (peak >= 70)
+            return `Rain is likely later today, with chances peaking around ${peak}%`
+        if (peak >= 40)
+            return `There is a decent chance of rain later today, peaking around ${peak}%`
+        if (peak >= 15)
+            return `A few showers are possible, with rain chances reaching about ${peak}%`
+        if (peak > 0)
+            return `Rain looks unlikely today, with only about a ${peak}% chance at its peak`
+        return "It should stay dry through today"
+    }
+
+    function environmentalOutlook() {
+        const observations = []
+        const aqi = Number(root.airQuality.aqi)
+        if (Number.isFinite(aqi)) {
+            const status = root.airQualityStatus(aqi)
+            if (aqi <= 50)
+                observations.push("air quality is good")
+            else if (aqi <= 100)
+                observations.push("air quality is moderate")
+            else if (aqi <= 150)
+                observations.push(`air quality may bother sensitive people (AQI ${Math.round(aqi)})`)
+            else
+                observations.push(`air quality is ${status.toLowerCase()} today (AQI ${Math.round(aqi)})`)
+        }
+
+        const dust = Number(root.airQuality.dust)
+        const dustState = root.dustStatus(dust)
+        if (dustState === "noticeable")
+            observations.push("there is noticeable dust in the air")
+        else if (dustState === "elevated" || dustState === "high")
+            observations.push(`dust levels are ${dustState}`)
+
+        const visible = root.numeric(root.current.visib)
+        if (observations.length < 2 && Number.isFinite(visible)) {
+            const km = Weather.useUSCS ? visible * 1.60934 : visible
+            if (km < 5)
+                observations.push(`visibility is reduced to ${root.current.visib}`)
+        }
+
+        const uv = root.numeric(root.current.uv)
+        if (observations.length < 2 && Number.isFinite(uv) && uv >= 6)
+            observations.push(`UV levels are ${root.uvStatus(uv).toLowerCase()}`)
+
+        if (!observations.length) return ""
+        if (observations.length === 1) return observations[0]
+        return `${observations[0]}, and ${observations[1]}`
     }
 
     function summaryText() {
-        const parts = []
+        const sentences = []
         const kind = root.conditionKind(root.current.wCode)
         const temperature = root.temperatureDescription()
         const rawDescription = String(root.current.wDesc || "").trim()
@@ -200,61 +261,31 @@ Singleton {
         if (kind === "clear") lead = `Clear and ${temperature}.`
         else if (kind === "partly") lead = `Partly cloudy and ${temperature}.`
         else if (kind === "cloudy") lead = `Cloudy and ${temperature}.`
-        else if (kind === "fog") lead = "Fog is reducing visibility."
-        else if (kind === "rain") lead = "Rainy conditions right now."
-        else if (kind === "storm") lead = "Thunderstorms nearby."
-        else if (kind === "snow") lead = "Snowy conditions right now."
-        parts.push(lead)
+        else if (kind === "fog") lead = "Fog is hanging around and visibility is reduced."
+        else if (kind === "rain") lead = "Rain is around right now."
+        else if (kind === "storm") lead = "Thunderstorms are nearby."
+        else if (kind === "snow") lead = "Snowy conditions are settling in."
+        sentences.push(lead)
 
-        const atmosphere = []
-        const humidity = root.numeric(root.current.humidity)
-        if (Number.isFinite(humidity))
-            atmosphere.push(`Humidity ${Math.round(humidity)}%`)
+        const humidity = root.humidityDescription(root.numeric(root.current.humidity))
         const wind = root.windDescription()
-        if (wind.length)
-            atmosphere.push(wind)
-        if (atmosphere.length)
-            parts.push(`${atmosphere.join(" · ")}.`)
+        if (humidity.length && wind.length)
+            sentences.push(`${humidity}, with ${wind}.`)
+        else if (humidity.length)
+            sentences.push(`${humidity}.`)
+        else if (wind.length)
+            sentences.push(`There is ${wind}.`)
 
-        const peak = root.peakRainChance()
-        if (root.hourly.length > 0) {
-            if (peak >= 70)
-                parts.push(`Rain likely · ${peak}% peak.`)
-            else if (peak >= 40)
-                parts.push(`Rain possible · ${peak}% peak.`)
-            else if (peak >= 15)
-                parts.push(`Slight rain chance · ${peak}% peak.`)
-            else if (peak > 0)
-                parts.push(`Rain risk low · ${peak}% peak.`)
-            else
-                parts.push("No rain expected today.")
-        }
+        const rain = root.rainOutlook()
+        const environment = root.environmentalOutlook()
+        if (rain.length && environment.length)
+            sentences.push(`${rain}, while ${environment}.`)
+        else if (rain.length)
+            sentences.push(`${rain}.`)
+        else if (environment.length)
+            sentences.push(`${environment.charAt(0).toUpperCase()}${environment.slice(1)}.`)
 
-        const environment = []
-        const aqi = Number(root.airQuality.aqi)
-        if (Number.isFinite(aqi))
-            environment.push(`AQI ${Math.round(aqi)} ${root.airQualityStatus(aqi).toLowerCase()}`)
-
-        const dust = Number(root.airQuality.dust)
-        const dustState = root.dustStatus(dust)
-        if (dustState.length && dustState !== "low")
-            environment.push(`dust ${dustState}`)
-
-        const visible = root.numeric(root.current.visib)
-        if (Number.isFinite(visible)) {
-            const km = Weather.useUSCS ? visible * 1.60934 : visible
-            if (km < 10)
-                environment.push(`visibility ${root.visibilityStatus(root.current.visib).toLowerCase()} at ${root.current.visib}`)
-        }
-
-        const uv = root.numeric(root.current.uv)
-        if (Number.isFinite(uv) && uv >= 3)
-            environment.push(`UV ${root.uvStatus(uv).toLowerCase()} at ${Math.round(uv)}`)
-
-        if (environment.length)
-            parts.push(`${environment.slice(0, 2).join(" · ")}.`)
-
-        return parts.join(" ")
+        return sentences.join(" ")
     }
 
     // Upstream k4 uses the Nerd Fonts Weather Icons E3xx range. The ii-vynx
