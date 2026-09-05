@@ -131,6 +131,10 @@ Item {
                         sourceComponent: ScreencopyView {
                             captureSource: windowItem.toplevel
                             live: true
+                            smooth: true
+                            layer.enabled: true
+                            layer.smooth: true
+                            layer.mipmap: true
                         }
                     }
 
