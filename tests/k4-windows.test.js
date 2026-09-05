@@ -27,6 +27,28 @@ test("windows adapter stays on ii-vynx Wayland and Hyprland ownership seams", ()
     assert.doesNotMatch(source, /hyprctl/);
 });
 
+test("Super-Tab always starts from the focused monitor workspace", () => {
+    const workspaces = readK4("K4Workspaces.qml");
+    const plugin = readK4("K4WindowsPlugin.qml");
+
+    assert.match(workspaces, /Hyprland\.focusedMonitor\?\.activeWorkspace\?\.id/);
+    assert.match(plugin, /selectedWorkspaceId = K4Workspaces\.activeId > 0/);
+});
+
+test("fullscreen clients occupy the whole overview workspace but remain interactive", () => {
+    const adapter = readK4("K4Windows.qml");
+    const layout = readK4("K4WorkspaceLayout.qml");
+
+    assert.match(adapter, /function isFullscreen\(/);
+    assert.match(adapter, /if \(root\.isFullscreen\(window\)\)/);
+    assert.match(adapter, /return \(\{ x: 0, y: 0, width: 1, height: 1 \}\)/);
+    assert.match(layout, /readonly property bool fullscreen:/);
+    assert.match(layout, /K4Windows\.isFullscreen\(windowItem\.modelData\)/);
+    assert.match(layout, /z: windowItem\.dragging \? 1000/);
+    assert.match(layout, /MouseArea \{/);
+    assert.match(layout, /root\.moveRequested\(row, targetWorkspace\)/);
+});
+
 test("windows plugin exposes overview and alt-tab modes with enlarged geometry", () => {
     const source = readK4("K4WindowsPlugin.qml");
     assert.match(source, /name:\s*"windows"/);
