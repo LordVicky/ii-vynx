@@ -25,6 +25,8 @@ Singleton {
 
     function refresh() {
         HyprlandData.updateWindowList()
+        HyprlandData.updateMonitors()
+        HyprlandData.updateWorkspaces()
     }
 
     function appName(window) {
@@ -72,6 +74,83 @@ Singleton {
         if (!currentWorkspaceOnly)
             return windows
         return windowsForWorkspace(K4Workspaces.activeId)
+    }
+
+    function monitorForWorkspace(workspaceId) {
+        const id = Number(workspaceId)
+        if (!isFinite(id) || id <= 0)
+            return null
+
+        const workspaceData = HyprlandData.workspaceById[id]
+        const workspaceMonitorId = Number(
+            workspaceData?.monitorID ?? workspaceData?.monitorId ?? -1)
+        const workspaceMonitorName = String(workspaceData?.monitor || "")
+
+        for (let i = 0; i < HyprlandData.monitors.length; ++i) {
+            const monitor = HyprlandData.monitors[i]
+            if (workspaceMonitorId >= 0 && Number(monitor?.id) === workspaceMonitorId)
+                return monitor
+            if (workspaceMonitorName.length > 0
+                    && String(monitor?.name || "") === workspaceMonitorName)
+                return monitor
+            if (Number(monitor?.activeWorkspace?.id) === id)
+                return monitor
+        }
+
+        const rows = windowsForWorkspace(id)
+        if (rows.length > 0) {
+            const monitorId = Number(rows[0]?.monitor ?? -1)
+            for (let i = 0; i < HyprlandData.monitors.length; ++i) {
+                if (Number(HyprlandData.monitors[i]?.id) === monitorId)
+                    return HyprlandData.monitors[i]
+            }
+        }
+
+        return HyprlandData.monitors.length > 0 ? HyprlandData.monitors[0] : null
+    }
+
+    function workspaceGeometry(workspaceId) {
+        const monitor = monitorForWorkspace(workspaceId)
+        if (!monitor)
+            return ({ x: 0, y: 0, width: 1, height: 1, monitor: null })
+
+        const reserved = monitor.reserved ?? [0, 0, 0, 0]
+        const left = Math.max(0, Number(reserved[0] ?? 0))
+        const top = Math.max(0, Number(reserved[1] ?? 0))
+        const right = Math.max(0, Number(reserved[2] ?? 0))
+        const bottom = Math.max(0, Number(reserved[3] ?? 0))
+        const rotated = Math.abs(Number(monitor.transform ?? 0)) % 2 === 1
+        const monitorWidth = Math.max(1, Number(
+            rotated ? monitor.height : monitor.width) || 1)
+        const monitorHeight = Math.max(1, Number(
+            rotated ? monitor.width : monitor.height) || 1)
+
+        return ({
+            x: Number(monitor.x ?? 0) + left,
+            y: Number(monitor.y ?? 0) + top,
+            width: Math.max(1, monitorWidth - left - right),
+            height: Math.max(1, monitorHeight - top - bottom),
+            monitor: monitor
+        })
+    }
+
+    function windowGeometry(window) {
+        const workspaceRect = workspaceGeometry(workspaceId(window))
+        const rawX = Number(window?.at?.[0] ?? workspaceRect.x)
+        const rawY = Number(window?.at?.[1] ?? workspaceRect.y)
+        const rawWidth = Math.max(1, Number(window?.size?.[0] ?? 1))
+        const rawHeight = Math.max(1, Number(window?.size?.[1] ?? 1))
+
+        const x = Math.max(0, Math.min(1,
+            (rawX - workspaceRect.x) / workspaceRect.width))
+        const y = Math.max(0, Math.min(1,
+            (rawY - workspaceRect.y) / workspaceRect.height))
+        const width = Math.max(0.01, Math.min(1 - x,
+            rawWidth / workspaceRect.width))
+        const height = Math.max(0.01, Math.min(1 - y,
+            rawHeight / workspaceRect.height))
+
+        return ({ x: x, y: y, width: width, height: height })
     }
 
     function normalizedAddress(value) {
