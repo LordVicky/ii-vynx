@@ -36,7 +36,10 @@ Singleton {
     // continuous 1..N range with ten slots minimum, expanding automatically for
     // users whose live workspace ids extend beyond ten.
     readonly property var overviewList: {
-        let highestId = Math.max(root.minimumOverviewWorkspaces, root.activeId)
+        let highestId = root.minimumOverviewWorkspaces
+        if (root.activeId > 0 && root.activeId <= 100)
+            highestId = Math.max(highestId, root.activeId)
+
         for (let i = 0; i < root.list.length; ++i) {
             const id = Number(root.list[i]?.id ?? -1)
             if (isFinite(id) && id > highestId && id <= 100)
