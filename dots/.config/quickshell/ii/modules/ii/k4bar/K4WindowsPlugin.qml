@@ -28,6 +28,8 @@ K4Plugin {
     readonly property var entries: showWorkspaces
         ? K4Windows.windowsForWorkspace(selectedWorkspaceId)
         : K4Windows.switcherWindows(altTabCurrentWorkspaceOnly)
+    readonly property var otherEntries: showWorkspaces
+        ? K4Windows.windowsOutsideWorkspace(selectedWorkspaceId) : []
     readonly property int count: entries.length
 
     islandWidth: showWorkspaces
@@ -128,12 +130,15 @@ K4Plugin {
             index = (index - 1 + count) % count
     }
 
-    function choose() {
-        const row = entries[index]
+    function chooseWindow(row) {
         if (!row)
             return
         close()
         K4Windows.activate(row)
+    }
+
+    function choose() {
+        chooseWindow(entries[index])
     }
 
     function closeCurrent() {
