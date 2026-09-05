@@ -2,6 +2,7 @@ import qs
 import qs.services
 import qs.modules.common
 import qs.modules.common.widgets
+import qs.modules.ii.k4bar
 import Qt.labs.synchronizer
 import QtQuick
 import QtQuick.Controls
@@ -16,6 +17,25 @@ Scope {
     property bool dontAutoCancelSearch: false
 
     signal setSearchingTextRequested(string text)
+
+    readonly property bool k4WindowsAvailable:
+        Config.options.bar.variant === "k4" && K4Windows.plugin !== null
+
+    function toggleWorkspaceOverview() {
+        if (k4WindowsAvailable) {
+            GlobalStates.overviewOpen = false
+            K4Windows.plugin.toggleOverview()
+            return
+        }
+        GlobalStates.overviewOpen = !GlobalStates.overviewOpen
+    }
+
+    function triggerWindowSwitcher(direction) {
+        if (!k4WindowsAvailable)
+            return
+        GlobalStates.overviewOpen = false
+        K4Windows.plugin.triggerSwitcher(direction)
+    }
 
     Variants {
         id: overviewVariant
@@ -45,7 +65,7 @@ Scope {
                 WlrLayershell.keyboardFocus: GlobalStates.overviewOpen ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
                 color: "transparent"
 
-                property var zoomLevels: {  // has to be reverted compared to background
+                property var zoomLevels: {
                     "in": { default: 1, zoomed: 1.04 },
                     "out": { default: 1.04, zoomed: 1 }
                 }
@@ -56,10 +76,10 @@ Scope {
                 property real defaultRatio: isZoomInStyle ? zoomLevels.in.default : zoomLevels.out.default
                 property real zoomedRatio: isZoomInStyle ? zoomLevels.in.zoomed : zoomLevels.out.zoomed
 
-                property bool isResettingZoom: false 
+                property bool isResettingZoom: false
                 property real scaleAnimated: showOpeningAnimation ? GlobalStates.overviewOpen ? zoomedRatio : defaultRatio : 1
 
-                property real effectiveScale: showOpeningAnimation ? zoomedRatio - scaleAnimated + 1 : 1 
+                property real effectiveScale: showOpeningAnimation ? zoomedRatio - scaleAnimated + 1 : 1
 
                 onIsZoomInStyleChanged: isResettingZoom = true
                 onScaleAnimatedChanged: {
@@ -69,9 +89,9 @@ Scope {
                 }
 
                 visible: {
-                    if (isResettingZoom) return false // not showing when we are resetting 
-                    if (!showOpeningAnimation) return GlobalStates.overviewOpen // no anim
-                    
+                    if (isResettingZoom) return false
+                    if (!showOpeningAnimation) return GlobalStates.overviewOpen
+
                     return isZoomInStyle ? scaleAnimated > defaultRatio : scaleAnimated < defaultRatio
                 }
 
@@ -87,7 +107,7 @@ Scope {
                 }
                 property int barSize: Config.options.bar.vertical ? Appearance.sizes.verticalBarWidth : Appearance.sizes.barHeight
                 property int margin: isZoomInStyle ? barSize : barSize * 2
-                margins { 
+                margins {
                     top: -margin * 2
                     bottom: -margin * 2
                     left: -margin * 2
@@ -126,8 +146,6 @@ Scope {
                     }
                 }
 
-                
-
                 Timer {
                     id: delayedGrabTimer
                     interval: Config.options.hacks.arbitraryRaceConditionDelay
@@ -146,7 +164,6 @@ Scope {
                     }
                 }
 
-
                 function setSearchingText(text) {
                     searchWidget.setSearchingText(text);
                     searchWidget.focusFirstItem();
@@ -156,12 +173,12 @@ Scope {
                     id: contentItem
                     anchors.fill: parent
 
-                    MouseArea { // We could have used PanelWindow.mask to detect this, but this is more stable
+                    MouseArea {
                         anchors.fill: parent
                         onClicked: GlobalStates.overviewOpen = false;
                     }
 
-                    Item { // Wrapper for animation 
+                    Item {
                         id: searchWidgetWrapper
                         implicitHeight: searchWidget.implicitHeight
                         implicitWidth: searchWidget.implicitWidth
@@ -187,9 +204,8 @@ Scope {
                             }
                         }
                     }
-                    
 
-                    Loader { // Classic overview
+                    Loader {
                         id: overviewLoader
                         scale: root.effectiveScale
                         anchors.top: searchWidgetWrapper.bottom
@@ -202,7 +218,7 @@ Scope {
                         }
                     }
 
-                    Loader { // Scrolling overview
+                    Loader {
                         id: scrollingOverviewLoader
                         scale: root.effectiveScale
                         anchors.fill: parent
@@ -214,12 +230,10 @@ Scope {
                             monitorIndex: root.monitorIndex
                         }
                     }
-                }   
-            }   
+                }
+            }
         }
     }
-    
-    
 
     function toggleClipboard() {
         if (GlobalStates.overviewOpen && overviewScope.dontAutoCancelSearch) {
@@ -248,9 +262,11 @@ Scope {
             GlobalStates.overviewOpen = !GlobalStates.overviewOpen;
         }
         function workspacesToggle() {
-            GlobalStates.overviewOpen = !GlobalStates.overviewOpen;
+            overviewScope.toggleWorkspaceOverview();
         }
         function close() {
+            if (overviewScope.k4WindowsAvailable && K4Windows.plugin.open)
+                K4Windows.plugin.close()
             GlobalStates.overviewOpen = false;
         }
         function open() {
@@ -277,6 +293,8 @@ Scope {
         description: "Closes overview on press"
 
         onPressed: {
+            if (overviewScope.k4WindowsAvailable && K4Windows.plugin.open)
+                K4Windows.plugin.close()
             GlobalStates.overviewOpen = false;
         }
     }
@@ -285,7 +303,23 @@ Scope {
         description: "Toggles overview on press"
 
         onPressed: {
-            GlobalStates.overviewOpen = !GlobalStates.overviewOpen;
+            overviewScope.toggleWorkspaceOverview();
+        }
+    }
+    GlobalShortcut {
+        name: "windowsSwitcherToggle"
+        description: "Cycles K4 windows forward"
+
+        onPressed: {
+            overviewScope.triggerWindowSwitcher(1);
+        }
+    }
+    GlobalShortcut {
+        name: "windowsSwitcherPrevious"
+        description: "Cycles K4 windows backward"
+
+        onPressed: {
+            overviewScope.triggerWindowSwitcher(-1);
         }
     }
     GlobalShortcut {
