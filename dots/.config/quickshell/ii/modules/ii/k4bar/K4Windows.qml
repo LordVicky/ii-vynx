@@ -9,7 +9,7 @@ import qs.services
 // K4 window presentation adapter over ii-vynx's existing Wayland/Hyprland
 // owners. HyprlandData remains the client-state owner, ToplevelManager supplies
 // native Wayland toplevels for previews, and compositor actions stay in-process
-// through Quickshell's Hyprland dispatcher. No hyprctl subprocess is involved.
+// through Quickshell's Hyprland dispatcher.
 Singleton {
     id: root
 
