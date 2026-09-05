@@ -62,7 +62,7 @@ Item {
         color: root.mini ? K4Theme.panelSurfaceHi : "#090a0c"
         border.width: root.mini ? 0 : 1
         border.color: K4Theme.panelLine
-        clip: true
+        clip: root.mini
 
         Image {
             id: workspaceWallpaper
