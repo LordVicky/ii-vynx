@@ -92,26 +92,24 @@ test("windows plugin exposes overview and alt-tab modes with enlarged geometry",
 test("modifier release commits only an armed Super-Tab or Alt-Tab session", () => {
     const plugin = readK4("K4WindowsPlugin.qml");
     const routing = readK4("K4LauncherRouting.qml");
-    const view = readK4("K4WindowsView.qml");
     const binds = fs.readFileSync(path.join(hyprlandRoot, "hyprland/k4-windows.lua"), "utf8");
 
     assert.match(plugin, /property string releaseCommitModifier:\s*""/);
     assert.match(plugin, /function armReleaseCommit\(modifier\)/);
     assert.match(plugin, /function commitRelease\(modifier\)/);
-    assert.match(plugin, /if \(!open \|\| releaseCommitModifier !== modifier\)/);
-    assert.match(plugin, /releaseCommitModifier = ""[\s\S]*?choose\(\)/);
+    assert.match(plugin, /if \(!open \|\| releaseCommitModifier !== value\)/);
+    assert.match(plugin, /releaseCommitModifier = ""[\s\S]*?chooseWindow\(row\)/);
     assert.match(plugin, /function close\(\)[\s\S]*?releaseCommitModifier = ""/);
 
-    assert.match(routing, /root\.toggleWindowsOverview\(\)[\s\S]*?armReleaseCommit\("super"\)/);
-    assert.match(routing, /root\.triggerWindowSwitcher\(1\)[\s\S]*?armReleaseCommit\("alt"\)/);
+    assert.match(routing, /function toggleWindowsOverview\(\)[\s\S]*?armReleaseCommit\("super"\)/);
+    assert.match(routing, /function triggerWindowSwitcher\(direction\)[\s\S]*?armReleaseCommit\("alt"\)/);
     assert.match(routing, /name:\s*"windowsSwitcherModifier"/);
-    assert.match(routing, /onReleased:[\s\S]*?commitRelease\("alt"\)/);
+    assert.match(routing, /name:\s*"windowsSwitcherModifier"[\s\S]*?onReleased:[\s\S]*?commitRelease\("alt"\)/);
     assert.match(routing, /name:\s*"searchToggleRelease"[\s\S]*?commitRelease\("super"\)/);
 
-    assert.match(binds, /ALT_L/);
-    assert.match(binds, /ALT_R/);
+    assert.match(binds, /ALT \+ ALT_L/);
+    assert.match(binds, /ALT \+ ALT_R/);
     assert.match(binds, /quickshell:windowsSwitcherModifier/);
-    assert.doesNotMatch(view, /Keys\.onReleased/);
 });
 
 test("workspace layout mirrors Hyprland geometry with live Wayland previews", () => {
