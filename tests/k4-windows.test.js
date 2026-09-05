@@ -58,9 +58,9 @@ test("Super-Tab and Alt-Tab route through Quickshell rather than window scripts"
     assert.match(source, /name:\s*"overviewWorkspacesToggle"/);
     assert.match(source, /K4Windows\.plugin\.toggleOverview\(\)/);
     assert.match(source, /name:\s*"windowsSwitcherToggle"/);
-    assert.match(source, /K4Windows\.plugin\.triggerSwitcher\(1\)/);
+    assert.match(source, /overviewScope\.triggerWindowSwitcher\(1\)/);
     assert.match(source, /name:\s*"windowsSwitcherPrevious"/);
-    assert.match(source, /K4Windows\.plugin\.triggerSwitcher\(-1\)/);
+    assert.match(source, /overviewScope\.triggerWindowSwitcher\(-1\)/);
 
     const entry = fs.readFileSync(path.join(hyprlandRoot, "hyprland.lua"), "utf8");
     const binds = fs.readFileSync(path.join(hyprlandRoot, "hyprland/k4-windows.lua"), "utf8");
