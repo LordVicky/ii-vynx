@@ -5,9 +5,8 @@ import QtQuick.Layouts
 import Quickshell
 import Quickshell.Wayland
 
-// Option A: workspace rail + live window stage for Super+Tab, with the same
-// stage expanded to the full island for Alt+Tab. Previews come directly from
-// Wayland ToplevelManager through K4Windows.toplevelFor().
+// Option A: workspace rail + live Wayland preview stage for Super+Tab. Alt+Tab
+// reuses the stage without the rail and gives each switcher entry more room.
 Item {
     id: root
     required property var plugin
@@ -69,10 +68,8 @@ Item {
         }
     }
 
-    // Alt+Tab is a modifier session: the compositor keeps sending Tab presses
-    // through the registered global shortcut, while releasing Alt lands here
-    // after K4 has taken exclusive keyboard focus. Super+Tab is intentionally a
-    // persistent overview and therefore does not commit on Super release.
+    // Alt+Tab is transient: releasing Alt commits the selected native toplevel.
+    // Super+Tab stays open until the user selects a window or dismisses it.
     Keys.onReleased: function(event) {
         if (root.plugin.mode === "switcher" && event.key === Qt.Key_Alt) {
             root.plugin.choose()
@@ -82,22 +79,22 @@ Item {
 
     ColumnLayout {
         anchors.fill: parent
-        anchors.leftMargin: 14
-        anchors.rightMargin: 14
-        anchors.topMargin: 10
-        anchors.bottomMargin: 14
-        spacing: 9
+        anchors.leftMargin: 16
+        anchors.rightMargin: 16
+        anchors.topMargin: 12
+        anchors.bottomMargin: 15
+        spacing: 10
 
         RowLayout {
             Layout.fillWidth: true
-            Layout.preferredHeight: 30
+            Layout.preferredHeight: 32
             spacing: 9
 
             Text {
                 text: root.plugin.showWorkspaces ? "Windows" : "Switch windows"
                 color: K4Theme.ink
                 font.family: K4Theme.uiFont
-                font.pixelSize: 15
+                font.pixelSize: 16
                 font.weight: Font.DemiBold
                 renderType: Text.NativeRendering
                 Layout.alignment: Qt.AlignVCenter
@@ -120,18 +117,18 @@ Item {
             Rectangle {
                 id: currentOnlyToggle
                 visible: !root.plugin.showWorkspaces
-                Layout.preferredWidth: currentOnlyLabel.implicitWidth + 38
-                Layout.preferredHeight: 25
-                radius: 12.5
-                color: currentOnlyHover.hovered ? K4Theme.panelSurfaceHot
-                    : K4Theme.panelSurfaceHi
+                Layout.preferredWidth: currentOnlyLabel.implicitWidth + 40
+                Layout.preferredHeight: 27
+                radius: 13.5
+                color: currentOnlyHover.hovered
+                    ? K4Theme.panelSurfaceHot : K4Theme.panelSurfaceHi
                 border.width: 1
                 border.color: root.plugin.altTabCurrentWorkspaceOnly
                     ? K4Theme.blue : K4Theme.panelLine
 
                 Row {
                     anchors.centerIn: parent
-                    spacing: 6
+                    spacing: 7
 
                     Rectangle {
                         width: 7
@@ -174,14 +171,14 @@ Item {
         RowLayout {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            spacing: 10
+            spacing: 12
 
             Rectangle {
                 id: workspaceRail
                 visible: root.plugin.showWorkspaces
-                Layout.preferredWidth: root.plugin.showWorkspaces ? 174 : 0
+                Layout.preferredWidth: 190
                 Layout.fillHeight: true
-                radius: 14
+                radius: 15
                 color: K4Theme.panelSurface
                 border.width: 1
                 border.color: K4Theme.panelLine
@@ -190,8 +187,8 @@ Item {
                 ListView {
                     id: workspaceList
                     anchors.fill: parent
-                    anchors.margins: 8
-                    spacing: 7
+                    anchors.margins: 9
+                    spacing: 8
                     clip: true
                     boundsBehavior: Flickable.StopAtBounds
                     model: K4Workspaces.list.filter(workspace => workspace.id > 0)
@@ -209,8 +206,8 @@ Item {
                             K4Windows.windowCountForWorkspace(workspaceId)
 
                         width: ListView.view.width
-                        height: 58
-                        radius: 11
+                        height: 66
+                        radius: 12
                         color: selected ? K4Theme.panelSurfaceHot
                             : workspaceHover.hovered ? K4Theme.panelSurfaceHi
                             : "transparent"
@@ -221,21 +218,20 @@ Item {
                             anchors.left: parent.left
                             anchors.right: parent.right
                             anchors.verticalCenter: parent.verticalCenter
-                            anchors.leftMargin: 10
-                            anchors.rightMargin: 9
-                            spacing: 7
+                            anchors.leftMargin: 11
+                            anchors.rightMargin: 10
+                            spacing: 8
 
-                            Row {
+                            RowLayout {
                                 width: parent.width
                                 spacing: 6
 
                                 Rectangle {
                                     visible: workspaceCard.active
-                                    width: 6
-                                    height: 6
+                                    Layout.preferredWidth: 6
+                                    Layout.preferredHeight: 6
                                     radius: 3
                                     color: K4Theme.blue
-                                    anchors.verticalCenter: parent.verticalCenter
                                 }
 
                                 Text {
@@ -248,11 +244,7 @@ Item {
                                     renderType: Text.NativeRendering
                                 }
 
-                                Item {
-                                    width: Math.max(0, workspaceCard.width
-                                        - (workspaceCard.active ? 102 : 90))
-                                    height: 1
-                                }
+                                Item { Layout.fillWidth: true }
 
                                 Text {
                                     text: workspaceCard.windowCount
@@ -265,11 +257,12 @@ Item {
 
                             Row {
                                 spacing: 4
+
                                 Repeater {
                                     model: Math.min(workspaceCard.windowCount, 6)
                                     Rectangle {
                                         required property int index
-                                        width: 17 + (index % 2) * 5
+                                        width: 18 + (index % 2) * 5
                                         height: 8
                                         radius: 3
                                         color: workspaceCard.selected
@@ -303,7 +296,7 @@ Item {
                 id: stage
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                radius: 14
+                radius: 15
                 color: K4Theme.panelSurface
                 border.width: 1
                 border.color: K4Theme.panelLine
@@ -311,13 +304,14 @@ Item {
 
                 ColumnLayout {
                     anchors.fill: parent
-                    anchors.margins: 9
-                    spacing: 7
+                    anchors.margins: 10
+                    spacing: 8
 
                     RowLayout {
                         visible: root.plugin.showWorkspaces
                         Layout.fillWidth: true
-                        Layout.preferredHeight: visible ? 25 : 0
+                        Layout.preferredHeight: visible ? 28 : 0
+                        spacing: 6
 
                         Text {
                             text: `Workspace ${root.plugin.selectedWorkspaceId}`
@@ -329,7 +323,8 @@ Item {
                         }
 
                         Text {
-                            text: `${root.plugin.count} window${root.plugin.count === 1 ? "" : "s"}`
+                            text: root.plugin.count === 1
+                                ? "1 window" : `${root.plugin.count} windows`
                             color: K4Theme.panelMuted
                             font.family: K4Theme.uiFont
                             font.pixelSize: 10
@@ -362,9 +357,9 @@ Item {
                                 ? GridView.FlowLeftToRight
                                 : GridView.FlowTopToBottom
                             cellWidth: root.plugin.showWorkspaces
-                                ? Math.max(190, width / 2)
-                                : 210
-                            cellHeight: root.plugin.showWorkspaces ? 155 : height
+                                ? Math.max(260, width / 2)
+                                : 260
+                            cellHeight: root.plugin.showWorkspaces ? 220 : height
 
                             delegate: Item {
                                 id: cardCell
@@ -376,8 +371,8 @@ Item {
                                 Rectangle {
                                     id: card
                                     anchors.fill: parent
-                                    anchors.margins: 4
-                                    radius: 12
+                                    anchors.margins: 5
+                                    radius: 13
                                     color: K4Theme.panelSurfaceHi
                                     border.width: selected ? 1 : 0
                                     border.color: K4Theme.blue
@@ -399,10 +394,10 @@ Item {
 
                                         Image {
                                             anchors.centerIn: parent
-                                            width: 44
-                                            height: 44
+                                            width: 52
+                                            height: 52
                                             source: K4Windows.appIcon(cardCell.modelData)
-                                            sourceSize: Qt.size(64, 64)
+                                            sourceSize: Qt.size(72, 72)
                                             fillMode: Image.PreserveAspectFit
                                             opacity: card.toplevel ? 0 : 0.8
                                         }
@@ -431,20 +426,20 @@ Item {
                                         anchors.left: parent.left
                                         anchors.right: parent.right
                                         anchors.bottom: parent.bottom
-                                        height: 38
+                                        height: 44
                                         color: "#0b0b0d"
 
                                         RowLayout {
                                             anchors.fill: parent
-                                            anchors.leftMargin: 8
-                                            anchors.rightMargin: 8
-                                            spacing: 7
+                                            anchors.leftMargin: 9
+                                            anchors.rightMargin: 9
+                                            spacing: 8
 
                                             Image {
-                                                Layout.preferredWidth: 21
-                                                Layout.preferredHeight: 21
+                                                Layout.preferredWidth: 24
+                                                Layout.preferredHeight: 24
                                                 source: K4Windows.appIcon(cardCell.modelData)
-                                                sourceSize: Qt.size(32, 32)
+                                                sourceSize: Qt.size(36, 36)
                                                 fillMode: Image.PreserveAspectFit
                                             }
 
@@ -474,15 +469,6 @@ Item {
                                                     renderType: Text.NativeRendering
                                                 }
                                             }
-
-                                            Text {
-                                                visible: cardCell.modelData?.floating ?? false
-                                                text: "Floating"
-                                                color: K4Theme.panelDim
-                                                font.family: K4Theme.uiFont
-                                                font.pixelSize: 8
-                                                renderType: Text.NativeRendering
-                                            }
                                         }
                                     }
 
@@ -491,13 +477,14 @@ Item {
                                             && !root.plugin.altTabCurrentWorkspaceOnly
                                         anchors.left: parent.left
                                         anchors.top: parent.top
-                                        anchors.margins: 7
-                                        width: workspaceBadge.implicitWidth + 12
-                                        height: 20
-                                        radius: 10
+                                        anchors.margins: 8
+                                        width: workspaceBadge.implicitWidth + 14
+                                        height: 21
+                                        radius: 10.5
                                         color: "#bb000000"
                                         border.width: 1
                                         border.color: K4Theme.panelLine
+                                        z: 3
 
                                         Text {
                                             id: workspaceBadge
@@ -515,9 +502,9 @@ Item {
                                         visible: cardMouse.containsMouse || card.selected
                                         anchors.right: parent.right
                                         anchors.top: parent.top
-                                        anchors.margins: 7
-                                        width: 24
-                                        height: 24
+                                        anchors.margins: 8
+                                        width: 26
+                                        height: 26
                                         radius: 8
                                         color: closeMouse.containsMouse
                                             ? Qt.rgba(1, 0.27, 0.23, 0.24)
@@ -552,6 +539,7 @@ Item {
                                         hoverEnabled: true
                                         cursorShape: Qt.PointingHandCursor
                                         acceptedButtons: Qt.LeftButton | Qt.MiddleButton
+                                        z: 1
                                         onEntered: root.plugin.index = cardCell.index
                                         onClicked: function(mouse) {
                                             root.plugin.index = cardCell.index
