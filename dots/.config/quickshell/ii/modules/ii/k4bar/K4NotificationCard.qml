@@ -340,7 +340,7 @@ Item {
                         source: root.imageSource
                         sourceSize.width: 184
                         sourceSize.height: 128
-                        fillMode: Image.PreserveAspectCrop
+                        fillMode: Image.PreserveAspectFit
                         asynchronous: true
                         cache: true
                     }
