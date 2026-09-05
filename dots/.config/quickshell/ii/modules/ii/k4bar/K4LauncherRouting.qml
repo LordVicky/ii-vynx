@@ -37,13 +37,19 @@ Scope {
     }
 
     function toggleWindowsOverview() {
-        if (K4Windows.plugin)
-            K4Windows.plugin.toggleOverview()
+        if (!K4Windows.plugin)
+            return
+        K4Windows.plugin.toggleOverview()
+        if (K4Windows.plugin.open && K4Windows.plugin.mode === "overview")
+            K4Windows.plugin.armReleaseCommit("super")
     }
 
     function triggerWindowSwitcher(direction) {
-        if (K4Windows.plugin)
-            K4Windows.plugin.triggerSwitcher(direction)
+        if (!K4Windows.plugin)
+            return
+        K4Windows.plugin.triggerSwitcher(direction)
+        if (K4Windows.plugin.open && K4Windows.plugin.mode === "switcher")
+            K4Windows.plugin.armReleaseCommit("alt")
     }
 
     IpcHandler {
@@ -91,12 +97,31 @@ Scope {
         onPressed: root.triggerWindowSwitcher(-1)
     }
 
+    // Hyprland binds the physical Alt modifier to this shortcut. Unlike a
+    // Keys.onReleased handler inside the island, this release arrives even
+    // while the compositor owns the Alt+Tab chord.
+    GlobalShortcut {
+        name: "windowsSwitcherModifier"
+        description: "Commits the armed K4 Alt-Tab selection on Alt release"
+        onReleased: {
+            if (K4Windows.plugin)
+                K4Windows.plugin.commitRelease("alt")
+        }
+    }
+
     GlobalShortcut {
         name: "searchToggleRelease"
         description: "Toggles the active K4 launcher on release"
 
         onPressed: GlobalStates.superReleaseMightTrigger = true
         onReleased: {
+            // Super+Tab uses the same proven Super release transport as the
+            // ii-vynx launcher. An armed Windows session wins before launcher
+            // release logic so releasing Super focuses the highlighted client.
+            if (K4Windows.plugin && K4Windows.plugin.commitRelease("super")) {
+                GlobalStates.superReleaseMightTrigger = true
+                return
+            }
             if (!GlobalStates.superReleaseMightTrigger) {
                 GlobalStates.superReleaseMightTrigger = true
                 return
