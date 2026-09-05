@@ -6,6 +6,8 @@ import Quickshell.Hyprland
 
 // k4 workspace contract backed by the existing Quickshell Hyprland service.
 Singleton {
+    readonly property int minimumOverviewWorkspaces: 10
+
     readonly property var list: {
         const values = Hyprland.workspaces.values.slice()
         values.sort((a, b) => a.id - b.id)
@@ -26,5 +28,22 @@ Singleton {
                 return list[i].id
         }
         return -1
+    }
+
+    // The overview must expose empty workspace destinations too. Keep a
+    // continuous 1..N range with ten slots minimum, expanding automatically for
+    // users whose live workspace ids extend beyond ten.
+    readonly property var overviewList: {
+        let highestId = Math.max(root.minimumOverviewWorkspaces, root.activeId)
+        for (let i = 0; i < root.list.length; ++i) {
+            const id = Number(root.list[i]?.id ?? -1)
+            if (isFinite(id) && id > highestId && id <= 100)
+                highestId = id
+        }
+
+        const values = []
+        for (let id = 1; id <= highestId; ++id)
+            values.push({ id: id })
+        return values
     }
 }
