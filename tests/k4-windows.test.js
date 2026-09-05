@@ -22,6 +22,7 @@ test("windows adapter stays on ii-vynx Wayland and Hyprland ownership seams", ()
     assert.match(source, /function workspaceGeometry\(/);
     assert.match(source, /function windowGeometry\(/);
     assert.match(source, /function moveToWorkspace\(/);
+    assert.match(source, /function swapWindows\(/);
     assert.doesNotMatch(source, /execDetached/);
     assert.doesNotMatch(source, /hyprctl/);
 });
@@ -55,17 +56,35 @@ test("workspace layout mirrors Hyprland geometry with live Wayland previews", ()
     assert.match(source, /height:\s*windowItem\.layoutHeight/);
 });
 
-test("Super-Tab workspace layout supports native drag to another workspace", () => {
+test("Super-Tab drag uses the proven ii-vynx imperative Drag lifecycle", () => {
     const source = readK4("K4WorkspaceLayout.qml");
     const view = readK4("K4WindowsView.qml");
 
-    assert.match(source, /Drag\.active/);
-    assert.match(source, /drag\.target:\s*root\.interactive/);
-    assert.match(source, /root\.draggingWindow = windowItem\.modelData/);
+    assert.match(source, /windowItem\.Drag\.active = true/);
+    assert.match(source, /windowItem\.Drag\.source = windowItem/);
+    assert.match(source, /windowItem\.Drag\.hotSpot\.x = mouse\.x/);
+    assert.match(source, /windowItem\.Drag\.hotSpot\.y = mouse\.y/);
+    assert.match(source, /const targetWorkspace = root\.draggingTargetWorkspace/);
+    assert.match(source, /windowItem\.Drag\.active = false/);
+    assert.match(source, /root\.moveRequested\(row, targetWorkspace\)/);
     assert.match(view, /DropArea/);
     assert.match(view, /root\.draggingTargetWorkspace = workspaceCard\.workspaceId/);
     assert.match(view, /K4Windows\.moveToWorkspace\(row, targetWorkspace\)/);
-    assert.match(view, /K4WorkspaceLayout/);
+});
+
+test("Super-Tab can reorder tiled windows inside a workspace like ii-vynx overview", () => {
+    const source = readK4("K4WorkspaceLayout.qml");
+    const adapter = readK4("K4Windows.qml");
+    const view = readK4("K4WindowsView.qml");
+
+    assert.match(source, /signal swapRequested\(var row, var targetRow, string direction\)/);
+    assert.match(source, /property var draggingTargetWindow/);
+    assert.match(source, /property string draggingDirection/);
+    assert.match(source, /DropArea/);
+    assert.match(source, /drag\.x < width \/ 2 \? "l" : "r"/);
+    assert.match(source, /root\.swapRequested\(row, targetRow, direction\)/);
+    assert.match(adapter, /hl\.dsp\.layout\(`swapaddrdir/);
+    assert.match(view, /K4Windows\.swapWindows\(row, targetRow, direction\)/);
 });
 
 test("Alt-Tab keeps the windows-only live preview switcher", () => {
