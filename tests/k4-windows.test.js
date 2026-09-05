@@ -49,6 +49,16 @@ test("Super-Tab exposes a continuous scrollable workspace range", () => {
     assert.match(view, /positionViewAtIndex\(index, ListView\.Contain\)/);
 });
 
+test("repeated Super-Tab cycles only workspaces that contain windows", () => {
+    const plugin = readK4("K4WindowsPlugin.qml");
+
+    assert.match(plugin, /function occupiedWorkspaceIds\(/);
+    assert.match(plugin, /K4Workspaces\.overviewList/);
+    assert.match(plugin, /K4Windows\.windowCountForWorkspace\(id\) > 0/);
+    assert.match(plugin, /function cycleOverviewWorkspace\(/);
+    assert.match(plugin, /if \(open && mode === "overview"\)[\s\S]*?cycleOverviewWorkspace\(1\)/);
+});
+
 test("fullscreen clients occupy the whole overview workspace but remain interactive", () => {
     const adapter = readK4("K4Windows.qml");
     const layout = readK4("K4WorkspaceLayout.qml");
@@ -90,6 +100,16 @@ test("workspace layout mirrors Hyprland geometry with live Wayland previews", ()
     assert.match(source, /y:\s*windowItem\.layoutY/);
     assert.match(source, /width:\s*windowItem\.layoutWidth/);
     assert.match(source, /height:\s*windowItem\.layoutHeight/);
+});
+
+test("workspace canvases reuse the current ii-vynx wallpaper", () => {
+    const layout = readK4("K4WorkspaceLayout.qml");
+
+    assert.match(layout, /Config\.options\.background\.thumbnailPath/);
+    assert.match(layout, /Config\.options\.background\.wallpaperPath/);
+    assert.match(layout, /id:\s*workspaceWallpaper/);
+    assert.match(layout, /fillMode:\s*Image\.PreserveAspectCrop/);
+    assert.match(layout, /mipmap:\s*true/);
 });
 
 test("live K4 window previews use smooth mipmapped downsampling", () => {
