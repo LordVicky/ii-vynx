@@ -32,10 +32,13 @@ K4Plugin {
         ? K4Windows.windowsOutsideWorkspace(selectedWorkspaceId) : []
     readonly property int count: entries.length
 
+    // Window previews are the primary content here, so give them substantially
+    // more room than the first V2 pass. K4's global widthScale still applies on
+    // top of these intrinsic dimensions.
     islandWidth: showWorkspaces
-        ? 900
-        : Math.min(900, Math.max(430, 80 + Math.min(count, 4) * 210))
-    islandHeight: showWorkspaces ? 440 : 245
+        ? 1120
+        : Math.min(1120, Math.max(520, 80 + Math.min(count, 4) * 260))
+    islandHeight: showWorkspaces ? 560 : 320
 
     function prepare() {
         K4Windows.refresh()
