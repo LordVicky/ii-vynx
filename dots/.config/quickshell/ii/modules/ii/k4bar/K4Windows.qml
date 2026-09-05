@@ -198,6 +198,15 @@ Singleton {
         Qt.callLater(refresh)
     }
 
+    function swapWindows(window, targetWindow, direction) {
+        if (!window?.address || !targetWindow?.address
+                || window.address === targetWindow.address)
+            return
+        const dir = direction === "l" ? "l" : "r"
+        Hyprland.dispatch(`hl.dsp.layout("swapaddrdir ${targetWindow.address} ${dir} ${window.address} true")`)
+        Qt.callLater(refresh)
+    }
+
     function focusWorkspace(workspaceId) {
         const id = Number(workspaceId)
         if (!isFinite(id) || id <= 0)
