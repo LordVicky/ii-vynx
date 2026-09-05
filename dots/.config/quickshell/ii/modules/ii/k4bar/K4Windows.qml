@@ -53,6 +53,10 @@ Singleton {
         return id > 0 ? String(id) : ""
     }
 
+    function isFullscreen(window) {
+        return Number(window?.fullscreen ?? 0) > 0
+    }
+
     function windowsForWorkspace(workspaceId) {
         const id = Number(workspaceId)
         return windows.filter(window => root.workspaceId(window) === id)
@@ -135,6 +139,13 @@ Singleton {
     }
 
     function windowGeometry(window) {
+        // A fullscreen client owns the visible workspace even when Hyprland's
+        // client snapshot retains pre-fullscreen at/size geometry. Normalize it
+        // to the whole workspace so the overview matches what is actually on
+        // screen while keeping the same native client for focus/drag/close.
+        if (root.isFullscreen(window))
+            return ({ x: 0, y: 0, width: 1, height: 1 })
+
         const workspaceRect = workspaceGeometry(workspaceId(window))
         const rawX = Number(window?.at?.[0] ?? workspaceRect.x)
         const rawY = Number(window?.at?.[1] ?? workspaceRect.y)
