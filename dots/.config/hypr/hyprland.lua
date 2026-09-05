@@ -17,6 +17,7 @@ require("hyprland.general")
 require("hyprland.rules")
 require("hyprland.colors")
 require("hyprland.keybinds")
+require("hyprland.k4-windows")
 require("hyprland.launcher")
 
 -- Custom configurations --
