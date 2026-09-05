@@ -35,6 +35,20 @@ test("Super-Tab always starts from the focused monitor workspace", () => {
     assert.match(plugin, /selectedWorkspaceId = K4Workspaces\.activeId > 0/);
 });
 
+test("Super-Tab exposes a continuous scrollable workspace range", () => {
+    const workspaces = readK4("K4Workspaces.qml");
+    const view = readK4("K4WindowsView.qml");
+
+    assert.match(workspaces, /minimumOverviewWorkspaces:\s*10/);
+    assert.match(workspaces, /readonly property var overviewList/);
+    assert.match(workspaces, /for \(let id = 1; id <= highestId; \+\+id\)/);
+    assert.match(view, /model:\s*K4Workspaces\.overviewList/);
+    assert.match(view, /flickableDirection:\s*Flickable\.VerticalFlick/);
+    assert.match(view, /id:\s*workspaceScrollThumb/);
+    assert.match(view, /workspaceList\.contentHeight > workspaceList\.height/);
+    assert.match(view, /positionViewAtIndex\(index, ListView\.Contain\)/);
+});
+
 test("fullscreen clients occupy the whole overview workspace but remain interactive", () => {
     const adapter = readK4("K4Windows.qml");
     const layout = readK4("K4WorkspaceLayout.qml");
@@ -76,6 +90,18 @@ test("workspace layout mirrors Hyprland geometry with live Wayland previews", ()
     assert.match(source, /y:\s*windowItem\.layoutY/);
     assert.match(source, /width:\s*windowItem\.layoutWidth/);
     assert.match(source, /height:\s*windowItem\.layoutHeight/);
+});
+
+test("live K4 window previews use smooth mipmapped downsampling", () => {
+    const layout = readK4("K4WorkspaceLayout.qml");
+    const view = readK4("K4WindowsView.qml");
+
+    for (const source of [layout, view]) {
+        assert.match(source, /ScreencopyView[\s\S]*?smooth:\s*true/);
+        assert.match(source, /layer\.enabled:\s*true/);
+        assert.match(source, /layer\.smooth:\s*true/);
+        assert.match(source, /layer\.mipmap:\s*true/);
+    }
 });
 
 test("Super-Tab drag uses the proven ii-vynx imperative Drag lifecycle", () => {
