@@ -3,6 +3,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
+import qs.modules.common
 
 // Proportional view of one Hyprland workspace. Client placement and size come
 // directly from the existing HyprlandData snapshot through K4Windows, while
@@ -29,6 +30,14 @@ Item {
     readonly property real workspaceAspect: Math.max(0.2,
         Number(workspaceRect.width) / Math.max(1, Number(workspaceRect.height)))
     readonly property var rows: K4Windows.windowsForWorkspace(root.workspaceId)
+    // Reuse ii-vynx's canonical wallpaper state. Prefer the generated thumbnail
+    // so workspace previews also work for animated/video wallpapers.
+    readonly property string wallpaperSource: {
+        const thumbnail = String(Config.options.background.thumbnailPath || "")
+        if (thumbnail.length > 0)
+            return thumbnail
+        return String(Config.options.background.wallpaperPath || "")
+    }
 
     function restorePosition(item) {
         item.x = Qt.binding(function() { return item.layoutX })
@@ -53,6 +62,25 @@ Item {
         color: root.mini ? K4Theme.panelSurfaceHi : "#090a0c"
         border.width: root.mini ? 0 : 1
         border.color: K4Theme.panelLine
+        clip: true
+
+        Image {
+            id: workspaceWallpaper
+            anchors.fill: parent
+            source: root.wallpaperSource
+            fillMode: Image.PreserveAspectCrop
+            asynchronous: true
+            cache: true
+            smooth: true
+            mipmap: true
+            z: 0
+        }
+
+        Rectangle {
+            anchors.fill: parent
+            color: root.mini ? "#12000000" : "#18000000"
+            z: 0.5
+        }
 
         Text {
             visible: root.rows.length === 0 && !root.mini
@@ -62,6 +90,7 @@ Item {
             font.family: K4Theme.uiFont
             font.pixelSize: 11
             renderType: Text.NativeRendering
+            z: 2
         }
 
         Repeater {
