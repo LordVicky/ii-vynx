@@ -24,7 +24,6 @@ Item {
     signal activated(var row)
     signal closeRequested(var row)
     signal moveRequested(var row, int targetWorkspace)
-    signal swapRequested(var row, var targetRow, string direction)
 
     readonly property var workspaceRect: K4Windows.workspaceGeometry(root.workspaceId)
     readonly property real workspaceAspect: Math.max(0.2,
@@ -256,7 +255,7 @@ Item {
 
                         if (targetRow?.address
                                 && targetRow.address !== row?.address)
-                            root.swapRequested(row, targetRow, direction)
+                            K4Windows.swapWindows(row, targetRow, direction)
                     }
                     onCanceled: {
                         windowItem.dragging = false
