@@ -1,8 +1,9 @@
 import QtQuick
 import Quickshell.Io
 
-// Window switcher adapted from k4ditano/k4 WindowsPlugin at the pinned source
-// commit. Client ownership remains in ii-vynx HyprlandData.
+// Windows V2 keeps one native Wayland-backed surface with two entry modes:
+// Super+Tab opens the workspace overview, while Alt+Tab opens a transient
+// windows-only switcher. Client ownership remains in ii-vynx HyprlandData.
 K4Plugin {
     id: root
 
@@ -16,62 +17,157 @@ K4Plugin {
     grabKeyboard: open
 
     property bool open: false
+    property string mode: "overview" // "overview" | "switcher"
     property int index: 0
-    readonly property var entries: K4Windows.windows
+    property int selectedWorkspaceId: -1
+    // Session preference intentionally lives on the long-lived plugin so the
+    // in-view toggle affects every subsequent Alt+Tab until Quickshell restarts.
+    property bool altTabCurrentWorkspaceOnly: false
+
+    readonly property bool showWorkspaces: mode === "overview"
+    readonly property var entries: showWorkspaces
+        ? K4Windows.windowsForWorkspace(selectedWorkspaceId)
+        : K4Windows.switcherWindows(altTabCurrentWorkspaceOnly)
     readonly property int count: entries.length
 
-    islandWidth: Math.min(880, Math.max(360, 60 + count * 128))
-    islandHeight: 190
+    islandWidth: showWorkspaces
+        ? 900
+        : Math.min(900, Math.max(430, 80 + Math.min(count, 4) * 210))
+    islandHeight: showWorkspaces ? 440 : 245
 
-    function openWindows() {
+    function prepare() {
         K4Windows.refresh()
         K4Panel.close()
         K4Notifications.dismissToast()
-        index = K4Windows.count > 1 ? 1 : 0
-        open = K4Windows.count > 0
+    }
+
+    function openOverview() {
+        if (!enabled)
+            return
+        prepare()
+        mode = "overview"
+        selectedWorkspaceId = K4Workspaces.activeId > 0
+            ? K4Workspaces.activeId
+            : (K4Workspaces.list[0]?.id ?? -1)
+        index = 0
+        open = true
+    }
+
+    function toggleOverview() {
+        if (open && mode === "overview") {
+            close()
+            return
+        }
+        openOverview()
+    }
+
+    function openSwitcher(direction = 1) {
+        if (!enabled)
+            return
+        prepare()
+        mode = "switcher"
+        selectedWorkspaceId = K4Workspaces.activeId
+        const rows = K4Windows.switcherWindows(altTabCurrentWorkspaceOnly)
+        if (rows.length === 0) {
+            open = false
+            return
+        }
+        if (rows.length === 1)
+            index = 0
+        else
+            index = direction < 0 ? rows.length - 1 : 1
+        open = true
+    }
+
+    function triggerSwitcher(direction = 1) {
+        if (!open || mode !== "switcher") {
+            openSwitcher(direction)
+            return
+        }
+        if (direction < 0)
+            retreat()
+        else
+            advance()
+    }
+
+    function selectWorkspace(workspaceId) {
+        const id = Number(workspaceId)
+        if (!isFinite(id) || id <= 0)
+            return
+        selectedWorkspaceId = id
+        index = 0
+    }
+
+    function setAltTabCurrentWorkspaceOnly(value) {
+        altTabCurrentWorkspaceOnly = Boolean(value)
+        index = Math.max(0, Math.min(index, count - 1))
     }
 
     function openApplication() {
-        if (!enabled) return false
-        openWindows()
+        if (!enabled)
+            return false
+        openOverview()
         return open
     }
 
-    function close() { open = false }
-    function toggle() { open ? advance() : openWindows() }
+    function close() {
+        open = false
+    }
+
+    function toggle() {
+        toggleOverview()
+    }
+
     function advance() {
-        if (count > 0) index = (index + 1) % count
+        if (count > 0)
+            index = (index + 1) % count
     }
+
     function retreat() {
-        if (count > 0) index = (index - 1 + count) % count
+        if (count > 0)
+            index = (index - 1 + count) % count
     }
+
     function choose() {
         const row = entries[index]
-        if (!row) return
+        if (!row)
+            return
         close()
         K4Windows.activate(row)
     }
+
     function closeCurrent() {
         const row = entries[index]
-        if (!row) return
+        if (!row)
+            return
         K4Windows.close(row)
         index = Math.max(0, Math.min(index, count - 2))
     }
 
     onCountChanged: {
-        if (count === 0) close()
-        else if (index >= count) index = Math.max(0, count - 1)
+        if (mode === "switcher" && open && count === 0)
+            close()
+        else if (index >= count)
+            index = Math.max(0, count - 1)
+    }
+
+    Component.onCompleted: K4Windows.plugin = root
+    Component.onDestruction: {
+        if (K4Windows.plugin === root)
+            K4Windows.plugin = null
     }
 
     IpcHandler {
         target: "k4.windows"
-        function toggle(): void { root.toggle() }
-        function open(): void { root.openWindows() }
+        function toggle(): void { root.toggleOverview() }
+        function open(): void { root.openOverview() }
+        function overview(): void { root.openOverview() }
+        function switcher(): void { root.openSwitcher(1) }
         function close(): void { root.close() }
         function next(): void { root.advance() }
+        function previous(): void { root.retreat() }
         function focus(index: int): void {
-            K4Windows.refresh()
-            root.index = Math.max(0, Math.min(K4Windows.count - 1, index))
+            root.index = Math.max(0, Math.min(root.count - 1, index))
             root.choose()
         }
     }
