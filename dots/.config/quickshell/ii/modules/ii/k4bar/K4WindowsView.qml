@@ -5,13 +5,16 @@ import QtQuick.Layouts
 import Quickshell
 import Quickshell.Wayland
 
-// Option A: workspace rail + live Wayland preview stage for Super+Tab. Alt+Tab
-// reuses the stage without the rail and gives each switcher entry more room.
+// Super+Tab mirrors the actual Hyprland workspace geometry and supports native
+// window moves between workspaces. Alt+Tab remains a focused windows-only
+// switcher with larger live previews.
 Item {
     id: root
     required property var plugin
     focus: true
     opacity: 0
+
+    property int draggingTargetWorkspace: -1
 
     Component.onCompleted: {
         fadeIn.start()
@@ -42,6 +45,11 @@ Item {
         root.plugin.selectWorkspace(workspaces[next].id)
     }
 
+    function finishMove(row, targetWorkspace) {
+        root.draggingTargetWorkspace = -1
+        K4Windows.moveToWorkspace(row, targetWorkspace)
+    }
+
     Keys.onPressed: function(event) {
         if (event.key === Qt.Key_Escape) {
             root.plugin.close()
@@ -68,8 +76,6 @@ Item {
         }
     }
 
-    // Alt+Tab is transient: releasing Alt commits the selected native toplevel.
-    // Super+Tab stays open until the user selects a window or dismisses it.
     Keys.onReleased: function(event) {
         if (root.plugin.mode === "switcher" && event.key === Qt.Key_Alt) {
             root.plugin.choose()
@@ -176,7 +182,7 @@ Item {
             Rectangle {
                 id: workspaceRail
                 visible: root.plugin.showWorkspaces
-                Layout.preferredWidth: 190
+                Layout.preferredWidth: 226
                 Layout.fillHeight: true
                 radius: 15
                 color: K4Theme.panelSurface
@@ -188,7 +194,7 @@ Item {
                     id: workspaceList
                     anchors.fill: parent
                     anchors.margins: 9
-                    spacing: 8
+                    spacing: 9
                     clip: true
                     boundsBehavior: Flickable.StopAtBounds
                     model: K4Workspaces.list.filter(workspace => workspace.id > 0)
@@ -197,6 +203,7 @@ Item {
                         id: workspaceCard
                         required property var modelData
                         required property int index
+                        property bool dragHover: false
                         readonly property int workspaceId: Number(modelData.id)
                         readonly property bool selected:
                             workspaceId === root.plugin.selectedWorkspaceId
@@ -206,24 +213,27 @@ Item {
                             K4Windows.windowCountForWorkspace(workspaceId)
 
                         width: ListView.view.width
-                        height: 66
+                        height: 105
                         radius: 12
-                        color: selected ? K4Theme.panelSurfaceHot
-                            : workspaceHover.hovered ? K4Theme.panelSurfaceHi
-                            : "transparent"
-                        border.width: selected ? 1 : 0
-                        border.color: selected ? K4Theme.blue : "transparent"
+                        color: workspaceCard.dragHover
+                            ? Qt.rgba(0.04, 0.52, 1, 0.13)
+                            : workspaceCard.selected
+                                ? K4Theme.panelSurfaceHot
+                                : workspaceHover.hovered
+                                    ? K4Theme.panelSurfaceHi : "transparent"
+                        border.width: workspaceCard.dragHover || workspaceCard.selected ? 1 : 0
+                        border.color: workspaceCard.dragHover
+                            ? K4Theme.blue
+                            : workspaceCard.selected ? K4Theme.blue : "transparent"
 
-                        Column {
-                            anchors.left: parent.left
-                            anchors.right: parent.right
-                            anchors.verticalCenter: parent.verticalCenter
-                            anchors.leftMargin: 11
-                            anchors.rightMargin: 10
-                            spacing: 8
+                        ColumnLayout {
+                            anchors.fill: parent
+                            anchors.margins: 8
+                            spacing: 6
 
                             RowLayout {
-                                width: parent.width
+                                Layout.fillWidth: true
+                                Layout.preferredHeight: 18
                                 spacing: 6
 
                                 Rectangle {
@@ -255,30 +265,12 @@ Item {
                                 }
                             }
 
-                            Row {
-                                spacing: 4
-
-                                Repeater {
-                                    model: Math.min(workspaceCard.windowCount, 6)
-                                    Rectangle {
-                                        required property int index
-                                        width: 18 + (index % 2) * 5
-                                        height: 8
-                                        radius: 3
-                                        color: workspaceCard.selected
-                                            ? Qt.rgba(0.04, 0.52, 1, 0.34)
-                                            : K4Theme.panelTrack
-                                    }
-                                }
-
-                                Text {
-                                    visible: workspaceCard.windowCount > 6
-                                    text: `+${workspaceCard.windowCount - 6}`
-                                    color: K4Theme.panelDim
-                                    font.family: K4Theme.uiFont
-                                    font.pixelSize: 8
-                                    renderType: Text.NativeRendering
-                                }
+                            K4WorkspaceLayout {
+                                Layout.fillWidth: true
+                                Layout.fillHeight: true
+                                workspaceId: workspaceCard.workspaceId
+                                mini: true
+                                interactive: false
                             }
                         }
 
@@ -287,6 +279,21 @@ Item {
                             cursorShape: Qt.PointingHandCursor
                             onTapped: root.plugin.selectWorkspace(
                                 workspaceCard.workspaceId)
+                        }
+
+                        DropArea {
+                            anchors.fill: parent
+                            enabled: selectedWorkspaceLayout.draggingWindow !== null
+                            onEntered: {
+                                root.draggingTargetWorkspace = workspaceCard.workspaceId
+                                workspaceCard.dragHover = true
+                            }
+                            onExited: {
+                                workspaceCard.dragHover = false
+                                if (root.draggingTargetWorkspace
+                                        === workspaceCard.workspaceId)
+                                    root.draggingTargetWorkspace = -1
+                            }
                         }
                     }
                 }
@@ -300,7 +307,7 @@ Item {
                 color: K4Theme.panelSurface
                 border.width: 1
                 border.color: K4Theme.panelLine
-                clip: true
+                clip: false
 
                 ColumnLayout {
                     anchors.fill: parent
@@ -334,8 +341,11 @@ Item {
                         Item { Layout.fillWidth: true }
 
                         Text {
-                            text: "↑ ↓ workspaces · Tab windows"
-                            color: K4Theme.panelDim
+                            text: selectedWorkspaceLayout.draggingWindow
+                                ? "Drop on a workspace to move"
+                                : "↑ ↓ workspaces · Tab windows · drag to move"
+                            color: selectedWorkspaceLayout.draggingWindow
+                                ? K4Theme.blue : K4Theme.panelDim
                             font.family: K4Theme.uiFont
                             font.pixelSize: 9
                             renderType: Text.NativeRendering
@@ -343,52 +353,71 @@ Item {
                     }
 
                     Item {
+                        visible: root.plugin.showWorkspaces
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+
+                        K4WorkspaceLayout {
+                            id: selectedWorkspaceLayout
+                            anchors.fill: parent
+                            workspaceId: Math.max(1, root.plugin.selectedWorkspaceId)
+                            interactive: true
+                            mini: false
+                            showLabels: true
+                            selectedIndex: root.plugin.index
+                            draggingTargetWorkspace: root.draggingTargetWorkspace
+                            onHighlighted: index => root.plugin.index = index
+                            onActivated: row => root.plugin.chooseWindow(row)
+                            onCloseRequested: row => K4Windows.close(row)
+                            onMoveRequested: (row, targetWorkspace) =>
+                                root.finishMove(row, targetWorkspace)
+                        }
+                    }
+
+                    Item {
+                        visible: !root.plugin.showWorkspaces
                         Layout.fillWidth: true
                         Layout.fillHeight: true
 
                         GridView {
-                            id: windowGrid
+                            id: switcherGrid
                             anchors.fill: parent
                             clip: true
                             boundsBehavior: Flickable.StopAtBounds
                             model: root.plugin.entries
                             currentIndex: root.plugin.index
-                            flow: root.plugin.showWorkspaces
-                                ? GridView.FlowLeftToRight
-                                : GridView.FlowTopToBottom
-                            cellWidth: root.plugin.showWorkspaces
-                                ? Math.max(260, width / 2)
-                                : 260
-                            cellHeight: root.plugin.showWorkspaces ? 220 : height
+                            flow: GridView.FlowTopToBottom
+                            cellWidth: 270
+                            cellHeight: height
 
                             delegate: Item {
-                                id: cardCell
+                                id: switcherCell
                                 required property var modelData
                                 required property int index
                                 width: GridView.view.cellWidth
                                 height: GridView.view.cellHeight
 
                                 Rectangle {
-                                    id: card
+                                    id: switcherCard
                                     anchors.fill: parent
                                     anchors.margins: 5
                                     radius: 13
                                     color: K4Theme.panelSurfaceHi
-                                    border.width: selected ? 1 : 0
+                                    border.width: switcherCard.selected ? 1 : 0
                                     border.color: K4Theme.blue
                                     clip: true
 
                                     readonly property bool selected:
-                                        cardCell.index === root.plugin.index
+                                        switcherCell.index === root.plugin.index
                                     readonly property var toplevel:
-                                        K4Windows.toplevelFor(cardCell.modelData)
+                                        K4Windows.toplevelFor(switcherCell.modelData)
 
                                     Rectangle {
-                                        id: previewFrame
+                                        id: switcherPreview
                                         anchors.left: parent.left
                                         anchors.right: parent.right
                                         anchors.top: parent.top
-                                        anchors.bottom: cardMeta.top
+                                        anchors.bottom: switcherMeta.top
                                         color: K4Theme.panelSurfaceHot
                                         clip: true
 
@@ -396,33 +425,33 @@ Item {
                                             anchors.centerIn: parent
                                             width: 52
                                             height: 52
-                                            source: K4Windows.appIcon(cardCell.modelData)
+                                            source: K4Windows.appIcon(switcherCell.modelData)
                                             sourceSize: Qt.size(72, 72)
                                             fillMode: Image.PreserveAspectFit
-                                            opacity: card.toplevel ? 0 : 0.8
+                                            opacity: switcherCard.toplevel ? 0 : 0.8
                                         }
 
                                         Loader {
                                             anchors.fill: parent
-                                            active: card.toplevel !== null
+                                            active: switcherCard.toplevel !== null
                                             sourceComponent: ScreencopyView {
-                                                captureSource: card.toplevel
+                                                captureSource: switcherCard.toplevel
                                                 live: true
                                             }
                                         }
 
                                         Rectangle {
                                             anchors.fill: parent
-                                            color: card.selected
+                                            color: switcherCard.selected
                                                 ? Qt.rgba(0.04, 0.52, 1, 0.08)
-                                                : cardMouse.containsMouse
+                                                : switcherMouse.containsMouse
                                                     ? Qt.rgba(1, 1, 1, 0.035)
                                                     : "transparent"
                                         }
                                     }
 
                                     Rectangle {
-                                        id: cardMeta
+                                        id: switcherMeta
                                         anchors.left: parent.left
                                         anchors.right: parent.right
                                         anchors.bottom: parent.bottom
@@ -438,7 +467,7 @@ Item {
                                             Image {
                                                 Layout.preferredWidth: 24
                                                 Layout.preferredHeight: 24
-                                                source: K4Windows.appIcon(cardCell.modelData)
+                                                source: K4Windows.appIcon(switcherCell.modelData)
                                                 sourceSize: Qt.size(36, 36)
                                                 fillMode: Image.PreserveAspectFit
                                             }
@@ -449,11 +478,11 @@ Item {
 
                                                 Text {
                                                     Layout.fillWidth: true
-                                                    text: K4Windows.appName(cardCell.modelData)
+                                                    text: K4Windows.appName(switcherCell.modelData)
                                                     color: K4Theme.ink
                                                     font.family: K4Theme.uiFont
                                                     font.pixelSize: 11
-                                                    font.weight: card.selected
+                                                    font.weight: switcherCard.selected
                                                         ? Font.DemiBold : Font.Medium
                                                     elide: Text.ElideRight
                                                     renderType: Text.NativeRendering
@@ -461,7 +490,7 @@ Item {
 
                                                 Text {
                                                     Layout.fillWidth: true
-                                                    text: K4Windows.title(cardCell.modelData)
+                                                    text: K4Windows.title(switcherCell.modelData)
                                                     color: K4Theme.panelMuted
                                                     font.family: K4Theme.uiFont
                                                     font.pixelSize: 9
@@ -473,12 +502,11 @@ Item {
                                     }
 
                                     Rectangle {
-                                        visible: !root.plugin.showWorkspaces
-                                            && !root.plugin.altTabCurrentWorkspaceOnly
+                                        visible: !root.plugin.altTabCurrentWorkspaceOnly
                                         anchors.left: parent.left
                                         anchors.top: parent.top
                                         anchors.margins: 8
-                                        width: workspaceBadge.implicitWidth + 14
+                                        width: switcherWorkspaceBadge.implicitWidth + 14
                                         height: 21
                                         radius: 10.5
                                         color: "#bb000000"
@@ -487,9 +515,9 @@ Item {
                                         z: 3
 
                                         Text {
-                                            id: workspaceBadge
+                                            id: switcherWorkspaceBadge
                                             anchors.centerIn: parent
-                                            text: `WS ${K4Windows.workspace(cardCell.modelData)}`
+                                            text: `WS ${K4Windows.workspace(switcherCell.modelData)}`
                                             color: K4Theme.panelInkSoft
                                             font.family: K4Theme.uiFont
                                             font.pixelSize: 9
@@ -498,51 +526,15 @@ Item {
                                         }
                                     }
 
-                                    Rectangle {
-                                        visible: cardMouse.containsMouse || card.selected
-                                        anchors.right: parent.right
-                                        anchors.top: parent.top
-                                        anchors.margins: 8
-                                        width: 26
-                                        height: 26
-                                        radius: 8
-                                        color: closeMouse.containsMouse
-                                            ? Qt.rgba(1, 0.27, 0.23, 0.24)
-                                            : "#bb000000"
-                                        border.width: 1
-                                        border.color: K4Theme.panelLine
-                                        z: 3
-
-                                        Text {
-                                            anchors.centerIn: parent
-                                            text: K4Theme.ico.close
-                                            color: K4Theme.ink
-                                            font.family: K4Theme.iconFont
-                                            font.pixelSize: 12
-                                        }
-
-                                        MouseArea {
-                                            id: closeMouse
-                                            anchors.fill: parent
-                                            hoverEnabled: true
-                                            cursorShape: Qt.PointingHandCursor
-                                            onClicked: {
-                                                root.plugin.index = cardCell.index
-                                                root.plugin.closeCurrent()
-                                            }
-                                        }
-                                    }
-
                                     MouseArea {
-                                        id: cardMouse
+                                        id: switcherMouse
                                         anchors.fill: parent
                                         hoverEnabled: true
                                         cursorShape: Qt.PointingHandCursor
                                         acceptedButtons: Qt.LeftButton | Qt.MiddleButton
-                                        z: 1
-                                        onEntered: root.plugin.index = cardCell.index
+                                        onEntered: root.plugin.index = switcherCell.index
                                         onClicked: function(mouse) {
-                                            root.plugin.index = cardCell.index
+                                            root.plugin.index = switcherCell.index
                                             if (mouse.button === Qt.MiddleButton)
                                                 root.plugin.closeCurrent()
                                             else
@@ -556,9 +548,7 @@ Item {
                         Text {
                             visible: root.plugin.count === 0
                             anchors.centerIn: parent
-                            text: root.plugin.showWorkspaces
-                                ? "No windows on this workspace"
-                                : "No windows available"
+                            text: "No windows available"
                             color: K4Theme.panelMuted
                             font.family: K4Theme.uiFont
                             font.pixelSize: 12
@@ -569,7 +559,7 @@ Item {
                             target: root.plugin
                             function onIndexChanged() {
                                 if (root.plugin.count > 0)
-                                    windowGrid.positionViewAtIndex(
+                                    switcherGrid.positionViewAtIndex(
                                         root.plugin.index, GridView.Contain)
                             }
                         }
@@ -582,7 +572,7 @@ Item {
             Layout.fillWidth: true
             Layout.preferredHeight: 14
             text: root.plugin.showWorkspaces
-                ? "Enter focuses · middle click/Delete closes · Esc returns"
+                ? "Drag a window onto another workspace · click focuses · middle click/Delete closes"
                 : "Alt release focuses · Tab cycles · middle click/Delete closes"
             color: K4Theme.panelDim
             font.family: K4Theme.uiFont
