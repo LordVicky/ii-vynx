@@ -6,6 +6,8 @@ import Quickshell.Hyprland
 
 // k4 workspace contract backed by the existing Quickshell Hyprland service.
 Singleton {
+    id: root
+
     readonly property int minimumOverviewWorkspaces: 10
 
     readonly property var list: {
