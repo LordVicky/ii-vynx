@@ -12,9 +12,15 @@ Singleton {
         return values
     }
 
-    // Match pinned k4's focus seam: the workspace objects carry their own focus
-    // state, so activeId changes in the same update path that drives pill focus.
+    // Follow the workspace on the compositor-focused monitor. This is the same
+    // monitor-aware source ii-vynx Overview uses and avoids opening K4 Windows on
+    // a stale workspace when another workspace object still reports focused.
     readonly property int activeId: {
+        const focusedMonitorWorkspace = Number(
+            Hyprland.focusedMonitor?.activeWorkspace?.id ?? -1)
+        if (isFinite(focusedMonitorWorkspace) && focusedMonitorWorkspace > 0)
+            return focusedMonitorWorkspace
+
         for (let i = 0; i < list.length; ++i) {
             if (list[i].focused)
                 return list[i].id
