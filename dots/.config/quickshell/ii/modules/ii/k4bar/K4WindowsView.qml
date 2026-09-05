@@ -19,6 +19,7 @@ Item {
     Component.onCompleted: {
         fadeIn.start()
         forceActiveFocus()
+        Qt.callLater(root.ensureSelectedWorkspaceVisible)
     }
 
     NumberAnimation {
@@ -31,18 +32,29 @@ Item {
         easing.type: Easing.OutCubic
     }
 
+    function ensureSelectedWorkspaceVisible() {
+        if (!root.plugin.showWorkspaces)
+            return
+        const rows = K4Workspaces.overviewList
+        const index = rows.findIndex(workspace =>
+            Number(workspace.id) === root.plugin.selectedWorkspaceId)
+        if (index >= 0)
+            workspaceList.positionViewAtIndex(index, ListView.Contain)
+    }
+
     function moveWorkspace(delta) {
         if (!root.plugin.showWorkspaces)
             return
-        const workspaces = K4Workspaces.list.filter(workspace => workspace.id > 0)
+        const workspaces = K4Workspaces.overviewList
         if (workspaces.length === 0)
             return
         let current = workspaces.findIndex(workspace =>
-            workspace.id === root.plugin.selectedWorkspaceId)
+            Number(workspace.id) === root.plugin.selectedWorkspaceId)
         if (current < 0)
             current = 0
         const next = (current + delta + workspaces.length) % workspaces.length
-        root.plugin.selectWorkspace(workspaces[next].id)
+        root.plugin.selectWorkspace(Number(workspaces[next].id))
+        Qt.callLater(root.ensureSelectedWorkspaceVisible)
     }
 
     function finishMove(row, targetWorkspace) {
@@ -80,6 +92,14 @@ Item {
         if (root.plugin.mode === "switcher" && event.key === Qt.Key_Alt) {
             root.plugin.choose()
             event.accepted = true
+        }
+    }
+
+    Connections {
+        target: root.plugin
+
+        function onSelectedWorkspaceIdChanged() {
+            Qt.callLater(root.ensureSelectedWorkspaceVisible)
         }
     }
 
@@ -193,11 +213,16 @@ Item {
                 ListView {
                     id: workspaceList
                     anchors.fill: parent
-                    anchors.margins: 9
+                    anchors.leftMargin: 9
+                    anchors.topMargin: 9
+                    anchors.bottomMargin: 9
+                    anchors.rightMargin: 13
                     spacing: 9
                     clip: true
+                    interactive: true
+                    flickableDirection: Flickable.VerticalFlick
                     boundsBehavior: Flickable.StopAtBounds
-                    model: K4Workspaces.list.filter(workspace => workspace.id > 0)
+                    model: K4Workspaces.overviewList
 
                     delegate: Rectangle {
                         id: workspaceCard
@@ -257,7 +282,8 @@ Item {
                                 Item { Layout.fillWidth: true }
 
                                 Text {
-                                    text: workspaceCard.windowCount
+                                    text: workspaceCard.windowCount > 0
+                                        ? String(workspaceCard.windowCount) : "Empty"
                                     color: K4Theme.panelMuted
                                     font.family: K4Theme.uiFont
                                     font.pixelSize: 9
@@ -296,6 +322,27 @@ Item {
                             }
                         }
                     }
+                }
+
+                Rectangle {
+                    id: workspaceScrollThumb
+                    visible: workspaceList.contentHeight > workspaceList.height
+                    anchors.right: parent.right
+                    anchors.rightMargin: 5
+                    width: 3
+                    radius: 1.5
+                    color: K4Theme.panelMuted
+                    opacity: 0.72
+                    height: visible
+                        ? Math.max(30, workspaceList.height * workspaceList.height
+                            / Math.max(1, workspaceList.contentHeight))
+                        : 0
+                    y: workspaceList.y + (workspaceList.height - height)
+                        * Math.max(0, Math.min(1,
+                            workspaceList.contentY
+                            / Math.max(1, workspaceList.contentHeight
+                                - workspaceList.height)))
+                    z: 20
                 }
             }
 
@@ -437,6 +484,10 @@ Item {
                                             sourceComponent: ScreencopyView {
                                                 captureSource: switcherCard.toplevel
                                                 live: true
+                                                smooth: true
+                                                layer.enabled: true
+                                                layer.smooth: true
+                                                layer.mipmap: true
                                             }
                                         }
 
@@ -572,7 +623,7 @@ Item {
             Layout.fillWidth: true
             Layout.preferredHeight: 14
             text: root.plugin.showWorkspaces
-                ? "Drag a window onto another workspace · click focuses · middle click/Delete closes"
+                ? "Scroll workspaces · drag a window to move · click focuses · middle click/Delete closes"
                 : "Alt release focuses · Tab cycles · middle click/Delete closes"
             color: K4Theme.panelDim
             font.family: K4Theme.uiFont
