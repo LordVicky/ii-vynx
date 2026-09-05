@@ -86,6 +86,10 @@ Item {
                     K4Windows.toplevelFor(windowItem.modelData)
                 readonly property bool selected:
                     root.selectedIndex === windowItem.index
+                readonly property bool fullscreen:
+                    K4Windows.isFullscreen(windowItem.modelData)
+                readonly property bool floating:
+                    Boolean(windowItem.modelData?.floating)
                 property bool dragging: false
                 property bool dropHover: false
 
@@ -93,7 +97,14 @@ Item {
                 y: windowItem.layoutY
                 width: windowItem.layoutWidth
                 height: windowItem.layoutHeight
-                z: windowItem.dragging ? 1000 : windowItem.index + 1
+
+                // Fullscreen owns the workspace visually, but in an overview it
+                // stays behind the other clients so windows hidden by fullscreen
+                // remain reachable. Dragging always rises above every preview.
+                z: windowItem.dragging ? 1000
+                    : windowItem.fullscreen ? 1
+                    : windowItem.floating ? 100 + windowItem.index
+                    : 20 + windowItem.index
 
                 Rectangle {
                     anchors.fill: parent
@@ -135,6 +146,31 @@ Item {
                                     : windowItem.selected
                                         ? Qt.rgba(0.04, 0.52, 1, 0.07)
                                         : "transparent"
+                    }
+
+                    Rectangle {
+                        visible: !root.mini && windowItem.fullscreen
+                        anchors.left: parent.left
+                        anchors.top: parent.top
+                        anchors.margins: 8
+                        width: fullscreenLabel.implicitWidth + 14
+                        height: 21
+                        radius: 10.5
+                        color: "#bb000000"
+                        border.width: 1
+                        border.color: K4Theme.panelLine
+                        z: 4
+
+                        Text {
+                            id: fullscreenLabel
+                            anchors.centerIn: parent
+                            text: "Fullscreen"
+                            color: K4Theme.panelInkSoft
+                            font.family: K4Theme.uiFont
+                            font.pixelSize: 9
+                            font.weight: Font.DemiBold
+                            renderType: Text.NativeRendering
+                        }
                     }
 
                     Rectangle {
