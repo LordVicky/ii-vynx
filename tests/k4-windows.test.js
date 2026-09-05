@@ -9,7 +9,7 @@ const family = path.join(root, "dots/.config/quickshell/ii/panelFamilies/Illogic
 const hyprlandRoot = path.join(root, "dots/.config/hypr");
 const readK4 = name => fs.readFileSync(path.join(k4, name), "utf8");
 
-test("windows adapter stays native to ii-vynx Wayland and Hyprland services", () => {
+test("windows adapter stays on ii-vynx Wayland and Hyprland ownership seams", () => {
     const source = readK4("K4Windows.qml");
     assert.match(source, /import Quickshell\.Wayland/);
     assert.match(source, /import Quickshell\.Hyprland/);
@@ -18,6 +18,10 @@ test("windows adapter stays native to ii-vynx Wayland and Hyprland services", ()
     assert.match(source, /Hyprland\.dispatch/);
     assert.match(source, /function toplevelFor\(/);
     assert.match(source, /function windowsForWorkspace\(/);
+    assert.match(source, /function monitorForWorkspace\(/);
+    assert.match(source, /function workspaceGeometry\(/);
+    assert.match(source, /function windowGeometry\(/);
+    assert.match(source, /function moveToWorkspace\(/);
     assert.doesNotMatch(source, /execDetached/);
     assert.doesNotMatch(source, /hyprctl/);
 });
@@ -38,16 +42,38 @@ test("windows plugin exposes overview and alt-tab modes with enlarged geometry",
     assert.match(source, /target:\s*"k4\.windows"/);
 });
 
-test("windows v2 view uses larger live Wayland previews and no dwell focus", () => {
-    const source = readK4("K4WindowsView.qml");
-    assert.match(source, /import Quickshell\.Wayland/);
+test("workspace layout mirrors Hyprland geometry with live Wayland previews", () => {
+    const source = readK4("K4WorkspaceLayout.qml");
+    assert.match(source, /required property int workspaceId/);
+    assert.match(source, /K4Windows\.workspaceGeometry\(root\.workspaceId\)/);
+    assert.match(source, /K4Windows\.windowGeometry\(windowItem\.modelData/);
     assert.match(source, /ScreencopyView/);
-    assert.match(source, /captureSource:\s*card\.toplevel/);
-    assert.match(source, /root\.plugin\.showWorkspaces/);
-    assert.match(source, /K4Workspaces\.list/);
+    assert.match(source, /captureSource:\s*windowItem\.toplevel/);
+    assert.match(source, /x:\s*windowItem\.layoutX/);
+    assert.match(source, /y:\s*windowItem\.layoutY/);
+    assert.match(source, /width:\s*windowItem\.layoutWidth/);
+    assert.match(source, /height:\s*windowItem\.layoutHeight/);
+});
+
+test("Super-Tab workspace layout supports native drag to another workspace", () => {
+    const source = readK4("K4WorkspaceLayout.qml");
+    const view = readK4("K4WindowsView.qml");
+
+    assert.match(source, /Drag\.active/);
+    assert.match(source, /drag\.target:\s*root\.interactive/);
+    assert.match(source, /root\.draggingWindow = windowItem\.modelData/);
+    assert.match(view, /DropArea/);
+    assert.match(view, /root\.draggingTargetWorkspace = workspaceCard\.workspaceId/);
+    assert.match(view, /K4Windows\.moveToWorkspace\(row, targetWorkspace\)/);
+    assert.match(view, /K4WorkspaceLayout/);
+});
+
+test("Alt-Tab keeps the windows-only live preview switcher", () => {
+    const source = readK4("K4WindowsView.qml");
+    assert.match(source, /id:\s*switcherGrid/);
+    assert.match(source, /model:\s*root\.plugin\.entries/);
+    assert.match(source, /ScreencopyView/);
     assert.match(source, /altTabCurrentWorkspaceOnly/);
-    assert.match(source, /cellWidth:\s*root\.plugin\.showWorkspaces[\s\S]*?Math\.max\(260,\s*width \/ 2\)[\s\S]*?: 260/);
-    assert.match(source, /cellHeight:\s*root\.plugin\.showWorkspaces \? 220 : height/);
     assert.match(source, /Keys\.onReleased/);
     assert.match(source, /Qt\.Key_Alt/);
     assert.doesNotMatch(source, /dwellDelay/);
