@@ -5,7 +5,7 @@ const test = require("node:test");
 
 const root = path.resolve(__dirname, "..");
 const k4 = path.join(root, "dots/.config/quickshell/ii/modules/ii/k4bar");
-const overview = path.join(root, "dots/.config/quickshell/ii/modules/ii/overview/Overview.qml");
+const family = path.join(root, "dots/.config/quickshell/ii/panelFamilies/IllogicalImpulseFamily.qml");
 const hyprlandRoot = path.join(root, "dots/.config/hypr");
 const readK4 = name => fs.readFileSync(path.join(k4, name), "utf8");
 
@@ -22,7 +22,7 @@ test("windows adapter stays native to ii-vynx Wayland and Hyprland services", ()
     assert.doesNotMatch(source, /hyprctl/);
 });
 
-test("windows plugin exposes overview and alt-tab modes", () => {
+test("windows plugin exposes overview and alt-tab modes with enlarged geometry", () => {
     const source = readK4("K4WindowsPlugin.qml");
     assert.match(source, /name:\s*"windows"/);
     assert.match(source, /priority:\s*83/);
@@ -33,12 +33,12 @@ test("windows plugin exposes overview and alt-tab modes", () => {
     assert.match(source, /function openOverview\(/);
     assert.match(source, /function openSwitcher\(/);
     assert.match(source, /function triggerSwitcher\(/);
-    assert.match(source, /mode === "overview"/);
-    assert.match(source, /altTabCurrentWorkspaceOnly/);
+    assert.match(source, /islandWidth:\s*showWorkspaces[\s\S]*?1120/);
+    assert.match(source, /islandHeight:\s*showWorkspaces \? 560 : 320/);
     assert.match(source, /target:\s*"k4\.windows"/);
 });
 
-test("windows v2 view uses live Wayland previews and no dwell focus", () => {
+test("windows v2 view uses larger live Wayland previews and no dwell focus", () => {
     const source = readK4("K4WindowsView.qml");
     assert.match(source, /import Quickshell\.Wayland/);
     assert.match(source, /ScreencopyView/);
@@ -46,21 +46,27 @@ test("windows v2 view uses live Wayland previews and no dwell focus", () => {
     assert.match(source, /root\.plugin\.showWorkspaces/);
     assert.match(source, /K4Workspaces\.list/);
     assert.match(source, /altTabCurrentWorkspaceOnly/);
+    assert.match(source, /cellWidth:\s*root\.plugin\.showWorkspaces[\s\S]*?Math\.max\(260,\s*width \/ 2\)[\s\S]*?: 260/);
+    assert.match(source, /cellHeight:\s*root\.plugin\.showWorkspaces \? 220 : height/);
     assert.match(source, /Keys\.onReleased/);
     assert.match(source, /Qt\.Key_Alt/);
     assert.doesNotMatch(source, /dwellDelay/);
     assert.doesNotMatch(source, /dwellTimer/);
 });
 
-test("Super-Tab and Alt-Tab route through Quickshell rather than window scripts", () => {
-    const source = fs.readFileSync(overview, "utf8");
-    assert.match(source, /import qs\.modules\.ii\.k4bar/);
-    assert.match(source, /name:\s*"overviewWorkspacesToggle"/);
-    assert.match(source, /K4Windows\.plugin\.toggleOverview\(\)/);
-    assert.match(source, /name:\s*"windowsSwitcherToggle"/);
-    assert.match(source, /overviewScope\.triggerWindowSwitcher\(1\)/);
-    assert.match(source, /name:\s*"windowsSwitcherPrevious"/);
-    assert.match(source, /overviewScope\.triggerWindowSwitcher\(-1\)/);
+test("K4-only routing owns Super-Tab and Alt-Tab while K4 is loaded", () => {
+    const routing = readK4("K4LauncherRouting.qml");
+    const familySource = fs.readFileSync(family, "utf8");
+
+    assert.match(familySource, /extraCondition:\s*barEnabled && usingK4Bar; component:\s*K4LauncherRouting \{\}/);
+    assert.match(familySource, /extraCondition:\s*usingStandardBar; component:\s*Overview \{\}/);
+
+    assert.match(routing, /name:\s*"overviewWorkspacesToggle"/);
+    assert.match(routing, /K4Windows\.plugin\.toggleOverview\(\)/);
+    assert.match(routing, /name:\s*"windowsSwitcherToggle"/);
+    assert.match(routing, /K4Windows\.plugin\.triggerSwitcher\(1\)/);
+    assert.match(routing, /name:\s*"windowsSwitcherPrevious"/);
+    assert.match(routing, /K4Windows\.plugin\.triggerSwitcher\(-1\)/);
 
     const entry = fs.readFileSync(path.join(hyprlandRoot, "hyprland.lua"), "utf8");
     const binds = fs.readFileSync(path.join(hyprlandRoot, "hyprland/k4-windows.lua"), "utf8");
