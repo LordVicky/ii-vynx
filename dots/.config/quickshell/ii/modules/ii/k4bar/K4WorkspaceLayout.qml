@@ -17,11 +17,14 @@ Item {
     property int selectedIndex: -1
     property int draggingTargetWorkspace: -1
     property var draggingWindow: null
+    property var draggingTargetWindow: null
+    property string draggingDirection: ""
 
     signal highlighted(int index)
     signal activated(var row)
     signal closeRequested(var row)
     signal moveRequested(var row, int targetWorkspace)
+    signal swapRequested(var row, var targetRow, string direction)
 
     readonly property var workspaceRect: K4Windows.workspaceGeometry(root.workspaceId)
     readonly property real workspaceAspect: Math.max(0.2,
@@ -31,6 +34,13 @@ Item {
     function restorePosition(item) {
         item.x = Qt.binding(function() { return item.layoutX })
         item.y = Qt.binding(function() { return item.layoutY })
+    }
+
+    function clearWindowDropTarget(row) {
+        if (root.draggingTargetWindow?.address === row?.address) {
+            root.draggingTargetWindow = null
+            root.draggingDirection = ""
+        }
     }
 
     Rectangle {
@@ -78,6 +88,7 @@ Item {
                 readonly property bool selected:
                     root.selectedIndex === windowItem.index
                 property bool dragging: false
+                property bool dropHover: false
 
                 x: windowItem.layoutX
                 y: windowItem.layoutY
@@ -85,17 +96,12 @@ Item {
                 height: windowItem.layoutHeight
                 z: windowItem.dragging ? 1000 : windowItem.index + 1
 
-                Drag.active: windowItem.dragging
-                Drag.source: windowItem
-                Drag.hotSpot.x: windowItem.width / 2
-                Drag.hotSpot.y: windowItem.height / 2
-
                 Rectangle {
                     anchors.fill: parent
                     radius: root.mini ? 3 : 8
                     color: K4Theme.panelSurfaceHot
-                    border.width: !root.mini && windowItem.selected ? 2 : 1
-                    border.color: !root.mini && windowItem.selected
+                    border.width: !root.mini && (windowItem.selected || windowItem.dropHover) ? 2 : 1
+                    border.color: !root.mini && (windowItem.selected || windowItem.dropHover)
                         ? K4Theme.blue : Qt.rgba(1, 1, 1, root.mini ? 0.16 : 0.10)
                     clip: true
 
@@ -123,11 +129,13 @@ Item {
                         anchors.fill: parent
                         color: windowItem.dragging
                             ? Qt.rgba(0.04, 0.52, 1, 0.16)
-                            : windowMouse.containsMouse
-                                ? Qt.rgba(1, 1, 1, 0.045)
-                                : windowItem.selected
-                                    ? Qt.rgba(0.04, 0.52, 1, 0.07)
-                                    : "transparent"
+                            : windowItem.dropHover
+                                ? Qt.rgba(0.04, 0.52, 1, 0.12)
+                                : windowMouse.containsMouse
+                                    ? Qt.rgba(1, 1, 1, 0.045)
+                                    : windowItem.selected
+                                        ? Qt.rgba(0.04, 0.52, 1, 0.07)
+                                        : "transparent"
                     }
 
                     Rectangle {
@@ -172,6 +180,26 @@ Item {
                     }
                 }
 
+                // Mirrors ii-vynx OverviewWidget's window-to-window drop seam.
+                // Dropping on either half of another preview determines the
+                // native scrolling/tiled swap direction.
+                DropArea {
+                    anchors.fill: parent
+                    enabled: root.interactive
+                        && root.draggingWindow !== null
+                        && root.draggingWindow?.address !== windowItem.modelData?.address
+
+                    onEntered: function(drag) {
+                        windowItem.dropHover = true
+                        root.draggingTargetWindow = windowItem.modelData
+                        root.draggingDirection = drag.x < width / 2 ? "l" : "r"
+                    }
+                    onExited: {
+                        windowItem.dropHover = false
+                        root.clearWindowDropTarget(windowItem.modelData)
+                    }
+                }
+
                 MouseArea {
                     id: windowMouse
                     anchors.fill: parent
@@ -187,32 +215,61 @@ Item {
                     onPressed: function(mouse) {
                         if (mouse.button !== Qt.LeftButton)
                             return
+
                         root.draggingWindow = windowItem.modelData
+                        root.draggingTargetWindow = null
+                        root.draggingDirection = ""
                         windowItem.dragging = true
+
+                        // Use the exact explicit lifecycle that the working
+                        // ii-vynx overview uses. The hotspot must be the press
+                        // point so DropAreas track the pointer, not the card's
+                        // center while the preview moves.
+                        windowItem.Drag.source = windowItem
+                        windowItem.Drag.hotSpot.x = mouse.x
+                        windowItem.Drag.hotSpot.y = mouse.y
+                        windowItem.Drag.active = true
                     }
                     onReleased: function(mouse) {
                         if (!windowItem.dragging)
                             return
 
+                        // Capture the drop target before disabling Drag.active;
+                        // disabling it causes DropArea.onExited to run.
                         const row = windowItem.modelData
                         const targetWorkspace = root.draggingTargetWorkspace
+                        const targetRow = root.draggingTargetWindow
+                        const direction = root.draggingDirection
+
                         windowItem.dragging = false
+                        windowItem.Drag.active = false
                         root.draggingWindow = null
+                        root.draggingTargetWindow = null
+                        root.draggingDirection = ""
                         root.restorePosition(windowItem)
 
                         if (targetWorkspace > 0
-                                && targetWorkspace !== root.workspaceId)
+                                && targetWorkspace !== root.workspaceId) {
                             root.moveRequested(row, targetWorkspace)
+                            return
+                        }
+
+                        if (targetRow?.address
+                                && targetRow.address !== row?.address)
+                            root.swapRequested(row, targetRow, direction)
                     }
                     onCanceled: {
                         windowItem.dragging = false
+                        windowItem.Drag.active = false
                         root.draggingWindow = null
+                        root.draggingTargetWindow = null
+                        root.draggingDirection = ""
                         root.restorePosition(windowItem)
                     }
                     onClicked: function(mouse) {
                         if (mouse.button === Qt.MiddleButton)
                             root.closeRequested(windowItem.modelData)
-                        else
+                        else if (!windowItem.dragging)
                             root.activated(windowItem.modelData)
                     }
                 }
