@@ -20,6 +20,10 @@ K4Plugin {
     property string mode: "overview" // "overview" | "switcher"
     property int index: 0
     property int selectedWorkspaceId: -1
+    // Only keyboard-invoked sessions arm a modifier-release commit. Opening
+    // Windows from the bar must never make a later bare Super/Alt release focus
+    // a client unexpectedly.
+    property string releaseCommitModifier: ""
     // Session preference intentionally lives on the long-lived plugin so the
     // in-view toggle affects every subsequent Alt+Tab until Quickshell restarts.
     property bool altTabCurrentWorkspaceOnly: false
@@ -50,6 +54,7 @@ K4Plugin {
         if (!enabled)
             return
         prepare()
+        releaseCommitModifier = ""
         mode = "overview"
         selectedWorkspaceId = K4Workspaces.activeId > 0
             ? K4Workspaces.activeId
@@ -109,6 +114,7 @@ K4Plugin {
         if (!enabled)
             return
         prepare()
+        releaseCommitModifier = ""
         mode = "switcher"
         selectedWorkspaceId = K4Workspaces.activeId
         const rows = K4Windows.switcherWindows(altTabCurrentWorkspaceOnly)
@@ -134,6 +140,29 @@ K4Plugin {
             advance()
     }
 
+    function armReleaseCommit(modifier) {
+        const value = String(modifier || "")
+        if (!open || (value !== "super" && value !== "alt"))
+            return
+        releaseCommitModifier = value
+    }
+
+    function commitRelease(modifier) {
+        const value = String(modifier || "")
+        if (!open || releaseCommitModifier !== value)
+            return false
+
+        // Disarm before activating because chooseWindow() closes the surface and
+        // activation can synchronously trigger Hyprland state refreshes.
+        releaseCommitModifier = ""
+        const row = entries[index]
+        if (row)
+            chooseWindow(row)
+        else
+            close()
+        return true
+    }
+
     function selectWorkspace(workspaceId) {
         const id = Number(workspaceId)
         if (!isFinite(id) || id <= 0)
@@ -155,6 +184,7 @@ K4Plugin {
     }
 
     function close() {
+        releaseCommitModifier = ""
         open = false
     }
 
