@@ -56,6 +56,14 @@ Singleton {
         return windows.filter(window => root.workspaceId(window) === id)
     }
 
+    function windowsOutsideWorkspace(workspaceId) {
+        const id = Number(workspaceId)
+        return windows.filter(window => {
+            const windowWorkspace = root.workspaceId(window)
+            return windowWorkspace > 0 && windowWorkspace !== id
+        })
+    }
+
     function windowCountForWorkspace(workspaceId) {
         return windowsForWorkspace(workspaceId).length
     }
