@@ -75,16 +75,13 @@ test("Super-Tab drag uses the proven ii-vynx imperative Drag lifecycle", () => {
 test("Super-Tab can reorder tiled windows inside a workspace like ii-vynx overview", () => {
     const source = readK4("K4WorkspaceLayout.qml");
     const adapter = readK4("K4Windows.qml");
-    const view = readK4("K4WindowsView.qml");
 
-    assert.match(source, /signal swapRequested\(var row, var targetRow, string direction\)/);
     assert.match(source, /property var draggingTargetWindow/);
     assert.match(source, /property string draggingDirection/);
     assert.match(source, /DropArea/);
     assert.match(source, /drag\.x < width \/ 2 \? "l" : "r"/);
-    assert.match(source, /root\.swapRequested\(row, targetRow, direction\)/);
+    assert.match(source, /K4Windows\.swapWindows\(row, targetRow, direction\)/);
     assert.match(adapter, /hl\.dsp\.layout\(`swapaddrdir/);
-    assert.match(view, /K4Windows\.swapWindows\(row, targetRow, direction\)/);
 });
 
 test("Alt-Tab keeps the windows-only live preview switcher", () => {
