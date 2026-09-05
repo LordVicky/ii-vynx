@@ -58,9 +58,48 @@ K4Plugin {
         open = true
     }
 
+    function occupiedWorkspaceIds() {
+        return K4Workspaces.overviewList
+            .map(workspace => Number(workspace?.id ?? -1))
+            .filter(id => isFinite(id) && id > 0
+                && K4Windows.windowCountForWorkspace(id) > 0)
+    }
+
+    function cycleOverviewWorkspace(direction = 1) {
+        const ids = occupiedWorkspaceIds()
+        if (ids.length === 0)
+            return
+
+        const step = direction < 0 ? -1 : 1
+        const current = ids.indexOf(selectedWorkspaceId)
+        if (current >= 0) {
+            selectWorkspace(ids[(current + step + ids.length) % ids.length])
+            return
+        }
+
+        if (step > 0) {
+            for (let i = 0; i < ids.length; ++i) {
+                if (ids[i] > selectedWorkspaceId) {
+                    selectWorkspace(ids[i])
+                    return
+                }
+            }
+            selectWorkspace(ids[0])
+            return
+        }
+
+        for (let i = ids.length - 1; i >= 0; --i) {
+            if (ids[i] < selectedWorkspaceId) {
+                selectWorkspace(ids[i])
+                return
+            }
+        }
+        selectWorkspace(ids[ids.length - 1])
+    }
+
     function toggleOverview() {
         if (open && mode === "overview") {
-            close()
+            cycleOverviewWorkspace(1)
             return
         }
         openOverview()
