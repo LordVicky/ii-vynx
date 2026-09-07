@@ -12,21 +12,50 @@ import Quickshell.Io
 import Quickshell.Wayland
 import Quickshell.Hyprland
 
+// The stock ii-vynx Overview remains shell-wide for every bar variant. K4 only
+// branches the launcher/clipboard presentation and Alt-Tab switcher routes; it
+// does not own Super-Tab workspace management.
 Scope {
     id: overviewScope
     property bool dontAutoCancelSearch: false
 
     signal setSearchingTextRequested(string text)
 
+    readonly property bool usingK4Bar: Config.options.bar.variant === "k4"
     readonly property bool k4WindowsAvailable:
-        Config.options.bar.variant === "k4" && K4Windows.plugin !== null
+        usingK4Bar && K4Windows.plugin !== null
 
-    function toggleWorkspaceOverview() {
-        if (k4WindowsAvailable) {
+    function closeK4Surfaces() {
+        if (!usingK4Bar)
+            return
+        K4Launcher.close()
+        K4Clipboard.closeSurface()
+        if (K4Windows.plugin)
+            K4Windows.plugin.close()
+    }
+
+    function toggleSearch() {
+        if (usingK4Bar) {
             GlobalStates.overviewOpen = false
-            K4Windows.plugin.toggleOverview()
+            K4Launcher.toggle()
             return
         }
+        GlobalStates.overviewOpen = !GlobalStates.overviewOpen
+    }
+
+    function openSearch() {
+        if (usingK4Bar) {
+            GlobalStates.overviewOpen = false
+            K4Launcher.openSearch("")
+            return
+        }
+        GlobalStates.overviewOpen = true
+    }
+
+    function toggleWorkspaceOverview() {
+        // Super-Tab always returns to the proven ii-vynx workspace manager.
+        // Close K4 keyboard surfaces first so only one surface owns focus.
+        closeK4Surfaces()
         GlobalStates.overviewOpen = !GlobalStates.overviewOpen
     }
 
@@ -34,6 +63,8 @@ Scope {
         if (!k4WindowsAvailable)
             return
         GlobalStates.overviewOpen = false
+        K4Launcher.close()
+        K4Clipboard.closeSurface()
         K4Windows.plugin.triggerSwitcher(direction)
     }
 
@@ -41,7 +72,6 @@ Scope {
         id: overviewVariant
 
         property var variantModel: Quickshell.screens
-
         model: overviewVariant.variantModel
 
         LazyLoader {
@@ -56,7 +86,6 @@ Scope {
 
                 readonly property bool monitorIsFocused: realOverviewLoader.monitorIsFocused
                 readonly property int monitorIndex: realOverviewLoader.monitorIndex
-
                 readonly property bool isScrollingLayout: Persistent.states.hyprland.layout === "scrolling"
                 property string searchingText: ""
 
@@ -72,26 +101,23 @@ Scope {
 
                 readonly property bool isZoomInStyle: Config.options.overview.scrollingStyle.zoomStyle === "in"
                 readonly property bool showOpeningAnimation: Config.options.overview.showOpeningAnimation
-
                 property real defaultRatio: isZoomInStyle ? zoomLevels.in.default : zoomLevels.out.default
                 property real zoomedRatio: isZoomInStyle ? zoomLevels.in.zoomed : zoomLevels.out.zoomed
-
                 property bool isResettingZoom: false
                 property real scaleAnimated: showOpeningAnimation ? GlobalStates.overviewOpen ? zoomedRatio : defaultRatio : 1
-
                 property real effectiveScale: showOpeningAnimation ? zoomedRatio - scaleAnimated + 1 : 1
 
                 onIsZoomInStyleChanged: isResettingZoom = true
                 onScaleAnimatedChanged: {
-                    if (scaleAnimated === defaultRatio) {
+                    if (scaleAnimated === defaultRatio)
                         isResettingZoom = false
-                    }
                 }
 
                 visible: {
-                    if (isResettingZoom) return false
-                    if (!showOpeningAnimation) return GlobalStates.overviewOpen
-
+                    if (isResettingZoom)
+                        return false
+                    if (!showOpeningAnimation)
+                        return GlobalStates.overviewOpen
                     return isZoomInStyle ? scaleAnimated > defaultRatio : scaleAnimated < defaultRatio
                 }
 
@@ -121,7 +147,7 @@ Scope {
                     active: false
                     onCleared: () => {
                         if (!active)
-                            GlobalStates.overviewOpen = false;
+                            GlobalStates.overviewOpen = false
                     }
                 }
 
@@ -129,21 +155,19 @@ Scope {
                     target: GlobalStates
                     function onOverviewOpenChanged() {
                         if (!GlobalStates.overviewOpen) {
-                            searchWidget.disableExpandAnimation();
-                            overviewScope.dontAutoCancelSearch = false;
+                            searchWidget.disableExpandAnimation()
+                            overviewScope.dontAutoCancelSearch = false
                         } else {
-                            if (!overviewScope.dontAutoCancelSearch) {
-                                searchWidget.cancelSearch();
-                            }
-                            delayedGrabTimer.start();
+                            if (!overviewScope.dontAutoCancelSearch)
+                                searchWidget.cancelSearch()
+                            delayedGrabTimer.start()
                         }
                     }
                 }
 
                 Keys.onPressed: event => {
-                    if (event.key === Qt.Key_Escape) {
-                        GlobalStates.overviewOpen = false;
-                    }
+                    if (event.key === Qt.Key_Escape)
+                        GlobalStates.overviewOpen = false
                 }
 
                 Timer {
@@ -152,21 +176,21 @@ Scope {
                     repeat: false
                     onTriggered: {
                         if (!grab.canBeActive)
-                            return;
-                        grab.active = GlobalStates.overviewOpen;
+                            return
+                        grab.active = GlobalStates.overviewOpen
                     }
                 }
 
                 Connections {
                     target: overviewScope
                     function onSetSearchingTextRequested(text) {
-                        root.setSearchingText(text);
+                        root.setSearchingText(text)
                     }
                 }
 
                 function setSearchingText(text) {
-                    searchWidget.setSearchingText(text);
-                    searchWidget.focusFirstItem();
+                    searchWidget.setSearchingText(text)
+                    searchWidget.focusFirstItem()
                 }
 
                 Item {
@@ -175,7 +199,7 @@ Scope {
 
                     MouseArea {
                         anchors.fill: parent
-                        onClicked: GlobalStates.overviewOpen = false;
+                        onClicked: GlobalStates.overviewOpen = false
                     }
 
                     Item {
@@ -185,9 +209,8 @@ Scope {
                         z: 999
 
                         Keys.onPressed: event => {
-                            if (event.key === Qt.Key_Escape) {
-                                GlobalStates.overviewOpen = false;
-                            }
+                            if (event.key === Qt.Key_Escape)
+                                GlobalStates.overviewOpen = false
                         }
 
                         anchors {
@@ -195,6 +218,7 @@ Scope {
                             top: parent.top
                             topMargin: root.margin * 2 + Appearance.sizes.elevationMargin
                         }
+
                         SearchWidget {
                             id: searchWidget
                             scale: root.effectiveScale
@@ -213,7 +237,7 @@ Scope {
                         active: root.visible && (Config?.options.overview.enable ?? true) && !root.isScrollingLayout
                         sourceComponent: OverviewWidget {
                             panelWindow: root
-                            visible: (root.searchingText == "")
+                            visible: root.searchingText == ""
                             monitorIndex: root.monitorIndex
                         }
                     }
@@ -226,7 +250,7 @@ Scope {
                         sourceComponent: ScrollingOverviewWidget {
                             anchors.fill: parent
                             panelWindow: root
-                            visible: (root.searchingText == "")
+                            visible: root.searchingText == ""
                             monitorIndex: root.monitorIndex
                         }
                     }
@@ -236,131 +260,123 @@ Scope {
     }
 
     function toggleClipboard() {
-        if (GlobalStates.overviewOpen && overviewScope.dontAutoCancelSearch) {
-            GlobalStates.overviewOpen = false;
-            return;
+        if (usingK4Bar) {
+            GlobalStates.overviewOpen = false
+            K4Clipboard.toggleSurface()
+            return
         }
-        overviewScope.dontAutoCancelSearch = true;
-        overviewScope.setSearchingTextRequested(Config.options.search.prefix.clipboard);
-        GlobalStates.overviewOpen = true;
+        if (GlobalStates.overviewOpen && overviewScope.dontAutoCancelSearch) {
+            GlobalStates.overviewOpen = false
+            return
+        }
+        overviewScope.dontAutoCancelSearch = true
+        overviewScope.setSearchingTextRequested(Config.options.search.prefix.clipboard)
+        GlobalStates.overviewOpen = true
     }
 
     function toggleEmojis() {
         if (GlobalStates.overviewOpen && overviewScope.dontAutoCancelSearch) {
-            GlobalStates.overviewOpen = false;
-            return;
+            GlobalStates.overviewOpen = false
+            return
         }
-        overviewScope.dontAutoCancelSearch = true;
-        overviewScope.setSearchingTextRequested(Config.options.search.prefix.emojis);
-        GlobalStates.overviewOpen = true;
+        if (usingK4Bar)
+            closeK4Surfaces()
+        overviewScope.dontAutoCancelSearch = true
+        overviewScope.setSearchingTextRequested(Config.options.search.prefix.emojis)
+        GlobalStates.overviewOpen = true
     }
 
     IpcHandler {
         target: "search"
 
-        function toggle() {
-            GlobalStates.overviewOpen = !GlobalStates.overviewOpen;
+        function toggle(): void { overviewScope.toggleSearch() }
+        function workspacesToggle(): void { overviewScope.toggleWorkspaceOverview() }
+        function close(): void {
+            overviewScope.closeK4Surfaces()
+            GlobalStates.overviewOpen = false
         }
-        function workspacesToggle() {
-            overviewScope.toggleWorkspaceOverview();
+        function open(): void { overviewScope.openSearch() }
+        function toggleReleaseInterrupt(): void {
+            GlobalStates.superReleaseMightTrigger = false
         }
-        function close() {
-            if (overviewScope.k4WindowsAvailable && K4Windows.plugin.open)
-                K4Windows.plugin.close()
-            GlobalStates.overviewOpen = false;
-        }
-        function open() {
-            GlobalStates.overviewOpen = true;
-        }
-        function toggleReleaseInterrupt() {
-            GlobalStates.superReleaseMightTrigger = false;
-        }
-        function clipboardToggle() {
-            overviewScope.toggleClipboard();
-        }
+        function clipboardToggle(): void { overviewScope.toggleClipboard() }
     }
 
     GlobalShortcut {
         name: "searchToggle"
         description: "Toggles search on press"
-
-        onPressed: {
-            GlobalStates.overviewOpen = !GlobalStates.overviewOpen;
-        }
+        onPressed: overviewScope.toggleSearch()
     }
+
     GlobalShortcut {
         name: "overviewWorkspacesClose"
         description: "Closes overview on press"
-
         onPressed: {
-            if (overviewScope.k4WindowsAvailable && K4Windows.plugin.open)
-                K4Windows.plugin.close()
-            GlobalStates.overviewOpen = false;
+            overviewScope.closeK4Surfaces()
+            GlobalStates.overviewOpen = false
         }
     }
+
     GlobalShortcut {
         name: "overviewWorkspacesToggle"
-        description: "Toggles overview on press"
-
-        onPressed: {
-            overviewScope.toggleWorkspaceOverview();
-        }
+        description: "Toggles ii-vynx workspace overview on press"
+        onPressed: overviewScope.toggleWorkspaceOverview()
     }
+
     GlobalShortcut {
         name: "windowsSwitcherToggle"
         description: "Cycles K4 windows forward"
-
-        onPressed: {
-            overviewScope.triggerWindowSwitcher(1);
-        }
+        onPressed: overviewScope.triggerWindowSwitcher(1)
     }
+
     GlobalShortcut {
         name: "windowsSwitcherPrevious"
         description: "Cycles K4 windows backward"
+        onPressed: overviewScope.triggerWindowSwitcher(-1)
+    }
 
-        onPressed: {
-            overviewScope.triggerWindowSwitcher(-1);
+    GlobalShortcut {
+        name: "windowsSwitcherModifier"
+        description: "Commits the K4 Alt-Tab selection on Alt release"
+        onReleased: {
+            if (overviewScope.k4WindowsAvailable)
+                K4Windows.plugin.commitRelease()
         }
     }
+
     GlobalShortcut {
         name: "searchToggleRelease"
         description: "Toggles search on release"
 
-        onPressed: {
-            GlobalStates.superReleaseMightTrigger = true;
-        }
-
+        onPressed: GlobalStates.superReleaseMightTrigger = true
         onReleased: {
             if (!GlobalStates.superReleaseMightTrigger) {
-                GlobalStates.superReleaseMightTrigger = true;
-                return;
+                GlobalStates.superReleaseMightTrigger = true
+                return
             }
-            GlobalStates.overviewOpen = !GlobalStates.overviewOpen;
+            if (overviewScope.usingK4Bar) {
+                K4Launcher.toggle()
+                return
+            }
+            GlobalStates.overviewOpen = !GlobalStates.overviewOpen
         }
     }
+
     GlobalShortcut {
         name: "searchToggleReleaseInterrupt"
         description: "Interrupts possibility of search being toggled on release. " + "This is necessary because GlobalShortcut.onReleased in quickshell triggers whether or not you press something else while holding the key. " + "To make sure this works consistently, use binditn = MODKEYS, catchall in an automatically triggered submap that includes everything."
-
-        onPressed: {
-            GlobalStates.superReleaseMightTrigger = false;
-        }
+        onPressed: GlobalStates.superReleaseMightTrigger = false
     }
+
     GlobalShortcut {
         name: "overviewClipboardToggle"
         description: "Toggle clipboard query on overview widget"
-
-        onPressed: {
-            overviewScope.toggleClipboard();
-        }
+        onPressed: overviewScope.toggleClipboard()
     }
 
     GlobalShortcut {
         name: "overviewEmojiToggle"
         description: "Toggle emoji query on overview widget"
-
-        onPressed: {
-            overviewScope.toggleEmojis();
-        }
+        onPressed: overviewScope.toggleEmojis()
     }
 }
