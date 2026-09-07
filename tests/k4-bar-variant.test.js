@@ -13,16 +13,17 @@ test("bar enablement defaults on while Standard remains the default variant", ()
     assert.match(config, /property JsonObject k4:\s*JsonObject\s*\{[\s\S]*?property string position:\s*"top"[\s\S]*?property int alignment:\s*50/);
 });
 
-test("ii family gives bar ownership to exactly the selected enabled variant", () => {
+test("ii family gives bar ownership to the selected variant while overview stays shell-wide", () => {
     const family = read("panelFamilies/IllogicalImpulseFamily.qml");
 
     assert.match(family, /readonly property bool barEnabled:\s*Config\.options\.bar\.enable/);
     assert.match(family, /readonly property bool usingStandardBar:\s*Config\.options\.bar\.variant === "standard"/);
     assert.match(family, /readonly property bool usingK4Bar:\s*Config\.options\.bar\.variant === "k4"/);
     assert.match(family, /PanelLoader \{ extraCondition: barEnabled && usingK4Bar; component: K4Bar \{\} \}/);
-    assert.match(family, /PanelLoader \{ extraCondition: barEnabled && usingK4Bar; component: K4LauncherRouting \{\} \}/);
     assert.match(family, /PanelLoader \{ extraCondition: barEnabled && usingStandardBar && !Config\.options\.bar\.vertical && barExtraCondition; component: Bar \{\} \}/);
     assert.match(family, /PanelLoader \{ extraCondition: barEnabled && usingStandardBar && Config\.options\.bar\.vertical && barExtraCondition; component: VerticalBar \{\} \}/);
+    assert.match(family, /PanelLoader \{ component: Overview \{\} \}/);
+    assert.doesNotMatch(family, /K4LauncherRouting/);
 
     assert.doesNotMatch(family, /BarHugGlassLayer|BarGlassLayer|BarPlainGlassLayer|VerticalBarGlassLayer|liquidGlass|LiquidGlass|hyprglass/);
 });
