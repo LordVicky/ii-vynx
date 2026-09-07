@@ -5,7 +5,7 @@ const test = require("node:test");
 
 const root = path.resolve(__dirname, "..");
 const base = path.join(root, "dots/.config/quickshell/ii/modules/ii/k4bar");
-const hypr = path.join(root, "dots/.config/hypr/hyprland/keybinds.lua");
+const hyprRoot = path.join(root, "dots/.config/hypr");
 const read = name => fs.readFileSync(path.join(base, name), "utf8");
 
 test("windows adapter reuses ii-vynx HyprlandData and in-process dispatcher", () => {
@@ -38,20 +38,24 @@ test("window selection no longer depends on local modifier release", () => {
 
 test("K4 routes Super-Tab and Alt-Tab and commits on modifier release", () => {
     const routing = read("K4LauncherRouting.qml");
-    const binds = fs.readFileSync(hypr, "utf8");
+    const coreBinds = fs.readFileSync(path.join(hyprRoot, "hyprland/keybinds.lua"), "utf8");
+    const k4Binds = fs.readFileSync(path.join(hyprRoot, "hyprland/k4-windows.lua"), "utf8");
+    const entry = fs.readFileSync(path.join(hyprRoot, "hyprland.lua"), "utf8");
 
     assert.match(routing, /name:\s*"overviewWorkspacesToggle"/);
     assert.match(routing, /name:\s*"windowsSwitcherToggle"/);
     assert.match(routing, /name:\s*"windowsSwitcherPrevious"/);
     assert.match(routing, /name:\s*"windowsSwitcherCommit"/);
     assert.match(routing, /K4Windows\.plugin\.choose\(\)/);
-    assert.match(routing, /searchToggleRelease[\s\S]*K4Windows\.plugin\.open[\s\S]*K4Windows\.plugin\.choose\(\)/);
+    assert.match(routing, /searchToggleRelease[\s\S]*K4Windows\.plugin\?\.open[\s\S]*K4Windows\.plugin\.choose\(\)/);
 
-    assert.match(binds, /SUPER \+ Tab[\s\S]*overviewWorkspacesToggle/);
-    assert.match(binds, /ALT \+ Tab[\s\S]*windowsSwitcherToggle/);
-    assert.match(binds, /ALT \+ SHIFT \+ Tab[\s\S]*windowsSwitcherPrevious/);
-    assert.match(binds, /ALT_L[\s\S]*windowsSwitcherCommit[\s\S]*release = true/);
-    assert.match(binds, /ALT_R[\s\S]*windowsSwitcherCommit[\s\S]*release = true/);
+    assert.match(coreBinds, /SUPER \+ Tab[\s\S]*overviewWorkspacesToggle/);
+    assert.match(k4Binds, /ALT \+ Tab[\s\S]*windowsSwitcherToggle/);
+    assert.match(k4Binds, /ALT \+ SHIFT \+ Tab[\s\S]*windowsSwitcherPrevious/);
+    assert.match(k4Binds, /ALT_L[\s\S]*windowsSwitcherCommit[\s\S]*release = true/);
+    assert.match(k4Binds, /ALT_R[\s\S]*windowsSwitcherCommit[\s\S]*release = true/);
+    assert.match(entry, /require\("hyprland\.k4-windows"\)/);
+    assert.doesNotMatch(k4Binds, /exec_cmd|hyprctl/);
 });
 
 test("windows utility is built in directly", () => {
