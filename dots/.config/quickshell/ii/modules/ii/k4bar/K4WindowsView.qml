@@ -39,11 +39,6 @@ Item {
         else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter || event.key === Qt.Key_Space) { root.plugin.choose(); event.accepted = true }
         else if (event.key === Qt.Key_Delete || event.key === Qt.Key_W) { root.plugin.closeCurrent(); event.accepted = true }
     }
-    Keys.onReleased: function(event) {
-        if (event.key === Qt.Key_Super_L || event.key === Qt.Key_Super_R || event.key === Qt.Key_Alt) {
-            root.plugin.choose(); event.accepted = true
-        }
-    }
 
     ColumnLayout {
         anchors.fill: parent
@@ -118,7 +113,7 @@ Item {
         }
         Text {
             Layout.fillWidth: true
-            text: "tab cycles · pauses to focus · delete closes · esc cancels"
+            text: "tab cycles · release modifier to focus · delete closes · esc cancels"
             color: K4Theme.dim; font.family: K4Theme.uiFont; font.pixelSize: 9
             horizontalAlignment: Text.AlignHCenter
         }
