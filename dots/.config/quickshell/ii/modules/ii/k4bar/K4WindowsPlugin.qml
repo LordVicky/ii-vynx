@@ -1,9 +1,8 @@
 import QtQuick
 import Quickshell.Io
 
-// Windows V2 keeps one native Wayland-backed surface with two entry modes:
-// Super+Tab opens the workspace overview, while Alt+Tab opens a transient
-// windows-only switcher. Client ownership remains in ii-vynx HyprlandData.
+// K4 owns only the Alt-Tab presentation. Super-Tab workspace management is the
+// stock ii-vynx Overview and deliberately does not route through this plugin.
 K4Plugin {
     id: root
 
@@ -17,32 +16,17 @@ K4Plugin {
     grabKeyboard: open
 
     property bool open: false
-    property string mode: "overview" // "overview" | "switcher"
     property int index: 0
-    property int selectedWorkspaceId: -1
-    // Only keyboard-invoked sessions arm a modifier-release commit. Opening
-    // Windows from the bar must never make a later bare Super/Alt release focus
-    // a client unexpectedly.
-    property string releaseCommitModifier: ""
-    // Session preference intentionally lives on the long-lived plugin so the
-    // in-view toggle affects every subsequent Alt+Tab until Quickshell restarts.
     property bool altTabCurrentWorkspaceOnly: false
+    property bool releaseCommitArmed: false
 
-    readonly property bool showWorkspaces: mode === "overview"
-    readonly property var entries: showWorkspaces
-        ? K4Windows.windowsForWorkspace(selectedWorkspaceId)
-        : K4Windows.switcherWindows(altTabCurrentWorkspaceOnly)
-    readonly property var otherEntries: showWorkspaces
-        ? K4Windows.windowsOutsideWorkspace(selectedWorkspaceId) : []
+    readonly property var entries:
+        K4Windows.switcherWindows(altTabCurrentWorkspaceOnly)
     readonly property int count: entries.length
 
-    // Window previews are the primary content here, so give them substantially
-    // more room than the first V2 pass. K4's global widthScale still applies on
-    // top of these intrinsic dimensions.
-    islandWidth: showWorkspaces
-        ? 1120
-        : Math.min(1120, Math.max(520, 80 + Math.min(count, 4) * 260))
-    islandHeight: showWorkspaces ? 560 : 320
+    islandWidth: Math.min(1120,
+        Math.max(520, 80 + Math.min(count, 4) * 260))
+    islandHeight: 320
 
     function prepare() {
         K4Windows.refresh()
@@ -50,76 +34,13 @@ K4Plugin {
         K4Notifications.dismissToast()
     }
 
-    function openOverview() {
-        if (!enabled)
-            return
-        prepare()
-        releaseCommitModifier = ""
-        mode = "overview"
-        selectedWorkspaceId = K4Workspaces.activeId > 0
-            ? K4Workspaces.activeId
-            : (K4Workspaces.list[0]?.id ?? -1)
-        index = 0
-        open = true
-    }
-
-    function occupiedWorkspaceIds() {
-        return K4Workspaces.overviewList
-            .map(workspace => Number(workspace?.id ?? -1))
-            .filter(id => isFinite(id) && id > 0
-                && K4Windows.windowCountForWorkspace(id) > 0)
-    }
-
-    function cycleOverviewWorkspace(direction = 1) {
-        const ids = occupiedWorkspaceIds()
-        if (ids.length === 0)
-            return
-
-        const step = direction < 0 ? -1 : 1
-        const current = ids.indexOf(selectedWorkspaceId)
-        if (current >= 0) {
-            selectWorkspace(ids[(current + step + ids.length) % ids.length])
-            return
-        }
-
-        if (step > 0) {
-            for (let i = 0; i < ids.length; ++i) {
-                if (ids[i] > selectedWorkspaceId) {
-                    selectWorkspace(ids[i])
-                    return
-                }
-            }
-            selectWorkspace(ids[0])
-            return
-        }
-
-        for (let i = ids.length - 1; i >= 0; --i) {
-            if (ids[i] < selectedWorkspaceId) {
-                selectWorkspace(ids[i])
-                return
-            }
-        }
-        selectWorkspace(ids[ids.length - 1])
-    }
-
-    function toggleOverview() {
-        if (open && mode === "overview") {
-            cycleOverviewWorkspace(1)
-            return
-        }
-        openOverview()
-    }
-
     function openSwitcher(direction = 1) {
         if (!enabled)
             return
         prepare()
-        releaseCommitModifier = ""
-        mode = "switcher"
-        selectedWorkspaceId = K4Workspaces.activeId
         const rows = K4Windows.switcherWindows(altTabCurrentWorkspaceOnly)
         if (rows.length === 0) {
-            open = false
+            close()
             return
         }
         if (rows.length === 1)
@@ -130,45 +51,32 @@ K4Plugin {
     }
 
     function triggerSwitcher(direction = 1) {
-        if (!open || mode !== "switcher") {
+        if (!open) {
             openSwitcher(direction)
-            return
-        }
-        if (direction < 0)
+        } else if (direction < 0) {
             retreat()
-        else
+        } else {
             advance()
+        }
+        if (open)
+            armReleaseCommit()
     }
 
-    function armReleaseCommit(modifier) {
-        const value = String(modifier || "")
-        if (!open || (value !== "super" && value !== "alt"))
-            return
-        releaseCommitModifier = value
+    function armReleaseCommit() {
+        releaseCommitArmed = open && count > 0
     }
 
-    function commitRelease(modifier) {
-        const value = String(modifier || "")
-        if (!open || releaseCommitModifier !== value)
+    function commitRelease() {
+        if (!open || !releaseCommitArmed)
             return false
-
-        // Disarm before activating because chooseWindow() closes the surface and
-        // activation can synchronously trigger Hyprland state refreshes.
-        releaseCommitModifier = ""
+        releaseCommitArmed = false
         const row = entries[index]
-        if (row)
-            chooseWindow(row)
-        else
+        if (!row) {
             close()
+            return false
+        }
+        chooseWindow(row)
         return true
-    }
-
-    function selectWorkspace(workspaceId) {
-        const id = Number(workspaceId)
-        if (!isFinite(id) || id <= 0)
-            return
-        selectedWorkspaceId = id
-        index = 0
     }
 
     function setAltTabCurrentWorkspaceOnly(value) {
@@ -179,17 +87,27 @@ K4Plugin {
     function openApplication() {
         if (!enabled)
             return false
-        openOverview()
-        return open
+        prepare()
+        if (entries.length === 0) {
+            close()
+            return false
+        }
+        index = 0
+        releaseCommitArmed = false
+        open = true
+        return true
     }
 
     function close() {
-        releaseCommitModifier = ""
+        releaseCommitArmed = false
         open = false
     }
 
     function toggle() {
-        toggleOverview()
+        if (open)
+            close()
+        else
+            openApplication()
     }
 
     function advance() {
@@ -222,7 +140,7 @@ K4Plugin {
     }
 
     onCountChanged: {
-        if (mode === "switcher" && open && count === 0)
+        if (open && count === 0)
             close()
         else if (index >= count)
             index = Math.max(0, count - 1)
@@ -236,9 +154,8 @@ K4Plugin {
 
     IpcHandler {
         target: "k4.windows"
-        function toggle(): void { root.toggleOverview() }
-        function open(): void { root.openOverview() }
-        function overview(): void { root.openOverview() }
+        function toggle(): void { root.toggle() }
+        function open(): void { root.openApplication() }
         function switcher(): void { root.openSwitcher(1) }
         function close(): void { root.close() }
         function next(): void { root.advance() }
