@@ -14,6 +14,8 @@ Scope {
     Component.onDestruction: {
         K4Launcher.close()
         K4Clipboard.closeSurface()
+        if (K4Windows.plugin)
+            K4Windows.plugin.close()
     }
 
     // Keep stale/external Overview state from reopening when the user later
@@ -27,15 +29,29 @@ Scope {
         }
     }
 
+    function closeKeyboardSurfaces() {
+        K4Launcher.close()
+        K4Clipboard.closeSurface()
+        if (K4Windows.plugin)
+            K4Windows.plugin.close()
+    }
+
+    function toggleWindows(direction = 1) {
+        if (K4Windows.plugin)
+            K4Windows.plugin.toggle(direction)
+    }
+
+    function commitWindows() {
+        if (K4Windows.plugin?.open)
+            K4Windows.plugin.choose()
+    }
+
     IpcHandler {
         target: "search"
 
         function toggle(): void { K4Launcher.toggle() }
-        function workspacesToggle(): void {}
-        function close(): void {
-            K4Launcher.close()
-            K4Clipboard.closeSurface()
-        }
+        function workspacesToggle(): void { root.toggleWindows(1) }
+        function close(): void { root.closeKeyboardSurfaces() }
         function open(): void { K4Launcher.openSearch("") }
         function toggleReleaseInterrupt(): void {
             GlobalStates.superReleaseMightTrigger = false
@@ -50,20 +66,49 @@ Scope {
     }
 
     GlobalShortcut {
+        name: "overviewWorkspacesToggle"
+        description: "Cycles K4 windows with Super+Tab"
+        onPressed: root.toggleWindows(1)
+    }
+
+    GlobalShortcut {
+        name: "windowsSwitcherToggle"
+        description: "Cycles K4 windows forward with Alt+Tab"
+        onPressed: root.toggleWindows(1)
+    }
+
+    GlobalShortcut {
+        name: "windowsSwitcherPrevious"
+        description: "Cycles K4 windows backward with Alt+Shift+Tab"
+        onPressed: root.toggleWindows(-1)
+    }
+
+    GlobalShortcut {
+        name: "windowsSwitcherCommit"
+        description: "Commits the active K4 window selection on Alt release"
+        onPressed: root.commitWindows()
+    }
+
+    GlobalShortcut {
         name: "overviewWorkspacesClose"
         description: "Closes active K4 keyboard surfaces"
-        onPressed: {
-            K4Launcher.close()
-            K4Clipboard.closeSurface()
-        }
+        onPressed: root.closeKeyboardSurfaces()
     }
 
     GlobalShortcut {
         name: "searchToggleRelease"
-        description: "Toggles the active K4 launcher on release"
+        description: "Commits K4 Super+Tab or toggles the launcher on Super release"
 
         onPressed: GlobalStates.superReleaseMightTrigger = true
         onReleased: {
+            // Super+Tab owns this release while the K4 window switcher is open.
+            // Commit before consulting the launcher interruption latch because
+            // Tab intentionally interrupts the normal Super-release launcher.
+            if (K4Windows.plugin?.open) {
+                K4Windows.plugin.choose()
+                GlobalStates.superReleaseMightTrigger = true
+                return
+            }
             if (!GlobalStates.superReleaseMightTrigger) {
                 GlobalStates.superReleaseMightTrigger = true
                 return
