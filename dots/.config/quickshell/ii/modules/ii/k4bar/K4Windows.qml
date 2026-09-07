@@ -2,12 +2,17 @@ pragma Singleton
 
 import QtQuick
 import Quickshell
+import Quickshell.Hyprland
 import qs.services
 
 // Window-switcher presentation adapter over ii-vynx HyprlandData. It reuses
 // the shell's existing client refresh owner and only dispatches user actions.
 Singleton {
     id: root
+
+    // The concrete plugin registers here so always-loaded K4 shortcut routing
+    // can commit the active selection on compositor modifier release.
+    property var plugin: null
 
     readonly property var windows: HyprlandData.windowList
         .filter(window => window && window.address && !(window.hidden ?? false))
@@ -27,11 +32,11 @@ Singleton {
     }
     function activate(window) {
         if (!window?.address) return
-        Quickshell.execDetached(["hyprctl", "dispatch", "focuswindow", "address:" + window.address])
+        Hyprland.dispatch(`hl.dsp.focus({ window = "address:${window.address}" })`)
     }
     function close(window) {
         if (!window?.address) return
-        Quickshell.execDetached(["hyprctl", "dispatch", "closewindow", "address:" + window.address])
+        Hyprland.dispatch(`hl.dsp.window.close({ window = "address:${window.address}" })`)
         Qt.callLater(refresh)
     }
 }
