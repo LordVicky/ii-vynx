@@ -107,33 +107,33 @@ git commit -m "fix(fullscreen): preserve direct scanout with K4 shell"
 - Consumes: the committed QML files from Task 1 and the existing `qs -c ii` process.
 - Produces: a live shell whose idle fullscreen layer state permits Hyprland direct scanout.
 
-- [ ] **Step 1: Compare source and live files before deployment**
+- [x] **Step 1: Compare source and live files before deployment**
 
 Run: `diff -u /home/lordvicky/.config/quickshell/ii/modules/ii/screenCorners/ScreenCorners.qml dots/.config/quickshell/ii/modules/ii/screenCorners/ScreenCorners.qml` and the equivalent command for `K4Bar.qml`.
 
 Expected: differences are limited to the Task 1 layer-routing changes.
 
-- [ ] **Step 2: Deploy the two changed QML files**
+- [x] **Step 2: Deploy the two changed QML files**
 
 Copy the two committed source files to their matching live paths without touching any other live configuration.
 
-- [ ] **Step 3: Restart the live shell**
+- [x] **Step 3: Restart the live shell**
 
 Run `qs -c ii kill`, then start `qs -c ii` with the same command line. Confirm one live shell process and inspect `qs log --no-color` for QML load errors.
 
-- [ ] **Step 4: Verify desktop presentation**
+- [x] **Step 4: Verify desktop presentation**
 
 Run: `hyprctl layers -j`
 
-Expected: outside fullscreen, `quickshell:screenCorners` and `quickshell:k4bar` are present on their normal overlay behavior and the configured K4 bar is visible.
+Expected: outside fullscreen, `quickshell:screenCorners` return to overlay, `quickshell:k4bar` returns to top, and the configured K4 bar is visible.
 
-- [ ] **Step 5: Verify Bodycam direct scanout**
+- [x] **Step 5: Verify Bodycam direct scanout**
 
 Focus Bodycam in its unchanged borderless mode and sample `hyprctl monitors -j` plus `hyprctl layers -j` for at least five frames.
 
 Expected: the active overlay level does not contain idle `quickshell:screenCorners` or `quickshell:k4bar`; `solitaryBlockedBy` is null; `directScanoutTo` equals the Bodycam window address; `directScanoutBlockedBy` is null; observed FPS is in the established 90-100 range.
 
-- [ ] **Step 6: Verify restoration after leaving fullscreen**
+- [x] **Step 6: Verify restoration after leaving fullscreen**
 
 Leave Bodycam's workspace and run `hyprctl layers -j` again.
 
