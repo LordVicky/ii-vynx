@@ -61,7 +61,7 @@ Scope {
                 pluginVisible?.name === "toast"
                 || pluginVisible?.name === "launcher"
                 || pluginVisible?.name === "volume"
-                || effectiveSpaceMode === "hidden"
+                || (effectiveSpaceMode === "hidden" && !idleFullscreen)
             readonly property bool pillShape: K4Settings.shape === "pill"
             readonly property int shapeInset: pillShape ? 6 : 0
             readonly property real widthScale: K4Settings.widthScale
@@ -77,6 +77,9 @@ Scope {
                 || (bottom && !hideMode && bottomBridgeHover.hovered)
             readonly property bool shouldShow:
                 pointerOver || (!!pluginVisible && pluginVisible.name !== "idle")
+            readonly property bool idleFullscreen:
+                K4Settings.spaceMode === "fullscreen"
+                    && effectiveSpaceMode === "hidden" && !shouldShow
             property bool withdrawn: false
             readonly property int targetHeight: Math.min(
                 K4Theme.maxIslandHeight + shapeInset,

@@ -39,7 +39,8 @@ Scope {
             item: sidebarCornerOpenInteractionLoader.active ? sidebarCornerOpenInteractionLoader : null
         }
         WlrLayershell.namespace: "quickshell:screenCorners"
-        WlrLayershell.layer: WlrLayer.Overlay
+        WlrLayershell.layer: cornerPanelWindow.cornerContentVisible
+            ? WlrLayer.Overlay : WlrLayer.Top
         color: "transparent"
 
         anchors {

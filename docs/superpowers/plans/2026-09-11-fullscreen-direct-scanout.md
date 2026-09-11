@@ -25,8 +25,8 @@
 - Modify: `dots/.config/quickshell/ii/modules/ii/k4bar/K4Bar.qml:45-80`
 
 **Interfaces:**
-- Consumes: `cornerPanelWindow.fullscreen`, `cornerPanelWindow.cornerContentVisible`, `HyprlandData.monitorHasFullscreen(screenName)`, `K4Settings.spaceMode`, `panelWindow.shouldShow`.
-- Produces: `panelWindow.monitorFullscreen: bool`, `panelWindow.idleFullscreen: bool`, and per-surface `WlrLayershell.layer` bindings.
+- Consumes: `cornerPanelWindow.fullscreen`, `cornerPanelWindow.cornerContentVisible`, `HyprlandData.monitorHasFullscreen(screenName)`, `K4Settings.spaceMode`, `panelWindow.effectiveSpaceMode`, and `panelWindow.shouldShow`.
+- Produces: `panelWindow.idleFullscreen: bool` and per-surface `WlrLayershell.layer` bindings.
 
 - [x] **Step 1: Run the failing live behavior check**
 
@@ -46,7 +46,7 @@ Focus Bodycam in borderless fullscreen, sample `hyprctl monitors -j` and `hyprct
 
 Expected: FAIL because the active overlay level contains `quickshell:k4bar` and `quickshell:screenCorners`, `solitaryBlockedBy` contains `OVERLAYS`, and `directScanoutTo` is `0`.
 
-- [ ] **Step 3: Implement the minimal QML layer routing**
+- [x] **Step 3: Implement the minimal QML layer routing**
 
 In `ScreenCorners.qml`, replace the fixed layer with:
 
@@ -58,14 +58,13 @@ WlrLayershell.layer: cornerPanelWindow.cornerContentVisible
 In `K4Bar.qml`, reuse one fullscreen query and distinguish an idle fullscreen surface:
 
 ```qml
-readonly property bool monitorFullscreen:
-    HyprlandData.monitorHasFullscreen(panelWindow.screen.name)
 readonly property string effectiveSpaceMode: K4Settings.spaceMode === "fullscreen"
-    ? (monitorFullscreen ? "hidden" : "reserve")
+    ? (HyprlandData.monitorHasFullscreen(panelWindow.screen.name)
+        ? "hidden" : "reserve")
     : K4Settings.spaceMode
 readonly property bool idleFullscreen:
     K4Settings.spaceMode === "fullscreen"
-        && monitorFullscreen && !shouldShow
+        && effectiveSpaceMode === "hidden" && !shouldShow
 ```
 
 Keep explicit K4 UI above fullscreen clients while allowing the idle surface to fall back to top:
@@ -78,19 +77,19 @@ readonly property bool notificationOverlay:
     || (effectiveSpaceMode === "hidden" && !idleFullscreen)
 ```
 
-- [ ] **Step 4: Run focused regression tests**
+- [x] **Step 4: Run focused regression tests**
 
 Run: `node --test tests/k4-space-mode.test.js tests/k4-volume-fullscreen.test.js tests/k4-notifications.test.js tests/k4-surface-lifecycle.test.js`
 
 Expected: all selected tests pass.
 
-- [ ] **Step 5: Check QML syntax**
+- [x] **Step 5: Check QML syntax**
 
 Run: `/usr/bin/qmllint-qt6 -I dots/.config/quickshell/ii dots/.config/quickshell/ii/modules/ii/screenCorners/ScreenCorners.qml dots/.config/quickshell/ii/modules/ii/k4bar/K4Bar.qml`
 
 Expected: exit 0. Existing unresolved-import warnings may remain, but there must be no syntax error in either changed file.
 
-- [ ] **Step 6: Commit the source change**
+- [x] **Step 6: Commit the source change**
 
 ```bash
 git add dots/.config/quickshell/ii/modules/ii/screenCorners/ScreenCorners.qml \
