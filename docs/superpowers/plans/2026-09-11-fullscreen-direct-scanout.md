@@ -21,7 +21,6 @@
 ### Task 1: Route idle fullscreen surfaces below the game
 
 **Files:**
-- Create: `tests/fullscreen-direct-scanout.test.js`
 - Modify: `dots/.config/quickshell/ii/modules/ii/screenCorners/ScreenCorners.qml:27-42`
 - Modify: `dots/.config/quickshell/ii/modules/ii/k4bar/K4Bar.qml:45-80`
 
@@ -29,41 +28,23 @@
 - Consumes: `cornerPanelWindow.fullscreen`, `cornerPanelWindow.cornerContentVisible`, `HyprlandData.monitorHasFullscreen(screenName)`, `K4Settings.spaceMode`, `panelWindow.shouldShow`.
 - Produces: `panelWindow.monitorFullscreen: bool`, `panelWindow.idleFullscreen: bool`, and per-surface `WlrLayershell.layer` bindings.
 
-- [ ] **Step 1: Write the failing source-contract tests**
+- [x] **Step 1: Run the failing live behavior check**
 
-```js
-import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
-import test from "node:test";
-
-const root = new URL("../dots/.config/quickshell/ii/", import.meta.url);
-const read = path => readFile(new URL(path, root), "utf8");
-
-test("fake corners remain mapped but leave overlay when hidden by fullscreen", async () => {
-    const source = await read("modules/ii/screenCorners/ScreenCorners.qml");
-
-    assert.match(source, /visible:\s*roundingWindowEnabled/);
-    assert.match(source,
-        /WlrLayershell\.layer:\s*cornerPanelWindow\.cornerContentVisible\s*\?\s*WlrLayer\.Overlay\s*:\s*WlrLayer\.Top/);
-});
-
-test("idle Away-when-fullscreen K4 surface leaves overlay until UI opens", async () => {
-    const source = await read("modules/ii/k4bar/K4Bar.qml");
-
-    assert.match(source,
-        /readonly property bool monitorFullscreen:\s*HyprlandData\.monitorHasFullscreen\(panelWindow\.screen\.name\)/);
-    assert.match(source,
-        /readonly property bool idleFullscreen:[\s\S]*?K4Settings\.spaceMode === "fullscreen"[\s\S]*?monitorFullscreen[\s\S]*?!shouldShow/);
-    assert.match(source,
-        /notificationOverlay:[\s\S]*?effectiveSpaceMode === "hidden" && !idleFullscreen/);
-});
+```python
+monitor = hyprctl_json("monitors")[0]
+overlay_namespaces = layer_namespaces(monitor["name"], level="3")
+assert "quickshell:k4bar" not in overlay_namespaces
+assert "quickshell:screenCorners" not in overlay_namespaces
+assert monitor["solitaryBlockedBy"] is None
+assert monitor["directScanoutBlockedBy"] is None
+assert monitor["directScanoutTo"] == bodycam_address_without_prefix
 ```
 
-- [ ] **Step 2: Run the new test and verify RED**
+- [x] **Step 2: Verify RED against the unchanged live shell**
 
-Run: `node --test tests/fullscreen-direct-scanout.test.js`
+Focus Bodycam in borderless fullscreen, sample `hyprctl monitors -j` and `hyprctl layers -j`, and evaluate the assertions above.
 
-Expected: both tests fail because the corner layer is always overlay and `monitorFullscreen` / `idleFullscreen` do not exist.
+Expected: FAIL because the active overlay level contains `quickshell:k4bar` and `quickshell:screenCorners`, `solitaryBlockedBy` contains `OVERLAYS`, and `directScanoutTo` is `0`.
 
 - [ ] **Step 3: Implement the minimal QML layer routing**
 
@@ -97,9 +78,9 @@ readonly property bool notificationOverlay:
     || (effectiveSpaceMode === "hidden" && !idleFullscreen)
 ```
 
-- [ ] **Step 4: Run focused tests and verify GREEN**
+- [ ] **Step 4: Run focused regression tests**
 
-Run: `node --test tests/fullscreen-direct-scanout.test.js tests/k4-space-mode.test.js tests/k4-volume-fullscreen.test.js tests/k4-notifications.test.js tests/k4-surface-lifecycle.test.js`
+Run: `node --test tests/k4-space-mode.test.js tests/k4-volume-fullscreen.test.js tests/k4-notifications.test.js tests/k4-surface-lifecycle.test.js`
 
 Expected: all selected tests pass.
 
@@ -112,8 +93,7 @@ Expected: exit 0. Existing unresolved-import warnings may remain, but there must
 - [ ] **Step 6: Commit the source change**
 
 ```bash
-git add tests/fullscreen-direct-scanout.test.js \
-    dots/.config/quickshell/ii/modules/ii/screenCorners/ScreenCorners.qml \
+git add dots/.config/quickshell/ii/modules/ii/screenCorners/ScreenCorners.qml \
     dots/.config/quickshell/ii/modules/ii/k4bar/K4Bar.qml
 git commit -m "fix(fullscreen): preserve direct scanout with K4 shell"
 ```
@@ -159,4 +139,3 @@ Expected: the active overlay level does not contain idle `quickshell:screenCorne
 Leave Bodycam's workspace and run `hyprctl layers -j` again.
 
 Expected: the normal K4 bar and corner layer behavior is restored without restarting Quickshell.
-
