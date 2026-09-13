@@ -46,6 +46,8 @@ Singleton {
             implicitWidth: 0
             implicitHeight: 0
             color: "transparent"
+            WlrLayershell.namespace: "quickshell:idleInhibitor"
+            WlrLayershell.layer: WlrLayer.Bottom
             // Just in case...
             anchors {
                 right: true

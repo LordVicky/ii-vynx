@@ -34,6 +34,22 @@ test("K4 fullscreen query reuses HyprlandData monitor and workspace snapshots", 
     assert.doesNotMatch(k4Bar, /command:\s*\[\s*"hyprctl"[\s\S]*?(workspaces|monitors)/);
 });
 
+test("fullscreen shell surfaces tolerate a temporarily missing Quickshell monitor", async () => {
+    const corners = await read("modules/ii/screenCorners/ScreenCorners.qml");
+    const background = await read("modules/ii/background/Background.qml");
+
+    assert.match(corners, /property bool fullscreen:\s*HyprlandData\.monitorHasFullscreen\(modelData\?\.name\)/);
+    assert.match(background, /readonly property bool fullscreen:\s*HyprlandData\.monitorHasFullscreen\(modelData\?\.name\)/);
+    assert.doesNotMatch(corners, /workspacesForMonitor|activeWorkspaceWithFullscreen/);
+    assert.doesNotMatch(background, /workspacesForMonitor|activeWorkspaceWithFullscreen/);
+});
+
+test("the idle-inhibitor protocol surface stays below fullscreen clients", async () => {
+    const idle = await read("services/Idle.qml");
+
+    assert.match(idle, /window:\s*PanelWindow\s*\{[\s\S]*?WlrLayershell\.layer:\s*WlrLayer\.Bottom/);
+});
+
 test("K4 host resolves Away-when-fullscreen per monitor and only Reserve claims space", async () => {
     const source = await read("modules/ii/k4bar/K4Bar.qml");
 
