@@ -31,7 +31,7 @@ Scope {
     readonly property bool barEnabled: Config.options.bar.enable
     readonly property bool usingStandardBar: Config.options.bar.variant === "standard"
     readonly property bool usingK4Bar: Config.options.bar.variant === "k4"
-    readonly property bool usingWrappedFrame: Config.options.appearance.fakeScreenRoundingEnabled && Config.options.appearance.fakeScreenRounding === 3
+    readonly property bool usingWrappedFrame: Config.options.appearance.fakeScreenRounding === 3
     readonly property bool barBot: Config.options.bar.bottom
     readonly property bool barVert: Config.options.bar.vertical
 

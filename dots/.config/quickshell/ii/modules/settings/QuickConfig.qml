@@ -307,15 +307,6 @@ ContentPage {
 
         
 
-        ConfigSwitch {
-            buttonIcon: "rounded_corner"
-            text: Translation.tr("Enable fake screen corners")
-            checked: Config.options.appearance.fakeScreenRoundingEnabled
-            onCheckedChanged: {
-                Config.options.appearance.fakeScreenRoundingEnabled = checked;
-            }
-        }
-
         ConfigRow {
             ContentSubsection {
                 title: Translation.tr("Bar position")
@@ -442,7 +433,7 @@ ContentPage {
         }
 
         ConfigSpinBox {
-            visible: Config.options.appearance.fakeScreenRoundingEnabled && Config.options.appearance.fakeScreenRounding === 3
+            visible: Config.options.appearance.fakeScreenRounding === 3
             icon: "line_weight"
             text: Translation.tr("Wrapped frame thickness")
             value: Config.options.appearance.wrappedFrameThickness

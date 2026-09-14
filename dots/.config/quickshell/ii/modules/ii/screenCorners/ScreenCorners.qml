@@ -27,12 +27,10 @@ Scope {
         // Keep the layer surface mapped while screen rounding is enabled. In mode 2
         // fullscreen hides only the corner content; it must not destroy/recreate the
         // PanelWindow on every fullscreen transition. Modes 0/3 remain fully unmapped.
-        readonly property bool roundingWindowEnabled: Config.options.appearance.fakeScreenRoundingEnabled
-            && (Config.options.appearance.fakeScreenRounding === 1
-                || Config.options.appearance.fakeScreenRounding === 2)
-        readonly property bool cornerContentVisible: roundingWindowEnabled
-            && (Config.options.appearance.fakeScreenRounding === 1
-                || (Config.options.appearance.fakeScreenRounding === 2 && !fullscreen))
+        readonly property bool roundingWindowEnabled: Config.options.appearance.fakeScreenRounding === 1
+            || Config.options.appearance.fakeScreenRounding === 2
+        readonly property bool cornerContentVisible: Config.options.appearance.fakeScreenRounding === 1
+            || (Config.options.appearance.fakeScreenRounding === 2 && !fullscreen)
         visible: roundingWindowEnabled
         property var corner
 
