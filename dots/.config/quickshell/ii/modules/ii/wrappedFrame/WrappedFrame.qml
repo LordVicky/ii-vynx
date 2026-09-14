@@ -89,7 +89,7 @@ Item {
     }
 
     Loader {
-        active: Config.options.appearance.fakeScreenRounding == 3
+        active: Config.options.appearance.fakeScreenRoundingEnabled && Config.options.appearance.fakeScreenRounding == 3
         sourceComponent: Variants {
             id: wrappedFrameVariant
             property var variantModel: Quickshell.screens
